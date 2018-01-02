@@ -219,7 +219,10 @@ func (p *Port) Push(item interface{}) {
 	}
 
 	if p.itemType == TYPE_ANY {
-		panic("no buffer")
+		for dest := range p.dests {
+			dest.Push(item)
+		}
+		return
 	}
 
 	if p.itemType == TYPE_STREAM {

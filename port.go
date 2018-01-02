@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"reflect"
 )
 
 const (
@@ -45,19 +46,40 @@ type Port struct {
 
 // Makes a new port.
 func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
-	var err error
+	if def == nil || reflect.ValueOf(def).IsNil() {
+		return nil, errors.New("definition is nil")
+	}
 
 	p := &Port{}
 	p.direction = dir
 	p.operator = o
 	p.dests = make(map[*Port]bool)
 
-	switch def["type"] {
+	itemType, ok := def["type"]
+
+	if !ok {
+		return nil, errors.New("type missing")
+	}
+
+	var err error
+	switch itemType {
 	case "map":
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
-		for k, e := range def["map"].(map[string]interface{}) {
-			p.subs[k], err = MakePort(o, e.(map[string]interface{}), dir)
+		me, ok := def["map"]
+		if !ok {
+			return nil, errors.New("map missing")
+		}
+		m, ok := me.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("map malformed")
+		}
+		for k, ee := range m {
+			e, ok := ee.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("entry malformed")
+			}
+			p.subs[k], err = MakePort(o, e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +88,15 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = MakePort(o, def["stream"].(map[string]interface{}), dir)
+		se, ok := def["stream"]
+		if !ok {
+			return nil, errors.New("stream missing")
+		}
+		s, ok := se.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("stream malformed")
+		}
+		p.sub, err = MakePort(o, s, dir)
 		if err != nil {
 			return nil, err
 		}

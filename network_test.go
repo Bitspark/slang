@@ -323,3 +323,70 @@ func TestNetwork_Complex2_PushPull(t *testing.T) {
 	o1.InPort().Push(helperJson2I(`[4]`))
 	assertPortItems(t, helperJson2I(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.OutPort())
 }
+
+func TestNetwork_Maps_Simple(t *testing.T) {
+	defIn := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defOut := defIn
+
+	defMap1In := helperJson2Map(`{"type":"number"}`)
+	defMap1Out := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+
+	defMap2In := defMap1Out
+	defMap2Out := defMap1In
+
+	evalMap1 := func(in, out *Port) {
+		for true {
+			i := in.Pull()
+			if i, ok := i.(float64); ok {
+				out.Port("a").Push(2 * i)
+				out.Port("b").Push(3 * i)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	evalMap2 := func(in, out *Port) {
+		for true {
+			i := in.Pull()
+			if m, ok := i.(map[string]interface{}); ok {
+				a := m["a"].(float64)
+				b := m["b"].(float64)
+				out.Push(a * b)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	o, _ := MakeOperator("", nil, defIn, defOut, nil)
+	oMap1, _ := MakeOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
+	oMap2, _ := MakeOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
+
+	o.InPort().Port("a").Connect(oMap2.InPort().Port("a"))
+	o.InPort().Port("b").Connect(oMap1.InPort())
+	oMap1.OutPort().Port("a").Connect(oMap2.InPort().Port("b"))
+	oMap1.OutPort().Port("b").Connect(o.OutPort().Port("b"))
+	oMap2.OutPort().Connect(o.OutPort().Port("a"))
+
+	o.OutPort().Port("a").buf = make(chan interface{}, 100)
+	o.OutPort().Port("b").buf = make(chan interface{}, 100)
+
+	go oMap1.Start()
+	go oMap2.Start()
+
+	dataIn := []string{
+		`{"a":1,"b":1}`,
+		`{"a":1,"b":0}`,
+		`{"a":0,"b":1}`,
+		`{"a":2,"b":3}`,
+	}
+	results := `[{"a":2,"b":3},{"a":0,"b":0},{"a":0,"b":3},{"a":12,"b":9}]`
+
+	for _, d := range dataIn {
+		o.InPort().Push(helperJson2I(d))
+	}
+
+	assertPortItems(t, helperJson2I(results).([]interface{}), o.OutPort())
+
+}

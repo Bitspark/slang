@@ -45,6 +45,40 @@ func TestPort_Connect__Map__KeysNotMatching(t *testing.T) {
 
 	err := p.Connect(q)
 	assertError(t, err)
+
+	if p.Connected(q) {
+		t.Error("connection not expected")
+	}
+}
+
+func TestPort_Connect__Map__LeftIsSubsetOfRight(t *testing.T) {
+	def1 := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def2 := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+
+	p, _ := MakePort(nil, def1, DIRECTION_IN)
+	q, _ := MakePort(nil, def2, DIRECTION_OUT)
+
+	err := p.Connect(q)
+	assertError(t, err)
+
+	if p.Connected(q) {
+		t.Error("connection not expected")
+	}
+}
+
+func TestPort_Connect__Map__RightIsSubsetOfRight(t *testing.T) {
+	def1 := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	def2 := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"}}}`)
+
+	p, _ := MakePort(nil, def1, DIRECTION_IN)
+	q, _ := MakePort(nil, def2, DIRECTION_OUT)
+
+	err := p.Connect(q)
+	assertError(t, err)
+
+	if p.Connected(q) {
+		t.Error("connection not expected")
+	}
 }
 
 func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
@@ -56,6 +90,10 @@ func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
 
 	err := p.Connect(q)
 	assertError(t, err)
+
+	if p.Connected(q) {
+		t.Error("connection not expected")
+	}
 }
 
 func TestPort_Connect__Map__SameKeys(t *testing.T) {
@@ -66,6 +104,14 @@ func TestPort_Connect__Map__SameKeys(t *testing.T) {
 
 	err := p.Connect(q)
 	assertNoError(t, err)
+
+	if !p.Port("a").Connected(q.Port("a")) {
+		t.Error("port 'a' must be connected")
+	}
+
+	if p.Connected(q) {
+		t.Error("maps must not be connected")
+	}
 }
 
 func TestPort_Connect__Map__Subport2Primitive(t *testing.T) {
@@ -76,5 +122,9 @@ func TestPort_Connect__Map__Subport2Primitive(t *testing.T) {
 	q, _ := MakePort(nil, def2, DIRECTION_OUT)
 
 	err := p.Port("a").Connect(q)
-	assertError(t, err)
+	assertNoError(t, err)
+
+	if !p.Port("a").Connected(q) {
+		t.Error("connection expected")
+	}
 }

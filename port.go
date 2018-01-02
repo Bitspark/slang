@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -139,11 +140,37 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != TYPE_ANY || q.itemType != TYPE_ANY {
-		return errors.New("can only connect primitives")
+
+	if p.itemType != q.itemType {
+		return errors.New("types don't match")
 	}
 
-	return p.connect(q)
+	switch p.itemType {
+	case TYPE_ANY:
+		return p.connect(q)
+	case TYPE_MAP:
+
+		if len(p.subs) != len(q.subs) {
+			return errors.New("maps are incompatible: Unequal lengths")
+		}
+
+		for k, pe := range p.subs {
+			qe, ok := q.subs[k]
+			if !ok {
+				return errors.New(fmt.Sprintf("maps are incompatible: %s not present", k))
+			}
+
+			err := pe.Connect(qe)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return errors.New("can only connect primitives and maps")
 }
 
 // Disconnects this port from port q.
@@ -210,6 +237,23 @@ func (p *Port) Push(item interface{}) {
 		}
 		p.sub.Push(EOS{p})
 	}
+
+	if p.itemType == TYPE_MAP {
+		m, ok := item.(map[string]interface{})
+
+		if !ok {
+			for _, sub := range p.subs {
+				sub.Push(m)
+			}
+			return
+		}
+
+		for k, i := range m {
+			p.subs[k].Push(i)
+		}
+		return
+	}
+
 }
 
 // Pull an item from this port.
@@ -248,10 +292,34 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
+	if p.itemType == TYPE_MAP {
+		var mi interface{}
+		itemMap := make(map[string]interface{})
+
+		for k, sub := range p.subs {
+			i := sub.Pull()
+
+			if bos, ok := i.(BOS); ok {
+				mi = bos
+				continue
+			}
+			if eos, ok := i.(EOS); ok {
+				mi = eos
+				continue
+			}
+			itemMap[k] = i
+		}
+
+		if mi != nil {
+			return mi
+		}
+		return itemMap
+	}
+
 	panic("unknown type")
 }
 
-// Returns a name generated from operator, directions and port.
+// Name returns a name generated from operator, directions and port.
 func (p *Port) Name() string {
 	var name string
 

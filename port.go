@@ -106,7 +106,7 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		p.itemType = TYPE_ANY
 
 		if dir == DIRECTION_IN && o != nil && o.function != nil {
-			p.buf = make(chan interface{})
+			p.buf = make(chan interface{}, 100)
 		}
 	}
 

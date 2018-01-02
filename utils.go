@@ -42,6 +42,13 @@ func assertNoError(t *testing.T, err error) {
 	}
 }
 
+func assertNotNil(t *testing.T, a interface{}) {
+	t.Helper()
+	if a == nil || reflect.ValueOf(a).IsNil() {
+		t.Error("instance is nil")
+	}
+}
+
 func assertPortItems(t *testing.T, i []interface{}, p *Port) {
 	t.Helper()
 	for _, e := range i {

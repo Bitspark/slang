@@ -55,6 +55,7 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 	switch def["type"] {
 	case "map":
 		p.itemType = TYPE_MAP
+		p.subs = make(map[string]*Port)
 		for k, e := range def["map"].(map[string]interface{}) {
 			p.subs[k], err = MakePort(o, e.(map[string]interface{}), dir)
 			if err != nil {
@@ -73,7 +74,7 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 	default:
 		p.itemType = TYPE_ANY
 
-		if dir == DIRECTION_IN && o.function != nil {
+		if dir == DIRECTION_IN && o != nil && o.function != nil {
 			p.buf = make(chan interface{})
 		}
 	}

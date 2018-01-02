@@ -101,7 +101,7 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		if err != nil {
 			return nil, err
 		}
-		p.sub.parStr = p
+		setParentStreams(p.sub, p)
 	default:
 		p.itemType = TYPE_ANY
 
@@ -140,18 +140,16 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-
 	if p.itemType != q.itemType {
-		return errors.New("types don't match")
+		return errors.New(fmt.Sprintf("types don't match: %d != %d", p.itemType, q.itemType))
 	}
 
 	switch p.itemType {
 	case TYPE_ANY:
 		return p.connect(q)
 	case TYPE_MAP:
-
 		if len(p.subs) != len(q.subs) {
-			return errors.New("maps are incompatible: Unequal lengths")
+			return errors.New("maps are incompatible: unequal lengths")
 		}
 
 		for k, pe := range p.subs {
@@ -168,6 +166,12 @@ func (p *Port) Connect(q *Port) error {
 		}
 
 		return nil
+	case TYPE_STREAM:
+		if q.sub == nil {
+			return errors.New("streams are incompatible: no sub present")
+		}
+
+		return p.sub.Connect(q.sub)
 	}
 
 	return errors.New("can only connect primitives and maps")
@@ -225,6 +229,22 @@ func (p *Port) Push(item interface{}) {
 		return
 	}
 
+	if p.itemType == TYPE_MAP {
+		m, ok := item.(map[string]interface{})
+
+		if !ok {
+			for _, sub := range p.subs {
+				sub.Push(item)
+			}
+			return
+		}
+
+		for k, i := range m {
+			p.subs[k].Push(i)
+		}
+		return
+	}
+
 	if p.itemType == TYPE_STREAM {
 		items, ok := item.([]interface{})
 		if !ok {
@@ -238,23 +258,6 @@ func (p *Port) Push(item interface{}) {
 		}
 		p.sub.Push(EOS{p})
 	}
-
-	if p.itemType == TYPE_MAP {
-		m, ok := item.(map[string]interface{})
-
-		if !ok {
-			for _, sub := range p.subs {
-				sub.Push(m)
-			}
-			return
-		}
-
-		for k, i := range m {
-			p.subs[k].Push(i)
-		}
-		return
-	}
-
 }
 
 // Pull an item from this port.
@@ -265,6 +268,30 @@ func (p *Port) Pull() interface{} {
 
 	if p.itemType == TYPE_ANY {
 		panic("no buffer")
+	}
+
+	if p.itemType == TYPE_MAP {
+		var mi interface{}
+		itemMap := make(map[string]interface{})
+
+		for k, sub := range p.subs {
+			i := sub.Pull()
+
+			if bos, ok := i.(BOS); ok {
+				mi = bos
+				continue
+			}
+			if eos, ok := i.(EOS); ok {
+				mi = eos
+				continue
+			}
+			itemMap[k] = i
+		}
+
+		if mi != nil {
+			return mi
+		}
+		return itemMap
 	}
 
 	if p.itemType == TYPE_STREAM {
@@ -293,64 +320,60 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
-	if p.itemType == TYPE_MAP {
-		var mi interface{}
-		itemMap := make(map[string]interface{})
-
-		for k, sub := range p.subs {
-			i := sub.Pull()
-
-			if bos, ok := i.(BOS); ok {
-				mi = bos
-				continue
-			}
-			if eos, ok := i.(EOS); ok {
-				mi = eos
-				continue
-			}
-			itemMap[k] = i
-		}
-
-		if mi != nil {
-			return mi
-		}
-		return itemMap
-	}
-
 	panic("unknown type")
 }
 
 // Name returns a name generated from operator, directions and port.
 func (p *Port) Name() string {
+	if p == nil {
+		return "<nil>"
+	}
+
 	var name string
 
 	switch p.itemType {
+	case TYPE_MAP:
+		name = "MAP"
 	case TYPE_STREAM:
 		name = "STREAM"
 	default:
 		name = "ANY"
 	}
 
-	if p.parStr == nil {
-		if p.direction == DIRECTION_IN {
-			if p.operator != nil {
-				return p.operator.name + ":IN_" + name
-			} else {
-				return "IN_" + name
-			}
-		} else {
-			if p.operator != nil {
-				return p.operator.name + ":OUT_" + name
-			} else {
-				return "OUT_" + name
-			}
-		}
+	if p.parMap != nil {
+		return p.parMap.Name() + "_" + name
 	}
 
-	return p.parStr.Name() + "_" + name
+	if p.parStr != nil {
+		return p.parStr.Name() + "_" + name
+	}
+
+	if p.direction == DIRECTION_IN {
+		if p.operator != nil {
+			return p.operator.name + ":IN_" + name
+		} else {
+			return "IN_" + name
+		}
+	} else {
+		if p.operator != nil {
+			return p.operator.name + ":OUT_" + name
+		} else {
+			return "OUT_" + name
+		}
+	}
 }
 
 // PRIVATE METHODS
+
+func setParentStreams(p *Port, parent *Port) {
+	p.parStr = parent
+
+	if p.itemType == TYPE_MAP {
+		for _, sub := range p.subs {
+			setParentStreams(sub, parent)
+		}
+	}
+}
 
 func (p *Port) connect(q *Port) error {
 	if p.direction == DIRECTION_IN {
@@ -389,7 +412,11 @@ func (p *Port) connect(q *Port) error {
 			q.src = p
 
 			if q.parStr == nil {
-				q.operator.basePort = p.parStr
+				if p.parStr != nil {
+					q.operator.basePort = p.parStr
+				} else {
+					q.operator.basePort = p.operator.basePort
+				}
 			} else {
 				if p.parStr != nil {
 					p.parStr.connect(q.parStr)

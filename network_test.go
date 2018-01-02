@@ -398,7 +398,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		"s":{"type":"string"},
 		"b":{"type":"boolean"}}}}`)
 	defStrMap := helperJson2Map(`{"type":"stream","stream":{"type":"map","map":{
-		"sum":{"type":"stream","stream":{"type":"number"}},
+		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
 	defFilterIn := helperJson2Map(`{"type":"map","map":{
 		"o":{"type":"any"},
@@ -452,7 +452,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	o, _ := MakeOperator("", nil, defStrMapStr, defStrMap, nil)
+	o, _ := MakeOperator("Global", nil, defStrMapStr, defStrMap, nil)
 	sum, _ := MakeOperator("Sum", sumEval, defSumIn, defSumOut, o)
 	add, _ := MakeOperator("Add", addEval, defAddIn, defAddOut, o)
 	filter1, _ := MakeOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
@@ -477,11 +477,12 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	go filter2.Start()
 
 	dataIn := []string{
-		`[{"N":[1,2,4],"n":2,"s":"must pass","b":true}]`,
+		`[{"N":[1,2,4],"n":2,"s":"must pass","b":true},{"N":[4,5],"n":-6,"s":"","b":true}]`,
 		`[{"N":[10,20,40],"n":20,"s":"may not pass","b":false}]`,
+		`[]`,
 		`[{"N":[],"n":1,"s":"must also pass","b":true}]`,
 	}
-	results := `[{"sum":9,"s":"must pass"},{"sum":1,"s":"must also pass"}]`
+	results := `[[{"sum":9,"s":"must pass"},{"sum":3,"s":""}],[],[],[{"sum":1,"s":"must also pass"}]]`
 
 	for _, d := range dataIn {
 		o.InPort().Push(helperJson2I(d))

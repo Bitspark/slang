@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
 )
 
 const (
@@ -45,18 +47,40 @@ type Port struct {
 
 // Makes a new port.
 func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
-	var err error
+	if def == nil || reflect.ValueOf(def).IsNil() {
+		return nil, errors.New("definition is nil")
+	}
 
 	p := &Port{}
 	p.direction = dir
 	p.operator = o
 	p.dests = make(map[*Port]bool)
 
-	switch def["type"] {
+	itemType, ok := def["type"]
+
+	if !ok {
+		return nil, errors.New("type missing")
+	}
+
+	var err error
+	switch itemType {
 	case "map":
 		p.itemType = TYPE_MAP
-		for k, e := range def["map"].(map[string]interface{}) {
-			p.subs[k], err = MakePort(o, e.(map[string]interface{}), dir)
+		p.subs = make(map[string]*Port)
+		me, ok := def["map"]
+		if !ok {
+			return nil, errors.New("map missing")
+		}
+		m, ok := me.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("map malformed")
+		}
+		for k, ee := range m {
+			e, ok := ee.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("entry malformed")
+			}
+			p.subs[k], err = MakePort(o, e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -65,7 +89,15 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = MakePort(o, def["stream"].(map[string]interface{}), dir)
+		se, ok := def["stream"]
+		if !ok {
+			return nil, errors.New("stream missing")
+		}
+		s, ok := se.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("stream malformed")
+		}
+		p.sub, err = MakePort(o, s, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -73,8 +105,8 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 	default:
 		p.itemType = TYPE_ANY
 
-		if dir == DIRECTION_IN && o.function != nil {
-			p.buf = make(chan interface{})
+		if dir == DIRECTION_IN && o != nil && o.function != nil {
+			p.buf = make(chan interface{}, 100)
 		}
 	}
 
@@ -108,11 +140,37 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != TYPE_ANY || q.itemType != TYPE_ANY {
-		return errors.New("can only connect primitives")
+
+	if p.itemType != q.itemType {
+		return errors.New("types don't match")
 	}
 
-	return p.connect(q)
+	switch p.itemType {
+	case TYPE_ANY:
+		return p.connect(q)
+	case TYPE_MAP:
+
+		if len(p.subs) != len(q.subs) {
+			return errors.New("maps are incompatible: Unequal lengths")
+		}
+
+		for k, pe := range p.subs {
+			qe, ok := q.subs[k]
+			if !ok {
+				return errors.New(fmt.Sprintf("maps are incompatible: %s not present", k))
+			}
+
+			err := pe.Connect(qe)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return errors.New("can only connect primitives and maps")
 }
 
 // Disconnects this port from port q.
@@ -157,13 +215,11 @@ func (p *Port) Merge() bool {
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
 		p.buf <- item
+		return
 	}
 
 	if p.itemType == TYPE_ANY {
-		for dest := range p.dests {
-			dest.Push(item)
-		}
-		return
+		panic("no buffer")
 	}
 
 	if p.itemType == TYPE_STREAM {
@@ -179,6 +235,23 @@ func (p *Port) Push(item interface{}) {
 		}
 		p.sub.Push(EOS{p})
 	}
+
+	if p.itemType == TYPE_MAP {
+		m, ok := item.(map[string]interface{})
+
+		if !ok {
+			for _, sub := range p.subs {
+				sub.Push(m)
+			}
+			return
+		}
+
+		for k, i := range m {
+			p.subs[k].Push(i)
+		}
+		return
+	}
+
 }
 
 // Pull an item from this port.
@@ -217,10 +290,34 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
+	if p.itemType == TYPE_MAP {
+		var mi interface{}
+		itemMap := make(map[string]interface{})
+
+		for k, sub := range p.subs {
+			i := sub.Pull()
+
+			if bos, ok := i.(BOS); ok {
+				mi = bos
+				continue
+			}
+			if eos, ok := i.(EOS); ok {
+				mi = eos
+				continue
+			}
+			itemMap[k] = i
+		}
+
+		if mi != nil {
+			return mi
+		}
+		return itemMap
+	}
+
 	panic("unknown type")
 }
 
-// Returns a name generated from operator, directions and port.
+// Name returns a name generated from operator, directions and port.
 func (p *Port) Name() string {
 	var name string
 

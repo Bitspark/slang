@@ -109,11 +109,11 @@ func TestMakePort__Stream__Success(t *testing.T) {
 	assertNoError(t, err)
 
 	if p.Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
-	if p.Stream().Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Stream().Type() != TYPE_NUMBER {
+		t.Error("wrong type")
 	}
 }
 
@@ -166,8 +166,8 @@ func TestMakePort__Number__Success(t *testing.T) {
 	assertNoError(t, err)
 	assertNotNil(t, p)
 
-	if p.Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Type() != TYPE_NUMBER {
+		t.Error("wrong type")
 	}
 
 	if p.Direction() != DIRECTION_IN {
@@ -181,11 +181,11 @@ func TestMakePort__Map__Success(t *testing.T) {
 	assertNoError(t, err)
 
 	if p.Type() != TYPE_MAP {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
-	if p.Port("a").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("a").Type() != TYPE_NUMBER {
+		t.Error("wrong type")
 	}
 }
 
@@ -195,15 +195,15 @@ func TestMakePort__NestedStreams__Success(t *testing.T) {
 	assertNoError(t, err)
 
 	if p.Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
 	if p.Stream().Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
-	if p.Stream().Stream().Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Stream().Stream().Type() != TYPE_STRING {
+		t.Error("wrong type")
 	}
 }
 
@@ -214,19 +214,19 @@ func TestMakePort__MapStream__Success(t *testing.T) {
 	assertNoError(t, err)
 
 	if p.Type() != TYPE_MAP {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
 	if p.Port("a").Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
-	if p.Port("a").Stream().Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("a").Stream().Type() != TYPE_STRING {
+		t.Error("wrong type")
 	}
 
-	if p.Port("b").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("b").Type() != TYPE_BOOLEAN {
+		t.Error("wrong type")
 	}
 }
 
@@ -236,7 +236,7 @@ func TestMakePort__NestedMap__Success(t *testing.T) {
 	assertNoError(t, err)
 	assertNotNil(t, p)
 
-	if p.Port("a") == nil || p.Port("a").Type() != TYPE_ANY {
+	if p.Port("a") == nil || p.Port("a").Type() != TYPE_NUMBER {
 		t.Error("map not correct")
 	}
 
@@ -244,7 +244,7 @@ func TestMakePort__NestedMap__Success(t *testing.T) {
 		t.Error("map not correct")
 	}
 
-	if p.Port("b").Port("a") == nil || p.Port("b").Port("a").Type() != TYPE_ANY {
+	if p.Port("b").Port("a") == nil || p.Port("b").Port("a").Type() != TYPE_NUMBER {
 		t.Error("map not correct")
 	}
 }
@@ -258,51 +258,115 @@ func TestMakePort__Complex__Success(t *testing.T) {
 	assertNoError(t, err)
 
 	if p.Type() != TYPE_MAP {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
 	if p.Port("a").Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
-	if p.Port("a").Stream().Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("a").Stream().Type() != TYPE_BOOLEAN {
+		t.Error("wrong type")
 	}
 
 	if p.Port("b").Type() != TYPE_MAP {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
 	if p.Port("b").Port("a").Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
 	if p.Port("b").Port("a").Stream().Type() != TYPE_STREAM {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
 	if p.Port("b").Port("a").Stream().Stream().Type() != TYPE_MAP {
-		t.Error("Wrong type")
+		t.Error("wrong type")
 	}
 
-	if p.Port("b").Port("a").Stream().Stream().Port("a").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("b").Port("a").Stream().Stream().Port("a").Type() != TYPE_NUMBER {
+		t.Error("wrong type")
 	}
 
-	if p.Port("b").Port("a").Stream().Stream().Port("b").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("b").Port("a").Stream().Stream().Port("b").Type() != TYPE_STRING {
+		t.Error("wrong type")
 	}
 
-	if p.Port("b").Port("a").Stream().Stream().Port("c").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("b").Port("a").Stream().Stream().Port("c").Type() != TYPE_BOOLEAN {
+		t.Error("wrong type")
 	}
 
-	if p.Port("b").Port("b").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("b").Port("b").Type() != TYPE_STRING {
+		t.Error("wrong type")
 	}
 
-	if p.Port("c").Type() != TYPE_ANY {
-		t.Error("Wrong type")
+	if p.Port("c").Type() != TYPE_BOOLEAN {
+		t.Error("wrong type")
+	}
+}
+
+// Port.Type (5 tests)
+
+func TestPort_Type__Simple__Any(t *testing.T) {
+	def := helperJson2Map(`{"type":"any"}`)
+	p, _ := MakePort(nil, def, DIRECTION_IN)
+
+	if p.Type() != TYPE_ANY {
+		t.Error("wrong type")
+	}
+}
+
+func TestPort_Type__Simple__Number(t *testing.T) {
+	def := helperJson2Map(`{"type":"number"}`)
+	p, _ := MakePort(nil, def, DIRECTION_IN)
+
+	if p.Type() != TYPE_NUMBER {
+		t.Error("wrong type")
+	}
+}
+
+func TestPort_Type__Simple__String(t *testing.T) {
+	def := helperJson2Map(`{"type":"string"}`)
+	p, _ := MakePort(nil, def, DIRECTION_IN)
+
+	if p.Type() != TYPE_STRING {
+		t.Error("wrong type")
+	}
+}
+
+func TestPort_Type__Simple__Boolean(t *testing.T) {
+	def := helperJson2Map(`{"type":"boolean"}`)
+	p, _ := MakePort(nil, def, DIRECTION_IN)
+
+	if p.Type() != TYPE_BOOLEAN {
+		t.Error("wrong type")
+	}
+}
+
+func TestPort_Type__Map(t *testing.T) {
+	def := helperJson2Map(`{"type":"map","map":{"a":{"type":"boolean"}}}`)
+	p, _ := MakePort(nil, def, DIRECTION_IN)
+
+	if p.Type() != TYPE_MAP {
+		t.Error("wrong type")
+	}
+
+	if p.Port("a").Type() != TYPE_BOOLEAN {
+		t.Error("wrong type")
+	}
+}
+
+func TestPort_Type__Stream(t *testing.T) {
+	def := helperJson2Map(`{"type":"stream","stream":{"type":"string"}}`)
+	p, _ := MakePort(nil, def, DIRECTION_IN)
+
+	if p.Type() != TYPE_STREAM {
+		t.Error("wrong type")
+	}
+
+	if p.Stream().Type() != TYPE_STRING {
+		t.Error("wrong type")
 	}
 }
 

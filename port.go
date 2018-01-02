@@ -51,6 +51,10 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		return nil, errors.New("definition is nil")
 	}
 
+	if dir != DIRECTION_IN && dir != DIRECTION_OUT {
+		return nil, errors.New("wrong direction")
+	}
+
 	p := &Port{}
 	p.direction = dir
 	p.operator = o
@@ -74,6 +78,9 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		m, ok := me.(map[string]interface{})
 		if !ok {
 			return nil, errors.New("map malformed")
+		}
+		if len(m) == 0 {
+			return nil, errors.New("empty map")
 		}
 		for k, ee := range m {
 			e, ok := ee.(map[string]interface{})
@@ -102,12 +109,14 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 			return nil, err
 		}
 		setParentStreams(p.sub, p)
-	default:
+	case "number", "string", "boolean", "any":
 		p.itemType = TYPE_ANY
 
 		if dir == DIRECTION_IN && o != nil && o.function != nil {
 			p.buf = make(chan interface{}, 100)
 		}
+	default:
+		return nil, errors.New("invalid type")
 	}
 
 	return p, nil

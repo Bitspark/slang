@@ -390,3 +390,103 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	assertPortItems(t, helperJson2I(results).([]interface{}), o.OutPort())
 
 }
+
+func TestNetwork_Maps_Complex(t *testing.T) {
+	defStrMapStr := helperJson2Map(`{"type":"stream","stream":{"type":"map","map":{
+		"N":{"type":"stream","stream":{"type":"number"}},
+		"n":{"type":"number"},
+		"s":{"type":"string"},
+		"b":{"type":"boolean"}}}}`)
+	defStrMap := helperJson2Map(`{"type":"stream","stream":{"type":"map","map":{
+		"sum":{"type":"number"},
+		"s":{"type":"string"}}}}`)
+	defFilterIn := helperJson2Map(`{"type":"map","map":{
+		"o":{"type":"any"},
+		"b":{"type":"boolean"}}}`)
+	defFilterOut := helperJson2Map(`{"type":"any"}`)
+	defAddIn := helperJson2Map(`{"type":"map","map":{
+		"a":{"type":"number"},
+		"b":{"type":"number"}}}`)
+	defAddOut := helperJson2Map(`{"type":"number"}`)
+	defSumIn := helperJson2Map(`{"type":"stream","stream":{"type":"number"}}`)
+	defSumOut := helperJson2Map(`{"type":"number"}`)
+
+	sumEval := func(in, out *Port) {
+		for true {
+			i := in.Pull()
+			if ns, ok := i.([]interface{}); ok {
+				sum := 0.0
+				for _, n := range ns {
+					sum += n.(float64)
+				}
+				out.Push(sum)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	filterEval := func(in, out *Port) {
+		for true {
+			i := in.Pull()
+			if m, ok := i.(map[string]interface{}); ok {
+				if m["b"].(bool) {
+					out.Push(m["o"])
+				}
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	addEval := func(in, out *Port) {
+		for true {
+			i := in.Pull()
+			if m, ok := i.(map[string]interface{}); ok {
+				a := m["a"].(float64)
+				b := m["b"].(float64)
+				out.Push(a + b)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	o, _ := MakeOperator("Global", nil, defStrMapStr, defStrMap, nil)
+	sum, _ := MakeOperator("Sum", sumEval, defSumIn, defSumOut, o)
+	add, _ := MakeOperator("Add", addEval, defAddIn, defAddOut, o)
+	filter1, _ := MakeOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
+	filter2, _ := MakeOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
+
+	o.InPort().Stream().Port("N").Connect(sum.InPort())
+	o.InPort().Stream().Port("n").Connect(add.InPort().Port("b"))
+	o.InPort().Stream().Port("b").Connect(filter1.InPort().Port("b"))
+	o.InPort().Stream().Port("b").Connect(filter2.InPort().Port("b"))
+	o.InPort().Stream().Port("s").Connect(filter2.InPort().Port("o"))
+	sum.OutPort().Connect(add.InPort().Port("a"))
+	add.OutPort().Connect(filter1.InPort().Port("o"))
+	filter1.OutPort().Connect(o.OutPort().Stream().Port("sum"))
+	filter2.OutPort().Connect(o.OutPort().Stream().Port("s"))
+
+	o.OutPort().Stream().Port("sum").buf = make(chan interface{}, 100)
+	o.OutPort().Stream().Port("s").buf = make(chan interface{}, 100)
+
+	go sum.Start()
+	go add.Start()
+	go filter1.Start()
+	go filter2.Start()
+
+	dataIn := []string{
+		`[{"N":[1,2,4],"n":2,"s":"must pass","b":true},{"N":[4,5],"n":-6,"s":"","b":true}]`,
+		`[{"N":[10,20,40],"n":20,"s":"may not pass","b":false}]`,
+		`[]`,
+		`[{"N":[],"n":1,"s":"must also pass","b":true}]`,
+	}
+	results := `[[{"sum":9,"s":"must pass"},{"sum":3,"s":""}],[],[],[{"sum":1,"s":"must also pass"}]]`
+
+	for _, d := range dataIn {
+		o.InPort().Push(helperJson2I(d))
+	}
+
+	assertPortItems(t, helperJson2I(results).([]interface{}), o.OutPort())
+}

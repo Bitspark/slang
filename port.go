@@ -215,13 +215,11 @@ func (p *Port) Merge() bool {
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
 		p.buf <- item
+		return
 	}
 
 	if p.itemType == TYPE_ANY {
-		for dest := range p.dests {
-			dest.Push(item)
-		}
-		return
+		panic("no buffer")
 	}
 
 	if p.itemType == TYPE_STREAM {

@@ -18,9 +18,9 @@ type Operator struct {
 }
 
 type operatorDef struct {
-	Name      string   `json:"name"`
-	In        *portDef `json:"in"`
-	Out       *portDef `json:"out"`
+	Name string   `json:"name"`
+	In   *PortDef `json:"in"`
+	Out  *PortDef `json:"out"`
 	Operators map[string]struct {
 		Class      string                 `json:"class"`
 		Properties map[string]interface{} `json:"properties"`
@@ -45,12 +45,12 @@ func (d *operatorDef) validate() error {
 	}
 
 	var portErr error
-	portErr = d.In.validate()
+	portErr = d.In.Validate()
 	if portErr != nil {
 		return portErr
 	}
 
-	portErr = d.Out.validate()
+	portErr = d.Out.Validate()
 	if portErr != nil {
 		return portErr
 	}
@@ -61,7 +61,7 @@ func (d *operatorDef) validate() error {
 
 type OFunc func(in, out *Port)
 
-func MakeOperator(name string, f OFunc, defIn, defOut portDef, par *Operator) (*Operator, error) {
+func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.parent = par

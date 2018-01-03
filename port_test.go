@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// portDef.validate (11 tests)
+// PortDef.Validate (11 tests)
 
 func TestPortDef_Validate__InvalidTypeInDefinition(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"gfdhgfd"}`)
@@ -15,7 +15,7 @@ func TestPortDef_Validate__InvalidTypeInDefinition(t *testing.T) {
 
 func TestPortDef_Validate__Stream__StreamNotPresent(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"stream"}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -23,7 +23,7 @@ func TestPortDef_Validate__Stream__StreamNotPresent(t *testing.T) {
 
 func TestPortDef_Validate__Stream__NilStream(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"stream","stream":null}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -31,7 +31,7 @@ func TestPortDef_Validate__Stream__NilStream(t *testing.T) {
 
 func TestPortDef_Validate__Stream__EmptyStream(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"stream","stream":{}}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -39,7 +39,7 @@ func TestPortDef_Validate__Stream__EmptyStream(t *testing.T) {
 
 func TestPortDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -47,7 +47,7 @@ func TestPortDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 
 func TestPortDef_Validate__Map__MapNotPresent(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map"}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -55,7 +55,7 @@ func TestPortDef_Validate__Map__MapNotPresent(t *testing.T) {
 
 func TestPortDef_Validate__Map__NilMap(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":null}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -63,7 +63,7 @@ func TestPortDef_Validate__Map__NilMap(t *testing.T) {
 
 func TestPortDef_Validate__Map__EmptyMap(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":{}}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -71,7 +71,7 @@ func TestPortDef_Validate__Map__EmptyMap(t *testing.T) {
 
 func TestPortDef_Validate__Map__NullEntry(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":{"a":null}}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -79,7 +79,7 @@ func TestPortDef_Validate__Map__NullEntry(t *testing.T) {
 
 func TestPortDef_Validate__Map__EmptyEntry(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":{"a":{}}}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}
@@ -87,7 +87,7 @@ func TestPortDef_Validate__Map__EmptyEntry(t *testing.T) {
 
 func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
-	assertError(t, def.validate())
+	assertError(t, def.Validate())
 	if def.valid {
 		t.Error("should not be valid")
 	}

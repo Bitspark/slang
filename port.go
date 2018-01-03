@@ -45,19 +45,19 @@ type Port struct {
 	buf chan interface{}
 }
 
-type portDef struct {
+type PortDef struct {
 	Type   string             `json:"type"`
-	Stream *portDef           `json:"stream"`
-	Map    map[string]portDef `json:"map"`
+	Stream *PortDef           `json:"stream"`
+	Map    map[string]PortDef `json:"map"`
 	valid  bool
 }
 
 // PUBLIC METHODS
 
 // Makes a new port.
-func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
+func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
 	if !def.valid {
-		err := def.validate()
+		err := def.Validate()
 		if err != nil {
 			return nil, err
 		}
@@ -370,7 +370,7 @@ func (p *Port) Name() string {
 
 // PRIVATE METHODS
 
-func (d *portDef) validate() error {
+func (d *PortDef) Validate() error {
 	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {
@@ -387,13 +387,13 @@ func (d *portDef) validate() error {
 		if d.Stream == nil {
 			return errors.New("stream missing")
 		}
-		return d.Stream.validate()
+		return d.Stream.Validate()
 	} else if d.Type == "map" {
 		if len(d.Map) == 0 {
 			return errors.New("map missing or empty")
 		}
 		for _, e := range d.Map {
-			err := e.validate()
+			err := e.Validate()
 			if err != nil {
 				return err
 			}

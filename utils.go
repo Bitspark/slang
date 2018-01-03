@@ -13,8 +13,8 @@ func helperJson2I(str string) interface{} {
 	return obj
 }
 
-func helperJson2PortDef(str string) portDef {
-	def := portDef{}
+func helperJson2PortDef(str string) PortDef {
+	def := PortDef{}
 	json.Unmarshal([]byte(str), &def)
 	return def
 }

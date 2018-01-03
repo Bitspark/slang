@@ -7,9 +7,12 @@ import (
 )
 
 const (
-	TYPE_ANY    = iota
-	TYPE_STREAM = iota
-	TYPE_MAP    = iota
+	TYPE_ANY     = iota
+	TYPE_NUMBER  = iota
+	TYPE_STRING  = iota
+	TYPE_BOOLEAN = iota
+	TYPE_STREAM  = iota
+	TYPE_MAP     = iota
 )
 
 const (
@@ -51,6 +54,10 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		return nil, errors.New("definition is nil")
 	}
 
+	if dir != DIRECTION_IN && dir != DIRECTION_OUT {
+		return nil, errors.New("wrong direction")
+	}
+
 	p := &Port{}
 	p.direction = dir
 	p.operator = o
@@ -74,6 +81,9 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		m, ok := me.(map[string]interface{})
 		if !ok {
 			return nil, errors.New("map malformed")
+		}
+		if len(m) == 0 {
+			return nil, errors.New("empty map")
 		}
 		for k, ee := range m {
 			e, ok := ee.(map[string]interface{})
@@ -102,12 +112,20 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 			return nil, err
 		}
 		setParentStreams(p.sub, p)
-	default:
+	case "number":
+		p.itemType = TYPE_NUMBER
+	case "string":
+		p.itemType = TYPE_STRING
+	case "boolean":
+		p.itemType = TYPE_BOOLEAN
+	case "any":
 		p.itemType = TYPE_ANY
+	default:
+		return nil, errors.New("invalid type")
+	}
 
-		if dir == DIRECTION_IN && o != nil && o.function != nil {
-			p.buf = make(chan interface{}, 100)
-		}
+	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
+		p.buf = make(chan interface{}, 100)
 	}
 
 	return p, nil
@@ -140,14 +158,15 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != q.itemType {
+	if p.itemType != TYPE_ANY && q.itemType != TYPE_ANY && p.itemType != q.itemType {
 		return errors.New(fmt.Sprintf("types don't match: %d != %d", p.itemType, q.itemType))
 	}
 
-	switch p.itemType {
-	case TYPE_ANY:
+	if p.primitive() {
 		return p.connect(q)
-	case TYPE_MAP:
+	}
+
+	if p.itemType == TYPE_MAP {
 		if len(p.subs) != len(q.subs) {
 			return errors.New("maps are incompatible: unequal lengths")
 		}
@@ -166,7 +185,9 @@ func (p *Port) Connect(q *Port) error {
 		}
 
 		return nil
-	case TYPE_STREAM:
+	}
+
+	if p.itemType == TYPE_STREAM {
 		if q.sub == nil {
 			return errors.New("streams are incompatible: no sub present")
 		}
@@ -222,7 +243,7 @@ func (p *Port) Push(item interface{}) {
 		return
 	}
 
-	if p.itemType == TYPE_ANY {
+	if p.primitive() {
 		for dest := range p.dests {
 			dest.Push(item)
 		}
@@ -266,7 +287,7 @@ func (p *Port) Pull() interface{} {
 		return <-p.buf
 	}
 
-	if p.itemType == TYPE_ANY {
+	if p.primitive() {
 		panic("no buffer")
 	}
 
@@ -332,12 +353,18 @@ func (p *Port) Name() string {
 	var name string
 
 	switch p.itemType {
+	case TYPE_ANY:
+		name = "ANY"
+	case TYPE_NUMBER:
+		name = "NUMBER"
+	case TYPE_STRING:
+		name = "STRING"
+	case TYPE_BOOLEAN:
+		name = "BOOLEAN"
 	case TYPE_MAP:
 		name = "MAP"
 	case TYPE_STREAM:
 		name = "STREAM"
-	default:
-		name = "ANY"
 	}
 
 	if p.parMap != nil {
@@ -441,4 +468,8 @@ func (p *Port) connect(q *Port) error {
 	}
 
 	return nil
+}
+
+func (p *Port) primitive() bool {
+	return p.itemType == TYPE_ANY || p.itemType == TYPE_NUMBER || p.itemType == TYPE_STRING || p.itemType == TYPE_BOOLEAN
 }

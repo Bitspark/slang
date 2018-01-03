@@ -42,6 +42,14 @@ func assertNoError(t *testing.T, err error) {
 	}
 }
 
+func assertNil(t *testing.T, a interface{}) {
+	t.Helper()
+	if a != nil && !reflect.ValueOf(a).IsNil() {
+		t.Error("instance should be nil")
+	}
+}
+
+
 func assertNotNil(t *testing.T, a interface{}) {
 	t.Helper()
 	if a == nil || reflect.ValueOf(a).IsNil() {

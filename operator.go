@@ -1,4 +1,4 @@
-package main
+package slang
 
 type Operator struct {
 	name     string

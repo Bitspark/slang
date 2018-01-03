@@ -3,7 +3,6 @@ package slang
 import (
 	"errors"
 	"fmt"
-	"reflect"
 )
 
 const (
@@ -46,12 +45,22 @@ type Port struct {
 	buf chan interface{}
 }
 
+type PortDef struct {
+	Type   string             `json:"type"`
+	Stream *PortDef           `json:"stream"`
+	Map    map[string]PortDef `json:"map"`
+	valid  bool
+}
+
 // PUBLIC METHODS
 
 // Makes a new port.
-func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
-	if def == nil || reflect.ValueOf(def).IsNil() {
-		return nil, errors.New("definition is nil")
+func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
+	if !def.valid {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if dir != DIRECTION_IN && dir != DIRECTION_OUT {
@@ -63,33 +72,12 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 	p.operator = o
 	p.dests = make(map[*Port]bool)
 
-	itemType, ok := def["type"]
-
-	if !ok {
-		return nil, errors.New("type missing")
-	}
-
 	var err error
-	switch itemType {
+	switch def.Type {
 	case "map":
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
-		me, ok := def["map"]
-		if !ok {
-			return nil, errors.New("map missing")
-		}
-		m, ok := me.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("map malformed")
-		}
-		if len(m) == 0 {
-			return nil, errors.New("empty map")
-		}
-		for k, ee := range m {
-			e, ok := ee.(map[string]interface{})
-			if !ok {
-				return nil, errors.New("entry malformed")
-			}
+		for k, e := range def.Map {
 			p.subs[k], err = MakePort(o, e, dir)
 			if err != nil {
 				return nil, err
@@ -99,15 +87,7 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		se, ok := def["stream"]
-		if !ok {
-			return nil, errors.New("stream missing")
-		}
-		s, ok := se.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("stream malformed")
-		}
-		p.sub, err = MakePort(o, s, dir)
+		p.sub, err = MakePort(o, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -120,8 +100,6 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	case "any":
 		p.itemType = TYPE_ANY
-	default:
-		return nil, errors.New("invalid type")
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
@@ -390,7 +368,48 @@ func (p *Port) Name() string {
 	}
 }
 
+func (p *Port) Bufferize() chan interface{} {
+	if p.buf == nil {
+		p.buf = make(chan interface{}, 100)
+	}
+	return p.buf
+}
+
 // PRIVATE METHODS
+
+func (d *PortDef) Validate() error {
+	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
+	found := false
+	for _, t := range validTypes {
+		if t == d.Type {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.New("unknown type")
+	}
+
+	if d.Type == "stream" {
+		if d.Stream == nil {
+			return errors.New("stream missing")
+		}
+		return d.Stream.Validate()
+	} else if d.Type == "map" {
+		if len(d.Map) == 0 {
+			return errors.New("map missing or empty")
+		}
+		for _, e := range d.Map {
+			err := e.Validate()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	d.valid = true
+	return nil
+}
 
 func setParentStreams(p *Port, parent *Port) {
 	p.parStr = parent

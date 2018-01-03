@@ -5,8 +5,8 @@ import (
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
-	defIn := helperJson2Map(`{"type":"number"}`)
-	defOut := helperJson2Map(`{"type":"number"}`)
+	defIn := helperJson2PortDef(`{"type":"number"}`)
+	defOut := helperJson2PortDef(`{"type":"number"}`)
 	o1, _ := MakeOperator("o1", nil, defIn, defOut, nil)
 
 	o1.InPort().Connect(o1.OutPort())
@@ -18,8 +18,8 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
-	defIn := helperJson2Map(`{"type":"number"}`)
-	defOut := helperJson2Map(`{"type":"number"}`)
+	defIn := helperJson2PortDef(`{"type":"number"}`)
+	defOut := helperJson2PortDef(`{"type":"number"}`)
 	o1, _ := MakeOperator("o1", nil, defIn, defOut, nil)
 	o2, _ := MakeOperator("o2", nil, defIn, defOut, o1)
 	o3, _ := MakeOperator("o3", nil, defIn, defOut, o2)
@@ -60,11 +60,11 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
-	defStrStr := helperJson2Map(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := helperJson2Map(`{"type":"stream","stream":{"type":"number"}}`)
-	def := helperJson2Map(`{"type":"number"}`)
+	defStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := helperJson2PortDef(`{"type":"number"}`)
 
-	double := func(in, out *Port) {
+	double := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -75,7 +75,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *Port) {
+	sum := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -185,12 +185,12 @@ func TestNetwork_DoubleSum(t *testing.T) {
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
-	defStrStrStr := helperJson2Map(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
-	defStrStr := helperJson2Map(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := helperJson2Map(`{"type":"stream","stream":{"type":"number"}}`)
-	def := helperJson2Map(`{"type":"number"}`)
+	defStrStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
+	defStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := helperJson2PortDef(`{"type":"number"}`)
 
-	numgen := func(in, out *Port) {
+	numgen := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -205,7 +205,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *Port) {
+	sum := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -337,16 +337,16 @@ func TestNetwork_NumgenSum(t *testing.T) {
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
-	defIn := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defIn := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 	defOut := defIn
 
-	defMap1In := helperJson2Map(`{"type":"number"}`)
-	defMap1Out := helperJson2Map(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defMap1In := helperJson2PortDef(`{"type":"number"}`)
+	defMap1Out := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
 
-	evalMap1 := func(in, out *Port) {
+	evalMap1 := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -358,7 +358,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	evalMap2 := func(in, out *Port) {
+	evalMap2 := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -404,26 +404,26 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 }
 
 func TestNetwork_Maps_Complex(t *testing.T) {
-	defStrMapStr := helperJson2Map(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMapStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"N":{"type":"stream","stream":{"type":"number"}},
 		"n":{"type":"number"},
 		"s":{"type":"string"},
 		"b":{"type":"boolean"}}}}`)
-	defStrMap := helperJson2Map(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMap := helperJson2PortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
-	defFilterIn := helperJson2Map(`{"type":"map","map":{
+	defFilterIn := helperJson2PortDef(`{"type":"map","map":{
 		"o":{"type":"any"},
 		"b":{"type":"boolean"}}}`)
-	defFilterOut := helperJson2Map(`{"type":"any"}`)
-	defAddIn := helperJson2Map(`{"type":"map","map":{
+	defFilterOut := helperJson2PortDef(`{"type":"any"}`)
+	defAddIn := helperJson2PortDef(`{"type":"map","map":{
 		"a":{"type":"number"},
 		"b":{"type":"number"}}}`)
-	defAddOut := helperJson2Map(`{"type":"number"}`)
-	defSumIn := helperJson2Map(`{"type":"stream","stream":{"type":"number"}}`)
-	defSumOut := helperJson2Map(`{"type":"number"}`)
+	defAddOut := helperJson2PortDef(`{"type":"number"}`)
+	defSumIn := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	defSumOut := helperJson2PortDef(`{"type":"number"}`)
 
-	sumEval := func(in, out *Port) {
+	sumEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -438,7 +438,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	filterEval := func(in, out *Port) {
+	filterEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -451,7 +451,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	addEval := func(in, out *Port) {
+	addEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {

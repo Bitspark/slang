@@ -175,42 +175,48 @@ func parseConnection(connStr string, operator *Operator) (*Port, error) {
 		return nil, errors.New("empty connection string")
 	}
 
-	connStrSpl := strings.Split(connStr, ".")
+	opSplit := strings.Split(connStr, ":")
 
-	if len(connStrSpl) < 2 {
+	if len(opSplit) != 2 {
 		return nil, errors.New("connection string malformed")
 	}
 
 	var o *Operator
-	if len(connStrSpl[0]) == 0 {
+	if len(opSplit[0]) == 0 {
 		o = operator
 	} else {
 		var ok bool
-		o, ok = operator.children[connStrSpl[0]]
+		o, ok = operator.children[opSplit[0]]
 		if !ok {
 			return nil, errors.New("unknown operator")
 		}
 	}
 
+	path := strings.Split(opSplit[1], ".")
+
+	if len(path) == 0 {
+		return nil, errors.New("connection string malformed")
+	}
+
 	var p *Port
-	if connStrSpl[1] == "in" {
+	if path[0] == "in" {
 		p = o.inPort
-	} else if connStrSpl[1] == "out" {
+	} else if path[0] == "out" {
 		p = o.outPort
 	} else {
-		return nil, errors.New(fmt.Sprintf("invalid direction: %s", connStrSpl[1]))
+		return nil, errors.New(fmt.Sprintf("invalid direction: %s", path[1]))
 	}
 
 	for p.itemType == TYPE_STREAM {
 		p = p.sub
 	}
 
-	for i := 2; i < len(connStrSpl); i++ {
+	for i := 1; i < len(path); i++ {
 		if p.itemType != TYPE_MAP {
 			return nil, errors.New("descending too deep")
 		}
 
-		k := connStrSpl[i]
+		k := path[i]
 		var ok bool
 		p, ok = p.subs[k]
 		if !ok {

@@ -45,7 +45,6 @@ func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*
 	o.children = make(map[string]*Operator)
 
 	if par != nil {
-		fmt.Println(">>>", o.name)
 		par.children[o.name] = o
 	}
 

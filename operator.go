@@ -100,8 +100,7 @@ func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {
 	} else {
 		o = operator.Child(opSplit[0])
 		if o == nil {
-			fmt.Println(operator)
-			return nil, fmt.Errorf(`operator "%s" has no child "%s": port %s`, operator.Name(), opSplit[0], connStr)
+			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, operator.Name(), opSplit[0])
 		}
 	}
 

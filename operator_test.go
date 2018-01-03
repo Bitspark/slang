@@ -5,9 +5,14 @@ import (
 	"testing"
 )
 
-func validateJSONOperatorDef(jsonDef string) (*OperatorDef, error) {
+func getJSONOperatorDef(jsonDef string) *OperatorDef {
 	def := &OperatorDef{}
 	json.Unmarshal([]byte(jsonDef), def)
+	return def
+}
+
+func validateJSONOperatorDef(jsonDef string) (*OperatorDef, error) {
+	def := getJSONOperatorDef(jsonDef)
 	return def, def.Validate()
 }
 
@@ -54,11 +59,12 @@ func TestInstanceDef_Validate_Fails_MissingOperator(t *testing.T) {
 }
 
 func TestInstanceDef_Validate_Succeeds(t *testing.T) {
-	_, err := validateJSONInstanceDef(`{
+	ins, err := validateJSONInstanceDef(`{
 		"operator": "opr",
 		"name":"oprInstance"
 	}`)
 	assertNoError(t, err)
+	assertTrue(t, ins.valid)
 }
 
 func TestOperatorDef_Validate_Fails_MissingName(t *testing.T) {
@@ -66,7 +72,7 @@ func TestOperatorDef_Validate_Fails_MissingName(t *testing.T) {
 		"in": {"type":"number"},
 		"out": {"type":"number"},
 		"connections": {
-			"opr.in": ["opr.out"]
+			":in": [":out"]
 		}
 	}`)
 	assertError(t, err)
@@ -78,7 +84,7 @@ func TestOperatorDef_Validate_Fails_SpacesInName(t *testing.T) {
 		"in": {"type":"number"},
 		"out": {"type":"number"},
 		"connections": {
-			"opr.in": ["opr.out"]
+			":in": [":out"]
 		}
 	}`)
 	assertError(t, err)
@@ -115,45 +121,26 @@ func TestOperatorDef_Validate_Succeeds(t *testing.T) {
 			}
 		],
 		"connections": {
-			"opr.in": ["add.in"],
-			"add.out": ["opr.in"]
+			":in": ["add:in"],
+			"add:out": [":in"]
 		}
 	}`)
 	assertNoError(t, err)
 	assertTrue(t, oDef.valid)
 }
 
-/*func TestOperator_ParseOperator_TrivialCase(t *testing.T) {
-	jsonDef := `{
+func TestOperator_MakeOperatorDeep_1_OuterOperator(t *testing.T) {
+	o, err := MakeOperatorDeep(*getJSONOperatorDef(`{
 		"name":"opr",
 		"in": {"type":"number"},
 		"out": {"type":"number"},
 		"connections": {
-			"opr.in": ["opr.out"]
+			":in": [":out"]
 		}
-	}`
-	o, err := ParseOperator(jsonDef)
+	}`), nil)
 	assertNoError(t, err)
-	o.InPort().Connected(o.OutPort())
-}*/
-
-/*
-func TestOperator_ParseOperator_OperatorContaining_1_Builtin(t *testing.T) {
-	jsonDef := `{
-		"name":"fun",
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"operators": {
-			"class": "anyBuiltIn"
-		}
-		"connections": {
-			"in": [""]
-		}
-	}`
-	o, err := ParseOperator(jsonDef)
-	assertNoError(t, err)
+	assertTrue(t, o.InPort().Connected(o.OutPort()))
 }
-*/
 
 func TestParseConnection__NilOperator(t *testing.T) {
 	p, err := parseConnection("test.in", nil)

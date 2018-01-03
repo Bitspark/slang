@@ -160,6 +160,20 @@ func MakeOperatorDeep(def OperatorDef, par *Operator) (*Operator, error) {
 		}
 	}
 
+	for srcConnDef, dstConnDefs := range def.Connections {
+		if pSrc, err := parseConnection(srcConnDef, o); err == nil {
+			for _, dstConnDef := range dstConnDefs {
+				if pDst, err := parseConnection(dstConnDef, o); err == nil {
+					pSrc.Connect(pDst)
+				} else {
+					return nil, err
+				}
+			}
+		} else {
+			return nil, err
+		}
+	}
+
 	return o, nil
 }
 
@@ -236,7 +250,7 @@ func parseConnection(connStr string, operator *Operator) (*Port, error) {
 	} else if path[0] == "out" {
 		p = o.outPort
 	} else {
-		return nil, errors.New(fmt.Sprintf("invalid direction: %s", path[1]))
+		return nil, fmt.Errorf("invalid direction: %s", path[1])
 	}
 
 	for p.itemType == TYPE_STREAM {
@@ -252,7 +266,7 @@ func parseConnection(connStr string, operator *Operator) (*Port, error) {
 		var ok bool
 		p, ok = p.subs[k]
 		if !ok {
-			return nil, errors.New(fmt.Sprintf("unknown port: %s", k))
+			return nil, fmt.Errorf("unknown port: %s", k)
 		}
 
 		for p.itemType == TYPE_STREAM {

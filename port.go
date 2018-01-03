@@ -3,7 +3,6 @@ package slang
 import (
 	"errors"
 	"fmt"
-	"reflect"
 )
 
 const (
@@ -55,11 +54,7 @@ type portDef struct {
 // PUBLIC METHODS
 
 // Makes a new port.
-func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
-	if def == nil || reflect.ValueOf(def).IsNil() {
-		return nil, errors.New("definition is nil")
-	}
-
+func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
 	if dir != DIRECTION_IN && dir != DIRECTION_OUT {
 		return nil, errors.New("wrong direction")
 	}
@@ -69,33 +64,15 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 	p.operator = o
 	p.dests = make(map[*Port]bool)
 
-	itemType, ok := def["type"]
-
-	if !ok {
-		return nil, errors.New("type missing")
-	}
-
 	var err error
-	switch itemType {
+	switch def.Type {
 	case "map":
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
-		me, ok := def["map"]
-		if !ok {
-			return nil, errors.New("map missing")
-		}
-		m, ok := me.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("map malformed")
-		}
-		if len(m) == 0 {
+		if len(def.Map) == 0 {
 			return nil, errors.New("empty map")
 		}
-		for k, ee := range m {
-			e, ok := ee.(map[string]interface{})
-			if !ok {
-				return nil, errors.New("entry malformed")
-			}
+		for k, e := range def.Map {
 			p.subs[k], err = MakePort(o, e, dir)
 			if err != nil {
 				return nil, err
@@ -105,15 +82,10 @@ func MakePort(o *Operator, def map[string]interface{}, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		se, ok := def["stream"]
-		if !ok {
+		if def.Stream == nil {
 			return nil, errors.New("stream missing")
 		}
-		s, ok := se.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("stream malformed")
-		}
-		p.sub, err = MakePort(o, s, dir)
+		p.sub, err = MakePort(o, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}

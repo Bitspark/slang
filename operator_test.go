@@ -5,7 +5,7 @@ import (
 )
 
 func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {
-	defPort := helperJson2Map(`{"type":"number"}`)
+	defPort := helperJson2PortDef(`{"type":"number"}`)
 	oParent, _ := MakeOperator("parent", nil, defPort, defPort, nil)
 	oChild1, _ := MakeOperator("child1", nil, defPort, defPort, oParent)
 	oChild2, _ := MakeOperator("child2", nil, defPort, defPort, oParent)

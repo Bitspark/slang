@@ -13,9 +13,10 @@ func helperJson2I(str string) interface{} {
 	return obj
 }
 
-func helperJson2Map(str string) map[string]interface{} {
-	m, _ := helperJson2I(str).(map[string]interface{})
-	return m
+func helperJson2PortDef(str string) portDef {
+	def := portDef{}
+	json.Unmarshal([]byte(str), &def)
+	return def
 }
 
 func assertPanic(t *testing.T, f func()) {
@@ -48,7 +49,6 @@ func assertNil(t *testing.T, a interface{}) {
 		t.Error("instance should be nil")
 	}
 }
-
 
 func assertNotNil(t *testing.T, a interface{}) {
 	t.Helper()

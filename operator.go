@@ -23,7 +23,7 @@ type operatorDef struct {
 
 type OFunc func(in, out *Port)
 
-func MakeOperator(name string, f OFunc, defIn, defOut map[string]interface{}, par *Operator) (*Operator, error) {
+func MakeOperator(name string, f OFunc, defIn, defOut portDef, par *Operator) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.parent = par

@@ -45,6 +45,7 @@ func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*
 	o.children = make(map[string]*Operator)
 
 	if par != nil {
+		fmt.Println(">>>", o.name)
 		par.children[o.name] = o
 	}
 
@@ -169,7 +170,13 @@ func (o *Operator) Child(name string) *Operator {
 }
 
 func (o *Operator) Start() {
-	o.function(o.inPort, o.outPort, o.store)
+	if o.function != nil {
+		go o.function(o.inPort, o.outPort, o.store)
+	} else {
+		for _, c := range o.children {
+			c.Start()
+		}
+	}
 }
 
 func (o *Operator) SetStore(store interface{}) {

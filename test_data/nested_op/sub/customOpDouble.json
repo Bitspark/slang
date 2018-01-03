@@ -1,0 +1,26 @@
+{
+    "name": "customOpDouble",
+    "in": {
+        "type": "number"
+    },
+    "out": {
+        "type": "number"
+    },
+    "operators": [
+        {
+            "operator": "function",
+            "name": "doubler",
+            "properties": {
+                "expression": "a+a"
+            }
+        }
+    ],
+    "connections": {
+        ":in": [
+            "doubler:in.a"
+        ],
+        "doubler:out": [
+            ":out"
+        ]
+    }
+}

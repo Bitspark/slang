@@ -5,15 +5,8 @@ import (
 	"testing"
 )
 
-func TestOperator_MakeOperatorDeep_1_OuterOperator(t *testing.T) {
-	o, err := MakeOperatorDeep(*getJSONOperatorDef(`{
-		"name":"opr",
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"connections": {
-			":in": [":out"]
-		}
-	}`), nil)
+func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
+	o, err := ReadOperator("test_data/voidOp.json")
 	assertNoError(t, err)
 	assertTrue(t, o.InPort().Connected(o.OutPort()))
 
@@ -21,6 +14,65 @@ func TestOperator_MakeOperatorDeep_1_OuterOperator(t *testing.T) {
 	o.InPort().Push("hallo")
 
 	assertPortItems(t, []interface{}{"hallo"}, o.OutPort())
+}
+
+func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
+	_, err := ReadOperator(`test_data/unknownOp.json`)
+	assertError(t, err)
+}
+
+func TestOperator_ReadOperator_1_BuiltinOperator_Function(t *testing.T) {
+	o, err := ReadOperator("test_data/usingBuiltinOp.json")
+	assertNoError(t, err)
+
+	oPasser := o.Child("passer")
+	assertNotNil(t, oPasser)
+	assertTrue(t, o.InPort().Connected(oPasser.InPort().Port("a")))
+	assertTrue(t, oPasser.OutPort().Connected(o.OutPort()))
+
+	o.OutPort().Bufferize()
+	o.InPort().Push("hallo")
+
+	o.Start()
+
+	assertPortItems(t, []interface{}{"hallo"}, o.OutPort())
+}
+
+func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
+	o, err := ReadOperator("test_data/nested_op/usingCustomOp1.json")
+	assertNoError(t, err)
+
+	o.OutPort().Bufferize()
+	o.InPort().Push("hallo")
+
+	o.Start()
+
+	assertPortItems(t, []interface{}{"hallo"}, o.OutPort())
+}
+
+func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
+	o, err := ReadOperator("test_data/nested_op/usingCustomOpN.json")
+	assertNoError(t, err)
+
+	o.OutPort().Bufferize()
+	o.InPort().Push("hallo")
+
+	o.Start()
+
+	assertPortItems(t, []interface{}{"hallo"}, o.OutPort())
+}
+
+func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
+	o, err := ReadOperator("test_data/nested_op/usingSubCustomOpDouble.json")
+	assertNoError(t, err)
+
+	o.OutPort().Bufferize()
+	o.InPort().Push("hallo")
+	o.InPort().Push(2.0)
+
+	o.Start()
+
+	assertPortItems(t, []interface{}{"hallohallo", 4.0}, o.OutPort())
 }
 
 func TestParseConnection__NilOperator(t *testing.T) {

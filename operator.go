@@ -48,7 +48,7 @@ func MakeOperatorDeep(def op.OperatorDef, par *op.Operator) (*op.Operator, error
 }
 
 func getOperator(insDef op.InstanceDef, par *op.Operator) (*op.Operator, error) {
-	if builtinOp, err := builtin.M().MakeOperator(insDef); err == nil {
+	if builtinOp, err := builtin.MakeOperator(insDef, nil); err == nil {
 		return builtinOp, nil
 	}
 	return nil, errors.New("Not Implemented")

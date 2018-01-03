@@ -55,6 +55,11 @@ type portDef struct {
 
 // Makes a new port.
 func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
+	err := def.validate()
+	if err != nil {
+		return nil, err
+	}
+
 	if dir != DIRECTION_IN && dir != DIRECTION_OUT {
 		return nil, errors.New("wrong direction")
 	}
@@ -64,14 +69,10 @@ func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
 	p.operator = o
 	p.dests = make(map[*Port]bool)
 
-	var err error
 	switch def.Type {
 	case "map":
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
-		if len(def.Map) == 0 {
-			return nil, errors.New("empty map")
-		}
 		for k, e := range def.Map {
 			p.subs[k], err = MakePort(o, e, dir)
 			if err != nil {
@@ -82,9 +83,6 @@ func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		if def.Stream == nil {
-			return nil, errors.New("stream missing")
-		}
 		p.sub, err = MakePort(o, *def.Stream, dir)
 		if err != nil {
 			return nil, err
@@ -98,8 +96,6 @@ func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	case "any":
 		p.itemType = TYPE_ANY
-	default:
-		return nil, errors.New("invalid type")
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
@@ -369,6 +365,32 @@ func (p *Port) Name() string {
 }
 
 // PRIVATE METHODS
+
+func (d *portDef) validate() error {
+	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
+	found := false
+	for _, t := range validTypes {
+		if t == d.Type {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.New("unknown type")
+	}
+
+	if d.Type == "stream" {
+		if d.Stream == nil {
+			return errors.New("stream missing")
+		}
+	} else if d.Type == "map" {
+		if len(d.Map) == 0 {
+			return errors.New("map missing or empty")
+		}
+	}
+
+	return nil
+}
 
 func setParentStreams(p *Port, parent *Port) {
 	p.parStr = parent

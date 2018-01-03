@@ -14,6 +14,7 @@ type Operator struct {
 	parent   *Operator
 	children map[string]*Operator
 	function OFunc
+	store    interface{}
 }
 
 type OperatorDef struct {
@@ -34,7 +35,7 @@ type InstanceDef struct {
 	valid      bool
 }
 
-type OFunc func(in, out *Port)
+type OFunc func(in, out *Port, store interface{})
 
 func (d *OperatorDef) Validate() error {
 	if d.Name == "" {
@@ -203,7 +204,11 @@ func (o *Operator) Child(name string) *Operator {
 }
 
 func (o *Operator) Start() {
-	o.function(o.inPort, o.outPort)
+	o.function(o.inPort, o.outPort, o.store)
+}
+
+func (o *Operator) SetStore(store interface{}) {
+	o.store = store
 }
 
 func (o *Operator) Compile() bool {

@@ -4,16 +4,95 @@ import (
 	"testing"
 )
 
-func TestNetwork_Complex1(t *testing.T) {
+func TestNetwork_EmptyOperator(t *testing.T) {
+	defIn := helperJson2PortDef(`{"type":"number"}`)
+	defOut := helperJson2PortDef(`{"type":"number"}`)
+	o1, _ := MakeOperator("o1", nil, defIn, defOut, nil)
+
+	o1.InPort().Connect(o1.OutPort())
+
+	o1.OutPort().buf = make(chan interface{}, 100)
+	o1.InPort().Push(1.0)
+
+	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.OutPort())
+}
+
+func TestNetwork_EmptyOperators(t *testing.T) {
+	defIn := helperJson2PortDef(`{"type":"number"}`)
+	defOut := helperJson2PortDef(`{"type":"number"}`)
+	o1, _ := MakeOperator("o1", nil, defIn, defOut, nil)
+	o2, _ := MakeOperator("o2", nil, defIn, defOut, o1)
+	o3, _ := MakeOperator("o3", nil, defIn, defOut, o2)
+	o4, _ := MakeOperator("o4", nil, defIn, defOut, o2)
+
+	o3.InPort().Connect(o3.OutPort())
+	o4.InPort().Connect(o4.OutPort())
+	o2.InPort().Connect(o3.InPort())
+	o3.OutPort().Connect(o4.InPort())
+	o4.OutPort().Connect(o2.OutPort())
+	o1.InPort().Connect(o2.InPort())
+	o2.OutPort().Connect(o1.OutPort())
+
+	if o1.InPort().Connected(o1.OutPort()) {
+		t.Error("should not be connected")
+	}
+
+	if !o1.InPort().Connected(o2.InPort()) {
+		t.Error("should be connected")
+	}
+
+	o3.Compile()
+	o4.Compile()
+	o2.Compile()
+
+	if !o1.InPort().Connected(o1.OutPort()) {
+		t.Error("should be connected")
+	}
+
+	if o1.InPort().Connected(o2.InPort()) {
+		t.Error("should not be connected")
+	}
+
+	o1.OutPort().buf = make(chan interface{}, 100)
+	o1.InPort().Push(1.0)
+
+	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.OutPort())
+}
+
+func TestNetwork_DoubleSum(t *testing.T) {
 	defStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
 	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := helperJson2PortDef(`{"type":"number"}`)
 
-	dummy := func(in, out *Port) {}
+	double := func(in, out *Port, store interface{}) {
+		for true {
+			i := in.Pull()
+			if n, ok := i.(float64); ok {
+				out.Push(2 * n)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	sum := func(in, out *Port, store interface{}) {
+		for true {
+			i := in.Pull()
+			if ns, ok := i.([]interface{}); ok {
+				sum := 0.0
+				for _, n := range ns {
+					sum += n.(float64)
+				}
+				out.Push(sum)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
 
 	o2, _ := MakeOperator("O2", nil, defStr, def, nil)
-	o3, _ := MakeOperator("O3", dummy, def, def, o2)
-	o4, _ := MakeOperator("O4", dummy, defStr, def, o2)
+	o3, _ := MakeOperator("O3", double, def, def, o2)
+	o4, _ := MakeOperator("O4", sum, defStr, def, o2)
 
 	err := o2.InPort().Stream().Connect(o3.InPort())
 	assertNoError(t, err)
@@ -91,18 +170,58 @@ func TestNetwork_Complex1(t *testing.T) {
 	if !o3.OutPort().Connected(o4.InPort().Stream()) {
 		t.Error("should be connected")
 	}
+
+	//
+
+	o1.OutPort().Stream().buf = make(chan interface{}, 100)
+
+	go o3.Start()
+	go o4.Start()
+
+	o1.InPort().Push(helperJson2I(`[[1,2,3],[4,5]]`))
+	o1.InPort().Push(helperJson2I(`[[],[2]]`))
+	o1.InPort().Push(helperJson2I(`[]`))
+	assertPortItems(t, helperJson2I(`[[12,18],[0,4],[]]`).([]interface{}), o1.OutPort())
 }
 
-func TestNetwork_Complex2(t *testing.T) {
+func TestNetwork_NumgenSum(t *testing.T) {
 	defStrStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
 	defStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
 	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := helperJson2PortDef(`{"type":"number"}`)
 
-	dummy := func(in, out *Port) {}
+	numgen := func(in, out *Port, store interface{}) {
+		for true {
+			i := in.Pull()
+			if n, ok := i.(float64); ok {
+				ns := []interface{}{}
+				for i := 1; i <= int(n); i++ {
+					ns = append(ns, float64(i))
+				}
+				out.Push(ns)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
+
+	sum := func(in, out *Port, store interface{}) {
+		for true {
+			i := in.Pull()
+			if ns, ok := i.([]interface{}); ok {
+				sum := 0.0
+				for _, n := range ns {
+					sum += n.(float64)
+				}
+				out.Push(sum)
+			} else {
+				out.Push(i)
+			}
+		}
+	}
 
 	o4, _ := MakeOperator("O4", nil, defStrStrStr, defStrStr, nil)
-	o5, _ := MakeOperator("O5", dummy, defStr, def, o4)
+	o5, _ := MakeOperator("O5", sum, defStr, def, o4)
 
 	o4.InPort().Stream().Stream().Stream().Connect(o5.InPort().Stream())
 	o5.OutPort().Connect(o4.OutPort().Stream().Stream())
@@ -130,8 +249,8 @@ func TestNetwork_Complex2(t *testing.T) {
 	//
 
 	o1, _ := MakeOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := MakeOperator("O2", dummy, def, defStr, o1)
-	o3, _ := MakeOperator("O3", dummy, def, defStr, o1)
+	o2, _ := MakeOperator("O2", numgen, def, defStr, o1)
+	o3, _ := MakeOperator("O3", numgen, def, defStr, o1)
 	o4.parent = o1
 
 	o1.InPort().Stream().Connect(o2.InPort())
@@ -202,115 +321,8 @@ func TestNetwork_Complex2(t *testing.T) {
 	if !o3.OutPort().Connected(o5.InPort()) {
 		t.Error("should be connected after merge")
 	}
-}
-
-func TestNetwork_Complex1_PushPull(t *testing.T) {
-	defStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := helperJson2PortDef(`{"type":"number"}`)
-
-	double := func(in, out *Port) {
-		for true {
-			i := in.Pull()
-			if n, ok := i.(float64); ok {
-				out.Push(2 * n)
-			} else {
-				out.Push(i)
-			}
-		}
-	}
-
-	sum := func(in, out *Port) {
-		for true {
-			i := in.Pull()
-			if ns, ok := i.([]interface{}); ok {
-				sum := 0.0
-				for _, n := range ns {
-					sum += n.(float64)
-				}
-				out.Push(sum)
-			} else {
-				out.Push(i)
-			}
-		}
-	}
-
-	o1, _ := MakeOperator("O1", nil, defStrStr, defStr, nil)
-	o2, _ := MakeOperator("O2", nil, defStr, def, o1)
-	o3, _ := MakeOperator("O3", double, def, def, o2)
-	o4, _ := MakeOperator("O4", sum, defStr, def, o2)
-
-	o1.InPort().Stream().Stream().Connect(o2.InPort().Stream())
-	o2.InPort().Stream().Connect(o3.InPort())
-	o3.OutPort().Connect(o4.InPort().Stream())
-	o4.OutPort().Connect(o2.OutPort())
-	o2.OutPort().Connect(o1.OutPort().Stream())
-
-	o2.Compile()
-
-	o1.OutPort().Stream().buf = make(chan interface{}, 100)
-
-	go o3.Start()
-	go o4.Start()
-
-	o1.InPort().Push(helperJson2I(`[[1,2,3],[4,5]]`))
-	o1.InPort().Push(helperJson2I(`[[],[2]]`))
-	o1.InPort().Push(helperJson2I(`[]`))
-	assertPortItems(t, helperJson2I(`[[12,18],[0,4],[]]`).([]interface{}), o1.OutPort())
-}
-
-func TestNetwork_Complex2_PushPull(t *testing.T) {
-	defStrStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
-	defStrStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := helperJson2PortDef(`{"type":"number"}`)
-
-	numgen := func(in, out *Port) {
-		for true {
-			i := in.Pull()
-			if n, ok := i.(float64); ok {
-				ns := []interface{}{}
-				for i := 1; i <= int(n); i++ {
-					ns = append(ns, float64(i))
-				}
-				out.Push(ns)
-			} else {
-				out.Push(i)
-			}
-		}
-	}
-
-	sum := func(in, out *Port) {
-		for true {
-			i := in.Pull()
-			if ns, ok := i.([]interface{}); ok {
-				sum := 0.0
-				for _, n := range ns {
-					sum += n.(float64)
-				}
-				out.Push(sum)
-			} else {
-				out.Push(i)
-			}
-		}
-	}
-
-	o1, _ := MakeOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := MakeOperator("O2", numgen, def, defStr, o1)
-	o3, _ := MakeOperator("O3", numgen, def, defStr, o1)
-	o4, _ := MakeOperator("O4", nil, defStrStrStr, defStrStr, o1)
-	o5, _ := MakeOperator("O5", sum, defStr, def, o4)
-
-	o1.InPort().Stream().Connect(o2.InPort())
-	o2.OutPort().Stream().Connect(o3.InPort())
-	o3.OutPort().Stream().Connect(o4.InPort().Stream().Stream().Stream())
-	o4.InPort().Stream().Stream().Stream().Connect(o5.InPort().Stream())
-	o5.OutPort().Connect(o4.OutPort().Stream().Stream())
-	o4.OutPort().Stream().Stream().Connect(o1.OutPort().Stream().Stream())
 
 	//
-
-	o4.Compile()
 
 	o1.OutPort().Stream().Stream().buf = make(chan interface{}, 100)
 
@@ -334,7 +346,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
 
-	evalMap1 := func(in, out *Port) {
+	evalMap1 := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -346,7 +358,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	evalMap2 := func(in, out *Port) {
+	evalMap2 := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -411,7 +423,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumIn := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	defSumOut := helperJson2PortDef(`{"type":"number"}`)
 
-	sumEval := func(in, out *Port) {
+	sumEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -426,7 +438,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	filterEval := func(in, out *Port) {
+	filterEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -439,7 +451,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	addEval := func(in, out *Port) {
+	addEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {

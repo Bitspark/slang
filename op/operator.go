@@ -169,7 +169,13 @@ func (o *Operator) Child(name string) *Operator {
 }
 
 func (o *Operator) Start() {
-	o.function(o.inPort, o.outPort, o.store)
+	if o.function != nil {
+		go o.function(o.inPort, o.outPort, o.store)
+	} else {
+		for _, c := range o.children {
+			c.Start()
+		}
+	}
 }
 
 func (o *Operator) SetStore(store interface{}) {

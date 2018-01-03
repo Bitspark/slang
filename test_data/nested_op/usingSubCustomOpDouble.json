@@ -1,0 +1,23 @@
+{
+    "name": "opr",
+    "in": {
+        "type": "number"
+    },
+    "out": {
+        "type": "number"
+    },
+    "operators": [
+        {
+            "operator": "sub.customOpDouble",
+            "name": "childOpr"
+        }
+    ],
+    "connections": {
+        ":in": [
+            "childOpr:in"
+        ],
+        "childOpr:out": [
+            ":out"
+        ]
+    }
+}

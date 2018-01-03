@@ -50,7 +50,7 @@ func functionCreator(def op.InstanceDef, par *op.Operator) (*op.Operator, error)
 		Type: "any",
 	}
 
-	o, err := op.MakeOperator("", func(in, out *op.Port, store interface{}) {
+	o, err := op.MakeOperator(def.Name, func(in, out *op.Port, store interface{}) {
 		expr := store.(functionStore).evalExpr
 		for true {
 			i := in.Pull()

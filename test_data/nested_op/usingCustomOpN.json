@@ -1,0 +1,37 @@
+{
+    "name": "opr",
+    "in": {
+        "type": "number"
+    },
+    "out": {
+        "type": "number"
+    },
+    "operators": [
+        {
+            "operator": "customOp",
+            "name": "left"
+        },
+        {
+            "operator": "customOp",
+            "name": "middle"
+        },
+        {
+            "operator": "customOp",
+            "name": "right"
+        }
+    ],
+    "connections": {
+        ":in": [
+            "left:in"
+        ],
+        "left:out": [
+            "middle:in"
+        ],
+        "middle:out": [
+            "right:in"
+        ],
+        "right:out": [
+            ":out"
+        ]
+    }
+}

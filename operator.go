@@ -3,12 +3,26 @@ package slang
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"path"
 	"slang/builtin"
 	"slang/op"
 	"strings"
 )
 
-func MakeOperatorDeep(def op.OperatorDef, par *op.Operator) (*op.Operator, error) {
+func ReadOperator(opDefFilePath string) (*op.Operator, error) {
+	return readOperator(opDefFilePath, opDefFilePath, nil)
+}
+
+func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.Operator, error) {
+	b, err := ioutil.ReadFile(opDefFilePath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	def := getJSONOperatorDef(string(b))
+
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -16,14 +30,16 @@ func MakeOperatorDeep(def op.OperatorDef, par *op.Operator) (*op.Operator, error
 		}
 	}
 
-	o, err := op.MakeOperator(def.Name, nil, *def.In, *def.Out, par)
+	o, err := op.MakeOperator(insName, nil, *def.In, *def.Out, par)
 
 	if err != nil {
 		return nil, err
 	}
 
+	currDir := path.Dir(opDefFilePath)
+
 	for _, childOpInsDef := range def.Operators {
-		_, err := getOperator(childOpInsDef, o)
+		_, err := getOperator(childOpInsDef, o, currDir)
 
 		if err != nil {
 			return nil, err
@@ -47,12 +63,20 @@ func MakeOperatorDeep(def op.OperatorDef, par *op.Operator) (*op.Operator, error
 	return o, nil
 }
 
-func getOperator(insDef op.InstanceDef, par *op.Operator) (*op.Operator, error) {
-	if builtinOp, err := builtin.MakeOperator(insDef, nil); err == nil {
+func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.Operator, error) {
+	if builtinOp, err := builtin.MakeOperator(insDef, par); err == nil {
 		return builtinOp, nil
 	}
-	return nil, errors.New("Not Implemented")
-	return nil, fmt.Errorf("Unknown operator: %s.%s", insDef.Operator, insDef.Name)
+
+	defFilePath := path.Join(currDir, strings.Replace(insDef.Operator, ".", "/", -1)+".json")
+
+	o, err := readOperator(insDef.Name, defFilePath, par)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
 func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {
@@ -76,7 +100,7 @@ func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {
 	} else {
 		o = operator.Child(opSplit[0])
 		if o == nil {
-			return nil, errors.New("unknown operator")
+			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, operator.Name(), opSplit[0])
 		}
 	}
 

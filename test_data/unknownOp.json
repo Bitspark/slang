@@ -1,0 +1,26 @@
+{
+    "name": "opr",
+    "in": {
+        "type": "number"
+    },
+    "out": {
+        "type": "number"
+    },
+    "operators": [
+        {
+            "operator": "DOESNOTEXIST",
+            "name": "passer",
+            "properties": {
+                "expression": "a"
+            }
+        }
+    ],
+    "connections": {
+        ":in": [
+            "passer:in.a"
+        ],
+        "passer:out": [
+            ":out"
+        ]
+    }
+}

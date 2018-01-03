@@ -46,6 +46,12 @@ type Port struct {
 	buf chan interface{}
 }
 
+type portDef struct {
+	Type   string             `json:"type"`
+	Stream *portDef           `json:"stream"`
+	Map    map[string]portDef `json:"map"`
+}
+
 // PUBLIC METHODS
 
 // Makes a new port.

@@ -10,6 +10,17 @@ type Operator struct {
 	function OFunc
 }
 
+type operatorDef struct {
+	Name      string  `json:"name"`
+	In        portDef `json:"in"`
+	Out       portDef `json:"out"`
+	Operators map[string]struct {
+		Class      string                 `json:"class"`
+		Properties map[string]interface{} `json:"properties"`
+	}
+	Connections map[string][]string `json:"connections"`
+}
+
 type OFunc func(in, out *Port)
 
 func MakeOperator(name string, f OFunc, defIn, defOut map[string]interface{}, par *Operator) (*Operator, error) {
@@ -38,7 +49,14 @@ func MakeOperator(name string, f OFunc, defIn, defOut map[string]interface{}, pa
 	return o, nil
 }
 
-func ParseOperator(def string) (*Operator, error) {
+func ParseOperator(jsonDef string) (*Operator, error) {
+	operatorDef := helperJson2Map(jsonDef)
+	err := assertOperatorDefIsValid(operatorDef)
+
+	if err != err {
+		return &Operator{}, err
+	}
+
 	return &Operator{}, nil
 }
 

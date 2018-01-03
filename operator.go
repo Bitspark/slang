@@ -17,7 +17,7 @@ type Operator struct {
 	function OFunc
 }
 
-type operatorDef struct {
+type OperatorDef struct {
 	Name        string   `json:"name"`
 	In          *PortDef `json:"in"`
 	Out         *PortDef `json:"out"`
@@ -36,7 +36,7 @@ type InstanceDef struct {
 
 type OFunc func(in, out *Port)
 
-func (d *operatorDef) validate() error {
+func (d *OperatorDef) Validate() error {
 	if d.Name == "" {
 		return errors.New(`operator name may not be empty`)
 	}
@@ -88,8 +88,8 @@ func (d *InstanceDef) validate() error {
 	return nil
 }
 
-func getOperatorDef(oprClass string) *operatorDef {
-	return &operatorDef{}
+func getOperatorDef(oprClass string) *OperatorDef {
+	return &OperatorDef{}
 }
 
 func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
@@ -119,10 +119,10 @@ func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*
 }
 
 func ParseOperator(jsonDef string) (*Operator, error) {
-	def := operatorDef{}
+	def := OperatorDef{}
 	json.Unmarshal([]byte(jsonDef), &def)
 
-	err := def.validate()
+	err := def.Validate()
 
 	if err != nil {
 		return &Operator{}, err

@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-func validateJsonOperatorDef(jsonDef string) (*operatorDef, error) {
-	def := &operatorDef{}
+func validateJsonOperatorDef(jsonDef string) (*OperatorDef, error) {
+	def := &OperatorDef{}
 	json.Unmarshal([]byte(jsonDef), def)
-	return def, def.validate()
+	return def, def.Validate()
 }
 
 func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {

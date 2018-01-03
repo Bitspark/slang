@@ -6,6 +6,7 @@ type Operator struct {
 	inPort   *Port
 	outPort  *Port
 	parent   *Operator
+	children map[string]*Operator
 	function OFunc
 }
 
@@ -16,6 +17,11 @@ func MakeOperator(name string, f OFunc, defIn, defOut map[string]interface{}, pa
 	o.function = f
 	o.parent = par
 	o.name = name
+	o.children = make(map[string]*Operator)
+
+	if par != nil {
+		par.children[o.name] = o
+	}
 
 	var err error
 
@@ -32,6 +38,10 @@ func MakeOperator(name string, f OFunc, defIn, defOut map[string]interface{}, pa
 	return o, nil
 }
 
+func ParseOperator(def string) (*Operator, error) {
+	return &Operator{}, nil
+}
+
 func (o *Operator) InPort() *Port {
 	return o.inPort
 }
@@ -40,12 +50,21 @@ func (o *Operator) OutPort() *Port {
 	return o.outPort
 }
 
+func (o *Operator) Name() string {
+	return o.name
+}
+
 func (o *Operator) BasePort() *Port {
 	return o.basePort
 }
 
 func (o *Operator) Parent() *Operator {
 	return o.parent
+}
+
+func (o *Operator) Child(name string) *Operator {
+	c, _ := o.children[name]
+	return c
 }
 
 func (o *Operator) Start() {

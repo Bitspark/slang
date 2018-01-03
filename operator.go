@@ -18,30 +18,35 @@ type Operator struct {
 }
 
 type operatorDef struct {
-	Name string   `json:"name"`
-	In   *PortDef `json:"in"`
-	Out  *PortDef `json:"out"`
-	Operators map[string]struct {
-		Class      string                 `json:"class"`
-		Properties map[string]interface{} `json:"properties"`
-	}
+	Name        string   `json:"name"`
+	In          *PortDef `json:"in"`
+	Out         *PortDef `json:"out"`
+	Operators   map[string]InstanceDef
 	Connections map[string][]string `json:"connections"`
 	valid       bool
 }
 
-func (d *operatorDef) validate() error {
-	fmt.Println(">>>> operaterDef", d, d.Name)
+type InstanceDef struct {
+	Operator   string                 `json:"operator"`
+	Properties map[string]interface{} `json:"properties"`
+	In         *PortDef               `json:"in"`
+	Out        *PortDef               `json:"out"`
+	valid      bool
+}
 
+type OFunc func(in, out *Port)
+
+func (d *operatorDef) validate() error {
 	if d.Name == "" {
 		return errors.New(`operator name may not be empty`)
 	}
 
 	if strings.Contains(d.Name, " ") {
-		return errors.New(fmt.Sprintf(`operator name may not contain spaces: "%s"`, d.Name))
+		return fmt.Errorf(`operator name may not contain spaces: "%s"`, d.Name)
 	}
 
-	if d.In == nil {
-		return errors.New(`port in must be defined`)
+	if d.In == nil || d.Out == nil {
+		return errors.New(`ports must be defined`)
 	}
 
 	var portErr error
@@ -59,7 +64,33 @@ func (d *operatorDef) validate() error {
 	return nil
 }
 
-type OFunc func(in, out *Port)
+func (d *InstanceDef) validate() error {
+	if d.Operator == "" {
+		return errors.New(`operator may not be empty`)
+	}
+
+	if strings.Contains(d.Operator, " ") {
+		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
+	}
+
+	if d.In != nil {
+		if portErr := d.In.Validate(); portErr != nil {
+			return portErr
+		}
+	}
+
+	if d.Out != nil {
+		if portErr := d.Out.Validate(); portErr != nil {
+			return portErr
+		}
+	}
+	d.valid = true
+	return nil
+}
+
+func getOperatorDef(oprClass string) *operatorDef {
+	return &operatorDef{}
+}
 
 func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
 	o := &Operator{}

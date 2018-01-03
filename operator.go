@@ -165,3 +165,62 @@ func (o *Operator) Compile() bool {
 	compiled = o.OutPort().Merge() || compiled
 	return compiled
 }
+
+func parseConnection(connStr string, operator *Operator) (*Port, error) {
+	if operator == nil {
+		return nil, errors.New("operator must not be nil")
+	}
+
+	if len(connStr) == 0 {
+		return nil, errors.New("empty connection string")
+	}
+
+	connStrSpl := strings.Split(connStr, ".")
+
+	if len(connStrSpl) < 2 {
+		return nil, errors.New("connection string malformed")
+	}
+
+	var o *Operator
+	if len(connStrSpl[0]) == 0 {
+		o = operator
+	} else {
+		var ok bool
+		o, ok = operator.children[connStrSpl[0]]
+		if !ok {
+			return nil, errors.New("unknown operator")
+		}
+	}
+
+	var p *Port
+	if connStrSpl[1] == "in" {
+		p = o.inPort
+	} else if connStrSpl[1] == "out" {
+		p = o.outPort
+	} else {
+		return nil, errors.New(fmt.Sprintf("invalid direction: %s", connStrSpl[1]))
+	}
+
+	for p.itemType == TYPE_STREAM {
+		p = p.sub
+	}
+
+	for i := 2; i < len(connStrSpl); i++ {
+		if p.itemType != TYPE_MAP {
+			return nil, errors.New("descending too deep")
+		}
+
+		k := connStrSpl[i]
+		var ok bool
+		p, ok = p.subs[k]
+		if !ok {
+			return nil, errors.New(fmt.Sprintf("unknown port: %s", k))
+		}
+
+		for p.itemType == TYPE_STREAM {
+			p = p.sub
+		}
+	}
+
+	return p, nil
+}

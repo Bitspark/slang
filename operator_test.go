@@ -106,3 +106,141 @@ func TestOperator_ParseOperator_OperatorContaining_1_Builtin(t *testing.T) {
 	assertNoError(t, err)
 }
 */
+
+func TestParseConnection__NilOperator(t *testing.T) {
+	p, err := parseConnection("test.in", nil)
+	assertError(t, err)
+	assertNil(t, p)
+}
+
+func TestParseConnection__NilConnection(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	MakeOperator("o2", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("", o1)
+	assertError(t, err)
+	assertNil(t, p)
+}
+
+func TestParseConnection__SelfIn(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	p, err := parseConnection(".in", o1)
+	assertNoError(t, err)
+
+	if p != o1.InPort() {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__SelfOut(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	p, err := parseConnection(".out", o1)
+	assertNoError(t, err)
+
+	if p != o1.OutPort() {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__SingleIn(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o2, _ := MakeOperator("o2", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in", o1)
+	assertNoError(t, err)
+
+	if p != o2.InPort() {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__SingleOut(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o2, _ := MakeOperator("o2", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.out", o1)
+	assertNoError(t, err)
+
+	if p != o2.OutPort() {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__Map(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o2, _ := MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "number"}}}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in.a", o1)
+	assertNoError(t, err)
+
+	if p != o2.InPort().Port("a") {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__Map__UnknownKey(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "number"}}}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in.b", o1)
+	assertError(t, err)
+	assertNil(t, p)
+}
+
+func TestParseConnection__Map__DescendingTooDeep(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "number"}}}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in.b.c", o1)
+	assertError(t, err)
+	assertNil(t, p)
+}
+
+func TestParseConnection__NestedMap(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o2, _ := MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "map", Map: map[string]PortDef{"b": {Type: "number"}}}}}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in.a.b", o1)
+	assertNoError(t, err)
+
+	if p != o2.InPort().Port("a").Port("b") {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__Stream(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o2, _ := MakeOperator("o2", nil, PortDef{Type: "stream", Stream: &PortDef{Type: "number"}}, PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in", o1)
+	assertNoError(t, err)
+
+	if p != o2.InPort().Stream() {
+		t.Error("wrong port")
+	}
+}
+
+func TestParseConnection__StreamMap(t *testing.T) {
+	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o2, _ := MakeOperator("o2", nil,
+		PortDef{
+			Type:   "stream",
+			Stream: &PortDef{
+				Type: "map",
+				Map: map[string]PortDef{
+					"a": {
+						Type: "stream",
+						Stream: &PortDef{
+							Type: "map",
+							Map: map[string]PortDef{
+								"a": {
+									Type: "stream",
+									Stream: &PortDef{
+										Type: "boolean",
+									},
+								},
+							},
+						},
+					},
+				}},
+		},
+		PortDef{Type: "number"}, o1)
+	p, err := parseConnection("o2.in.a.a", o1)
+	assertNoError(t, err)
+
+	if p != o2.InPort().Stream().Port("a").Stream().Port("a").Stream() {
+		t.Error("wrong port")
+	}
+}

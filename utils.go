@@ -2,9 +2,9 @@ package slang
 
 import (
 	"encoding/json"
-	"testing"
-	"reflect"
 	"fmt"
+	"reflect"
+	"testing"
 )
 
 func helperJson2I(str string) interface{} {
@@ -17,6 +17,18 @@ func helperJson2PortDef(str string) portDef {
 	def := portDef{}
 	json.Unmarshal([]byte(str), &def)
 	return def
+}
+
+func assertTrue(t *testing.T, b bool) {
+	if !b {
+		t.Error("expected to be true")
+	}
+}
+
+func assertFalse(t *testing.T, b bool) {
+	if b {
+		t.Error("expected to be false")
+	}
 }
 
 func assertPanic(t *testing.T, f func()) {

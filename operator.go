@@ -1,7 +1,6 @@
 package slang
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,16 +17,17 @@ type Operator struct {
 }
 
 type OperatorDef struct {
-	Name        string   `json:"name"`
-	In          *PortDef `json:"in"`
-	Out         *PortDef `json:"out"`
-	Operators   map[string]InstanceDef
+	Name        string              `json:"name"`
+	In          *PortDef            `json:"in"`
+	Out         *PortDef            `json:"out"`
+	Operators   []InstanceDef       `json:"operators"`
 	Connections map[string][]string `json:"connections"`
 	valid       bool
 }
 
 type InstanceDef struct {
 	Operator   string                 `json:"operator"`
+	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
 	In         *PortDef               `json:"in"`
 	Out        *PortDef               `json:"out"`
@@ -49,22 +49,41 @@ func (d *OperatorDef) Validate() error {
 		return errors.New(`ports must be defined`)
 	}
 
-	var portErr error
-	portErr = d.In.Validate()
-	if portErr != nil {
-		return portErr
+	if err := d.In.Validate(); err != nil {
+		return err
 	}
 
-	portErr = d.Out.Validate()
-	if portErr != nil {
-		return portErr
+	if err := d.Out.Validate(); err != nil {
+		return err
+	}
+
+	alreadyUsedInsNames := make(map[string]bool)
+	for _, insDef := range d.Operators {
+		if err := insDef.Validate(); err != nil {
+			return err
+		}
+
+		if _, ok := alreadyUsedInsNames[insDef.Name]; ok {
+			return fmt.Errorf(`Colliding instance names within same parent operator: "%s"`, insDef.Name)
+		}
+
+		alreadyUsedInsNames[insDef.Name] = true
+
 	}
 
 	d.valid = true
 	return nil
 }
 
-func (d *InstanceDef) validate() error {
+func (d *InstanceDef) Validate() error {
+	if d.Name == "" {
+		return fmt.Errorf(`instance name may not be empty`)
+	}
+
+	if strings.Contains(d.Name, " ") {
+		return fmt.Errorf(`operator instance name may not contain spaces: "%s"`, d.Name)
+	}
+
 	if d.Operator == "" {
 		return errors.New(`operator may not be empty`)
 	}
@@ -74,22 +93,23 @@ func (d *InstanceDef) validate() error {
 	}
 
 	if d.In != nil {
-		if portErr := d.In.Validate(); portErr != nil {
-			return portErr
+		if err := d.In.Validate(); err != nil {
+			return err
 		}
 	}
 
 	if d.Out != nil {
-		if portErr := d.Out.Validate(); portErr != nil {
-			return portErr
+		if err := d.Out.Validate(); err != nil {
+			return err
 		}
 	}
+
 	d.valid = true
 	return nil
 }
 
-func getOperatorDef(oprClass string) *OperatorDef {
-	return &OperatorDef{}
+func getOperator(insDef InstanceDef, par *Operator) (*Operator, error) {
+	return nil, errors.New("Not Implemented")
 }
 
 func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
@@ -118,17 +138,29 @@ func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*
 	return o, nil
 }
 
-func ParseOperator(jsonDef string) (*Operator, error) {
-	def := OperatorDef{}
-	json.Unmarshal([]byte(jsonDef), &def)
-
-	err := def.Validate()
-
-	if err != nil {
-		return &Operator{}, err
+func MakeOperatorDeep(def OperatorDef, par *Operator) (*Operator, error) {
+	if !def.valid {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return &Operator{}, nil
+	o, err := MakeOperator(def.Name, nil, *def.In, *def.Out, par)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, childOpInsDef := range def.Operators {
+		_, err := getOperator(childOpInsDef, o)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return o, nil
 }
 
 func (o *Operator) InPort() *Port {

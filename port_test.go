@@ -4,11 +4,100 @@ import (
 	"testing"
 )
 
-// MakePort (20 tests)
+// portDef.validate (11 tests)
 
-func TestMakePort__InvalidTypeInDefinition(t *testing.T) {
+func TestPortDef_Validate__InvalidTypeInDefinition(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"gfdhgfd"}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
+	assertError(t, err)
+	assertNil(t, p)
+}
+
+func TestPortDef_Validate__Stream__StreamNotPresent(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"stream"}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Stream__NilStream(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"stream","stream":null}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Stream__EmptyStream(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"stream","stream":{}}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Map__MapNotPresent(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"map"}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Map__NilMap(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"map","map":null}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Map__EmptyMap(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"map","map":{}}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Map__NullEntry(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"map","map":{"a":null}}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Map__EmptyEntry(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"map","map":{"a":{}}}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
+	assertError(t, def.validate())
+	if def.valid {
+		t.Error("should not be valid")
+	}
+}
+
+// MakePort (10 tests)
+
+func TestMakePort__InvalidDefinition(t *testing.T) {
+	def := helperJson2PortDef(`{"type":"bcvbvcbvc"}`)
+	p, err := MakePort(nil, def, 0)
 	assertError(t, err)
 	assertNil(t, p)
 }
@@ -27,35 +116,7 @@ func TestMakePort__Number__WrongDirectionGiven(t *testing.T) {
 	assertNil(t, p)
 }
 
-func TestMakePort__Stream__StreamNotPresent(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"stream"}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Stream__NilStream(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"stream","stream":null}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Stream__EmptyStream(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"stream","stream":{}}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Stream__InvalidTypeInDefinition(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Stream__Success(t *testing.T) {
+func TestMakePort__Stream(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
 	assertNoError(t, err)
@@ -69,49 +130,7 @@ func TestMakePort__Stream__Success(t *testing.T) {
 	}
 }
 
-func TestMakePort__Map__MapNotPresent(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"map"}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Map__NilMap(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"map","map":null}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Map__EmptyMap(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"map","map":{}}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Map__NullEntry(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"map","map":{"a":null}}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Map__EmptyEntry(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"map","map":{"a":{}}}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Map__InvalidTypeInDefinition(t *testing.T) {
-	def := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
-	p, err := MakePort(nil, def, DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
-}
-
-func TestMakePort__Number__Success(t *testing.T) {
+func TestMakePort__Number(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"number"}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
 
@@ -127,7 +146,7 @@ func TestMakePort__Number__Success(t *testing.T) {
 	}
 }
 
-func TestMakePort__Map__Success(t *testing.T) {
+func TestMakePort__Map(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
 	assertNoError(t, err)
@@ -141,7 +160,7 @@ func TestMakePort__Map__Success(t *testing.T) {
 	}
 }
 
-func TestMakePort__NestedStreams__Success(t *testing.T) {
+func TestMakePort__NestedStreams(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"string"}}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
 	assertNoError(t, err)
@@ -159,7 +178,7 @@ func TestMakePort__NestedStreams__Success(t *testing.T) {
 	}
 }
 
-func TestMakePort__MapStream__Success(t *testing.T) {
+func TestMakePort__MapStream(t *testing.T) {
 	def := helperJson2PortDef(
 `{"type":"map","map":{"a":{"type":"stream","stream":{"type":"string"}},"b":{"type":"boolean"}}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
@@ -182,7 +201,7 @@ func TestMakePort__MapStream__Success(t *testing.T) {
 	}
 }
 
-func TestMakePort__NestedMap__Success(t *testing.T) {
+func TestMakePort__NestedMap(t *testing.T) {
 	def := helperJson2PortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"map","map":{"a":{"type":"number"}}}}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
 	assertNoError(t, err)
@@ -201,7 +220,7 @@ func TestMakePort__NestedMap__Success(t *testing.T) {
 	}
 }
 
-func TestMakePort__Complex__Success(t *testing.T) {
+func TestMakePort__Complex(t *testing.T) {
 	def := helperJson2PortDef(
 `{"type":"map","map":{"a":{"type":"stream","stream":{"type":"boolean"}},"b":{"type":"map","map":
 {"a":{"type":"stream","stream":{"type":"stream","stream":{"type":"map","map":{"a":{"type":"number"},

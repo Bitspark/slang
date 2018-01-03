@@ -11,8 +11,12 @@ type functionStore struct {
 	evalExpr *govaluate.EvaluableExpression
 }
 
-func functionCreator(properties map[string]interface{}) (*slang.Operator, error) {
-	exprStr, ok := properties["expression"]
+func functionCreator(def slang.InstanceDef) (*slang.Operator, error) {
+	if def.Properties == nil {
+		return nil, errors.New("no properties given")
+	}
+
+	exprStr, ok := def.Properties["expression"]
 
 	if !ok {
 		return nil, errors.New("no expression given")

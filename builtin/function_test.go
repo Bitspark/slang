@@ -1,12 +1,12 @@
 package builtin
 
 import (
+	"slang/op"
 	"testing"
-	"slang"
 )
 
 func TestManager_MakeOperator__Function__NilProperties(t *testing.T) {
-	fo, err := M().MakeOperator(slang.InstanceDef{Operator: "function"})
+	fo, err := M().MakeOperator(op.InstanceDef{Operator: "function"})
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
@@ -14,7 +14,7 @@ func TestManager_MakeOperator__Function__NilProperties(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__EmptyExpression(t *testing.T) {
-	fo, err := M().MakeOperator(slang.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": ""}})
+	fo, err := M().MakeOperator(op.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": ""}})
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
@@ -22,7 +22,7 @@ func TestManager_MakeOperator__Function__EmptyExpression(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__InvalidExpression(t *testing.T) {
-	fo, err := M().MakeOperator(slang.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "+"}})
+	fo, err := M().MakeOperator(op.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "+"}})
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
@@ -30,7 +30,7 @@ func TestManager_MakeOperator__Function__InvalidExpression(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__Add(t *testing.T) {
-	fo, err := M().MakeOperator(slang.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a+b"}})
+	fo, err := M().MakeOperator(op.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a+b"}})
 
 	if fo == nil {
 		t.Error("operator not defined")
@@ -40,15 +40,15 @@ func TestManager_MakeOperator__Function__Add(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	if fo.InPort().Type() != slang.TYPE_MAP {
+	if fo.InPort().Type() != op.TYPE_MAP {
 		t.Error("expected map")
 	}
 
-	if fo.InPort().Port("a").Type() != slang.TYPE_ANY {
+	if fo.InPort().Port("a").Type() != op.TYPE_ANY {
 		t.Error("expected any input")
 	}
 
-	if fo.InPort().Port("b").Type() != slang.TYPE_ANY {
+	if fo.InPort().Port("b").Type() != op.TYPE_ANY {
 		t.Error("expected any input")
 	}
 
@@ -74,7 +74,7 @@ func TestManager_MakeOperator__Function__Add(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__BoolArith(t *testing.T) {
-	fo, err := M().MakeOperator(slang.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a && (b != c)"}})
+	fo, err := M().MakeOperator(op.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a && (b != c)"}})
 
 	if fo == nil {
 		t.Error("operator not defined")
@@ -84,19 +84,19 @@ func TestManager_MakeOperator__Function__BoolArith(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	if fo.InPort().Type() != slang.TYPE_MAP {
+	if fo.InPort().Type() != op.TYPE_MAP {
 		t.Error("expected map")
 	}
 
-	if fo.InPort().Port("a").Type() != slang.TYPE_ANY {
+	if fo.InPort().Port("a").Type() != op.TYPE_ANY {
 		t.Error("expected any input")
 	}
 
-	if fo.InPort().Port("b").Type() != slang.TYPE_ANY {
+	if fo.InPort().Port("b").Type() != op.TYPE_ANY {
 		t.Error("expected any input")
 	}
 
-	if fo.InPort().Port("c").Type() != slang.TYPE_ANY {
+	if fo.InPort().Port("c").Type() != op.TYPE_ANY {
 		t.Error("expected any input")
 	}
 

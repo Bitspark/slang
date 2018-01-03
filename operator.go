@@ -4,155 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"slang/builtin"
+	"slang/op"
 	"strings"
 )
 
-type Operator struct {
-	name     string
-	basePort *Port
-	inPort   *Port
-	outPort  *Port
-	parent   *Operator
-	children map[string]*Operator
-	function OFunc
-	store    interface{}
-}
-
-type OperatorDef struct {
-	Name        string              `json:"name"`
-	In          *PortDef            `json:"in"`
-	Out         *PortDef            `json:"out"`
-	Operators   []InstanceDef       `json:"operators"`
-	Connections map[string][]string `json:"connections"`
-	valid       bool
-}
-
-type InstanceDef struct {
-	Operator   string                 `json:"operator"`
-	Name       string                 `json:"name"`
-	Properties map[string]interface{} `json:"properties"`
-	In         *PortDef               `json:"in"`
-	Out        *PortDef               `json:"out"`
-	valid      bool
-}
-
-type OFunc func(in, out *Port, store interface{})
-
-func (d *OperatorDef) Validate() error {
-	if d.Name == "" {
-		return errors.New(`operator name may not be empty`)
-	}
-
-	if strings.Contains(d.Name, " ") {
-		return fmt.Errorf(`operator name may not contain spaces: "%s"`, d.Name)
-	}
-
-	if d.In == nil || d.Out == nil {
-		return errors.New(`ports must be defined`)
-	}
-
-	if err := d.In.Validate(); err != nil {
-		return err
-	}
-
-	if err := d.Out.Validate(); err != nil {
-		return err
-	}
-
-	alreadyUsedInsNames := make(map[string]bool)
-	for _, insDef := range d.Operators {
-		if err := insDef.Validate(); err != nil {
-			return err
-		}
-
-		if _, ok := alreadyUsedInsNames[insDef.Name]; ok {
-			return fmt.Errorf(`Colliding instance names within same parent operator: "%s"`, insDef.Name)
-		}
-
-		alreadyUsedInsNames[insDef.Name] = true
-
-	}
-
-	d.valid = true
-	return nil
-}
-
-func (d *InstanceDef) Validate() error {
-	if d.Name == "" {
-		return fmt.Errorf(`instance name may not be empty`)
-	}
-
-	if strings.Contains(d.Name, " ") {
-		return fmt.Errorf(`operator instance name may not contain spaces: "%s"`, d.Name)
-	}
-
-	if d.Operator == "" {
-		return errors.New(`operator may not be empty`)
-	}
-
-	if strings.Contains(d.Operator, " ") {
-		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
-	}
-
-	if d.In != nil {
-		if err := d.In.Validate(); err != nil {
-			return err
-		}
-	}
-
-	if d.Out != nil {
-		if err := d.Out.Validate(); err != nil {
-			return err
-		}
-	}
-
-	d.valid = true
-	return nil
-}
-
-func getOperator(insDef InstanceDef, par *Operator) (*Operator, error) {
-	if builtinOp, ok := builtin.M().MakeOperator(); ok {
-		return builtinOp, nil
-	}
-	return nil, errors.New("Not Implemented")
-	return nil, fmt.Errorf("Unknown operator: %s.%s", insDef.Operator, insDef.Name)
-}
-
-func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
-	o := &Operator{}
-	o.function = f
-	o.parent = par
-	o.name = name
-	o.children = make(map[string]*Operator)
-
-	if par != nil {
-		par.children[o.name] = o
-	}
-
-	var err error
-
-	o.inPort, err = MakePort(o, defIn, DIRECTION_IN)
-	if err != nil {
-		return nil, err
-	}
-
-	o.outPort, err = MakePort(o, defOut, DIRECTION_OUT)
-	if err != nil {
-		return nil, err
-	}
-
-	return o, nil
-}
-
-func MakeOperatorDeep(def OperatorDef, par *Operator) (*Operator, error) {
-	if !def.valid {
+func MakeOperatorDeep(def op.OperatorDef, par *op.Operator) (*op.Operator, error) {
+	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	o, err := MakeOperator(def.Name, nil, *def.In, *def.Out, par)
+	o, err := op.MakeOperator(def.Name, nil, *def.In, *def.Out, par)
 
 	if err != nil {
 		return nil, err
@@ -183,46 +47,15 @@ func MakeOperatorDeep(def OperatorDef, par *Operator) (*Operator, error) {
 	return o, nil
 }
 
-func (o *Operator) InPort() *Port {
-	return o.inPort
+func getOperator(insDef op.InstanceDef, par *op.Operator) (*op.Operator, error) {
+	if builtinOp, err := builtin.M().MakeOperator(insDef); err == nil {
+		return builtinOp, nil
+	}
+	return nil, errors.New("Not Implemented")
+	return nil, fmt.Errorf("Unknown operator: %s.%s", insDef.Operator, insDef.Name)
 }
 
-func (o *Operator) OutPort() *Port {
-	return o.outPort
-}
-
-func (o *Operator) Name() string {
-	return o.name
-}
-
-func (o *Operator) BasePort() *Port {
-	return o.basePort
-}
-
-func (o *Operator) Parent() *Operator {
-	return o.parent
-}
-
-func (o *Operator) Child(name string) *Operator {
-	c, _ := o.children[name]
-	return c
-}
-
-func (o *Operator) Start() {
-	o.function(o.inPort, o.outPort, o.store)
-}
-
-func (o *Operator) SetStore(store interface{}) {
-	o.store = store
-}
-
-func (o *Operator) Compile() bool {
-	compiled := o.InPort().Merge()
-	compiled = o.OutPort().Merge() || compiled
-	return compiled
-}
-
-func parseConnection(connStr string, operator *Operator) (*Port, error) {
+func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {
 	if operator == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -237,13 +70,12 @@ func parseConnection(connStr string, operator *Operator) (*Port, error) {
 		return nil, errors.New("connection string malformed")
 	}
 
-	var o *Operator
+	var o *op.Operator
 	if len(opSplit[0]) == 0 {
 		o = operator
 	} else {
-		var ok bool
-		o, ok = operator.children[opSplit[0]]
-		if !ok {
+		o = operator.Child(opSplit[0])
+		if o == nil {
 			return nil, errors.New("unknown operator")
 		}
 	}
@@ -254,33 +86,32 @@ func parseConnection(connStr string, operator *Operator) (*Port, error) {
 		return nil, errors.New("connection string malformed")
 	}
 
-	var p *Port
+	var p *op.Port
 	if path[0] == "in" {
-		p = o.inPort
+		p = o.InPort()
 	} else if path[0] == "out" {
-		p = o.outPort
+		p = o.OutPort()
 	} else {
 		return nil, fmt.Errorf("invalid direction: %s", path[1])
 	}
 
-	for p.itemType == TYPE_STREAM {
-		p = p.sub
+	for p.Type() == op.TYPE_STREAM {
+		p = p.Stream()
 	}
 
 	for i := 1; i < len(path); i++ {
-		if p.itemType != TYPE_MAP {
+		if p.Type() != op.TYPE_MAP {
 			return nil, errors.New("descending too deep")
 		}
 
 		k := path[i]
-		var ok bool
-		p, ok = p.subs[k]
-		if !ok {
+		p = p.Port(k)
+		if p == nil {
 			return nil, fmt.Errorf("unknown port: %s", k)
 		}
 
-		for p.itemType == TYPE_STREAM {
-			p = p.sub
+		for p.Type() == op.TYPE_STREAM {
+			p = p.Stream()
 		}
 	}
 

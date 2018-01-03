@@ -1,10 +1,9 @@
-package slang
+package op
 
 import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"slang/op"
 	"testing"
 )
 
@@ -14,27 +13,10 @@ func helperJson2I(str string) interface{} {
 	return obj
 }
 
-func helperJson2PortDef(str string) op.PortDef {
-	def := op.PortDef{}
+func helperJson2PortDef(str string) PortDef {
+	def := PortDef{}
 	json.Unmarshal([]byte(str), &def)
 	return def
-}
-
-func getJSONOperatorDef(jsonDef string) *op.OperatorDef {
-	def := &op.OperatorDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def
-}
-
-func validateJSONOperatorDef(jsonDef string) (*op.OperatorDef, error) {
-	def := getJSONOperatorDef(jsonDef)
-	return def, def.Validate()
-}
-
-func validateJSONInstanceDef(jsonDef string) (*op.InstanceDef, error) {
-	def := &op.InstanceDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def, def.Validate()
 }
 
 func assertTrue(t *testing.T, b bool) {
@@ -87,7 +69,7 @@ func assertNotNil(t *testing.T, a interface{}) {
 	}
 }
 
-func assertPortItems(t *testing.T, i []interface{}, p *op.Port) {
+func assertPortItems(t *testing.T, i []interface{}, p *Port) {
 	t.Helper()
 	for _, e := range i {
 		a := p.Pull()

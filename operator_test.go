@@ -1,133 +1,9 @@
 package slang
 
 import (
-	"encoding/json"
+	"slang/op"
 	"testing"
 )
-
-func getJSONOperatorDef(jsonDef string) *OperatorDef {
-	def := &OperatorDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def
-}
-
-func validateJSONOperatorDef(jsonDef string) (*OperatorDef, error) {
-	def := getJSONOperatorDef(jsonDef)
-	return def, def.Validate()
-}
-
-func validateJSONInstanceDef(jsonDef string) (*InstanceDef, error) {
-	def := &InstanceDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def, def.Validate()
-}
-
-func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {
-	defPort := helperJson2PortDef(`{"type":"number"}`)
-	oParent, _ := MakeOperator("parent", nil, defPort, defPort, nil)
-	oChild1, _ := MakeOperator("child1", nil, defPort, defPort, oParent)
-	oChild2, _ := MakeOperator("child2", nil, defPort, defPort, oParent)
-
-	if oParent != oChild1.Parent() || oParent != oChild2.Parent() {
-		t.Error("oParent must be parent of oChild1 and oChil2")
-	}
-	if oParent.Child(oChild1.Name()) == nil || oParent.Child(oChild2.Name()) == nil {
-		t.Error("oChild1 and oChil2 must be children of oParent")
-	}
-}
-
-func TestInstanceDef_Validate_Fails_MissingName(t *testing.T) {
-	_, err := validateJSONInstanceDef(`{
-		"operator": "opr"
-	}`)
-	assertError(t, err)
-}
-
-func TestInstanceDef_Validate_Fails_SpacesInName(t *testing.T) {
-	_, err := validateJSONInstanceDef(`{
-		"operator": "opr",
-		"name":"fun 4 ever",
-	}`)
-	assertError(t, err)
-}
-
-func TestInstanceDef_Validate_Fails_MissingOperator(t *testing.T) {
-	_, err := validateJSONInstanceDef(`{
-		"name":"oprInstance"
-	}`)
-	assertError(t, err)
-}
-
-func TestInstanceDef_Validate_Succeeds(t *testing.T) {
-	ins, err := validateJSONInstanceDef(`{
-		"operator": "opr",
-		"name":"oprInstance"
-	}`)
-	assertNoError(t, err)
-	assertTrue(t, ins.valid)
-}
-
-func TestOperatorDef_Validate_Fails_MissingName(t *testing.T) {
-	_, err := validateJSONOperatorDef(`{
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"connections": {
-			":in": [":out"]
-		}
-	}`)
-	assertError(t, err)
-}
-
-func TestOperatorDef_Validate_Fails_SpacesInName(t *testing.T) {
-	_, err := validateJSONOperatorDef(`{
-		"name":"fun 4 ever",
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"connections": {
-			":in": [":out"]
-		}
-	}`)
-	assertError(t, err)
-}
-func TestOperatorDef_Validate_Fails_PortMustBeDefined_In(t *testing.T) {
-	_, err := validateJSONOperatorDef(`{
-		"name":"opr",
-		"out": {"type":"number"},
-	}`)
-	assertError(t, err)
-}
-
-func TestOperatorDef_Validate_Fails_PortMustBeDefined_Out(t *testing.T) {
-	_, err := validateJSONOperatorDef(`{
-		"name":"opr",
-		"in": {"type":"number"},
-	}`)
-	assertError(t, err)
-}
-
-func TestOperatorDef_Validate_Succeeds(t *testing.T) {
-	oDef, err := validateJSONOperatorDef(`{
-		"name": "opr",
-		"in": {
-			"type": "number"
-		},
-		"out": {
-			"type": "number"
-		},
-		"operators": [
-			{
-				"operator": "builtin_Adder",
-				"name": "add"
-			}
-		],
-		"connections": {
-			":in": ["add:in"],
-			"add:out": [":in"]
-		}
-	}`)
-	assertNoError(t, err)
-	assertTrue(t, oDef.valid)
-}
 
 func TestOperator_MakeOperatorDeep_1_OuterOperator(t *testing.T) {
 	o, err := MakeOperatorDeep(*getJSONOperatorDef(`{
@@ -144,28 +20,7 @@ func TestOperator_MakeOperatorDeep_1_OuterOperator(t *testing.T) {
 	o.OutPort().Bufferize()
 	o.InPort().Push("hallo")
 
-	assertPortItems([]string{"hallo"}, o.OutPort())
-}
-
-func TestOperator_MakeOperatorDeep_1_BuiltinOperator_Function(t *testing.T) {
-	o, err := MakeOperatorDeep(*getJSONOperatorDef(`{
-		"name":"opr",
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"operators": [
-			{
-				"operator": "function",
-				"name": "pass",
-				"expression": "a"
-			}
-		],
-		"connections": {
-			":in": ["pass:in.a"]
-			"pass:out": [":out"]
-		}
-	}`), nil)
-	assertNoError(t, err)
-	assertTrue(t, o.InPort().Connected(o.OutPort()))
+	assertPortItems(t, []interface{}{"hallo"}, o.OutPort())
 }
 
 func TestParseConnection__NilOperator(t *testing.T) {
@@ -175,15 +30,15 @@ func TestParseConnection__NilOperator(t *testing.T) {
 }
 
 func TestParseConnection__NilConnection(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	MakeOperator("o2", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op.MakeOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("", o1)
 	assertError(t, err)
 	assertNil(t, p)
 }
 
 func TestParseConnection__SelfIn(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
 	p, err := parseConnection(":in", o1)
 	assertNoError(t, err)
 
@@ -193,7 +48,7 @@ func TestParseConnection__SelfIn(t *testing.T) {
 }
 
 func TestParseConnection__SelfOut(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
 	p, err := parseConnection(":out", o1)
 	assertNoError(t, err)
 
@@ -203,8 +58,8 @@ func TestParseConnection__SelfOut(t *testing.T) {
 }
 
 func TestParseConnection__SingleIn(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	o2, _ := MakeOperator("o2", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in", o1)
 	assertNoError(t, err)
 
@@ -214,8 +69,8 @@ func TestParseConnection__SingleIn(t *testing.T) {
 }
 
 func TestParseConnection__SingleOut(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	o2, _ := MakeOperator("o2", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:out", o1)
 	assertNoError(t, err)
 
@@ -225,8 +80,8 @@ func TestParseConnection__SingleOut(t *testing.T) {
 }
 
 func TestParseConnection__Map(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	o2, _ := MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "number"}}}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in.a", o1)
 	assertNoError(t, err)
 
@@ -236,24 +91,24 @@ func TestParseConnection__Map(t *testing.T) {
 }
 
 func TestParseConnection__Map__UnknownKey(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "number"}}}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in.b", o1)
 	assertError(t, err)
 	assertNil(t, p)
 }
 
 func TestParseConnection__Map__DescendingTooDeep(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "number"}}}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in.b.c", o1)
 	assertError(t, err)
 	assertNil(t, p)
 }
 
 func TestParseConnection__NestedMap(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	o2, _ := MakeOperator("o2", nil, PortDef{Type: "map", Map: map[string]PortDef{"a": {Type: "map", Map: map[string]PortDef{"b": {Type: "number"}}}}}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "map", Map: map[string]op.PortDef{"b": {Type: "number"}}}}}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in.a.b", o1)
 	assertNoError(t, err)
 
@@ -263,8 +118,8 @@ func TestParseConnection__NestedMap(t *testing.T) {
 }
 
 func TestParseConnection__Stream(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	o2, _ := MakeOperator("o2", nil, PortDef{Type: "stream", Stream: &PortDef{Type: "number"}}, PortDef{Type: "number"}, o1)
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "stream", Stream: &op.PortDef{Type: "number"}}, op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in", o1)
 	assertNoError(t, err)
 
@@ -274,21 +129,21 @@ func TestParseConnection__Stream(t *testing.T) {
 }
 
 func TestParseConnection__StreamMap(t *testing.T) {
-	o1, _ := MakeOperator("o1", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	o2, _ := MakeOperator("o2", nil,
-		PortDef{
+	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.MakeOperator("o2", nil,
+		op.PortDef{
 			Type: "stream",
-			Stream: &PortDef{
+			Stream: &op.PortDef{
 				Type: "map",
-				Map: map[string]PortDef{
+				Map: map[string]op.PortDef{
 					"a": {
 						Type: "stream",
-						Stream: &PortDef{
+						Stream: &op.PortDef{
 							Type: "map",
-							Map: map[string]PortDef{
+							Map: map[string]op.PortDef{
 								"a": {
 									Type: "stream",
-									Stream: &PortDef{
+									Stream: &op.PortDef{
 										Type: "boolean",
 									},
 								},
@@ -297,7 +152,7 @@ func TestParseConnection__StreamMap(t *testing.T) {
 					},
 				}},
 		},
-		PortDef{Type: "number"}, o1)
+		op.PortDef{Type: "number"}, o1)
 	p, err := parseConnection("o2:in.a.a", o1)
 	assertNoError(t, err)
 

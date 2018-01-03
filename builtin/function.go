@@ -1,8 +1,9 @@
 package builtin
 
 import (
-	"slang"
 	"errors"
+	"slang/op"
+
 	"github.com/Knetic/govaluate"
 )
 
@@ -11,7 +12,7 @@ type functionStore struct {
 	evalExpr *govaluate.EvaluableExpression
 }
 
-func functionCreator(def slang.InstanceDef) (*slang.Operator, error) {
+func functionCreator(def op.InstanceDef) (*op.Operator, error) {
 	if def.Properties == nil {
 		return nil, errors.New("no properties given")
 	}
@@ -34,22 +35,22 @@ func functionCreator(def slang.InstanceDef) (*slang.Operator, error) {
 		return nil, err
 	}
 
-	inDef := slang.PortDef{
+	inDef := op.PortDef{
 		Type: "map",
-		Map:  make(map[string]slang.PortDef),
+		Map:  make(map[string]op.PortDef),
 	}
 
 	vars := evalExpr.Vars()
 
 	for _, v := range vars {
-		inDef.Map[v] = slang.PortDef{Type: "any"}
+		inDef.Map[v] = op.PortDef{Type: "any"}
 	}
 
-	outDef := slang.PortDef{
+	outDef := op.PortDef{
 		Type: "any",
 	}
 
-	o, err := slang.MakeOperator("", func(in, out *slang.Port, store interface{}) {
+	o, err := op.MakeOperator("", func(in, out *op.Port, store interface{}) {
 		expr := store.(functionStore).evalExpr
 		for true {
 			i := in.Pull()

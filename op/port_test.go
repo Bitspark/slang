@@ -1,4 +1,4 @@
-package slang
+package op
 
 import (
 	"testing"
@@ -180,7 +180,7 @@ func TestMakePort__NestedStreams(t *testing.T) {
 
 func TestMakePort__MapStream(t *testing.T) {
 	def := helperJson2PortDef(
-`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"string"}},"b":{"type":"boolean"}}}`)
+		`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"string"}},"b":{"type":"boolean"}}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)
 	assertNoError(t, err)
 
@@ -222,7 +222,7 @@ func TestMakePort__NestedMap(t *testing.T) {
 
 func TestMakePort__Complex(t *testing.T) {
 	def := helperJson2PortDef(
-`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"boolean"}},"b":{"type":"map","map":
+		`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"boolean"}},"b":{"type":"map","map":
 {"a":{"type":"stream","stream":{"type":"stream","stream":{"type":"map","map":{"a":{"type":"number"},
 "b":{"type":"string"},"c":{"type":"boolean"}}}}},"b":{"type":"string"}}},"c":{"type":"boolean"}}}`)
 	p, err := MakePort(nil, def, DIRECTION_IN)

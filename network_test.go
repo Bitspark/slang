@@ -91,7 +91,8 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	o2, _ := op.MakeOperator("O2", nil, defStr, def, nil)
+	o1, _ := op.MakeOperator("O1", nil, defStrStr, defStr, nil)
+	o2, _ := op.MakeOperator("O2", nil, defStr, def, o1)
 	o3, _ := op.MakeOperator("O3", double, def, def, o2)
 	o4, _ := op.MakeOperator("O4", sum, defStr, def, o2)
 
@@ -123,9 +124,6 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	}
 
 	//
-
-	o1, _ := op.MakeOperator("O1", nil, defStrStr, defStr, nil)
-	// o2.parent = o1
 
 	err = o1.InPort().Stream().Stream().Connect(o2.InPort().Stream())
 	assertNoError(t, err)
@@ -221,7 +219,10 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	o4, _ := op.MakeOperator("O4", nil, defStrStrStr, defStrStr, nil)
+	o1, _ := op.MakeOperator("O1", nil, defStr, defStrStr, nil)
+	o2, _ := op.MakeOperator("O2", numgen, def, defStr, o1)
+	o3, _ := op.MakeOperator("O3", numgen, def, defStr, o1)
+	o4, _ := op.MakeOperator("O4", nil, defStrStrStr, defStrStr, o1)
 	o5, _ := op.MakeOperator("O5", sum, defStr, def, o4)
 
 	o4.InPort().Stream().Stream().Stream().Connect(o5.InPort().Stream())
@@ -248,11 +249,6 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	}
 
 	//
-
-	o1, _ := op.MakeOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := op.MakeOperator("O2", numgen, def, defStr, o1)
-	o3, _ := op.MakeOperator("O3", numgen, def, defStr, o1)
-	// o4.parent = o1
 
 	o1.InPort().Stream().Connect(o2.InPort())
 	o2.OutPort().Stream().Connect(o3.InPort())

@@ -3,6 +3,7 @@ package slang
 import (
 	"errors"
 	"fmt"
+	"slang/builtin"
 	"strings"
 )
 
@@ -110,7 +111,11 @@ func (d *InstanceDef) Validate() error {
 }
 
 func getOperator(insDef InstanceDef, par *Operator) (*Operator, error) {
+	if builtinOp, ok := builtin.M().MakeOperator(); ok {
+		return builtinOp, nil
+	}
 	return nil, errors.New("Not Implemented")
+	return nil, fmt.Errorf("Unknown operator: %s.%s", insDef.Operator, insDef.Name)
 }
 
 func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {

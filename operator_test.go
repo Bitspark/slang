@@ -140,6 +140,32 @@ func TestOperator_MakeOperatorDeep_1_OuterOperator(t *testing.T) {
 	}`), nil)
 	assertNoError(t, err)
 	assertTrue(t, o.InPort().Connected(o.OutPort()))
+
+	o.OutPort().Bufferize()
+	o.InPort().Push("hallo")
+
+	assertPortItems([]string{"hallo"}, o.OutPort())
+}
+
+func TestOperator_MakeOperatorDeep_1_BuiltinOperator_Function(t *testing.T) {
+	o, err := MakeOperatorDeep(*getJSONOperatorDef(`{
+		"name":"opr",
+		"in": {"type":"number"},
+		"out": {"type":"number"},
+		"operators": [
+			{
+				"operator": "function",
+				"name": "pass",
+				"expression": "a"
+			}
+		],
+		"connections": {
+			":in": ["pass:in.a"]
+			"pass:out": [":out"]
+		}
+	}`), nil)
+	assertNoError(t, err)
+	assertTrue(t, o.InPort().Connected(o.OutPort()))
 }
 
 func TestParseConnection__NilOperator(t *testing.T) {

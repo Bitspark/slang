@@ -14,6 +14,7 @@ type Manager struct {
 var m = Manager{}
 
 func init() {
+	m.creators = make(map[string]CreatorFunc)
 	m.Register("function", functionCreator)
 }
 

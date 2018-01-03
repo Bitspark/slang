@@ -390,6 +390,13 @@ func (p *Port) Name() string {
 	}
 }
 
+func (p *Port) Bufferize() chan interface{} {
+	if p.buf == nil {
+		p.buf = make(chan interface{}, 100)
+	}
+	return p.buf
+}
+
 // PRIVATE METHODS
 
 func setParentStreams(p *Port, parent *Port) {

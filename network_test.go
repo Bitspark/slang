@@ -64,7 +64,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := helperJson2PortDef(`{"type":"number"}`)
 
-	double := func(in, out *Port) {
+	double := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -75,7 +75,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *Port) {
+	sum := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -190,7 +190,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := helperJson2PortDef(`{"type":"number"}`)
 
-	numgen := func(in, out *Port) {
+	numgen := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -205,7 +205,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *Port) {
+	sum := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -346,7 +346,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
 
-	evalMap1 := func(in, out *Port) {
+	evalMap1 := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -358,7 +358,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	evalMap2 := func(in, out *Port) {
+	evalMap2 := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -423,7 +423,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumIn := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	defSumOut := helperJson2PortDef(`{"type":"number"}`)
 
-	sumEval := func(in, out *Port) {
+	sumEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -438,7 +438,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	filterEval := func(in, out *Port) {
+	filterEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -451,7 +451,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	addEval := func(in, out *Port) {
+	addEval := func(in, out *Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {

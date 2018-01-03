@@ -13,8 +13,24 @@ func TestManager_MakeOperator__Function__NilProperties(t *testing.T) {
 	}
 }
 
+func TestManager_MakeOperator__Function__EmptyExpression(t *testing.T) {
+	fo, err := M().MakeOperator("function", map[string]interface{}{"expression": ""})
+
+	if fo != nil || err == nil {
+		t.Error("expected error")
+	}
+}
+
+func TestManager_MakeOperator__Function__InvalidExpression(t *testing.T) {
+	fo, err := M().MakeOperator("function", map[string]interface{}{"expression": "+"})
+
+	if fo != nil || err == nil {
+		t.Error("expected error")
+	}
+}
+
 func TestManager_MakeOperator__Function__Add(t *testing.T) {
-	fo, err := M().MakeOperator("function", map[string]interface{}{"function": "a+b"})
+	fo, err := M().MakeOperator("function", map[string]interface{}{"expression": "a+b"})
 
 	if fo == nil {
 		t.Error("operator not defined")
@@ -57,8 +73,8 @@ func TestManager_MakeOperator__Function__Add(t *testing.T) {
 	}
 }
 
-func TestManager_MakeOperator__Function__And(t *testing.T) {
-	fo, err := M().MakeOperator("function", map[string]interface{}{"function": "a && (b || !c)"})
+func TestManager_MakeOperator__Function__BoolArith(t *testing.T) {
+	fo, err := M().MakeOperator("function", map[string]interface{}{"expression": "a && (b != c)"})
 
 	if fo == nil {
 		t.Error("operator not defined")
@@ -88,8 +104,10 @@ func TestManager_MakeOperator__Function__And(t *testing.T) {
 
 	go fo.Start()
 
-	fo.InPort().Push(map[string]interface{}{"a": true, "b": true, "c": true})
-	fo.InPort().Push(map[string]interface{}{"a": false, "b": true, "c": true})
+	fo.InPort().Push(map[string]interface{}{"a": true, "b": true, "c": false})
+	fo.InPort().Push(map[string]interface{}{"a": false, "b": false, "c": false})
+	fo.InPort().Push(map[string]interface{}{"a": false, "b": false, "c": true})
+	fo.InPort().Push(map[string]interface{}{"a": true, "b": false, "c": true})
 	fo.InPort().Push(map[string]interface{}{"a": true, "b": false, "c": false})
 
 	if fo.OutPort().Pull() != true {
@@ -100,7 +118,15 @@ func TestManager_MakeOperator__Function__And(t *testing.T) {
 		t.Error("wrong output")
 	}
 
+	if fo.OutPort().Pull() != false {
+		t.Error("wrong output")
+	}
+
 	if fo.OutPort().Pull() != true {
+		t.Error("wrong output")
+	}
+
+	if fo.OutPort().Pull() != false {
 		t.Error("wrong output")
 	}
 }

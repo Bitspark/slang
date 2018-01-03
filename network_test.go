@@ -1,17 +1,18 @@
 package slang
 
 import (
+	"slang/op"
 	"testing"
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
 	defIn := helperJson2PortDef(`{"type":"number"}`)
 	defOut := helperJson2PortDef(`{"type":"number"}`)
-	o1, _ := MakeOperator("o1", nil, defIn, defOut, nil)
+	o1, _ := op.MakeOperator("o1", nil, defIn, defOut, nil)
 
 	o1.InPort().Connect(o1.OutPort())
 
-	o1.OutPort().buf = make(chan interface{}, 100)
+	o1.OutPort().Bufferize()
 	o1.InPort().Push(1.0)
 
 	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.OutPort())
@@ -20,10 +21,10 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 func TestNetwork_EmptyOperators(t *testing.T) {
 	defIn := helperJson2PortDef(`{"type":"number"}`)
 	defOut := helperJson2PortDef(`{"type":"number"}`)
-	o1, _ := MakeOperator("o1", nil, defIn, defOut, nil)
-	o2, _ := MakeOperator("o2", nil, defIn, defOut, o1)
-	o3, _ := MakeOperator("o3", nil, defIn, defOut, o2)
-	o4, _ := MakeOperator("o4", nil, defIn, defOut, o2)
+	o1, _ := op.MakeOperator("o1", nil, defIn, defOut, nil)
+	o2, _ := op.MakeOperator("o2", nil, defIn, defOut, o1)
+	o3, _ := op.MakeOperator("o3", nil, defIn, defOut, o2)
+	o4, _ := op.MakeOperator("o4", nil, defIn, defOut, o2)
 
 	o3.InPort().Connect(o3.OutPort())
 	o4.InPort().Connect(o4.OutPort())
@@ -53,7 +54,7 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 		t.Error("should not be connected")
 	}
 
-	o1.OutPort().buf = make(chan interface{}, 100)
+	o1.OutPort().Bufferize()
 	o1.InPort().Push(1.0)
 
 	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.OutPort())
@@ -64,7 +65,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := helperJson2PortDef(`{"type":"number"}`)
 
-	double := func(in, out *Port, store interface{}) {
+	double := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -75,7 +76,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *Port, store interface{}) {
+	sum := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -90,9 +91,10 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	o2, _ := MakeOperator("O2", nil, defStr, def, nil)
-	o3, _ := MakeOperator("O3", double, def, def, o2)
-	o4, _ := MakeOperator("O4", sum, defStr, def, o2)
+	o1, _ := op.MakeOperator("O1", nil, defStrStr, defStr, nil)
+	o2, _ := op.MakeOperator("O2", nil, defStr, def, o1)
+	o3, _ := op.MakeOperator("O3", double, def, def, o2)
+	o4, _ := op.MakeOperator("O4", sum, defStr, def, o2)
 
 	err := o2.InPort().Stream().Connect(o3.InPort())
 	assertNoError(t, err)
@@ -122,9 +124,6 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	}
 
 	//
-
-	o1, _ := MakeOperator("O1", nil, defStrStr, defStr, nil)
-	o2.parent = o1
 
 	err = o1.InPort().Stream().Stream().Connect(o2.InPort().Stream())
 	assertNoError(t, err)
@@ -173,7 +172,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 
 	//
 
-	o1.OutPort().Stream().buf = make(chan interface{}, 100)
+	o1.OutPort().Stream().Bufferize()
 
 	go o3.Start()
 	go o4.Start()
@@ -190,7 +189,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	defStr := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := helperJson2PortDef(`{"type":"number"}`)
 
-	numgen := func(in, out *Port, store interface{}) {
+	numgen := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -205,7 +204,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *Port, store interface{}) {
+	sum := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -220,8 +219,11 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	o4, _ := MakeOperator("O4", nil, defStrStrStr, defStrStr, nil)
-	o5, _ := MakeOperator("O5", sum, defStr, def, o4)
+	o1, _ := op.MakeOperator("O1", nil, defStr, defStrStr, nil)
+	o2, _ := op.MakeOperator("O2", numgen, def, defStr, o1)
+	o3, _ := op.MakeOperator("O3", numgen, def, defStr, o1)
+	o4, _ := op.MakeOperator("O4", nil, defStrStrStr, defStrStr, o1)
+	o5, _ := op.MakeOperator("O5", sum, defStr, def, o4)
 
 	o4.InPort().Stream().Stream().Stream().Connect(o5.InPort().Stream())
 	o5.OutPort().Connect(o4.OutPort().Stream().Stream())
@@ -247,11 +249,6 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	}
 
 	//
-
-	o1, _ := MakeOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := MakeOperator("O2", numgen, def, defStr, o1)
-	o3, _ := MakeOperator("O3", numgen, def, defStr, o1)
-	o4.parent = o1
 
 	o1.InPort().Stream().Connect(o2.InPort())
 	o2.OutPort().Stream().Connect(o3.InPort())
@@ -324,7 +321,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 
 	//
 
-	o1.OutPort().Stream().Stream().buf = make(chan interface{}, 100)
+	o1.OutPort().Stream().Stream().Bufferize()
 
 	go o2.Start()
 	go o3.Start()
@@ -346,7 +343,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
 
-	evalMap1 := func(in, out *Port, store interface{}) {
+	evalMap1 := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -358,7 +355,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	evalMap2 := func(in, out *Port, store interface{}) {
+	evalMap2 := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -371,9 +368,9 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	o, _ := MakeOperator("", nil, defIn, defOut, nil)
-	oMap1, _ := MakeOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
-	oMap2, _ := MakeOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
+	o, _ := op.MakeOperator("", nil, defIn, defOut, nil)
+	oMap1, _ := op.MakeOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
+	oMap2, _ := op.MakeOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
 
 	o.InPort().Port("a").Connect(oMap2.InPort().Port("a"))
 	o.InPort().Port("b").Connect(oMap1.InPort())
@@ -381,8 +378,8 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	oMap1.OutPort().Port("b").Connect(o.OutPort().Port("b"))
 	oMap2.OutPort().Connect(o.OutPort().Port("a"))
 
-	o.OutPort().Port("a").buf = make(chan interface{}, 100)
-	o.OutPort().Port("b").buf = make(chan interface{}, 100)
+	o.OutPort().Port("a").Bufferize()
+	o.OutPort().Port("b").Bufferize()
 
 	go oMap1.Start()
 	go oMap2.Start()
@@ -423,7 +420,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumIn := helperJson2PortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	defSumOut := helperJson2PortDef(`{"type":"number"}`)
 
-	sumEval := func(in, out *Port, store interface{}) {
+	sumEval := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -438,7 +435,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	filterEval := func(in, out *Port, store interface{}) {
+	filterEval := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -451,7 +448,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	addEval := func(in, out *Port, store interface{}) {
+	addEval := func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -464,11 +461,11 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	o, _ := MakeOperator("Global", nil, defStrMapStr, defStrMap, nil)
-	sum, _ := MakeOperator("Sum", sumEval, defSumIn, defSumOut, o)
-	add, _ := MakeOperator("Add", addEval, defAddIn, defAddOut, o)
-	filter1, _ := MakeOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
-	filter2, _ := MakeOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
+	o, _ := op.MakeOperator("Global", nil, defStrMapStr, defStrMap, nil)
+	sum, _ := op.MakeOperator("Sum", sumEval, defSumIn, defSumOut, o)
+	add, _ := op.MakeOperator("Add", addEval, defAddIn, defAddOut, o)
+	filter1, _ := op.MakeOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
+	filter2, _ := op.MakeOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
 
 	o.InPort().Stream().Port("N").Connect(sum.InPort())
 	o.InPort().Stream().Port("n").Connect(add.InPort().Port("b"))
@@ -480,8 +477,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	filter1.OutPort().Connect(o.OutPort().Stream().Port("sum"))
 	filter2.OutPort().Connect(o.OutPort().Stream().Port("s"))
 
-	o.OutPort().Stream().Port("sum").buf = make(chan interface{}, 100)
-	o.OutPort().Stream().Port("s").buf = make(chan interface{}, 100)
+	o.OutPort().Stream().Port("sum").Bufferize()
+	o.OutPort().Stream().Port("s").Bufferize()
 
 	go sum.Start()
 	go add.Start()

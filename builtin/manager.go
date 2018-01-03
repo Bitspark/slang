@@ -1,11 +1,11 @@
 package builtin
 
 import (
-	"slang"
 	"errors"
+	"slang/op"
 )
 
-type CreatorFunc func(slang.InstanceDef) (*slang.Operator, error)
+type CreatorFunc func(op.InstanceDef) (*op.Operator, error)
 
 type Manager struct {
 	creators map[string]CreatorFunc
@@ -22,7 +22,7 @@ func M() Manager {
 	return m
 }
 
-func (m Manager) MakeOperator(def slang.InstanceDef) (*slang.Operator, error) {
+func (m Manager) MakeOperator(def op.InstanceDef) (*op.Operator, error) {
 	creator, ok := m.creators[def.Operator]
 
 	if !ok {

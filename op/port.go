@@ -1,4 +1,4 @@
-package slang
+package op
 
 import (
 	"errors"
@@ -53,6 +53,44 @@ type PortDef struct {
 }
 
 // PUBLIC METHODS
+
+func (d *PortDef) Valid() bool {
+	return d.valid
+}
+
+func (d *PortDef) Validate() error {
+	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
+	found := false
+	for _, t := range validTypes {
+		if t == d.Type {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.New("unknown type")
+	}
+
+	if d.Type == "stream" {
+		if d.Stream == nil {
+			return errors.New("stream missing")
+		}
+		return d.Stream.Validate()
+	} else if d.Type == "map" {
+		if len(d.Map) == 0 {
+			return errors.New("map missing or empty")
+		}
+		for _, e := range d.Map {
+			err := e.Validate()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	d.valid = true
+	return nil
+}
 
 // Makes a new port.
 func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
@@ -126,7 +164,8 @@ func (p *Port) ParentStream() *Port {
 
 // Returns the subport with the according name of this port. Port must be of type map.
 func (p *Port) Port(name string) *Port {
-	return p.subs[name]
+	port, _ := p.subs[name]
+	return port
 }
 
 // Returns the substream port of this port. Port must be of type stream.
@@ -376,40 +415,6 @@ func (p *Port) Bufferize() chan interface{} {
 }
 
 // PRIVATE METHODS
-
-func (d *PortDef) Validate() error {
-	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
-	found := false
-	for _, t := range validTypes {
-		if t == d.Type {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return errors.New("unknown type")
-	}
-
-	if d.Type == "stream" {
-		if d.Stream == nil {
-			return errors.New("stream missing")
-		}
-		return d.Stream.Validate()
-	} else if d.Type == "map" {
-		if len(d.Map) == 0 {
-			return errors.New("map missing or empty")
-		}
-		for _, e := range d.Map {
-			err := e.Validate()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	d.valid = true
-	return nil
-}
 
 func setParentStreams(p *Port, parent *Port) {
 	p.parStr = parent

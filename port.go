@@ -49,15 +49,18 @@ type portDef struct {
 	Type   string             `json:"type"`
 	Stream *portDef           `json:"stream"`
 	Map    map[string]portDef `json:"map"`
+	valid  bool
 }
 
 // PUBLIC METHODS
 
 // Makes a new port.
 func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
-	err := def.validate()
-	if err != nil {
-		return nil, err
+	if !def.valid {
+		err := def.validate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if dir != DIRECTION_IN && dir != DIRECTION_OUT {
@@ -69,6 +72,7 @@ func MakePort(o *Operator, def portDef, dir int) (*Port, error) {
 	p.operator = o
 	p.dests = make(map[*Port]bool)
 
+	var err error
 	switch def.Type {
 	case "map":
 		p.itemType = TYPE_MAP
@@ -383,12 +387,20 @@ func (d *portDef) validate() error {
 		if d.Stream == nil {
 			return errors.New("stream missing")
 		}
+		return d.Stream.validate()
 	} else if d.Type == "map" {
 		if len(d.Map) == 0 {
 			return errors.New("map missing or empty")
 		}
+		for _, e := range d.Map {
+			err := e.validate()
+			if err != nil {
+				return err
+			}
+		}
 	}
 
+	d.valid = true
 	return nil
 }
 

@@ -1,5 +1,4 @@
 {
-    "name": "customOpDouble",
     "in": {
         "type": "number"
     },

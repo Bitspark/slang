@@ -182,8 +182,39 @@ func (o *Operator) SetStore(store interface{}) {
 	o.store = store
 }
 
-func (o *Operator) Compile() bool {
-	compiled := o.In().Merge()
-	compiled = o.Out().Merge() || compiled
-	return compiled
+func (o *Operator) Builtin() bool {
+	return o.function != nil
+}
+
+func (o *Operator) Compile() int {
+	if o.Builtin() {
+		return 0
+	}
+
+	compiled := 0
+
+	// Go down
+	for _, c := range o.children {
+		compiled += c.Compile()
+	}
+
+	if o.parent == nil {
+		return compiled
+	}
+
+	// Remove in and out port
+	o.In().Merge()
+	o.Out().Merge()
+
+	// Move children to parent and rename instances
+	for _, c := range o.children {
+		c.name = o.name + "." + c.name
+		c.parent = o.parent
+		o.parent.children[c.name] = c
+	}
+
+	// Remove this operator from its parent
+	delete(o.parent.children, o.name)
+
+	return compiled + 1
 }

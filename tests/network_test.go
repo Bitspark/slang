@@ -1,4 +1,4 @@
-package slang
+package tests
 
 import (
 	"slang/op"

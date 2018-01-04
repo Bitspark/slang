@@ -1,32 +1,15 @@
-package op
+package tests
 
 import (
-	"encoding/json"
+	"slang/op"
 	"testing"
 )
 
-func getJSONOperatorDef(jsonDef string) *OperatorDef {
-	def := &OperatorDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def
-}
-
-func validateJSONOperatorDef(jsonDef string) (*OperatorDef, error) {
-	def := getJSONOperatorDef(jsonDef)
-	return def, def.Validate()
-}
-
-func validateJSONInstanceDef(jsonDef string) (*InstanceDef, error) {
-	def := &InstanceDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def, def.Validate()
-}
-
 func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {
 	defPort := helperJson2PortDef(`{"type":"number"}`)
-	oParent, _ := MakeOperator("parent", nil, defPort, defPort, nil)
-	oChild1, _ := MakeOperator("child1", nil, defPort, defPort, oParent)
-	oChild2, _ := MakeOperator("child2", nil, defPort, defPort, oParent)
+	oParent, _ := op.MakeOperator("parent", nil, defPort, defPort, nil)
+	oChild1, _ := op.MakeOperator("child1", nil, defPort, defPort, oParent)
+	oChild2, _ := op.MakeOperator("child2", nil, defPort, defPort, oParent)
 
 	if oParent != oChild1.Parent() || oParent != oChild2.Parent() {
 		t.Error("oParent must be parent of oChild1 and oChil2")
@@ -64,7 +47,7 @@ func TestInstanceDef_Validate_Succeeds(t *testing.T) {
 		"name":"oprInstance"
 	}`)
 	assertNoError(t, err)
-	assertTrue(t, ins.valid)
+	assertTrue(t, ins.Valid())
 }
 
 func TestOperatorDef_Validate_Fails_PortMustBeDefined_In(t *testing.T) {
@@ -104,13 +87,13 @@ func TestOperatorDef_Validate_Succeeds(t *testing.T) {
 		}
 	}`)
 	assertNoError(t, err)
-	assertTrue(t, oDef.valid)
+	assertTrue(t, oDef.Valid())
 }
 
 func TestOperator_Compile__Nested_1_Child(t *testing.T) {
-	op1, _ := MakeOperator("", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	op2, _ := MakeOperator("a", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, op1)
-	op3, _ := MakeOperator("b", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op2)
+	op1, _ := op.MakeOperator("", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op2, _ := op.MakeOperator("a", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
+	op3, _ := op.MakeOperator("b", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
 
 	// op1
 	op1.In().Connect(op2.In())
@@ -123,13 +106,13 @@ func TestOperator_Compile__Nested_1_Child(t *testing.T) {
 	// Compile
 	assertTrue(t, op1.Compile() == 1)
 
-	assertTrue(t, len(op1.children) == 1)
+	assertTrue(t, len(op1.Children()) == 1)
 
-	if _, ok := op1.children["a.b"]; !ok {
+	if _, ok := op1.Children()["a.b"]; !ok {
 		t.Error("child not there")
 	}
 
-	assertTrue(t, op3.parent == op1)
+	assertTrue(t, op3.Parent() == op1)
 
 	assertTrue(t, op1.In().Connected(op3.In()))
 	assertTrue(t, op3.Out().Connected(op1.Out()))
@@ -139,12 +122,12 @@ func TestOperator_Compile__Nested_1_Child(t *testing.T) {
 }
 
 func TestOperator_Compile__Nested_Children(t *testing.T) {
-	op1, _ := MakeOperator("", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
-	op2, _ := MakeOperator("a", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, op1)
-	op3, _ := MakeOperator("b", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, op1)
-	op4, _ := MakeOperator("c", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op2)
-	op5, _ := MakeOperator("d", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op2)
-	op6, _ := MakeOperator("e", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op3)
+	op1, _ := op.MakeOperator("", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op2, _ := op.MakeOperator("a", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
+	op3, _ := op.MakeOperator("b", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
+	op4, _ := op.MakeOperator("c", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
+	op5, _ := op.MakeOperator("d", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
+	op6, _ := op.MakeOperator("e", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op3)
 
 	// op1
 	op1.In().Connect(op2.In())
@@ -163,23 +146,23 @@ func TestOperator_Compile__Nested_Children(t *testing.T) {
 	// Compile
 	assertTrue(t, op1.Compile() == 2)
 
-	assertTrue(t, len(op1.children) == 3)
+	assertTrue(t, len(op1.Children()) == 3)
 
-	if _, ok := op1.children["a.c"]; !ok {
+	if _, ok := op1.Children()["a.c"]; !ok {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.children["a.d"]; !ok {
+	if _, ok := op1.Children()["a.d"]; !ok {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.children["b.e"]; !ok {
+	if _, ok := op1.Children()["b.e"]; !ok {
 		t.Error("child not there")
 	}
 
-	assertTrue(t, op4.parent == op1)
-	assertTrue(t, op5.parent == op1)
-	assertTrue(t, op6.parent == op1)
+	assertTrue(t, op4.Parent() == op1)
+	assertTrue(t, op5.Parent() == op1)
+	assertTrue(t, op6.Parent() == op1)
 
 	assertTrue(t, op1.In().Connected(op4.In()))
 	assertTrue(t, op4.Out().Connected(op5.In()))

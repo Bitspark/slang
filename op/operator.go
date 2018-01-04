@@ -152,6 +152,10 @@ func (o *Operator) Parent() *Operator {
 	return o.parent
 }
 
+func (o *Operator) Children() map[string]*Operator {
+	return o.children
+}
+
 func (o *Operator) Child(name string) *Operator {
 	c, _ := o.children[name]
 	return c

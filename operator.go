@@ -47,9 +47,9 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.O
 	}
 
 	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := parseConnection(srcConnDef, o); err == nil {
+		if pSrc, err := ParseConnection(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := parseConnection(dstConnDef, o); err == nil {
+				if pDst, err := ParseConnection(dstConnDef, o); err == nil {
 					pSrc.Connect(pDst)
 				} else {
 					return nil, err
@@ -68,7 +68,7 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 		return builtinOp, nil
 	}
 
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)+".json"
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
 
 	if strings.HasPrefix(insDef.Operator, ".") {
 		defFilePath := path.Join(currDir, relFilePath)
@@ -100,7 +100,7 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 	return nil, err
 }
 
-func parseConnection(connStr string, par *op.Operator) (*op.Port, error) {
+func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}

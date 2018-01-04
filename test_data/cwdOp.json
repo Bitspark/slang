@@ -1,0 +1,23 @@
+{
+  "name": "opr",
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": [
+    {
+      "operator": "test_data.voidOp",
+      "name": "void"
+    }
+  ],
+  "connections": {
+    ":in": [
+      "void:in"
+    ],
+    "void:out": [
+      ":out"
+    ]
+  }
+}

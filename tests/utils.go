@@ -25,7 +25,7 @@ func validateJSONInstanceDef(jsonDef string) (op.InstanceDef, error) {
 	return def, def.Validate()
 }
 
-func assertPortItems(t *testing.T, i []interface{}, p *op.Port) {
+func AssertPortItems(t *testing.T, i []interface{}, p *op.Port) {
 	t.Helper()
 	for _, e := range i {
 		a := p.Pull()

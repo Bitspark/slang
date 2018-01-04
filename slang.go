@@ -51,7 +51,7 @@ func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
 	} else if pathSplit[0] == "out" {
 		p = o.Out()
 	} else {
-		return nil, fmt.Errorf("invalid direction: %s", pathSplit[1])
+		return nil, fmt.Errorf("invalid direction: %s", pathSplit[0])
 	}
 
 	for p.Type() == op.TYPE_STREAM {

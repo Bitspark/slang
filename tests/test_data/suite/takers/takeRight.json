@@ -1,0 +1,20 @@
+{
+  "in": {
+    "type": "map",
+    "map": {
+      "left": {
+        "type": "any"
+      },
+      "right": {
+        "type": "any"
+      }
+    }
+  },
+  "out": {
+    "type": "any"
+  },
+  "operators": [],
+  "connections": {
+    ":in.right": [":out"]
+  }
+}

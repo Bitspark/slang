@@ -20,12 +20,14 @@ func helperJson2PortDef(str string) PortDef {
 }
 
 func assertTrue(t *testing.T, b bool) {
+	t.Helper()
 	if !b {
 		t.Error("expected to be true")
 	}
 }
 
 func assertFalse(t *testing.T, b bool) {
+	t.Helper()
 	if b {
 		t.Error("expected to be false")
 	}

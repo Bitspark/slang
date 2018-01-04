@@ -106,3 +106,90 @@ func TestOperatorDef_Validate_Succeeds(t *testing.T) {
 	assertNoError(t, err)
 	assertTrue(t, oDef.valid)
 }
+
+func TestOperator_Compile__Nested_1_Child(t *testing.T) {
+	op1, _ := MakeOperator("", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	op2, _ := MakeOperator("a", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, op1)
+	op3, _ := MakeOperator("b", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op2)
+
+	// op1
+	op1.In().Connect(op2.In())
+	op2.Out().Connect(op1.Out())
+
+	// op2
+	op2.In().Connect(op3.In())
+	op3.Out().Connect(op2.Out())
+
+	// Compile
+	assertTrue(t, op1.Compile() == 1)
+
+	assertTrue(t, len(op1.children) == 1)
+
+	if _, ok := op1.children["a.b"]; !ok {
+		t.Error("child not there")
+	}
+
+	assertTrue(t, op3.parent == op1)
+
+	assertTrue(t, op1.In().Connected(op3.In()))
+	assertTrue(t, op3.Out().Connected(op1.Out()))
+
+	assertFalse(t, op1.In().Connected(op2.In()))
+	assertFalse(t, op2.Out().Connected(op1.Out()))
+}
+
+func TestOperator_Compile__Nested_Children(t *testing.T) {
+	op1, _ := MakeOperator("", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, nil)
+	op2, _ := MakeOperator("a", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, op1)
+	op3, _ := MakeOperator("b", nil, PortDef{Type: "number"}, PortDef{Type: "number"}, op1)
+	op4, _ := MakeOperator("c", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op2)
+	op5, _ := MakeOperator("d", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op2)
+	op6, _ := MakeOperator("e", func(_, _ *Port, _ interface{}) {}, PortDef{Type: "number"}, PortDef{Type: "number"}, op3)
+
+	// op1
+	op1.In().Connect(op2.In())
+	op2.Out().Connect(op3.In())
+	op3.Out().Connect(op1.Out())
+
+	// op2
+	op2.In().Connect(op4.In())
+	op4.Out().Connect(op5.In())
+	op5.Out().Connect(op2.Out())
+
+	// op3
+	op3.In().Connect(op6.In())
+	op6.Out().Connect(op3.Out())
+
+	// Compile
+	assertTrue(t, op1.Compile() == 2)
+
+	assertTrue(t, len(op1.children) == 3)
+
+	if _, ok := op1.children["a.c"]; !ok {
+		t.Error("child not there")
+	}
+
+	if _, ok := op1.children["a.d"]; !ok {
+		t.Error("child not there")
+	}
+
+	if _, ok := op1.children["b.e"]; !ok {
+		t.Error("child not there")
+	}
+
+	assertTrue(t, op4.parent == op1)
+	assertTrue(t, op5.parent == op1)
+	assertTrue(t, op6.parent == op1)
+
+	assertTrue(t, op1.In().Connected(op4.In()))
+	assertTrue(t, op4.Out().Connected(op5.In()))
+	assertTrue(t, op5.Out().Connected(op6.In()))
+	assertTrue(t, op6.Out().Connected(op1.Out()))
+
+	assertFalse(t, op1.In().Connected(op2.In()))
+	assertFalse(t, op3.Out().Connected(op1.Out()))
+	assertFalse(t, op2.In().Connected(op4.In()))
+	assertFalse(t, op5.Out().Connected(op2.Out()))
+	assertFalse(t, op3.In().Connected(op6.In()))
+	assertFalse(t, op6.Out().Connected(op3.Out()))
+}

@@ -3,6 +3,8 @@ package tests
 import (
 	"slang/op"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
@@ -97,11 +99,11 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o4, _ := op.MakeOperator("O4", sum, defStr, def, o2)
 
 	err := o2.In().Stream().Connect(o3.In())
-	assertNoError(t, err)
+	assert.NoError(t, err)
 	err = o3.Out().Connect(o4.In().Stream())
-	assertNoError(t, err)
+	assert.NoError(t, err)
 	err = o4.Out().Connect(o2.Out())
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if !o2.In().Stream().Connected(o3.In()) {
 		t.Error("should be connected")
@@ -126,9 +128,9 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	//
 
 	err = o1.In().Stream().Stream().Connect(o2.In().Stream())
-	assertNoError(t, err)
+	assert.NoError(t, err)
 	err = o2.Out().Connect(o1.Out().Stream())
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if !o1.In().Stream().Stream().Connected(o2.In().Stream()) {
 		t.Error("should be connected")

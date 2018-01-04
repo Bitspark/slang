@@ -3,6 +3,8 @@ package tests
 import (
 	"slang/op"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // PortDef.Validate (11 tests)
@@ -10,13 +12,13 @@ import (
 func TestPortDef_Validate__InvalidTypeInDefinition(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"gfdhgfd"}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertError(t, err)
-	assertNil(t, p)
+	assert.Error(t, err)
+	assert.Nil(t, p)
 }
 
 func TestPortDef_Validate__Stream__StreamNotPresent(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"stream"}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -24,7 +26,7 @@ func TestPortDef_Validate__Stream__StreamNotPresent(t *testing.T) {
 
 func TestPortDef_Validate__Stream__NilStream(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"stream","stream":null}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -32,7 +34,7 @@ func TestPortDef_Validate__Stream__NilStream(t *testing.T) {
 
 func TestPortDef_Validate__Stream__EmptyStream(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"stream","stream":{}}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -40,7 +42,7 @@ func TestPortDef_Validate__Stream__EmptyStream(t *testing.T) {
 
 func TestPortDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -48,7 +50,7 @@ func TestPortDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 
 func TestPortDef_Validate__Map__MapNotPresent(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map"}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -56,7 +58,7 @@ func TestPortDef_Validate__Map__MapNotPresent(t *testing.T) {
 
 func TestPortDef_Validate__Map__NilMap(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":null}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -64,7 +66,7 @@ func TestPortDef_Validate__Map__NilMap(t *testing.T) {
 
 func TestPortDef_Validate__Map__EmptyMap(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":{}}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -72,7 +74,7 @@ func TestPortDef_Validate__Map__EmptyMap(t *testing.T) {
 
 func TestPortDef_Validate__Map__NullEntry(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":{"a":null}}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -80,7 +82,7 @@ func TestPortDef_Validate__Map__NullEntry(t *testing.T) {
 
 func TestPortDef_Validate__Map__EmptyEntry(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":{"a":{}}}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -88,7 +90,7 @@ func TestPortDef_Validate__Map__EmptyEntry(t *testing.T) {
 
 func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
-	assertError(t, def.Validate())
+	assert.Error(t, def.Validate())
 	if def.Valid() {
 		t.Error("should not be valid")
 	}
@@ -99,28 +101,28 @@ func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 func TestMakePort__InvalidDefinition(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"bcvbvcbvc"}`)
 	p, err := op.MakePort(nil, def, 0)
-	assertError(t, err)
-	assertNil(t, p)
+	assert.Error(t, err)
+	assert.Nil(t, p)
 }
 
 func TestMakePort__Number__NoDirectionGiven(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"number"}`)
 	p, err := op.MakePort(nil, def, 0)
-	assertError(t, err)
-	assertNil(t, p)
+	assert.Error(t, err)
+	assert.Nil(t, p)
 }
 
 func TestMakePort__Number__WrongDirectionGiven(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"number"}`)
 	p, err := op.MakePort(nil, def, 3)
-	assertError(t, err)
-	assertNil(t, p)
+	assert.Error(t, err)
+	assert.Nil(t, p)
 }
 
 func TestMakePort__Stream(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if p.Type() != op.TYPE_STREAM {
 		t.Error("wrong type")
@@ -135,8 +137,8 @@ func TestMakePort__Number(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"number"}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
 
-	assertNoError(t, err)
-	assertNotNil(t, p)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
 
 	if p.Type() != op.TYPE_NUMBER {
 		t.Error("wrong type")
@@ -150,7 +152,7 @@ func TestMakePort__Number(t *testing.T) {
 func TestMakePort__Map(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if p.Type() != op.TYPE_MAP {
 		t.Error("wrong type")
@@ -164,7 +166,7 @@ func TestMakePort__Map(t *testing.T) {
 func TestMakePort__NestedStreams(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"string"}}}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if p.Type() != op.TYPE_STREAM {
 		t.Error("wrong type")
@@ -183,7 +185,7 @@ func TestMakePort__MapStream(t *testing.T) {
 	def := op.ParsePortDef(
 		`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"string"}},"b":{"type":"boolean"}}}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if p.Type() != op.TYPE_MAP {
 		t.Error("wrong type")
@@ -205,8 +207,8 @@ func TestMakePort__MapStream(t *testing.T) {
 func TestMakePort__NestedMap(t *testing.T) {
 	def := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"map","map":{"a":{"type":"number"}}}}}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertNoError(t, err)
-	assertNotNil(t, p)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
 
 	if p.Map("a") == nil || p.Map("a").Type() != op.TYPE_NUMBER {
 		t.Error("map not correct")
@@ -227,7 +229,7 @@ func TestMakePort__Complex(t *testing.T) {
 {"a":{"type":"stream","stream":{"type":"stream","stream":{"type":"map","map":{"a":{"type":"number"},
 "b":{"type":"string"},"c":{"type":"boolean"}}}}},"b":{"type":"string"}}},"c":{"type":"boolean"}}}`)
 	p, err := op.MakePort(nil, def, op.DIRECTION_IN)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if p.Type() != op.TYPE_MAP {
 		t.Error("wrong type")
@@ -352,7 +354,7 @@ func TestPort_Connect__Map__KeysNotMatching(t *testing.T) {
 	q, _ := op.MakePort(nil, def2, op.DIRECTION_OUT)
 
 	err := p.Connect(q)
-	assertError(t, err)
+	assert.Error(t, err)
 
 	if p.Connected(q) {
 		t.Error("connection not expected")
@@ -367,7 +369,7 @@ func TestPort_Connect__Map__LeftIsSubsetOfRight(t *testing.T) {
 	q, _ := op.MakePort(nil, def2, op.DIRECTION_OUT)
 
 	err := p.Connect(q)
-	assertError(t, err)
+	assert.Error(t, err)
 
 	if p.Connected(q) {
 		t.Error("connection not expected")
@@ -382,7 +384,7 @@ func TestPort_Connect__Map__RightIsSubsetOfRight(t *testing.T) {
 	q, _ := op.MakePort(nil, def2, op.DIRECTION_OUT)
 
 	err := p.Connect(q)
-	assertError(t, err)
+	assert.Error(t, err)
 
 	if p.Connected(q) {
 		t.Error("connection not expected")
@@ -397,7 +399,7 @@ func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
 	q, _ := op.MakePort(nil, def2, op.DIRECTION_OUT)
 
 	err := p.Connect(q)
-	assertError(t, err)
+	assert.Error(t, err)
 
 	if p.Connected(q) {
 		t.Error("connection not expected")
@@ -411,7 +413,7 @@ func TestPort_Connect__Map__SameKeys(t *testing.T) {
 	q, _ := op.MakePort(nil, def, op.DIRECTION_OUT)
 
 	err := p.Connect(q)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if !p.Map("a").Connected(q.Map("a")) {
 		t.Error("port 'a' must be connected")
@@ -430,7 +432,7 @@ func TestPort_Connect__Map__Subport2Primitive(t *testing.T) {
 	q, _ := op.MakePort(nil, def2, op.DIRECTION_OUT)
 
 	err := p.Map("a").Connect(q)
-	assertNoError(t, err)
+	assert.NoError(t, err)
 
 	if !p.Map("a").Connected(q) {
 		t.Error("connection expected")

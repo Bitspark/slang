@@ -3,6 +3,8 @@ package tests
 import (
 	"slang/op"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {
@@ -23,7 +25,7 @@ func TestInstanceDef_Validate_Fails_MissingName(t *testing.T) {
 	_, err := validateJSONInstanceDef(`{
 		"operator": "opr"
 	}`)
-	assertError(t, err)
+	assert.Error(t, err)
 }
 
 func TestInstanceDef_Validate_Fails_SpacesInName(t *testing.T) {
@@ -31,14 +33,14 @@ func TestInstanceDef_Validate_Fails_SpacesInName(t *testing.T) {
 		"operator": "opr",
 		"name":"fun 4 ever",
 	}`)
-	assertError(t, err)
+	assert.Error(t, err)
 }
 
 func TestInstanceDef_Validate_Fails_MissingOperator(t *testing.T) {
 	_, err := validateJSONInstanceDef(`{
 		"name":"oprInstance"
 	}`)
-	assertError(t, err)
+	assert.Error(t, err)
 }
 
 func TestInstanceDef_Validate_Succeeds(t *testing.T) {
@@ -46,8 +48,8 @@ func TestInstanceDef_Validate_Succeeds(t *testing.T) {
 		"operator": "opr",
 		"name":"oprInstance"
 	}`)
-	assertNoError(t, err)
-	assertTrue(t, ins.Valid())
+	assert.NoError(t, err)
+	assert.True(t, ins.Valid())
 }
 
 func TestOperatorDef_Validate_Fails_PortMustBeDefined_In(t *testing.T) {
@@ -55,7 +57,7 @@ func TestOperatorDef_Validate_Fails_PortMustBeDefined_In(t *testing.T) {
 		"name":"opr",
 		"out": {"type":"number"},
 	}`)
-	assertError(t, err)
+	assert.Error(t, err)
 }
 
 func TestOperatorDef_Validate_Fails_PortMustBeDefined_Out(t *testing.T) {
@@ -63,7 +65,7 @@ func TestOperatorDef_Validate_Fails_PortMustBeDefined_Out(t *testing.T) {
 		"name":"opr",
 		"in": {"type":"number"},
 	}`)
-	assertError(t, err)
+	assert.Error(t, err)
 }
 
 func TestOperatorDef_Validate_Succeeds(t *testing.T) {
@@ -86,8 +88,8 @@ func TestOperatorDef_Validate_Succeeds(t *testing.T) {
 			"add:out": [":in"]
 		}
 	}`)
-	assertNoError(t, err)
-	assertTrue(t, oDef.Valid())
+	assert.NoError(t, err)
+	assert.True(t, oDef.Valid())
 }
 
 func TestOperator_Compile__Nested_1_Child(t *testing.T) {
@@ -104,21 +106,21 @@ func TestOperator_Compile__Nested_1_Child(t *testing.T) {
 	op3.Out().Connect(op2.Out())
 
 	// Compile
-	assertTrue(t, op1.Compile() == 1)
+	assert.True(t, op1.Compile() == 1)
 
-	assertTrue(t, len(op1.Children()) == 1)
+	assert.True(t, len(op1.Children()) == 1)
 
 	if _, ok := op1.Children()["a.b"]; !ok {
 		t.Error("child not there")
 	}
 
-	assertTrue(t, op3.Parent() == op1)
+	assert.True(t, op3.Parent() == op1)
 
-	assertTrue(t, op1.In().Connected(op3.In()))
-	assertTrue(t, op3.Out().Connected(op1.Out()))
+	assert.True(t, op1.In().Connected(op3.In()))
+	assert.True(t, op3.Out().Connected(op1.Out()))
 
-	assertFalse(t, op1.In().Connected(op2.In()))
-	assertFalse(t, op2.Out().Connected(op1.Out()))
+	assert.False(t, op1.In().Connected(op2.In()))
+	assert.False(t, op2.Out().Connected(op1.Out()))
 }
 
 func TestOperator_Compile__Nested_Children(t *testing.T) {
@@ -144,9 +146,9 @@ func TestOperator_Compile__Nested_Children(t *testing.T) {
 	op6.Out().Connect(op3.Out())
 
 	// Compile
-	assertTrue(t, op1.Compile() == 2)
+	assert.True(t, op1.Compile() == 2)
 
-	assertTrue(t, len(op1.Children()) == 3)
+	assert.True(t, len(op1.Children()) == 3)
 
 	if _, ok := op1.Children()["a.c"]; !ok {
 		t.Error("child not there")
@@ -160,19 +162,19 @@ func TestOperator_Compile__Nested_Children(t *testing.T) {
 		t.Error("child not there")
 	}
 
-	assertTrue(t, op4.Parent() == op1)
-	assertTrue(t, op5.Parent() == op1)
-	assertTrue(t, op6.Parent() == op1)
+	assert.True(t, op4.Parent() == op1)
+	assert.True(t, op5.Parent() == op1)
+	assert.True(t, op6.Parent() == op1)
 
-	assertTrue(t, op1.In().Connected(op4.In()))
-	assertTrue(t, op4.Out().Connected(op5.In()))
-	assertTrue(t, op5.Out().Connected(op6.In()))
-	assertTrue(t, op6.Out().Connected(op1.Out()))
+	assert.True(t, op1.In().Connected(op4.In()))
+	assert.True(t, op4.Out().Connected(op5.In()))
+	assert.True(t, op5.Out().Connected(op6.In()))
+	assert.True(t, op6.Out().Connected(op1.Out()))
 
-	assertFalse(t, op1.In().Connected(op2.In()))
-	assertFalse(t, op3.Out().Connected(op1.Out()))
-	assertFalse(t, op2.In().Connected(op4.In()))
-	assertFalse(t, op5.Out().Connected(op2.Out()))
-	assertFalse(t, op3.In().Connected(op6.In()))
-	assertFalse(t, op6.Out().Connected(op3.Out()))
+	assert.False(t, op1.In().Connected(op2.In()))
+	assert.False(t, op3.Out().Connected(op1.Out()))
+	assert.False(t, op2.In().Connected(op4.In()))
+	assert.False(t, op5.Out().Connected(op2.Out()))
+	assert.False(t, op3.In().Connected(op6.In()))
+	assert.False(t, op6.Out().Connected(op3.Out()))
 }

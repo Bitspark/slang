@@ -10,12 +10,12 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	defOut := helperJson2PortDef(`{"type":"number"}`)
 	o1, _ := op.MakeOperator("o1", nil, defIn, defOut, nil)
 
-	o1.InPort().Connect(o1.OutPort())
+	o1.In().Connect(o1.Out())
 
-	o1.OutPort().Bufferize()
-	o1.InPort().Push(1.0)
+	o1.Out().Bufferize()
+	o1.In().Push(1.0)
 
-	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.OutPort())
+	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
@@ -26,19 +26,19 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o3, _ := op.MakeOperator("o3", nil, defIn, defOut, o2)
 	o4, _ := op.MakeOperator("o4", nil, defIn, defOut, o2)
 
-	o3.InPort().Connect(o3.OutPort())
-	o4.InPort().Connect(o4.OutPort())
-	o2.InPort().Connect(o3.InPort())
-	o3.OutPort().Connect(o4.InPort())
-	o4.OutPort().Connect(o2.OutPort())
-	o1.InPort().Connect(o2.InPort())
-	o2.OutPort().Connect(o1.OutPort())
+	o3.In().Connect(o3.Out())
+	o4.In().Connect(o4.Out())
+	o2.In().Connect(o3.In())
+	o3.Out().Connect(o4.In())
+	o4.Out().Connect(o2.Out())
+	o1.In().Connect(o2.In())
+	o2.Out().Connect(o1.Out())
 
-	if o1.InPort().Connected(o1.OutPort()) {
+	if o1.In().Connected(o1.Out()) {
 		t.Error("should not be connected")
 	}
 
-	if !o1.InPort().Connected(o2.InPort()) {
+	if !o1.In().Connected(o2.In()) {
 		t.Error("should be connected")
 	}
 
@@ -46,18 +46,18 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o4.Compile()
 	o2.Compile()
 
-	if !o1.InPort().Connected(o1.OutPort()) {
+	if !o1.In().Connected(o1.Out()) {
 		t.Error("should be connected")
 	}
 
-	if o1.InPort().Connected(o2.InPort()) {
+	if o1.In().Connected(o2.In()) {
 		t.Error("should not be connected")
 	}
 
-	o1.OutPort().Bufferize()
-	o1.InPort().Push(1.0)
+	o1.Out().Bufferize()
+	o1.In().Push(1.0)
 
-	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.OutPort())
+	assertPortItems(t, helperJson2I(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
@@ -96,57 +96,57 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o3, _ := op.MakeOperator("O3", double, def, def, o2)
 	o4, _ := op.MakeOperator("O4", sum, defStr, def, o2)
 
-	err := o2.InPort().Stream().Connect(o3.InPort())
+	err := o2.In().Stream().Connect(o3.In())
 	assertNoError(t, err)
-	err = o3.OutPort().Connect(o4.InPort().Stream())
+	err = o3.Out().Connect(o4.In().Stream())
 	assertNoError(t, err)
-	err = o4.OutPort().Connect(o2.OutPort())
+	err = o4.Out().Connect(o2.Out())
 	assertNoError(t, err)
 
-	if !o2.InPort().Stream().Connected(o3.InPort()) {
+	if !o2.In().Stream().Connected(o3.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.OutPort().Connected(o4.InPort().Stream()) {
+	if !o3.Out().Connected(o4.In().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.OutPort().Connected(o2.OutPort()) {
+	if !o4.Out().Connected(o2.Out()) {
 		t.Error("should be connected")
 	}
 
-	if o3.BasePort() != o2.InPort() {
+	if o3.BasePort() != o2.In() {
 		t.Error("wrong base port")
 	}
 
-	if !o2.InPort().Connected(o4.InPort()) {
+	if !o2.In().Connected(o4.In()) {
 		t.Error("should be connected via base port")
 	}
 
 	//
 
-	err = o1.InPort().Stream().Stream().Connect(o2.InPort().Stream())
+	err = o1.In().Stream().Stream().Connect(o2.In().Stream())
 	assertNoError(t, err)
-	err = o2.OutPort().Connect(o1.OutPort().Stream())
+	err = o2.Out().Connect(o1.Out().Stream())
 	assertNoError(t, err)
 
-	if !o1.InPort().Stream().Stream().Connected(o2.InPort().Stream()) {
+	if !o1.In().Stream().Stream().Connected(o2.In().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o1.InPort().Stream().Connected(o2.InPort()) {
+	if !o1.In().Stream().Connected(o2.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o2.OutPort().Connected(o1.OutPort().Stream()) {
+	if !o2.Out().Connected(o1.Out().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if o2.BasePort() != o1.InPort() {
+	if o2.BasePort() != o1.In() {
 		t.Error("wrong base port")
 	}
 
-	if !o1.InPort().Connected(o1.OutPort()) {
+	if !o1.In().Connected(o1.Out()) {
 		t.Error("should be connected via base port")
 	}
 
@@ -154,33 +154,33 @@ func TestNetwork_DoubleSum(t *testing.T) {
 
 	o2.Compile()
 
-	if !o1.InPort().Connected(o1.OutPort()) {
+	if !o1.In().Connected(o1.Out()) {
 		t.Error("should be connected")
 	}
 
-	if !o1.InPort().Stream().Connected(o4.InPort()) {
+	if !o1.In().Stream().Connected(o4.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o1.InPort().Stream().Stream().Connected(o3.InPort()) {
+	if !o1.In().Stream().Stream().Connected(o3.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.OutPort().Connected(o4.InPort().Stream()) {
+	if !o3.Out().Connected(o4.In().Stream()) {
 		t.Error("should be connected")
 	}
 
 	//
 
-	o1.OutPort().Stream().Bufferize()
+	o1.Out().Stream().Bufferize()
 
 	go o3.Start()
 	go o4.Start()
 
-	o1.InPort().Push(helperJson2I(`[[1,2,3],[4,5]]`))
-	o1.InPort().Push(helperJson2I(`[[],[2]]`))
-	o1.InPort().Push(helperJson2I(`[]`))
-	assertPortItems(t, helperJson2I(`[[12,18],[0,4],[]]`).([]interface{}), o1.OutPort())
+	o1.In().Push(helperJson2I(`[[1,2,3],[4,5]]`))
+	o1.In().Push(helperJson2I(`[[],[2]]`))
+	o1.In().Push(helperJson2I(`[]`))
+	assertPortItems(t, helperJson2I(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
@@ -225,77 +225,77 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o4, _ := op.MakeOperator("O4", nil, defStrStrStr, defStrStr, o1)
 	o5, _ := op.MakeOperator("O5", sum, defStr, def, o4)
 
-	o4.InPort().Stream().Stream().Stream().Connect(o5.InPort().Stream())
-	o5.OutPort().Connect(o4.OutPort().Stream().Stream())
+	o4.In().Stream().Stream().Stream().Connect(o5.In().Stream())
+	o5.Out().Connect(o4.Out().Stream().Stream())
 
-	if !o4.InPort().Stream().Stream().Stream().Connected(o5.InPort().Stream()) {
+	if !o4.In().Stream().Stream().Stream().Connected(o5.In().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.InPort().Stream().Stream().Connected(o5.InPort()) {
+	if !o4.In().Stream().Stream().Connected(o5.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o5.OutPort().Connected(o4.OutPort().Stream().Stream()) {
+	if !o5.Out().Connected(o4.Out().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.InPort().Stream().Connected(o4.OutPort().Stream()) {
+	if !o4.In().Stream().Connected(o4.Out().Stream()) {
 		t.Error("should be connected via base port")
 	}
 
-	if !o4.InPort().Connected(o4.OutPort()) {
+	if !o4.In().Connected(o4.Out()) {
 		t.Error("should be connected via base port")
 	}
 
 	//
 
-	o1.InPort().Stream().Connect(o2.InPort())
-	o2.OutPort().Stream().Connect(o3.InPort())
-	o3.OutPort().Stream().Connect(o4.InPort().Stream().Stream().Stream())
-	o4.OutPort().Stream().Stream().Connect(o1.OutPort().Stream().Stream())
+	o1.In().Stream().Connect(o2.In())
+	o2.Out().Stream().Connect(o3.In())
+	o3.Out().Stream().Connect(o4.In().Stream().Stream().Stream())
+	o4.Out().Stream().Stream().Connect(o1.Out().Stream().Stream())
 
-	if !o1.InPort().Stream().Connected(o2.InPort()) {
+	if !o1.In().Stream().Connected(o2.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o2.OutPort().Stream().Connected(o3.InPort()) {
+	if !o2.Out().Stream().Connected(o3.In()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.OutPort().Stream().Connected(o4.InPort().Stream().Stream().Stream()) {
+	if !o3.Out().Stream().Connected(o4.In().Stream().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.OutPort().Connected(o4.InPort().Stream().Stream()) {
+	if !o3.Out().Connected(o4.In().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.OutPort().Stream().Stream().Connected(o1.OutPort().Stream().Stream()) {
+	if !o4.Out().Stream().Stream().Connected(o1.Out().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.OutPort().Stream().Connected(o1.OutPort().Stream()) {
+	if !o4.Out().Stream().Connected(o1.Out().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.OutPort().Connected(o1.OutPort()) {
+	if !o4.Out().Connected(o1.Out()) {
 		t.Error("should be connected")
 	}
 
-	if o2.BasePort() != o1.InPort() {
+	if o2.BasePort() != o1.In() {
 		t.Error("wrong base port")
 	}
 
-	if o3.BasePort() != o2.OutPort() {
+	if o3.BasePort() != o2.Out() {
 		t.Error("wrong base port")
 	}
 
-	if !o1.InPort().Connected(o4.InPort()) {
+	if !o1.In().Connected(o4.In()) {
 		t.Error("should be connected via base port")
 	}
 
-	if !o2.OutPort().Connected(o4.InPort().Stream()) {
+	if !o2.Out().Connected(o4.In().Stream()) {
 		t.Error("should be connected via base port")
 	}
 
@@ -303,34 +303,34 @@ func TestNetwork_NumgenSum(t *testing.T) {
 
 	o4.Compile()
 
-	if !o1.InPort().Connected(o1.OutPort()) {
+	if !o1.In().Connected(o1.Out()) {
 		t.Error("should be connected after merge")
 	}
 
-	if !o2.OutPort().Connected(o1.OutPort().Stream()) {
+	if !o2.Out().Connected(o1.Out().Stream()) {
 		t.Error("should be connected after merge")
 	}
 
-	if !o3.OutPort().Stream().Connected(o5.InPort().Stream()) {
+	if !o3.Out().Stream().Connected(o5.In().Stream()) {
 		t.Error("should be connected after merge")
 	}
 
-	if !o3.OutPort().Connected(o5.InPort()) {
+	if !o3.Out().Connected(o5.In()) {
 		t.Error("should be connected after merge")
 	}
 
 	//
 
-	o1.OutPort().Stream().Stream().Bufferize()
+	o1.Out().Stream().Stream().Bufferize()
 
 	go o2.Start()
 	go o3.Start()
 	go o5.Start()
 
-	o1.InPort().Push(helperJson2I(`[1,2,3]`))
-	o1.InPort().Push(helperJson2I(`[]`))
-	o1.InPort().Push(helperJson2I(`[4]`))
-	assertPortItems(t, helperJson2I(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.OutPort())
+	o1.In().Push(helperJson2I(`[1,2,3]`))
+	o1.In().Push(helperJson2I(`[]`))
+	o1.In().Push(helperJson2I(`[4]`))
+	assertPortItems(t, helperJson2I(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
@@ -347,8 +347,8 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
-				out.Port("a").Push(2 * i)
-				out.Port("b").Push(3 * i)
+				out.Map("a").Push(2 * i)
+				out.Map("b").Push(3 * i)
 			} else {
 				out.Push(i)
 			}
@@ -372,14 +372,14 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	oMap1, _ := op.MakeOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
 	oMap2, _ := op.MakeOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
 
-	o.InPort().Port("a").Connect(oMap2.InPort().Port("a"))
-	o.InPort().Port("b").Connect(oMap1.InPort())
-	oMap1.OutPort().Port("a").Connect(oMap2.InPort().Port("b"))
-	oMap1.OutPort().Port("b").Connect(o.OutPort().Port("b"))
-	oMap2.OutPort().Connect(o.OutPort().Port("a"))
+	o.In().Map("a").Connect(oMap2.In().Map("a"))
+	o.In().Map("b").Connect(oMap1.In())
+	oMap1.Out().Map("a").Connect(oMap2.In().Map("b"))
+	oMap1.Out().Map("b").Connect(o.Out().Map("b"))
+	oMap2.Out().Connect(o.Out().Map("a"))
 
-	o.OutPort().Port("a").Bufferize()
-	o.OutPort().Port("b").Bufferize()
+	o.Out().Map("a").Bufferize()
+	o.Out().Map("b").Bufferize()
 
 	go oMap1.Start()
 	go oMap2.Start()
@@ -393,10 +393,10 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	results := `[{"a":2,"b":3},{"a":0,"b":0},{"a":0,"b":3},{"a":12,"b":9}]`
 
 	for _, d := range dataIn {
-		o.InPort().Push(helperJson2I(d))
+		o.In().Push(helperJson2I(d))
 	}
 
-	assertPortItems(t, helperJson2I(results).([]interface{}), o.OutPort())
+	assertPortItems(t, helperJson2I(results).([]interface{}), o.Out())
 
 }
 
@@ -467,18 +467,18 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	filter1, _ := op.MakeOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
 	filter2, _ := op.MakeOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
 
-	o.InPort().Stream().Port("N").Connect(sum.InPort())
-	o.InPort().Stream().Port("n").Connect(add.InPort().Port("b"))
-	o.InPort().Stream().Port("b").Connect(filter1.InPort().Port("b"))
-	o.InPort().Stream().Port("b").Connect(filter2.InPort().Port("b"))
-	o.InPort().Stream().Port("s").Connect(filter2.InPort().Port("o"))
-	sum.OutPort().Connect(add.InPort().Port("a"))
-	add.OutPort().Connect(filter1.InPort().Port("o"))
-	filter1.OutPort().Connect(o.OutPort().Stream().Port("sum"))
-	filter2.OutPort().Connect(o.OutPort().Stream().Port("s"))
+	o.In().Stream().Map("N").Connect(sum.In())
+	o.In().Stream().Map("n").Connect(add.In().Map("b"))
+	o.In().Stream().Map("b").Connect(filter1.In().Map("b"))
+	o.In().Stream().Map("b").Connect(filter2.In().Map("b"))
+	o.In().Stream().Map("s").Connect(filter2.In().Map("o"))
+	sum.Out().Connect(add.In().Map("a"))
+	add.Out().Connect(filter1.In().Map("o"))
+	filter1.Out().Connect(o.Out().Stream().Map("sum"))
+	filter2.Out().Connect(o.Out().Stream().Map("s"))
 
-	o.OutPort().Stream().Port("sum").Bufferize()
-	o.OutPort().Stream().Port("s").Bufferize()
+	o.Out().Stream().Map("sum").Bufferize()
+	o.Out().Stream().Map("s").Bufferize()
 
 	go sum.Start()
 	go add.Start()
@@ -494,8 +494,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	results := `[[{"sum":9,"s":"must pass"},{"sum":3,"s":""}],[],[],[{"sum":1,"s":"must also pass"}]]`
 
 	for _, d := range dataIn {
-		o.InPort().Push(helperJson2I(d))
+		o.In().Push(helperJson2I(d))
 	}
 
-	assertPortItems(t, helperJson2I(results).([]interface{}), o.OutPort())
+	assertPortItems(t, helperJson2I(results).([]interface{}), o.Out())
 }

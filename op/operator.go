@@ -143,11 +143,11 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
-func (o *Operator) InPort() *Port {
+func (o *Operator) In() *Port {
 	return o.inPort
 }
 
-func (o *Operator) OutPort() *Port {
+func (o *Operator) Out() *Port {
 	return o.outPort
 }
 
@@ -183,7 +183,7 @@ func (o *Operator) SetStore(store interface{}) {
 }
 
 func (o *Operator) Compile() bool {
-	compiled := o.InPort().Merge()
-	compiled = o.OutPort().Merge() || compiled
+	compiled := o.In().Merge()
+	compiled = o.Out().Merge() || compiled
 	return compiled
 }

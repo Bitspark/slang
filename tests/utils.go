@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slang"
 	"slang/op"
 	"testing"
 )
@@ -20,14 +21,8 @@ func helperJson2PortDef(str string) op.PortDef {
 	return def
 }
 
-func getJSONOperatorDef(jsonDef string) *op.OperatorDef {
-	def := &op.OperatorDef{}
-	json.Unmarshal([]byte(jsonDef), def)
-	return def
-}
-
 func validateJSONOperatorDef(jsonDef string) (*op.OperatorDef, error) {
-	def := getJSONOperatorDef(jsonDef)
+	def := slang.ParseOperatorDef(jsonDef)
 	return def, def.Validate()
 }
 

@@ -1,6 +1,7 @@
 package slang
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -14,6 +15,75 @@ func ReadOperator(opDefFilePath string) (*op.Operator, error) {
 	return readOperator(opDefFilePath, opDefFilePath, nil)
 }
 
+func ParseOperatorDef(defStr string) *op.OperatorDef {
+	def := &op.OperatorDef{}
+	json.Unmarshal([]byte(defStr), def)
+	return def
+}
+
+func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
+	if par == nil {
+		return nil, errors.New("operator must not be nil")
+	}
+
+	if len(connStr) == 0 {
+		return nil, errors.New("empty connection string")
+	}
+
+	opSplit := strings.Split(connStr, ":")
+
+	if len(opSplit) != 2 {
+		return nil, errors.New("connection string malformed")
+	}
+
+	var o *op.Operator
+	if len(opSplit[0]) == 0 {
+		o = par
+	} else {
+		o = par.Child(opSplit[0])
+		if o == nil {
+			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
+		}
+	}
+
+	pathSplit := strings.Split(opSplit[1], ".")
+
+	if len(pathSplit) == 0 {
+		return nil, errors.New("connection string malformed")
+	}
+
+	var p *op.Port
+	if pathSplit[0] == "in" {
+		p = o.In()
+	} else if pathSplit[0] == "out" {
+		p = o.Out()
+	} else {
+		return nil, fmt.Errorf("invalid direction: %s", pathSplit[1])
+	}
+
+	for p.Type() == op.TYPE_STREAM {
+		p = p.Stream()
+	}
+
+	for i := 1; i < len(pathSplit); i++ {
+		if p.Type() != op.TYPE_MAP {
+			return nil, errors.New("descending too deep")
+		}
+
+		k := pathSplit[i]
+		p = p.Map(k)
+		if p == nil {
+			return nil, fmt.Errorf("unknown port: %s", k)
+		}
+
+		for p.Type() == op.TYPE_STREAM {
+			p = p.Stream()
+		}
+	}
+
+	return p, nil
+}
+
 func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.Operator, error) {
 	b, err := ioutil.ReadFile(opDefFilePath)
 
@@ -21,7 +91,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.O
 		return nil, err
 	}
 
-	def := getJSONOperatorDef(string(b))
+	def := ParseOperatorDef(string(b))
 
 	if !def.Valid() {
 		err := def.Validate()
@@ -98,67 +168,4 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 	}
 
 	return nil, err
-}
-
-func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
-	if par == nil {
-		return nil, errors.New("operator must not be nil")
-	}
-
-	if len(connStr) == 0 {
-		return nil, errors.New("empty connection string")
-	}
-
-	opSplit := strings.Split(connStr, ":")
-
-	if len(opSplit) != 2 {
-		return nil, errors.New("connection string malformed")
-	}
-
-	var o *op.Operator
-	if len(opSplit[0]) == 0 {
-		o = par
-	} else {
-		o = par.Child(opSplit[0])
-		if o == nil {
-			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
-		}
-	}
-
-	pathSplit := strings.Split(opSplit[1], ".")
-
-	if len(pathSplit) == 0 {
-		return nil, errors.New("connection string malformed")
-	}
-
-	var p *op.Port
-	if pathSplit[0] == "in" {
-		p = o.In()
-	} else if pathSplit[0] == "out" {
-		p = o.Out()
-	} else {
-		return nil, fmt.Errorf("invalid direction: %s", pathSplit[1])
-	}
-
-	for p.Type() == op.TYPE_STREAM {
-		p = p.Stream()
-	}
-
-	for i := 1; i < len(pathSplit); i++ {
-		if p.Type() != op.TYPE_MAP {
-			return nil, errors.New("descending too deep")
-		}
-
-		k := pathSplit[i]
-		p = p.Map(k)
-		if p == nil {
-			return nil, fmt.Errorf("unknown port: %s", k)
-		}
-
-		for p.Type() == op.TYPE_STREAM {
-			p = p.Stream()
-		}
-	}
-
-	return p, nil
 }

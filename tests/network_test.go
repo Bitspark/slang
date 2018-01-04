@@ -17,7 +17,7 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	assertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	AssertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
@@ -59,7 +59,7 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	assertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	AssertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
@@ -182,7 +182,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[[1,2,3],[4,5]]`))
 	o1.In().Push(parseJSON(`[[],[2]]`))
 	o1.In().Push(parseJSON(`[]`))
-	assertPortItems(t, parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
+	AssertPortItems(t, parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
@@ -332,7 +332,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[1,2,3]`))
 	o1.In().Push(parseJSON(`[]`))
 	o1.In().Push(parseJSON(`[4]`))
-	assertPortItems(t, parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
+	AssertPortItems(t, parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
@@ -398,7 +398,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	assertPortItems(t, parseJSON(results).([]interface{}), o.Out())
+	AssertPortItems(t, parseJSON(results).([]interface{}), o.Out())
 
 }
 
@@ -499,5 +499,5 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	assertPortItems(t, parseJSON(results).([]interface{}), o.Out())
+	AssertPortItems(t, parseJSON(results).([]interface{}), o.Out())
 }

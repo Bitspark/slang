@@ -13,21 +13,24 @@ type Manager struct {
 
 var m = Manager{}
 
-func init() {
-	m.creators = make(map[string]CreatorFunc)
-	Register("function", functionCreator)
-}
-
 func MakeOperator(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
-	creator, ok := m.creators[def.Operator]
-
-	if !ok {
-		return nil, errors.New("unknown builtin operator")
+	if creator := getCreatorFunc(def.Operator); creator != nil {
+		return creator(def, par)
 	}
-
-	return creator(def, par)
+	return nil, errors.New("unknown builtin operator")
 }
 
 func Register(name string, creator CreatorFunc) {
 	m.creators[name] = creator
+}
+
+func init() {
+	m.creators = make(map[string]CreatorFunc)
+	Register("function", createOpFunc)
+	Register("fork", createOpFork)
+}
+
+func getCreatorFunc(name string) CreatorFunc {
+	c, _ := m.creators[name]
+	return c
 }

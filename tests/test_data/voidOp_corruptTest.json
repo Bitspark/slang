@@ -1,0 +1,18 @@
+{
+  "operatorFile": "voidOp.json",
+  "description": "A test which will fail",
+  "testCases": [
+    {
+      "name": "ItemPassFail",
+      "description": "Items are not changed by voidOp, but here we test if they do. Test should fail.",
+      "data": {
+        "in": [
+          1
+        ],
+        "out": [
+          2
+        ]
+      }
+    }
+  ]
+}

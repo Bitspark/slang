@@ -1,0 +1,39 @@
+{
+  "in": {
+    "type": "map",
+    "map": {
+      "a": {
+        "type": "number"
+      },
+      "b": {
+        "type": "number"
+      },
+      "c": {
+        "type": "number"
+      },
+      "x": {
+        "type": "number"
+      }
+    }
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": [
+    {
+      "name": "pfunc",
+      "operator": "function",
+      "properties": {
+        "expression": "a*x*x + b*x + c"
+      }
+    }
+  ],
+  "connections": {
+    ":in": [
+      "pfunc:in"
+    ],
+    "pfunc:out": [
+      ":out"
+    ]
+  }
+}

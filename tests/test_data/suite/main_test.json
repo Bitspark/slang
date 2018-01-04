@@ -1,0 +1,16 @@
+{
+  "operatorFile": "main.json",
+  "testCases": [
+    {
+      "name": "ItemPass",
+      "data": {
+        "in": [
+          1
+        ],
+        "out": [
+          3
+        ]
+      }
+    }
+  ]
+}

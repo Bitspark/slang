@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"slang"
 	"io/ioutil"
+	"os"
 )
 
 func TestTestOperator__TrivialTests(t *testing.T) {
@@ -23,10 +24,24 @@ func TestTestOperator__SimpleFail(t *testing.T) {
 	a.Equal(1, fails)
 }
 
-func TestTestOperator__ComplexTests(t *testing.T) {
+func TestTestOperator__ComplexTest(t *testing.T) {
 	a := assert.New(t)
 	succs, fails, err := slang.TestOperator("test_data/nested_op/usingSubCustomOpDouble_test.json", ioutil.Discard, true)
 	a.Nil(err)
 	a.Equal(2, succs)
+	a.Equal(0, fails)
+}
+
+func TestTestOperator__SuiteTests(t *testing.T) {
+	a := assert.New(t)
+
+	succs, fails, err := slang.TestOperator("test_data/suite/polynomial_test.json", os.Stdout, false)
+	a.Nil(err)
+	a.Equal(1, succs)
+	a.Equal(0, fails)
+
+	succs, fails, err = slang.TestOperator("test_data/suite/main_test.json", os.Stdout, false)
+	a.Nil(err)
+	a.Equal(1, succs)
 	a.Equal(0, fails)
 }

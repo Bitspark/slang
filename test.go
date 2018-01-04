@@ -64,6 +64,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	o.Start()
 	defer o.Stop()
 	fmt.Fprintln(writer, "Operator started")
+	fmt.Fprintln(writer)
 
 	succs := 0
 	fails := 0
@@ -93,10 +94,13 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		}
 
 		if success {
+			fmt.Fprintln(writer, "  success")
 			succs++
 		} else {
 			fails++
 		}
+
+		fmt.Fprintln(writer)
 	}
 
 	return succs, fails, nil

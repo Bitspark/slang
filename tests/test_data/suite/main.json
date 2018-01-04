@@ -1,0 +1,57 @@
+{
+  "in": {
+    "type": "map",
+    "map": {
+      "first": {
+        "type": "number"
+      },
+      "second": {
+        "type": "number"
+      },
+      "third": {
+        "type": "number"
+      }
+    }
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": [
+    {
+      "name": "dbl1",
+      "operator": ".duplicator"
+    },
+    {
+      "name": "dbl2",
+      "operator": ".duplicator"
+    },
+    {
+      "name": "dbl3",
+      "operator": ".duplicator"
+    },
+    {
+      "name": "tl",
+      "operator": ".takers.takeLeft"
+    },
+    {
+      "name": "tr",
+      "operator": ".takers.takeRight"
+    },
+    {
+      "name": "p",
+      "operator": ".polynomial"
+    }
+  ],
+  "connections": {
+    ":in.first": ["dbl1:in"],
+    ":in.second": ["dbl2:in"],
+    ":in.third": ["dbl3:in"],
+    "dbl1:out": ["tl:in"],
+    "dbl2:out": ["tr:in"],
+    "dbl3:out.left": ["p:in.a"],
+    "dbl3:out.right": ["p:in.b"],
+    "tl:out": ["p:in.c"],
+    "tr:out": ["p:in.x"],
+    "p:out": [":out"]
+  }
+}

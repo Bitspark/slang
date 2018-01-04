@@ -20,7 +20,6 @@ type Operator struct {
 }
 
 type OperatorDef struct {
-	Name        string              `json:"name"`
 	In          *PortDef            `json:"in"`
 	Out         *PortDef            `json:"out"`
 	Operators   []InstanceDef       `json:"operators"`
@@ -72,14 +71,6 @@ func (d InstanceDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	if d.Name == "" {
-		return errors.New(`operator name may not be empty`)
-	}
-
-	if strings.Contains(d.Name, " ") {
-		return fmt.Errorf(`operator name may not contain spaces: "%s"`, d.Name)
-	}
-
 	if d.In == nil || d.Out == nil {
 		return errors.New(`ports must be defined`)
 	}
@@ -101,9 +92,7 @@ func (d *OperatorDef) Validate() error {
 		if _, ok := alreadyUsedInsNames[insDef.Name]; ok {
 			return fmt.Errorf(`Colliding instance names within same parent operator: "%s"`, insDef.Name)
 		}
-
 		alreadyUsedInsNames[insDef.Name] = true
-
 	}
 
 	d.valid = true

@@ -67,29 +67,6 @@ func TestInstanceDef_Validate_Succeeds(t *testing.T) {
 	assertTrue(t, ins.valid)
 }
 
-func TestOperatorDef_Validate_Fails_MissingName(t *testing.T) {
-	_, err := validateJSONOperatorDef(`{
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"connections": {
-			":in": [":out"]
-		}
-	}`)
-	assertError(t, err)
-}
-
-func TestOperatorDef_Validate_Fails_SpacesInName(t *testing.T) {
-	_, err := validateJSONOperatorDef(`{
-		"name":"fun 4 ever",
-		"in": {"type":"number"},
-		"out": {"type":"number"},
-		"connections": {
-			":in": [":out"]
-		}
-	}`)
-	assertError(t, err)
-}
-
 func TestOperatorDef_Validate_Fails_PortMustBeDefined_In(t *testing.T) {
 	_, err := validateJSONOperatorDef(`{
 		"name":"opr",

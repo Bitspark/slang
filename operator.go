@@ -68,15 +68,36 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 		return builtinOp, nil
 	}
 
-	defFilePath := path.Join(currDir, strings.Replace(insDef.Operator, ".", "/", -1)+".json")
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)+".json"
 
-	o, err := readOperator(insDef.Name, defFilePath, par)
+	if strings.HasPrefix(insDef.Operator, ".") {
+		defFilePath := path.Join(currDir, relFilePath)
+		o, err := readOperator(insDef.Name, defFilePath, par)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		return o, nil
 	}
 
-	return o, nil
+	paths := []string{"."}
+
+	var err error
+	for _, p := range paths {
+		defFilePath := path.Join(p, relFilePath)
+
+		var o *op.Operator
+		o, err = readOperator(insDef.Name, defFilePath, par)
+
+		if err != nil {
+			continue
+		}
+
+		return o, nil
+	}
+
+	return nil, err
 }
 
 func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {

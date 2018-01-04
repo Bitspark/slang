@@ -75,6 +75,19 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 	assertPortItems(t, []interface{}{"hallohallo", 4.0}, o.OutPort())
 }
 
+func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
+	o, err := ReadOperator("test_data/cwdOp.json")
+	assertNoError(t, err)
+
+	o.OutPort().Bufferize()
+	o.InPort().Push("hey")
+	o.InPort().Push(false)
+
+	o.Start()
+
+	assertPortItems(t, []interface{}{"hey", false}, o.OutPort())
+}
+
 func TestParseConnection__NilOperator(t *testing.T) {
 	p, err := parseConnection("test.in", nil)
 	assertError(t, err)

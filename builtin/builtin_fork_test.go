@@ -21,8 +21,8 @@ func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
 
-	a.NotNil(o.In().Map("i"))
-	a.NotNil(o.In().Map("select"))
+	a.NotNil(o.In().Stream().Map("i"))
+	a.NotNil(o.In().Stream().Map("select"))
 }
 
 func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
@@ -31,8 +31,8 @@ func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
 
-	a.NotNil(o.Out().Map("true"))
-	a.NotNil(o.Out().Map("false"))
+	a.NotNil(o.Out().Map("true").Stream())
+	a.NotNil(o.Out().Map("false").Stream())
 }
 
 func TestBuiltin_OperatorFork__Correct(t *testing.T) {
@@ -41,22 +41,29 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
 
-	o.Out().Map("true").Bufferize()
-	o.Out().Map("false").Bufferize()
+	o.Out().Map("true").Stream().Bufferize()
+	o.Out().Map("false").Stream().Bufferize()
 	o.Start()
 
-	datIn := map[string][]interface{}{
-		"i":      []interface{}{"hallo", "welt", 100, 200},
-		"select": []interface{}{true, false, true, false},
-	}
+	o.In().Push([]interface{}{
+		map[string]interface{}{
+			"i":      "hallo",
+			"select": true,
+		},
+		map[string]interface{}{
+			"i":      "welt",
+			"select": false,
+		},
+		map[string]interface{}{
+			"i":      100,
+			"select": true,
+		},
+		map[string]interface{}{
+			"i":      101,
+			"select": false,
+		},
+	})
 
-	for _, i := range datIn["i"] {
-		o.In().Map("i").Push(i)
-	}
-	for _, i := range datIn["select"] {
-		o.In().Map("select").Push(i)
-	}
-
-	tests.AssertPortItems(t, []interface{}{"hallo", 100}, o.Out().Map("true"))
-	tests.AssertPortItems(t, []interface{}{"welt", 200}, o.Out().Map("false"))
+	tests.AssertPortItems(t, []interface{}{"hallo", 100}, o.Out().Map("true").Stream())
+	tests.AssertPortItems(t, []interface{}{"welt", 101}, o.Out().Map("false").Stream())
 }

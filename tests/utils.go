@@ -4,31 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"slang"
 	"slang/op"
 	"testing"
 )
 
-func helperJson2I(str string) interface{} {
+func parseJSON(str string) interface{} {
 	var obj interface{}
 	json.Unmarshal([]byte(str), &obj)
 	return obj
 }
 
-func helperJson2PortDef(str string) op.PortDef {
-	def := op.PortDef{}
-	json.Unmarshal([]byte(str), &def)
-	return def
-}
-
-func validateJSONOperatorDef(jsonDef string) (*op.OperatorDef, error) {
-	def := slang.ParseOperatorDef(jsonDef)
+func validateJSONOperatorDef(jsonDef string) (op.OperatorDef, error) {
+	def := op.ParseOperatorDef(jsonDef)
 	return def, def.Validate()
 }
 
-func validateJSONInstanceDef(jsonDef string) (*op.InstanceDef, error) {
-	def := &op.InstanceDef{}
-	json.Unmarshal([]byte(jsonDef), def)
+func validateJSONInstanceDef(jsonDef string) (op.InstanceDef, error) {
+	def := op.InstanceDef{}
+	json.Unmarshal([]byte(jsonDef), &def)
 	return def, def.Validate()
 }
 

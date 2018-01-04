@@ -6,7 +6,7 @@ import (
 )
 
 func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {
-	defPort := helperJson2PortDef(`{"type":"number"}`)
+	defPort := op.ParsePortDef(`{"type":"number"}`)
 	oParent, _ := op.MakeOperator("parent", nil, defPort, defPort, nil)
 	oChild1, _ := op.MakeOperator("child1", nil, defPort, defPort, oParent)
 	oChild2, _ := op.MakeOperator("child2", nil, defPort, defPort, oParent)

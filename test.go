@@ -52,7 +52,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		return 0, 0, err
 	}
 
-	fmt.Fprintf(writer, "Parsed %s successfully\n", test.OperatorFile)
+	fmt.Fprintf(writer, "%s parsed successfully\n", test.OperatorFile)
 
 	compiled := o.Compile()
 	fmt.Fprintln(writer, "Operator compiled")
@@ -69,8 +69,11 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	succs := 0
 	fails := 0
 
+	fmt.Fprintln(writer, "BEGIN TESTING")
+	fmt.Fprintln(writer)
+
 	for i, tc := range test.TestCases {
-		fmt.Fprintf(writer, "Test case %3d/%3d: %s\n", i+1, len(test.TestCases), tc.Name)
+		fmt.Fprintf(writer, "Test case %3d/%3d: %s (size: %d)\n", i+1, len(test.TestCases), tc.Name, len(tc.Data.In))
 
 		success := true
 
@@ -99,9 +102,15 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		} else {
 			fails++
 		}
-
-		fmt.Fprintln(writer)
 	}
+
+	fmt.Fprintln(writer)
+
+	fmt.Fprintln(writer, "SUMMARY")
+	fmt.Fprintln(writer)
+	fmt.Fprintf(writer, "Tests run: %3d\n", len(test.TestCases))
+	fmt.Fprintf(writer, "Succeeded: %3d\n", succs)
+	fmt.Fprintf(writer, "Failed:    %3d\n", fails)
 
 	return succs, fails, nil
 }

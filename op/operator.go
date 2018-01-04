@@ -178,6 +178,9 @@ func (o *Operator) Start() {
 	}
 }
 
+func (o *Operator) Stop() {
+}
+
 func (o *Operator) SetStore(store interface{}) {
 	o.store = store
 }

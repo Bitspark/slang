@@ -62,6 +62,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	o.Out().Bufferize()
 
 	o.Start()
+	defer o.Stop()
 	fmt.Fprintln(writer, "Operator started")
 
 	succs := 0

@@ -1,6 +1,7 @@
 package op
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -90,6 +91,12 @@ func (d *PortDef) Validate() error {
 
 	d.valid = true
 	return nil
+}
+
+func ParsePortDef(str string) PortDef {
+	def := PortDef{}
+	json.Unmarshal([]byte(str), &def)
+	return def
 }
 
 // Makes a new port.

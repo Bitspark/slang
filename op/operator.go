@@ -1,6 +1,7 @@
 package op
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -34,6 +35,12 @@ type InstanceDef struct {
 	In         *PortDef               `json:"in"`
 	Out        *PortDef               `json:"out"`
 	valid      bool
+}
+
+func ParseOperatorDef(defStr string) OperatorDef {
+	def := OperatorDef{}
+	json.Unmarshal([]byte(defStr), &def)
+	return def
 }
 
 func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
@@ -150,6 +157,10 @@ func (o *Operator) BasePort() *Port {
 
 func (o *Operator) Parent() *Operator {
 	return o.parent
+}
+
+func (o *Operator) Children() map[string]*Operator {
+	return o.children
 }
 
 func (o *Operator) Child(name string) *Operator {

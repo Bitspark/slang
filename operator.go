@@ -14,93 +14,7 @@ func ReadOperator(opDefFilePath string) (*op.Operator, error) {
 	return readOperator(opDefFilePath, opDefFilePath, nil)
 }
 
-func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.Operator, error) {
-	b, err := ioutil.ReadFile(opDefFilePath)
-
-	if err != nil {
-		return nil, err
-	}
-
-	def := getJSONOperatorDef(string(b))
-
-	if !def.Valid() {
-		err := def.Validate()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	o, err := op.MakeOperator(insName, nil, *def.In, *def.Out, par)
-
-	if err != nil {
-		return nil, err
-	}
-
-	currDir := path.Dir(opDefFilePath)
-
-	for _, childOpInsDef := range def.Operators {
-		_, err := getOperator(childOpInsDef, o, currDir)
-
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := parseConnection(srcConnDef, o); err == nil {
-			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := parseConnection(dstConnDef, o); err == nil {
-					pSrc.Connect(pDst)
-				} else {
-					return nil, err
-				}
-			}
-		} else {
-			return nil, err
-		}
-	}
-
-	return o, nil
-}
-
-func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.Operator, error) {
-	if builtinOp, err := builtin.MakeOperator(insDef, par); err == nil {
-		return builtinOp, nil
-	}
-
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)+".json"
-
-	if strings.HasPrefix(insDef.Operator, ".") {
-		defFilePath := path.Join(currDir, relFilePath)
-		o, err := readOperator(insDef.Name, defFilePath, par)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return o, nil
-	}
-
-	paths := []string{"."}
-
-	var err error
-	for _, p := range paths {
-		defFilePath := path.Join(p, relFilePath)
-
-		var o *op.Operator
-		o, err = readOperator(insDef.Name, defFilePath, par)
-
-		if err != nil {
-			continue
-		}
-
-		return o, nil
-	}
-
-	return nil, err
-}
-
-func parseConnection(connStr string, par *op.Operator) (*op.Port, error) {
+func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -161,4 +75,90 @@ func parseConnection(connStr string, par *op.Operator) (*op.Port, error) {
 	}
 
 	return p, nil
+}
+
+func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.Operator, error) {
+	b, err := ioutil.ReadFile(opDefFilePath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	def := op.ParseOperatorDef(string(b))
+
+	if !def.Valid() {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	o, err := op.MakeOperator(insName, nil, *def.In, *def.Out, par)
+
+	if err != nil {
+		return nil, err
+	}
+
+	currDir := path.Dir(opDefFilePath)
+
+	for _, childOpInsDef := range def.Operators {
+		_, err := getOperator(childOpInsDef, o, currDir)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for srcConnDef, dstConnDefs := range def.Connections {
+		if pSrc, err := ParseConnection(srcConnDef, o); err == nil {
+			for _, dstConnDef := range dstConnDefs {
+				if pDst, err := ParseConnection(dstConnDef, o); err == nil {
+					pSrc.Connect(pDst)
+				} else {
+					return nil, err
+				}
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return o, nil
+}
+
+func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.Operator, error) {
+	if builtinOp, err := builtin.MakeOperator(insDef, par); err == nil {
+		return builtinOp, nil
+	}
+
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
+
+	if strings.HasPrefix(insDef.Operator, ".") {
+		defFilePath := path.Join(currDir, relFilePath)
+		o, err := readOperator(insDef.Name, defFilePath, par)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return o, nil
+	}
+
+	paths := []string{"."}
+
+	var err error
+	for _, p := range paths {
+		defFilePath := path.Join(p, relFilePath)
+
+		var o *op.Operator
+		o, err = readOperator(insDef.Name, defFilePath, par)
+
+		if err != nil {
+			continue
+		}
+
+		return o, nil
+	}
+
+	return nil, err
 }

@@ -100,8 +100,8 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 	return nil, err
 }
 
-func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {
-	if operator == nil {
+func parseConnection(connStr string, par *op.Operator) (*op.Port, error) {
+	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
 
@@ -117,40 +117,40 @@ func parseConnection(connStr string, operator *op.Operator) (*op.Port, error) {
 
 	var o *op.Operator
 	if len(opSplit[0]) == 0 {
-		o = operator
+		o = par
 	} else {
-		o = operator.Child(opSplit[0])
+		o = par.Child(opSplit[0])
 		if o == nil {
-			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, operator.Name(), opSplit[0])
+			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
 		}
 	}
 
-	path := strings.Split(opSplit[1], ".")
+	pathSplit := strings.Split(opSplit[1], ".")
 
-	if len(path) == 0 {
+	if len(pathSplit) == 0 {
 		return nil, errors.New("connection string malformed")
 	}
 
 	var p *op.Port
-	if path[0] == "in" {
-		p = o.InPort()
-	} else if path[0] == "out" {
-		p = o.OutPort()
+	if pathSplit[0] == "in" {
+		p = o.In()
+	} else if pathSplit[0] == "out" {
+		p = o.Out()
 	} else {
-		return nil, fmt.Errorf("invalid direction: %s", path[1])
+		return nil, fmt.Errorf("invalid direction: %s", pathSplit[1])
 	}
 
 	for p.Type() == op.TYPE_STREAM {
 		p = p.Stream()
 	}
 
-	for i := 1; i < len(path); i++ {
+	for i := 1; i < len(pathSplit); i++ {
 		if p.Type() != op.TYPE_MAP {
 			return nil, errors.New("descending too deep")
 		}
 
-		k := path[i]
-		p = p.Port(k)
+		k := pathSplit[i]
+		p = p.Map(k)
 		if p == nil {
 			return nil, fmt.Errorf("unknown port: %s", k)
 		}

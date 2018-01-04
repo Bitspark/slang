@@ -163,7 +163,7 @@ func (p *Port) ParentStream() *Port {
 }
 
 // Returns the subport with the according name of this port. Port must be of type map.
-func (p *Port) Port(name string) *Port {
+func (p *Port) Map(name string) *Port {
 	port, _ := p.subs[name]
 	return port
 }

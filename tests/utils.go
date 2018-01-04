@@ -2,7 +2,6 @@ package tests
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"slang/op"
 	"testing"
@@ -30,7 +29,7 @@ func AssertPortItems(t *testing.T, i []interface{}, p *op.Port) {
 	for _, e := range i {
 		a := p.Pull()
 		if !reflect.DeepEqual(e, a) {
-			fmt.Errorf("wrong value:\nexpected: %#v,\nactual:   %#v", e, a)
+			t.Errorf("wrong value:\nexpected: %#v,\nactual:   %#v", e, a)
 			break
 		}
 	}

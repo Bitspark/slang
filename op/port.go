@@ -297,11 +297,11 @@ func (p *Port) Push(item interface{}) {
 			return
 		}
 
-		p.sub.Push(p.NewBOS())
+		p.PushBOS()
 		for _, i := range items {
 			p.sub.Push(i)
 		}
-		p.sub.Push(p.NewEOS())
+		p.PushEOS()
 	}
 }
 

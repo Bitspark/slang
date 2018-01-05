@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOperator_MakeOperator_CorrectRelation(t *testing.T) {
+func TestOperator_NewOperator_CorrectRelation(t *testing.T) {
 	defPort := op.ParsePortDef(`{"type":"number"}`)
-	oParent, _ := op.MakeOperator("parent", nil, defPort, defPort, nil)
-	oChild1, _ := op.MakeOperator("child1", nil, defPort, defPort, oParent)
-	oChild2, _ := op.MakeOperator("child2", nil, defPort, defPort, oParent)
+	oParent, _ := op.NewOperator("parent", nil, defPort, defPort, nil)
+	oChild1, _ := op.NewOperator("child1", nil, defPort, defPort, oParent)
+	oChild2, _ := op.NewOperator("child2", nil, defPort, defPort, oParent)
 
 	if oParent != oChild1.Parent() || oParent != oChild2.Parent() {
 		t.Error("oParent must be parent of oChild1 and oChil2")
@@ -93,9 +93,9 @@ func TestOperatorDef_Validate_Succeeds(t *testing.T) {
 }
 
 func TestOperator_Compile__Nested_1_Child(t *testing.T) {
-	op1, _ := op.MakeOperator("", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	op2, _ := op.MakeOperator("a", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
-	op3, _ := op.MakeOperator("b", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
+	op1, _ := op.NewOperator("", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op2, _ := op.NewOperator("a", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
+	op3, _ := op.NewOperator("b", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
 
 	// op1
 	op1.In().Connect(op2.In())
@@ -124,12 +124,12 @@ func TestOperator_Compile__Nested_1_Child(t *testing.T) {
 }
 
 func TestOperator_Compile__Nested_Children(t *testing.T) {
-	op1, _ := op.MakeOperator("", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	op2, _ := op.MakeOperator("a", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
-	op3, _ := op.MakeOperator("b", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
-	op4, _ := op.MakeOperator("c", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
-	op5, _ := op.MakeOperator("d", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
-	op6, _ := op.MakeOperator("e", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op3)
+	op1, _ := op.NewOperator("", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op2, _ := op.NewOperator("a", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
+	op3, _ := op.NewOperator("b", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op1)
+	op4, _ := op.NewOperator("c", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
+	op5, _ := op.NewOperator("d", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op2)
+	op6, _ := op.NewOperator("e", func(_, _ *op.Port, _ interface{}) {}, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, op3)
 
 	// op1
 	op1.In().Connect(op2.In())

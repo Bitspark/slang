@@ -105,15 +105,15 @@ func TestParseConnection__NilOperator(t *testing.T) {
 }
 
 func TestParseConnection__NilConnection(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	op.MakeOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op.NewOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("", o1)
 	assert.Error(t, err)
 	assert.Nil(t, p)
 }
 
 func TestParseConnection__SelfIn(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
 	p, err := slang.ParseConnection(":in", o1)
 	assert.NoError(t, err)
 
@@ -123,7 +123,7 @@ func TestParseConnection__SelfIn(t *testing.T) {
 }
 
 func TestParseConnection__SelfOut(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
 	p, err := slang.ParseConnection(":out", o1)
 	assert.NoError(t, err)
 
@@ -133,8 +133,8 @@ func TestParseConnection__SelfOut(t *testing.T) {
 }
 
 func TestParseConnection__SingleIn(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.NewOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:in", o1)
 	assert.NoError(t, err)
 
@@ -144,8 +144,8 @@ func TestParseConnection__SingleIn(t *testing.T) {
 }
 
 func TestParseConnection__SingleOut(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.NewOperator("o2", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:out", o1)
 	assert.NoError(t, err)
 
@@ -155,8 +155,8 @@ func TestParseConnection__SingleOut(t *testing.T) {
 }
 
 func TestParseConnection__Map(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.NewOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:in.a", o1)
 	assert.NoError(t, err)
 
@@ -166,24 +166,24 @@ func TestParseConnection__Map(t *testing.T) {
 }
 
 func TestParseConnection__Map__UnknownKey(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op.NewOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:in.b", o1)
 	assert.Error(t, err)
 	assert.Nil(t, p)
 }
 
 func TestParseConnection__Map__DescendingTooDeep(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	op.NewOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "number"}}}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:in.b.c", o1)
 	assert.Error(t, err)
 	assert.Nil(t, p)
 }
 
 func TestParseConnection__NestedMap(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "map", Map: map[string]op.PortDef{"b": {Type: "number"}}}}}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.NewOperator("o2", nil, op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "map", Map: map[string]op.PortDef{"b": {Type: "number"}}}}}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:in.a.b", o1)
 	assert.NoError(t, err)
 
@@ -193,8 +193,8 @@ func TestParseConnection__NestedMap(t *testing.T) {
 }
 
 func TestParseConnection__Stream(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	o2, _ := op.MakeOperator("o2", nil, op.PortDef{Type: "stream", Stream: &op.PortDef{Type: "number"}}, op.PortDef{Type: "number"}, o1)
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.NewOperator("o2", nil, op.PortDef{Type: "stream", Stream: &op.PortDef{Type: "number"}}, op.PortDef{Type: "number"}, o1)
 	p, err := slang.ParseConnection("o2:in", o1)
 	assert.NoError(t, err)
 
@@ -204,8 +204,8 @@ func TestParseConnection__Stream(t *testing.T) {
 }
 
 func TestParseConnection__StreamMap(t *testing.T) {
-	o1, _ := op.MakeOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
-	o2, _ := op.MakeOperator("o2", nil,
+	o1, _ := op.NewOperator("o1", nil, op.PortDef{Type: "number"}, op.PortDef{Type: "number"}, nil)
+	o2, _ := op.NewOperator("o2", nil,
 		op.PortDef{
 			Type: "stream",
 			Stream: &op.PortDef{

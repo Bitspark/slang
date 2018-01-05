@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"path/filepath"
 	"slang/builtin"
 	"slang/op"
 	"strings"
-	"path/filepath"
 )
 
 func ReadOperator(opDefFilePath string) (*op.Operator, error) {
@@ -106,7 +106,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsR
 		return nil, err
 	}
 
-	o, err := op.MakeOperator(insName, nil, *def.In, *def.Out, par)
+	o, err := op.NewOperator(insName, nil, *def.In, *def.Out, par)
 
 	if err != nil {
 		return nil, err

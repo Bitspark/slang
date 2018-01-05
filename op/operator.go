@@ -43,7 +43,7 @@ func ParseOperatorDef(defStr string) OperatorDef {
 	return def
 }
 
-func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
+func NewOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.parent = par
@@ -56,12 +56,12 @@ func MakeOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*
 
 	var err error
 
-	o.inPort, err = MakePort(o, defIn, DIRECTION_IN)
+	o.inPort, err = NewPort(o, defIn, DIRECTION_IN)
 	if err != nil {
 		return nil, err
 	}
 
-	o.outPort, err = MakePort(o, defOut, DIRECTION_OUT)
+	o.outPort, err = NewPort(o, defOut, DIRECTION_OUT)
 	if err != nil {
 		return nil, err
 	}

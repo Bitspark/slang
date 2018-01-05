@@ -100,7 +100,7 @@ func ParsePortDef(str string) PortDef {
 }
 
 // Makes a new port.
-func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
+func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -123,7 +123,7 @@ func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = MakePort(o, e, dir)
+			p.subs[k], err = NewPort(o, e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -132,7 +132,7 @@ func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = MakePort(o, *def.Stream, dir)
+		p.sub, err = NewPort(o, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}

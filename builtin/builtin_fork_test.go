@@ -64,6 +64,6 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 		},
 	})
 
-	tests.AssertPortItems(t, []interface{}{"hallo", 100}, o.Out().Map("true").Stream())
-	tests.AssertPortItems(t, []interface{}{"welt", 101}, o.Out().Map("false").Stream())
+	tests.AssertPortItems(t, []interface{}{[]interface{}{"hallo", 100}}, o.Out().Map("true"))
+	tests.AssertPortItems(t, []interface{}{[]interface{}{"welt", 101}}, o.Out().Map("false"))
 }

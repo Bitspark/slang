@@ -10,8 +10,8 @@ func createOpFork(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
 		Stream: &op.PortDef{
 			Type: "map",
 			Map: map[string]op.PortDef{
-				"i":      op.PortDef{Type: "any"},
-				"select": op.PortDef{Type: "boolean"},
+				"i":      {Type: "any"},
+				"select": {Type: "boolean"},
 			},
 		},
 	}
@@ -19,11 +19,11 @@ func createOpFork(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
 	outDef := op.PortDef{
 		Type: "map",
 		Map: map[string]op.PortDef{
-			"true": op.PortDef{
+			"true": {
 				Type:   "stream",
 				Stream: &op.PortDef{Type: "any"},
 			},
-			"false": op.PortDef{
+			"false": {
 				Type:   "stream",
 				Stream: &op.PortDef{Type: "any"},
 			},
@@ -34,18 +34,35 @@ func createOpFork(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
 		for true {
 			i := in.Stream().Pull()
 
-			if m, ok := i.(map[string]interface{}); ok {
-				pI := m["i"]
-
-				pSelect := m["select"].(bool)
-
-				if pSelect {
-					out.Map("true").Push(pI)
-				} else {
-					out.Map("false").Push(pI)
-				}
-			} else {
+			if !in.OwnBOS(i) {
 				out.Push(i)
+			}
+
+			out.Map("true").PushBOS()
+			out.Map("false").PushBOS()
+
+			for true {
+				i := in.Stream().Pull()
+
+				if in.OwnEOS(i) {
+					out.Map("true").PushEOS()
+					out.Map("false").PushEOS()
+					break
+				}
+
+				if m, ok := i.(map[string]interface{}); ok {
+					pI := m["i"]
+
+					pSelect := m["select"].(bool)
+
+					if pSelect {
+						out.Map("true").Push(pI)
+					} else {
+						out.Map("false").Push(pI)
+					}
+				} else {
+					panic("invalid item")
+				}
 			}
 		}
 	}, inDef, outDef, par)

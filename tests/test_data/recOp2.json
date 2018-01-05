@@ -1,0 +1,18 @@
+{
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": [
+    {
+      "operator": ".recOp1",
+      "name": "void"
+    }
+  ],
+  "connections": {
+    ":in": ["void:in"],
+    ":void.out": [":out"]
+  }
+}

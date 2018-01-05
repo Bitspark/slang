@@ -91,6 +91,13 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 	AssertPortItems(t, []interface{}{"hey", false}, o.Out())
 }
 
+func TestOperator_ReadOperator__Recursion(t *testing.T) {
+	a := assert.New(t)
+	o, err := slang.ReadOperator("test_data/recOp1.json")
+	a.Error(err)
+	a.Nil(o)
+}
+
 func TestParseConnection__NilOperator(t *testing.T) {
 	p, err := slang.ParseConnection("test.in", nil)
 	assert.Error(t, err)

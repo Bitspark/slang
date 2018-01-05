@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"slang"
 	"slang/op"
 	"testing"
 
@@ -8,8 +9,8 @@ import (
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
-	defIn := op.ParsePortDef(`{"type":"number"}`)
-	defOut := op.ParsePortDef(`{"type":"number"}`)
+	defIn := slang.ParsePortDef(`{"type":"number"}`)
+	defOut := slang.ParsePortDef(`{"type":"number"}`)
 	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
 
 	o1.In().Connect(o1.Out())
@@ -17,12 +18,12 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	AssertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	assert.PortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
-	defIn := op.ParsePortDef(`{"type":"number"}`)
-	defOut := op.ParsePortDef(`{"type":"number"}`)
+	defIn := slang.ParsePortDef(`{"type":"number"}`)
+	defOut := slang.ParsePortDef(`{"type":"number"}`)
 	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
 	o2, _ := op.NewOperator("o2", nil, defIn, defOut, o1)
 	o3, _ := op.NewOperator("o3", nil, defIn, defOut, o2)
@@ -59,13 +60,13 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	AssertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	assert.PortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
-	defStrStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := op.ParsePortDef(`{"type":"number"}`)
+	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := slang.ParsePortDef(`{"type":"number"}`)
 
 	double := func(in, out *op.Port, store interface{}) {
 		for true {
@@ -182,14 +183,14 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[[1,2,3],[4,5]]`))
 	o1.In().Push(parseJSON(`[[],[2]]`))
 	o1.In().Push(parseJSON(`[]`))
-	AssertPortItems(t, parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
+	assert.PortItems(t, parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
-	defStrStrStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
-	defStrStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := op.ParsePortDef(`{"type":"number"}`)
+	defStrStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
+	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := slang.ParsePortDef(`{"type":"number"}`)
 
 	numgen := func(in, out *op.Port, store interface{}) {
 		for true {
@@ -332,15 +333,15 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[1,2,3]`))
 	o1.In().Push(parseJSON(`[]`))
 	o1.In().Push(parseJSON(`[4]`))
-	AssertPortItems(t, parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
+	assert.PortItems(t, parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
-	defIn := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defIn := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 	defOut := defIn
 
-	defMap1In := op.ParsePortDef(`{"type":"number"}`)
-	defMap1Out := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defMap1In := slang.ParsePortDef(`{"type":"number"}`)
+	defMap1Out := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
@@ -398,29 +399,29 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	AssertPortItems(t, parseJSON(results).([]interface{}), o.Out())
+	assert.PortItems(t, parseJSON(results).([]interface{}), o.Out())
 
 }
 
 func TestNetwork_Maps_Complex(t *testing.T) {
-	defStrMapStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMapStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"N":{"type":"stream","stream":{"type":"number"}},
 		"n":{"type":"number"},
 		"s":{"type":"string"},
 		"b":{"type":"boolean"}}}}`)
-	defStrMap := op.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMap := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
-	defFilterIn := op.ParsePortDef(`{"type":"map","map":{
+	defFilterIn := slang.ParsePortDef(`{"type":"map","map":{
 		"o":{"type":"any"},
 		"b":{"type":"boolean"}}}`)
-	defFilterOut := op.ParsePortDef(`{"type":"any"}`)
-	defAddIn := op.ParsePortDef(`{"type":"map","map":{
+	defFilterOut := slang.ParsePortDef(`{"type":"any"}`)
+	defAddIn := slang.ParsePortDef(`{"type":"map","map":{
 		"a":{"type":"number"},
 		"b":{"type":"number"}}}`)
-	defAddOut := op.ParsePortDef(`{"type":"number"}`)
-	defSumIn := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	defSumOut := op.ParsePortDef(`{"type":"number"}`)
+	defAddOut := slang.ParsePortDef(`{"type":"number"}`)
+	defSumIn := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	defSumOut := slang.ParsePortDef(`{"type":"number"}`)
 
 	sumEval := func(in, out *op.Port, store interface{}) {
 		for true {
@@ -499,5 +500,5 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	AssertPortItems(t, parseJSON(results).([]interface{}), o.Out())
+	assert.PortItems(t, parseJSON(results).([]interface{}), o.Out())
 }

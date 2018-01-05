@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"slang"
 	"slang/op"
 	"testing"
 
@@ -8,7 +9,7 @@ import (
 )
 
 func TestOperator_NewOperator_CorrectRelation(t *testing.T) {
-	defPort := op.ParsePortDef(`{"type":"number"}`)
+	defPort := slang.ParsePortDef(`{"type":"number"}`)
 	oParent, _ := op.NewOperator("parent", nil, defPort, defPort, nil)
 	oChild1, _ := op.NewOperator("child1", nil, defPort, defPort, oParent)
 	oChild2, _ := op.NewOperator("child2", nil, defPort, defPort, oParent)

@@ -1,7 +1,6 @@
 package op
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -137,16 +136,4 @@ func (d *PortDef) Validate() error {
 
 	d.valid = true
 	return nil
-}
-
-func ParsePortDef(defStr string) PortDef {
-	def := PortDef{}
-	json.Unmarshal([]byte(defStr), &def)
-	return def
-}
-
-func ParseOperatorDef(defStr string) OperatorDef {
-	def := OperatorDef{}
-	json.Unmarshal([]byte(defStr), &def)
-	return def
 }

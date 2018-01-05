@@ -1,6 +1,7 @@
 package slang
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +14,18 @@ import (
 
 func ReadOperator(opDefFilePath string) (*op.Operator, error) {
 	return readOperator(opDefFilePath, opDefFilePath, nil, nil)
+}
+
+func ParsePortDef(defStr string) op.PortDef {
+	def := op.PortDef{}
+	json.Unmarshal([]byte(defStr), &def)
+	return def
+}
+
+func ParseOperatorDef(defStr string) op.OperatorDef {
+	def := op.OperatorDef{}
+	json.Unmarshal([]byte(defStr), &def)
+	return def
 }
 
 func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
@@ -85,7 +98,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsR
 		return nil, err
 	}
 
-	def := op.ParseOperatorDef(string(b))
+	def := ParseOperatorDef(string(b))
 
 	if !def.Valid() {
 		err := def.Validate()

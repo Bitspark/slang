@@ -16,7 +16,7 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	o.Out().Bufferize()
 	o.In().Push("hallo")
 
-	AssertPortItems(t, []interface{}{"hallo"}, o.Out())
+	assert.PortItems(t, []interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
@@ -38,7 +38,7 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Function(t *testing.T) {
 
 	o.Start()
 
-	AssertPortItems(t, []interface{}{"hallo"}, o.Out())
+	assert.PortItems(t, []interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
@@ -50,7 +50,7 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 
 	o.Start()
 
-	AssertPortItems(t, []interface{}{"hallo"}, o.Out())
+	assert.PortItems(t, []interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
@@ -62,7 +62,7 @@ func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 
 	o.Start()
 
-	AssertPortItems(t, []interface{}{"hallo"}, o.Out())
+	assert.PortItems(t, []interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
@@ -75,7 +75,7 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 
 	o.Start()
 
-	AssertPortItems(t, []interface{}{"hallohallo", 4.0}, o.Out())
+	assert.PortItems(t, []interface{}{"hallohallo", 4.0}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
@@ -88,7 +88,7 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 
 	o.Start()
 
-	AssertPortItems(t, []interface{}{"hey", false}, o.Out())
+	assert.PortItems(t, []interface{}{"hey", false}, o.Out())
 }
 
 func TestOperator_ReadOperator__Recursion(t *testing.T) {

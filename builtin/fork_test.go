@@ -2,7 +2,6 @@ package builtin
 
 import (
 	"slang/op"
-	"slang/tests"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,6 +63,6 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 		},
 	})
 
-	tests.AssertPortItems(t, []interface{}{"hallo", 100}, o.Out().Map("true").Stream())
-	tests.AssertPortItems(t, []interface{}{"welt", 101}, o.Out().Map("false").Stream())
+	assert.PortItems(t, []interface{}{"hallo", 100}, o.Out().Map("true").Stream())
+	assert.PortItems(t, []interface{}{"welt", 101}, o.Out().Map("false").Stream())
 }

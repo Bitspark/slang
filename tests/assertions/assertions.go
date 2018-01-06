@@ -1,7 +1,7 @@
 package assertions
 
 import (
-	"slang/op"
+	"slang/core"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +14,7 @@ func New(t assert.TestingT) *SlAssertions {
 	return &SlAssertions{assert.New(t)}
 }
 
-func (sla *SlAssertions) PortPushes(exp []interface{}, p *op.Port) {
+func (sla *SlAssertions) PortPushes(exp []interface{}, p *core.Port) {
 	for _, e := range exp {
 		a := p.Pull()
 		sla.Equal(e, a)

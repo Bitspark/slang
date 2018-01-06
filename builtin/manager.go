@@ -2,10 +2,10 @@ package builtin
 
 import (
 	"errors"
-	"slang/op"
+	"slang/core"
 )
 
-type CreatorFunc func(op.InstanceDef, *op.Operator) (*op.Operator, error)
+type CreatorFunc func(core.InstanceDef, *core.Operator) (*core.Operator, error)
 
 type Manager struct {
 	creators map[string]CreatorFunc
@@ -13,7 +13,7 @@ type Manager struct {
 
 var m = Manager{}
 
-func MakeOperator(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
+func MakeOperator(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if creator := getCreatorFunc(def.Operator); creator != nil {
 		return creator(def, par)
 	}

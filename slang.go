@@ -8,27 +8,27 @@ import (
 	"path"
 	"path/filepath"
 	"slang/builtin"
-	"slang/op"
+	"slang/core"
 	"strings"
 )
 
-func ReadOperator(opDefFilePath string) (*op.Operator, error) {
+func ReadOperator(opDefFilePath string) (*core.Operator, error) {
 	return readOperator(opDefFilePath, opDefFilePath, nil, nil)
 }
 
-func ParsePortDef(defStr string) op.PortDef {
-	def := op.PortDef{}
+func ParsePortDef(defStr string) core.PortDef {
+	def := core.PortDef{}
 	json.Unmarshal([]byte(defStr), &def)
 	return def
 }
 
-func ParseOperatorDef(defStr string) op.OperatorDef {
-	def := op.OperatorDef{}
+func ParseOperatorDef(defStr string) core.OperatorDef {
+	def := core.OperatorDef{}
 	json.Unmarshal([]byte(defStr), &def)
 	return def
 }
 
-func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
+func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -43,7 +43,7 @@ func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 		return nil, errors.New("connection string malformed")
 	}
 
-	var o *op.Operator
+	var o *core.Operator
 	if len(opSplit[0]) == 0 {
 		o = par
 	} else {
@@ -59,7 +59,7 @@ func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 		return nil, errors.New("connection string malformed")
 	}
 
-	var p *op.Port
+	var p *core.Port
 	if pathSplit[0] == "in" {
 		p = o.In()
 	} else if pathSplit[0] == "out" {
@@ -68,12 +68,12 @@ func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 		return nil, fmt.Errorf("invalid direction: %s", pathSplit[0])
 	}
 
-	for p.Type() == op.TYPE_STREAM {
+	for p.Type() == core.TYPE_STREAM {
 		p = p.Stream()
 	}
 
 	for i := 1; i < len(pathSplit); i++ {
-		if p.Type() != op.TYPE_MAP {
+		if p.Type() != core.TYPE_MAP {
 			return nil, errors.New("descending too deep")
 		}
 
@@ -83,7 +83,7 @@ func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 			return nil, fmt.Errorf("unknown port: %s", k)
 		}
 
-		for p.Type() == op.TYPE_STREAM {
+		for p.Type() == core.TYPE_STREAM {
 			p = p.Stream()
 		}
 	}
@@ -91,7 +91,7 @@ func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 	return p, nil
 }
 
-func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsRead []string) (*op.Operator, error) {
+func readOperator(insName string, opDefFilePath string, par *core.Operator, pathsRead []string) (*core.Operator, error) {
 	b, err := ioutil.ReadFile(opDefFilePath)
 
 	if err != nil {
@@ -119,7 +119,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsR
 		return nil, err
 	}
 
-	o, err := op.NewOperator(insName, nil, *def.In, *def.Out, par)
+	o, err := core.NewOperator(insName, nil, *def.In, *def.Out, par)
 
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsR
 	return o, nil
 }
 
-func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string, pathsRead []string) (*op.Operator, error) {
+func getOperator(insDef core.InstanceDef, par *core.Operator, currDir string, pathsRead []string) (*core.Operator, error) {
 	if builtinOp, err := builtin.MakeOperator(insDef, par); err == nil {
 		return builtinOp, nil
 	}
@@ -176,7 +176,7 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string, pathsR
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
 
-		var o *op.Operator
+		var o *core.Operator
 		o, err = readOperator(insDef.Name, defFilePath, par, pathsRead)
 
 		if err != nil {

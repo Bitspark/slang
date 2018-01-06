@@ -1,7 +1,7 @@
 package builtin
 
 import (
-	"slang/op"
+	"slang/core"
 	"slang/tests/assertions"
 	"testing"
 )
@@ -16,7 +16,7 @@ func TestOperatorCreator_Fork_IsRegistered(t *testing.T) {
 func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
 
 	a.NotNil(o.In().Stream().Map("i"))
@@ -26,7 +26,7 @@ func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
 
 	a.NotNil(o.Out().Map("true").Stream())
@@ -36,23 +36,23 @@ func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	idef := op.PortDef{Type: "any"}
-	in := op.PortDef{
+	idef := core.PortDef{Type: "any"}
+	in := core.PortDef{
 		Type: "stream",
-		Stream: &op.PortDef{
+		Stream: &core.PortDef{
 			Type: "map",
-			Map:  map[string]op.PortDef{"select": {Type: "boolean"}, "i": idef},
+			Map:  map[string]core.PortDef{"select": {Type: "boolean"}, "i": idef},
 		},
 	}
-	out := op.PortDef{
+	out := core.PortDef{
 		Type: "map",
-		Map: map[string]op.PortDef{
+		Map: map[string]core.PortDef{
 			"true":  {Type: "stream", Stream: &idef},
 			"false": {Type: "stream", Stream: &idef},
 		},
 	}
 
-	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork", In: &in, Out: &out}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork", In: &in, Out: &out}, nil)
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()
@@ -85,23 +85,23 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 
-	idef := op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "any"}, "b": {Type: "any"}}}
-	in := op.PortDef{
+	idef := core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "any"}, "b": {Type: "any"}}}
+	in := core.PortDef{
 		Type: "stream",
-		Stream: &op.PortDef{
+		Stream: &core.PortDef{
 			Type: "map",
-			Map:  map[string]op.PortDef{"select": {Type: "boolean"}, "i": idef},
+			Map:  map[string]core.PortDef{"select": {Type: "boolean"}, "i": idef},
 		},
 	}
-	out := op.PortDef{
+	out := core.PortDef{
 		Type: "map",
-		Map: map[string]op.PortDef{
+		Map: map[string]core.PortDef{
 			"true":  {Type: "stream", Stream: &idef},
 			"false": {Type: "stream", Stream: &idef},
 		},
 	}
 
-	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork", In: &in, Out: &out}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork", In: &in, Out: &out}, nil)
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()

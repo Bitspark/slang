@@ -12,13 +12,13 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 		return nil, errors.New("need port definitions")
 	} else {
 		iType := def.In.Map["init"]
-		if !def.In.Map["iteration"].Stream.Map["state"].Equals(iType) {
+		if def.In.Map["iteration"].Stream.Map["state"].Equals(iType) != nil {
 			return nil, errors.New("in item and true output not equal")
 		}
-		if !def.Out.Map["end"].Equals(iType) {
+		if def.Out.Map["end"].Equals(iType) != nil {
 			return nil, errors.New("in item and true output not equal")
 		}
-		if !def.Out.Map["state"].Stream.Equals(iType) {
+		if def.Out.Map["state"].Stream.Equals(iType) != nil {
 			return nil, errors.New("in item and true output not equal")
 		}
 		inDef = *def.In

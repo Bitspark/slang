@@ -303,9 +303,19 @@ func TestNewPort__Complex(t *testing.T) {
 
 // Port.Type (6 tests)
 
-func TestPort_Type__Simple__Any(t *testing.T) {
+func TestPort_Type__Simple__Any_MissingIdentifier(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"any"}`)
-	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
+	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
+	a.Error(err)
+	a.Nil(p)
+}
+
+func TestPort_Type__Simple__Any(t *testing.T) {
+	a := assertions.New(t)
+	def := slang.ParsePortDef(`{"type":"any","any":"a"}`)
+	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
+	a.NoError(err)
 
 	if p.Type() != core.TYPE_ANY {
 		t.Error("wrong type")

@@ -14,11 +14,11 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 			Map: map[string]core.PortDef{
 				"true": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "any", Any: "itemType"},
 				},
 				"false": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "any", Any: "itemType"},
 				},
 				"select": {
 					Type:   "stream",
@@ -28,7 +28,7 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 		}
 		outDef = core.PortDef{
 			Type:   "stream",
-			Stream: &core.PortDef{Type: "any"},
+			Stream: &core.PortDef{Type: "any", Any: "itemType"},
 		}
 
 	} else {
@@ -36,13 +36,13 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 			return nil, errors.New("ports In and Out must be either defined or undefined")
 		}
 
-		if !def.In.Map["true"].Equals(*def.Out) {
+		if def.In.Map["true"].Equals(*def.Out) != nil {
 			return nil, errors.New("out item and true output not equal")
 		}
-		if !def.In.Map["false"].Equals(*def.Out) {
+		if def.In.Map["false"].Equals(*def.Out) != nil {
 			return nil, errors.New("out item and false output not equal")
 		}
-		if !def.In.Map["select"].Equals(core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "boolean"}}) {
+		if def.In.Map["select"].Equals(core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "boolean"}}) != nil {
 			return nil, errors.New("select output def not correct")
 		}
 

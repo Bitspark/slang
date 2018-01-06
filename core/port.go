@@ -6,12 +6,13 @@ import (
 )
 
 const (
-	TYPE_ANY     = iota
-	TYPE_NUMBER  = iota
-	TYPE_STRING  = iota
-	TYPE_BOOLEAN = iota
-	TYPE_STREAM  = iota
-	TYPE_MAP     = iota
+	TYPE_ANY       = iota
+	TYPE_PRIMITIVE = iota
+	TYPE_NUMBER    = iota
+	TYPE_STRING    = iota
+	TYPE_BOOLEAN   = iota
+	TYPE_STREAM    = iota
+	TYPE_MAP       = iota
 )
 
 const (
@@ -29,6 +30,7 @@ type EOS struct {
 }
 
 type Port struct {
+	portDef   PortDef
 	operator  *Operator
 	dests     map[*Port]bool
 	src       *Port
@@ -41,6 +43,7 @@ type Port struct {
 
 	sub  *Port
 	subs map[string]*Port
+	any  string
 
 	buf chan interface{}
 }
@@ -59,6 +62,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 	}
 
 	p := &Port{}
+	p.portDef = def
 	p.direction = dir
 	p.operator = o
 	p.dests = make(map[*Port]bool)
@@ -83,6 +87,8 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 			return nil, err
 		}
 		setParentStreams(p.sub, p)
+	case "primitive":
+		p.itemType = TYPE_PRIMITIVE
 	case "number":
 		p.itemType = TYPE_NUMBER
 	case "string":
@@ -91,6 +97,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	case "any":
 		p.itemType = TYPE_ANY
+		p.any = def.Any
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
@@ -117,23 +124,73 @@ func (p *Port) ParentStream() *Port {
 
 // Returns the subport with the according name of this port. Port must be of type map.
 func (p *Port) Map(name string) *Port {
+	if p.itemType != TYPE_MAP {
+		panic("not a map")
+	}
 	port, _ := p.subs[name]
 	return port
 }
 
 // Returns the substream port of this port. Port must be of type stream.
 func (p *Port) Stream() *Port {
+	if p.itemType != TYPE_STREAM {
+		panic("not a stream")
+	}
 	return p.sub
+}
+
+// Returns the any identifier of this port. Port must be of type any.
+func (p *Port) Any(name string) string {
+	if p.itemType != TYPE_ANY {
+		panic("not an any")
+	}
+	return p.any
 }
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != TYPE_ANY && q.itemType != TYPE_ANY && p.itemType != q.itemType {
+	// Types don't match
+	if p.itemType != q.itemType && p.itemType != TYPE_ANY && q.itemType != TYPE_ANY &&
+		!(p.itemType == TYPE_PRIMITIVE && q.primitive() || p.primitive() && q.itemType == TYPE_PRIMITIVE) {
 		return errors.New(fmt.Sprintf("types don't match: %d != %d", p.itemType, q.itemType))
 	}
 
-	if p.primitive() {
-		return p.connect(q)
+	propagateForwards := false
+	if p.itemType != TYPE_ANY && q.itemType == TYPE_ANY {
+		if err := q.operator.SpecifyAny(q.any, p.portDef); err != nil {
+			return err
+		}
+		propagateForwards = true
+	}
+
+	propagateBackwards := false
+	if p.itemType == TYPE_ANY && q.itemType != TYPE_ANY {
+		if err := p.operator.SpecifyAny(p.any, q.portDef); err != nil {
+			return err
+		}
+		propagateBackwards = true
+	}
+
+	if p.primitive() || q.itemType == TYPE_ANY || p.itemType == TYPE_ANY {
+		err := p.connect(q)
+
+		if err != nil {
+			return err
+		}
+
+		if propagateForwards {
+			if err := q.operator.PropagateAnys(); err != nil {
+				return err
+			}
+		}
+
+		if propagateBackwards {
+			if err := p.operator.PropagateAnys(); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
 	if p.itemType == TYPE_MAP {
@@ -165,7 +222,7 @@ func (p *Port) Connect(q *Port) error {
 		return p.sub.Connect(q.sub)
 	}
 
-	return errors.New("can only connect primitives and maps")
+	return errors.New("could not connect")
 }
 
 // Disconnects this port from port q.
@@ -208,6 +265,10 @@ func (p *Port) Merge() bool {
 
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
+	if p.itemType == TYPE_ANY {
+		panic("cannot push to any")
+	}
+
 	if p.buf != nil {
 		p.buf <- item
 		return
@@ -248,7 +309,10 @@ func (p *Port) Push(item interface{}) {
 			p.sub.Push(i)
 		}
 		p.PushEOS()
+		return
 	}
+
+	panic(fmt.Sprintf("pushing to unknown type %d", p.itemType))
 }
 
 func (p *Port) PushBOS() {
@@ -261,6 +325,10 @@ func (p *Port) PushEOS() {
 
 // Pull an item from this port.
 func (p *Port) Pull() interface{} {
+	if p.itemType == TYPE_ANY {
+		panic("cannot pull from any")
+	}
+
 	if p.buf != nil {
 		return <-p.buf
 	}
@@ -313,7 +381,7 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
-	panic("unknown type")
+	panic(fmt.Sprintf("pulling from unknown type %d", p.itemType))
 }
 
 func (p *Port) NewBOS() BOS {
@@ -355,6 +423,8 @@ func (p *Port) Name() string {
 	switch p.itemType {
 	case TYPE_ANY:
 		name = "ANY"
+	case TYPE_PRIMITIVE:
+		name = "PRIMITIVE"
 	case TYPE_NUMBER:
 		name = "NUMBER"
 	case TYPE_STRING:
@@ -478,5 +548,5 @@ func (p *Port) connect(q *Port) error {
 }
 
 func (p *Port) primitive() bool {
-	return p.itemType == TYPE_ANY || p.itemType == TYPE_NUMBER || p.itemType == TYPE_STRING || p.itemType == TYPE_BOOLEAN
+	return p.itemType == TYPE_PRIMITIVE || p.itemType == TYPE_NUMBER || p.itemType == TYPE_STRING || p.itemType == TYPE_BOOLEAN
 }

@@ -14,7 +14,7 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			Stream: &core.PortDef{
 				Type: "map",
 				Map: map[string]core.PortDef{
-					"i":      {Type: "any"},
+					"i":      {Type: "any", Any: "itemType"},
 					"select": {Type: "boolean"},
 				},
 			},
@@ -25,11 +25,11 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			Map: map[string]core.PortDef{
 				"true": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "any", Any: "itemType"},
 				},
 				"false": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "any", Any: "itemType"},
 				},
 			},
 		}
@@ -38,10 +38,10 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			return nil, errors.New("ports In and Out must be either defined or undefined")
 		}
 
-		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["true"].Stream) {
+		if def.In.Stream.Map["i"].Equals(*def.Out.Map["true"].Stream) != nil {
 			return nil, errors.New("in item and true output not equal")
 		}
-		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["false"].Stream) {
+		if def.In.Stream.Map["i"].Equals(*def.Out.Map["false"].Stream) != nil {
 			return nil, errors.New("in item and false output not equal")
 		}
 		inDef = *def.In

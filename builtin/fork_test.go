@@ -36,7 +36,7 @@ func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	idef := core.PortDef{Type: "any"}
+	idef := core.PortDef{Type: "primitive"}
 	in := core.PortDef{
 		Type: "stream",
 		Stream: &core.PortDef{
@@ -85,7 +85,7 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 
-	idef := core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "any"}, "b": {Type: "any"}}}
+	idef := core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "primitive"}, "b": {Type: "primitive"}}}
 	in := core.PortDef{
 		Type: "stream",
 		Stream: &core.PortDef{

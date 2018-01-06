@@ -2,32 +2,46 @@ package builtin
 
 import (
 	"slang/op"
+	"errors"
 )
 
 func createOpFork(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
-	inDef := op.PortDef{
-		Type: "stream",
-		Stream: &op.PortDef{
+	var inDef, outDef op.PortDef
+
+	if def.In == nil || def.Out == nil {
+		inDef = op.PortDef{
+			Type: "stream",
+			Stream: &op.PortDef{
+				Type: "map",
+				Map: map[string]op.PortDef{
+					"i":      {Type: "any"},
+					"select": {Type: "boolean"},
+				},
+			},
+		}
+
+		outDef = op.PortDef{
 			Type: "map",
 			Map: map[string]op.PortDef{
-				"i":      {Type: "any"},
-				"select": {Type: "boolean"},
+				"true": {
+					Type:   "stream",
+					Stream: &op.PortDef{Type: "any"},
+				},
+				"false": {
+					Type:   "stream",
+					Stream: &op.PortDef{Type: "any"},
+				},
 			},
-		},
-	}
-
-	outDef := op.PortDef{
-		Type: "map",
-		Map: map[string]op.PortDef{
-			"true": {
-				Type:   "stream",
-				Stream: &op.PortDef{Type: "any"},
-			},
-			"false": {
-				Type:   "stream",
-				Stream: &op.PortDef{Type: "any"},
-			},
-		},
+		}
+	} else {
+		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["true"].Stream) {
+			return nil, errors.New("in item and true output not equal")
+		}
+		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["false"].Stream) {
+			return nil, errors.New("in item and false output not equal")
+		}
+		inDef = *def.In
+		outDef = *def.Out
 	}
 
 	return op.MakeOperator(def.Name, func(in, out *op.Port, store interface{}) {

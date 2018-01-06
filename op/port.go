@@ -93,6 +93,34 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
+func (d PortDef) Equals(p PortDef) bool {
+	if d.Type != p.Type {
+		return false
+	}
+
+	if d.Type == "map" {
+		if len(d.Map) != len(p.Map) {
+			return false
+		}
+
+		for k, e := range d.Map {
+			pe, ok := p.Map[k]
+			if !ok {
+				return false
+			}
+			if !e.Equals(pe) {
+				return false
+			}
+		}
+	} else if d.Type == "stream" {
+		if !d.Stream.Equals(*p.Stream) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func ParsePortDef(str string) PortDef {
 	def := PortDef{}
 	json.Unmarshal([]byte(str), &def)

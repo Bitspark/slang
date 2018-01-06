@@ -28,7 +28,7 @@ func ParseOperatorDef(defStr string) op.OperatorDef {
 	return def
 }
 
-func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
+func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -136,9 +136,9 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsR
 	}
 
 	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := ParseConnection(srcConnDef, o); err == nil {
+		if pSrc, err := ParsePort(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := ParseConnection(dstConnDef, o); err == nil {
+				if pDst, err := ParsePort(dstConnDef, o); err == nil {
 					pSrc.Connect(pDst)
 				} else {
 					return nil, err

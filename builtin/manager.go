@@ -28,6 +28,7 @@ func init() {
 	m.creators = make(map[string]CreatorFunc)
 	Register("function", createOpFunc)
 	Register("fork", createOpFork)
+	Register("merge", createOpMerge)
 }
 
 func getCreatorFunc(name string) CreatorFunc {

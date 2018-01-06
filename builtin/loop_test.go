@@ -148,7 +148,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 		}
 	}, idef, core.PortDef{Type: "boolean"}, nil)
 
-	// Double function operator
+	// Fibonacci function operator
 	fo, _ := core.NewOperator("fib", func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()

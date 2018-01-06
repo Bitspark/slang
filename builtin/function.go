@@ -54,11 +54,17 @@ func createOpFunc(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 		expr := store.(functionStore).evalExpr
 		for true {
 			i := in.Pull()
+
+			if isMarker(i) {
+				out.Push(i)
+				continue
+			}
+
 			if m, ok := i.(map[string]interface{}); ok {
 				rlt, _ := expr.Evaluate(m)
 				out.Push(rlt)
 			} else {
-				out.Push(i)
+				panic("invalid item")
 			}
 		}
 	}, inDef, outDef, par)

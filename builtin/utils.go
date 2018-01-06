@@ -1,10 +1,15 @@
 package builtin
 
-import "errors"
+import (
+	"slang/core"
+)
 
-func EnsureThat(cond bool, errMsg string) error {
-	if !cond {
-		return errors.New(errMsg)
+func isMarker(item interface{}) bool {
+	if _, ok := item.(core.BOS); ok {
+		return true
 	}
-	return nil
+	if _, ok := item.(core.EOS); ok {
+		return true
+	}
+	return false
 }

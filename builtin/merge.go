@@ -2,7 +2,6 @@ package builtin
 
 import (
 	"errors"
-	"fmt"
 	"slang/core"
 )
 
@@ -66,8 +65,6 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 				continue
 			}
 
-			fmt.Printf("--- %#v %#v %#v", i, pTrue, pFalse)
-
 			if in.Map("true").OwnBOS(pTrue) && in.Map("false").OwnBOS(pFalse) {
 				out.PushBOS()
 			} else {
@@ -76,8 +73,6 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 
 			for true {
 				i := in.Map("select").Stream().Pull()
-
-				fmt.Printf("got %#v\n", i)
 
 				if in.Map("select").OwnEOS(i) {
 					pTrue := in.Map("true").Stream().Pull()
@@ -88,8 +83,6 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 					} else {
 						panic("port select received EOS too early")
 					}
-
-					fmt.Print("-- BREAK --")
 
 					break
 				}
@@ -102,7 +95,6 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 						pName = "false"
 					}
 					pI := in.Map(pName).Stream().Pull()
-					fmt.Println("pushed to", pName, pI)
 					out.Stream().Push(pI)
 				} else {
 					// Happens when i == OwnEOS --> should never happen

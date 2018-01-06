@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"errors"
-	"slang/op"
+	"slang/core"
 
 	"github.com/Knetic/govaluate"
 )
@@ -12,7 +12,7 @@ type functionStore struct {
 	evalExpr *govaluate.EvaluableExpression
 }
 
-func createOpFunc(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
+func createOpFunc(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if def.Properties == nil {
 		return nil, errors.New("no properties given")
 	}
@@ -35,22 +35,22 @@ func createOpFunc(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
 		return nil, err
 	}
 
-	inDef := op.PortDef{
+	inDef := core.PortDef{
 		Type: "map",
-		Map:  make(map[string]op.PortDef),
+		Map:  make(map[string]core.PortDef),
 	}
 
 	vars := evalExpr.Vars()
 
 	for _, v := range vars {
-		inDef.Map[v] = op.PortDef{Type: "any"}
+		inDef.Map[v] = core.PortDef{Type: "any"}
 	}
 
-	outDef := op.PortDef{
+	outDef := core.PortDef{
 		Type: "any",
 	}
 
-	o, err := op.NewOperator(def.Name, func(in, out *op.Port, store interface{}) {
+	o, err := core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
 		expr := store.(functionStore).evalExpr
 		for true {
 			i := in.Pull()

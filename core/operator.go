@@ -1,4 +1,4 @@
-package op
+package core
 
 type OFunc func(in, out *Port, store interface{})
 

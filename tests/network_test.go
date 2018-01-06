@@ -2,7 +2,7 @@ package tests
 
 import (
 	"slang"
-	"slang/op"
+	"slang/core"
 	"slang/tests/assertions"
 	"testing"
 )
@@ -11,7 +11,7 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	a := assertions.New(t)
 	defIn := slang.ParsePortDef(`{"type":"number"}`)
 	defOut := slang.ParsePortDef(`{"type":"number"}`)
-	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
+	o1, _ := core.NewOperator("o1", nil, defIn, defOut, nil)
 
 	o1.In().Connect(o1.Out())
 
@@ -25,10 +25,10 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	a := assertions.New(t)
 	defIn := slang.ParsePortDef(`{"type":"number"}`)
 	defOut := slang.ParsePortDef(`{"type":"number"}`)
-	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
-	o2, _ := op.NewOperator("o2", nil, defIn, defOut, o1)
-	o3, _ := op.NewOperator("o3", nil, defIn, defOut, o2)
-	o4, _ := op.NewOperator("o4", nil, defIn, defOut, o2)
+	o1, _ := core.NewOperator("o1", nil, defIn, defOut, nil)
+	o2, _ := core.NewOperator("o2", nil, defIn, defOut, o1)
+	o3, _ := core.NewOperator("o3", nil, defIn, defOut, o2)
+	o4, _ := core.NewOperator("o4", nil, defIn, defOut, o2)
 
 	o3.In().Connect(o3.Out())
 	o4.In().Connect(o4.Out())
@@ -70,7 +70,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := slang.ParsePortDef(`{"type":"number"}`)
 
-	double := func(in, out *op.Port, store interface{}) {
+	double := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -81,7 +81,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *op.Port, store interface{}) {
+	sum := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -96,10 +96,10 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := op.NewOperator("O1", nil, defStrStr, defStr, nil)
-	o2, _ := op.NewOperator("O2", nil, defStr, def, o1)
-	o3, _ := op.NewOperator("O3", double, def, def, o2)
-	o4, _ := op.NewOperator("O4", sum, defStr, def, o2)
+	o1, _ := core.NewOperator("O1", nil, defStrStr, defStr, nil)
+	o2, _ := core.NewOperator("O2", nil, defStr, def, o1)
+	o3, _ := core.NewOperator("O3", double, def, def, o2)
+	o4, _ := core.NewOperator("O4", sum, defStr, def, o2)
 
 	err := o2.In().Stream().Connect(o3.In())
 	a.NoError(err)
@@ -195,7 +195,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := slang.ParsePortDef(`{"type":"number"}`)
 
-	numgen := func(in, out *op.Port, store interface{}) {
+	numgen := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -210,7 +210,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	sum := func(in, out *op.Port, store interface{}) {
+	sum := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -225,11 +225,11 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := op.NewOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := op.NewOperator("O2", numgen, def, defStr, o1)
-	o3, _ := op.NewOperator("O3", numgen, def, defStr, o1)
-	o4, _ := op.NewOperator("O4", nil, defStrStrStr, defStrStr, o1)
-	o5, _ := op.NewOperator("O5", sum, defStr, def, o4)
+	o1, _ := core.NewOperator("O1", nil, defStr, defStrStr, nil)
+	o2, _ := core.NewOperator("O2", numgen, def, defStr, o1)
+	o3, _ := core.NewOperator("O3", numgen, def, defStr, o1)
+	o4, _ := core.NewOperator("O4", nil, defStrStrStr, defStrStr, o1)
+	o5, _ := core.NewOperator("O5", sum, defStr, def, o4)
 
 	o4.In().Stream().Stream().Stream().Connect(o5.In().Stream())
 	o5.Out().Connect(o4.Out().Stream().Stream())
@@ -350,7 +350,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
 
-	evalMap1 := func(in, out *op.Port, store interface{}) {
+	evalMap1 := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -362,7 +362,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	evalMap2 := func(in, out *op.Port, store interface{}) {
+	evalMap2 := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -375,9 +375,9 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	o, _ := op.NewOperator("", nil, defIn, defOut, nil)
-	oMap1, _ := op.NewOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
-	oMap2, _ := op.NewOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
+	o, _ := core.NewOperator("", nil, defIn, defOut, nil)
+	oMap1, _ := core.NewOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
+	oMap2, _ := core.NewOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
 
 	o.In().Map("a").Connect(oMap2.In().Map("a"))
 	o.In().Map("b").Connect(oMap1.In())
@@ -428,7 +428,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumIn := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	defSumOut := slang.ParsePortDef(`{"type":"number"}`)
 
-	sumEval := func(in, out *op.Port, store interface{}) {
+	sumEval := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -443,7 +443,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	filterEval := func(in, out *op.Port, store interface{}) {
+	filterEval := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -456,7 +456,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	addEval := func(in, out *op.Port, store interface{}) {
+	addEval := func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -469,11 +469,11 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	o, _ := op.NewOperator("Global", nil, defStrMapStr, defStrMap, nil)
-	sum, _ := op.NewOperator("Sum", sumEval, defSumIn, defSumOut, o)
-	add, _ := op.NewOperator("Add", addEval, defAddIn, defAddOut, o)
-	filter1, _ := op.NewOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
-	filter2, _ := op.NewOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
+	o, _ := core.NewOperator("Global", nil, defStrMapStr, defStrMap, nil)
+	sum, _ := core.NewOperator("Sum", sumEval, defSumIn, defSumOut, o)
+	add, _ := core.NewOperator("Add", addEval, defAddIn, defAddOut, o)
+	filter1, _ := core.NewOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
+	filter2, _ := core.NewOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
 
 	o.In().Stream().Map("N").Connect(sum.In())
 	o.In().Stream().Map("n").Connect(add.In().Map("b"))

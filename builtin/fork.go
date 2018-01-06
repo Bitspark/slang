@@ -1,36 +1,34 @@
 package builtin
 
-import (
-	"slang/op"
-)
+import "slang/core"
 
-func createOpFork(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
-	inDef := op.PortDef{
+func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+	inDef := core.PortDef{
 		Type: "stream",
-		Stream: &op.PortDef{
+		Stream: &core.PortDef{
 			Type: "map",
-			Map: map[string]op.PortDef{
-				"i":      op.PortDef{Type: "any"},
-				"select": op.PortDef{Type: "boolean"},
+			Map: map[string]core.PortDef{
+				"i":      core.PortDef{Type: "any"},
+				"select": core.PortDef{Type: "boolean"},
 			},
 		},
 	}
 
-	outDef := op.PortDef{
+	outDef := core.PortDef{
 		Type: "map",
-		Map: map[string]op.PortDef{
-			"true": op.PortDef{
+		Map: map[string]core.PortDef{
+			"true": core.PortDef{
 				Type:   "stream",
-				Stream: &op.PortDef{Type: "any"},
+				Stream: &core.PortDef{Type: "any"},
 			},
-			"false": op.PortDef{
+			"false": core.PortDef{
 				Type:   "stream",
-				Stream: &op.PortDef{Type: "any"},
+				Stream: &core.PortDef{Type: "any"},
 			},
 		},
 	}
 
-	return op.NewOperator(def.Name, func(in, out *op.Port, store interface{}) {
+	return core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Stream().Pull()
 

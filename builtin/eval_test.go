@@ -4,7 +4,242 @@ import (
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
+
+	"github.com/Knetic/govaluate"
 )
+
+func TestEvaluableExpression__Translates_Variables(t *testing.T) {
+	a := assertions.New(t)
+
+	evalExpr, _ := NewEvaluableExpression("a + 100")
+
+	a.Equal([]string{"a"}, evalExpr.Vars())
+}
+
+func TestEvaluableExpression__Translates_AccessingFields(t *testing.T) {
+	a := assertions.New(t)
+
+	evalExpr, _ := NewEvaluableExpression("vec.x + 100")
+
+	a.Equal([]string{"vec__x"}, evalExpr.Vars())
+}
+
+func TestEvaluableExpression__Translates_AccessingNestedFields(t *testing.T) {
+	a := assertions.New(t)
+
+	evalExpr, _ := NewEvaluableExpression(`person.address.zipcode == "ABCD"`)
+
+	a.Equal([]string{"person__address__zipcode"}, evalExpr.Vars())
+}
+
+func TestEvaluableExpression__Evaluates_ArgumentsAcessingFields(t *testing.T) {
+	a := assertions.New(t)
+
+	evalExpr, _ := NewEvaluableExpression("(vec.0.x + vec.1.x) * (vec.0.y + vec.1.y)")
+	params := NewFlatMapParameters(map[string]interface{}{
+		"vec": []interface{}{
+			map[string]interface{}{
+				"x": 1,
+				"y": 2,
+			},
+			map[string]interface{}{
+				"x": 3,
+				"y": 4,
+			},
+		},
+	})
+	result, _ := evalExpr.Evaluate(params)
+	a.Equal(24.0, result)
+}
+
+func TestEvaluableExpression__Translates_Combined(t *testing.T) {
+	a := assertions.New(t)
+
+	evalExpr, _ := NewEvaluableExpression(`a * vec.x + vec.y`)
+
+	a.Equal([]string{"a", "vec__x", "vec__y"}, evalExpr.Vars())
+}
+
+func TestFlatMapParameters__NestingLevel0(t *testing.T) {
+	a := assertions.New(t)
+
+	params := NewFlatMapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+	})
+
+	a.Equal(govaluate.MapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+	}), params)
+}
+
+func TestFlatMapParameters__NestingLevel0_Arrays(t *testing.T) {
+	a := assertions.New(t)
+
+	params := NewFlatMapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+		"l":   []interface{}{1, 2},
+	})
+
+	a.Equal(govaluate.MapParameters(map[string]interface{}{
+		"foo":  100,
+		"bar":  200,
+		"l__0": 1,
+		"l__1": 2,
+	}), params)
+}
+
+func TestFlatMapParameters__NestingLevel1(t *testing.T) {
+	a := assertions.New(t)
+
+	params := NewFlatMapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+		"vec": map[string]interface{}{
+			"x": 1,
+			"y": 2,
+		},
+	})
+
+	a.Equal(govaluate.MapParameters(map[string]interface{}{
+		"foo":    100,
+		"bar":    200,
+		"vec__x": 1,
+		"vec__y": 2,
+	}), params)
+}
+
+func TestFlatMapParameters__NestingLevel2(t *testing.T) {
+	a := assertions.New(t)
+
+	params := NewFlatMapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+		"vec": map[string]interface{}{
+			"x": 1,
+			"y": 2,
+		},
+		"person": map[string]interface{}{
+			"phone": map[string]interface{}{
+				"mobile": "0123/4567890",
+			},
+			"name": map[string]interface{}{
+				"first": "Paul J.",
+				"last":  "Morrison",
+			},
+		},
+	})
+
+	a.Equal(govaluate.MapParameters(map[string]interface{}{
+		"foo":                   100,
+		"bar":                   200,
+		"vec__x":                1,
+		"vec__y":                2,
+		"person__phone__mobile": "0123/4567890",
+		"person__name__first":   "Paul J.",
+		"person__name__last":    "Morrison",
+	}), params)
+}
+
+func TestFlatMapParameters__NestingLevel3(t *testing.T) {
+	a := assertions.New(t)
+
+	params := NewFlatMapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+		"vec": map[string]interface{}{
+			"x": 1,
+			"y": 2,
+		},
+		"root": map[string]interface{}{
+			"left": map[string]interface{}{
+				"left": map[string]interface{}{
+					"i": 100,
+				},
+				"right": map[string]interface{}{
+
+					"i": 101,
+				},
+			},
+			"right": map[string]interface{}{
+				"left": map[string]interface{}{
+					"i": 110,
+				},
+				"right": map[string]interface{}{
+
+					"i": 111,
+				},
+			},
+		},
+	})
+
+	a.Equal(govaluate.MapParameters(map[string]interface{}{
+		"foo":                   100,
+		"bar":                   200,
+		"vec__x":                1,
+		"vec__y":                2,
+		"root__left__left__i":   100,
+		"root__left__right__i":  101,
+		"root__right__left__i":  110,
+		"root__right__right__i": 111,
+	}), params)
+}
+
+func TestFlatMapParameters__ComplexMixed(t *testing.T) {
+	a := assertions.New(t)
+
+	params := NewFlatMapParameters(map[string]interface{}{
+		"foo": 100,
+		"bar": 200,
+		"vec": []interface{}{
+			map[string]interface{}{
+				"x": 1,
+				"y": 2,
+			},
+			map[string]interface{}{
+				"x": 3,
+				"y": 4,
+			},
+		},
+		"person": []interface{}{
+			map[string]interface{}{
+				"phone": map[string]interface{}{
+					"mobile": "0123/4567890",
+				},
+				"name": map[string]interface{}{
+					"first": "Taleh",
+					"last":  "Didover",
+				},
+			},
+			map[string]interface{}{
+				"phone": map[string]interface{}{
+					"mobile": "0123/4567890",
+				},
+				"name": map[string]interface{}{
+					"first": "Julian",
+					"last":  "Matschinske",
+				},
+			},
+		},
+	})
+
+	a.Equal(govaluate.MapParameters(map[string]interface{}{
+		"foo":                      100,
+		"bar":                      200,
+		"vec__0__x":                1,
+		"vec__0__y":                2,
+		"vec__1__x":                3,
+		"vec__1__y":                4,
+		"person__0__phone__mobile": "0123/4567890",
+		"person__0__name__first":   "Taleh",
+		"person__0__name__last":    "Didover",
+		"person__1__phone__mobile": "0123/4567890",
+		"person__1__name__first":   "Julian",
+		"person__1__name__last":    "Matschinske",
+	}), params)
+}
 
 func TestBuiltin_Eval__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)

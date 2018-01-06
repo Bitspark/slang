@@ -6,39 +6,39 @@ import (
 	"testing"
 )
 
-func TestOperatorCreator_Function_IsRegistered(t *testing.T) {
+func TestBuiltin_Eval__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFunction := getCreatorFunc("function")
+	ocFunction := getCreatorFunc("eval")
 	a.NotNil(ocFunction)
 }
 
-func TestManager_MakeOperator__Function__NilProperties(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function"}, nil)
+func TestBuiltin_Eval__NilProperties(t *testing.T) {
+	fo, err := createOpEval(core.InstanceDef{Operator: "eval"}, nil)
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
 	}
 }
 
-func TestManager_MakeOperator__Function__EmptyExpression(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": ""}}, nil)
+func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
+	fo, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": ""}}, nil)
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
 	}
 }
 
-func TestManager_MakeOperator__Function__InvalidExpression(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "+"}}, nil)
+func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
+	fo, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "+"}}, nil)
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
 	}
 }
 
-func TestManager_MakeOperator__Function__Add(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a+b"}}, nil)
+func TestBuiltin_Eval__Add(t *testing.T) {
+	fo, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "a+b"}}, nil)
 
 	if fo == nil {
 		t.Error("operator not defined")
@@ -81,8 +81,8 @@ func TestManager_MakeOperator__Function__Add(t *testing.T) {
 	}
 }
 
-func TestManager_MakeOperator__Function__BoolArith(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a && (b != c)"}}, nil)
+func TestBuiltin_Eval__BoolArith(t *testing.T) {
+	fo, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "a && (b != c)"}}, nil)
 
 	if fo == nil {
 		t.Error("operator not defined")

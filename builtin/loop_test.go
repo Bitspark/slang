@@ -89,7 +89,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{16.0, 20.0}, lo.Out().Map("end"))
+	a.PortPushes([]interface{}{8.0, 10.0}, lo.Out().Map("end"))
 }
 
 func TestBuiltin_Loop__FibLoop(t *testing.T) {
@@ -172,15 +172,15 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 
 	lo.Out().Map("end").Bufferize()
 
-	lo.In().Map("init").Push(map[string]interface{}{"i": 9.0, "fib": 1.0, "oldFib": 0.0})
-	lo.In().Map("init").Push(map[string]interface{}{"i": 19.0, "fib": 1.0, "oldFib": 0.0})
+	lo.In().Map("init").Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
+	lo.In().Map("init").Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
 
 	lo.Start()
 	fo.Start()
 	co.Start()
 
 	a.PortPushes([]interface{}{
-		map[string]interface{}{"i": 0.0, "fib": 55.0, "oldFib": 34.0},
-		map[string]interface{}{"i": 0.0, "fib": 6765.0, "oldFib": 4181.0},
+		map[string]interface{}{"i": 1.0, "fib": 55.0, "oldFib": 34.0},
+		map[string]interface{}{"i": 1.0, "fib": 6765.0, "oldFib": 4181.0},
 	}, lo.Out().Map("end"))
 }

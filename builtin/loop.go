@@ -38,6 +38,8 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			out.Map("oldState").PushBOS()
 			out.Map("oldState").Stream().Push(i)
 
+			oldState := i
+
 			i = in.Map("iteration").Stream().Pull()
 
 			if !in.Map("iteration").OwnBOS(i) {
@@ -57,9 +59,11 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 					if !in.Map("iteration").OwnEOS(i) {
 						panic("expected own BOS")
 					}
-					out.Map("end").Push(newState)
+					out.Map("end").Push(oldState)
 					break
 				}
+
+				oldState = newState
 			}
 		}
 	}, inDef, outDef, par)

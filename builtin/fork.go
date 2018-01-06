@@ -44,7 +44,7 @@ func createOpFork(def op.InstanceDef, par *op.Operator) (*op.Operator, error) {
 		outDef = *def.Out
 	}
 
-	return op.MakeOperator(def.Name, func(in, out *op.Port, store interface{}) {
+	return op.NewOperator(def.Name, func(in, out *op.Port, store interface{}) {
 		for true {
 			i := in.Stream().Pull()
 

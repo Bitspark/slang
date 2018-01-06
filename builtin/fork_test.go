@@ -2,21 +2,19 @@ package builtin
 
 import (
 	"slang/op"
-	"slang/tests"
+	"slang/tests/assertions"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestOperatorCreator_Fork_IsRegistered(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	ocFork := getCreatorFunc("fork")
 	a.NotNil(ocFork)
 }
 
 func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
@@ -26,7 +24,7 @@ func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 }
 
 func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
@@ -36,7 +34,7 @@ func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 }
 
 func TestBuiltin_OperatorFork__Correct(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	idef := op.PortDef{Type: "any"}
 	in := op.PortDef{
@@ -48,8 +46,8 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 	}
 	out := op.PortDef{
 		Type: "map",
-		Map:  map[string]op.PortDef{
-			"true": {Type: "stream", Stream: &idef},
+		Map: map[string]op.PortDef{
+			"true":  {Type: "stream", Stream: &idef},
 			"false": {Type: "stream", Stream: &idef},
 		},
 	}
@@ -80,12 +78,12 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 		},
 	})
 
-	tests.AssertPortItems(t, []interface{}{[]interface{}{"hallo", 100}}, o.Out().Map("true"))
-	tests.AssertPortItems(t, []interface{}{[]interface{}{"welt", 101}}, o.Out().Map("false"))
+	a.PortPushes([]interface{}{[]interface{}{"hallo", 100}}, o.Out().Map("true"))
+	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.Out().Map("false"))
 }
 
 func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	idef := op.PortDef{Type: "map", Map: map[string]op.PortDef{"a": {Type: "any"}, "b": {Type: "any"}}}
 	in := op.PortDef{
@@ -97,8 +95,8 @@ func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
 	}
 	out := op.PortDef{
 		Type: "map",
-		Map:  map[string]op.PortDef{
-			"true": {Type: "stream", Stream: &idef},
+		Map: map[string]op.PortDef{
+			"true":  {Type: "stream", Stream: &idef},
 			"false": {Type: "stream", Stream: &idef},
 		},
 	}
@@ -121,6 +119,6 @@ func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
 		},
 	})
 
-	tests.AssertPortItems(t, []interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Out().Map("true"))
-	tests.AssertPortItems(t, []interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Out().Map("false"))
+	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Out().Map("true"))
+	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Out().Map("false"))
 }

@@ -1,32 +1,34 @@
 package tests
 
 import (
+	"slang"
 	"slang/op"
+	"slang/tests/assertions"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
-	defIn := op.ParsePortDef(`{"type":"number"}`)
-	defOut := op.ParsePortDef(`{"type":"number"}`)
-	o1, _ := op.MakeOperator("o1", nil, defIn, defOut, nil)
+	a := assertions.New(t)
+	defIn := slang.ParsePortDef(`{"type":"number"}`)
+	defOut := slang.ParsePortDef(`{"type":"number"}`)
+	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
 
 	o1.In().Connect(o1.Out())
 
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	AssertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
-	defIn := op.ParsePortDef(`{"type":"number"}`)
-	defOut := op.ParsePortDef(`{"type":"number"}`)
-	o1, _ := op.MakeOperator("o1", nil, defIn, defOut, nil)
-	o2, _ := op.MakeOperator("o2", nil, defIn, defOut, o1)
-	o3, _ := op.MakeOperator("o3", nil, defIn, defOut, o2)
-	o4, _ := op.MakeOperator("o4", nil, defIn, defOut, o2)
+	a := assertions.New(t)
+	defIn := slang.ParsePortDef(`{"type":"number"}`)
+	defOut := slang.ParsePortDef(`{"type":"number"}`)
+	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
+	o2, _ := op.NewOperator("o2", nil, defIn, defOut, o1)
+	o3, _ := op.NewOperator("o3", nil, defIn, defOut, o2)
+	o4, _ := op.NewOperator("o4", nil, defIn, defOut, o2)
 
 	o3.In().Connect(o3.Out())
 	o4.In().Connect(o4.Out())
@@ -59,13 +61,14 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	AssertPortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
-	defStrStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := op.ParsePortDef(`{"type":"number"}`)
+	a := assertions.New(t)
+	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := slang.ParsePortDef(`{"type":"number"}`)
 
 	double := func(in, out *op.Port, store interface{}) {
 		for true {
@@ -93,17 +96,17 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := op.MakeOperator("O1", nil, defStrStr, defStr, nil)
-	o2, _ := op.MakeOperator("O2", nil, defStr, def, o1)
-	o3, _ := op.MakeOperator("O3", double, def, def, o2)
-	o4, _ := op.MakeOperator("O4", sum, defStr, def, o2)
+	o1, _ := op.NewOperator("O1", nil, defStrStr, defStr, nil)
+	o2, _ := op.NewOperator("O2", nil, defStr, def, o1)
+	o3, _ := op.NewOperator("O3", double, def, def, o2)
+	o4, _ := op.NewOperator("O4", sum, defStr, def, o2)
 
 	err := o2.In().Stream().Connect(o3.In())
-	assert.NoError(t, err)
+	a.NoError(err)
 	err = o3.Out().Connect(o4.In().Stream())
-	assert.NoError(t, err)
+	a.NoError(err)
 	err = o4.Out().Connect(o2.Out())
-	assert.NoError(t, err)
+	a.NoError(err)
 
 	if !o2.In().Stream().Connected(o3.In()) {
 		t.Error("should be connected")
@@ -128,9 +131,9 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	//
 
 	err = o1.In().Stream().Stream().Connect(o2.In().Stream())
-	assert.NoError(t, err)
+	a.NoError(err)
 	err = o2.Out().Connect(o1.Out().Stream())
-	assert.NoError(t, err)
+	a.NoError(err)
 
 	if !o1.In().Stream().Stream().Connected(o2.In().Stream()) {
 		t.Error("should be connected")
@@ -182,14 +185,15 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[[1,2,3],[4,5]]`))
 	o1.In().Push(parseJSON(`[[],[2]]`))
 	o1.In().Push(parseJSON(`[]`))
-	AssertPortItems(t, parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
-	defStrStrStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
-	defStrStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := op.ParsePortDef(`{"type":"number"}`)
+	a := assertions.New(t)
+	defStrStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
+	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := slang.ParsePortDef(`{"type":"number"}`)
 
 	numgen := func(in, out *op.Port, store interface{}) {
 		for true {
@@ -221,11 +225,11 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := op.MakeOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := op.MakeOperator("O2", numgen, def, defStr, o1)
-	o3, _ := op.MakeOperator("O3", numgen, def, defStr, o1)
-	o4, _ := op.MakeOperator("O4", nil, defStrStrStr, defStrStr, o1)
-	o5, _ := op.MakeOperator("O5", sum, defStr, def, o4)
+	o1, _ := op.NewOperator("O1", nil, defStr, defStrStr, nil)
+	o2, _ := op.NewOperator("O2", numgen, def, defStr, o1)
+	o3, _ := op.NewOperator("O3", numgen, def, defStr, o1)
+	o4, _ := op.NewOperator("O4", nil, defStrStrStr, defStrStr, o1)
+	o5, _ := op.NewOperator("O5", sum, defStr, def, o4)
 
 	o4.In().Stream().Stream().Stream().Connect(o5.In().Stream())
 	o5.Out().Connect(o4.Out().Stream().Stream())
@@ -332,15 +336,16 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[1,2,3]`))
 	o1.In().Push(parseJSON(`[]`))
 	o1.In().Push(parseJSON(`[4]`))
-	AssertPortItems(t, parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
-	defIn := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	a := assertions.New(t)
+	defIn := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 	defOut := defIn
 
-	defMap1In := op.ParsePortDef(`{"type":"number"}`)
-	defMap1Out := op.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defMap1In := slang.ParsePortDef(`{"type":"number"}`)
+	defMap1Out := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
@@ -370,9 +375,9 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	o, _ := op.MakeOperator("", nil, defIn, defOut, nil)
-	oMap1, _ := op.MakeOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
-	oMap2, _ := op.MakeOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
+	o, _ := op.NewOperator("", nil, defIn, defOut, nil)
+	oMap1, _ := op.NewOperator("Map1", evalMap1, defMap1In, defMap1Out, o)
+	oMap2, _ := op.NewOperator("Map2", evalMap2, defMap2In, defMap2Out, o)
 
 	o.In().Map("a").Connect(oMap2.In().Map("a"))
 	o.In().Map("b").Connect(oMap1.In())
@@ -398,29 +403,30 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	AssertPortItems(t, parseJSON(results).([]interface{}), o.Out())
+	a.PortPushes(parseJSON(results).([]interface{}), o.Out())
 
 }
 
 func TestNetwork_Maps_Complex(t *testing.T) {
-	defStrMapStr := op.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
+	a := assertions.New(t)
+	defStrMapStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"N":{"type":"stream","stream":{"type":"number"}},
 		"n":{"type":"number"},
 		"s":{"type":"string"},
 		"b":{"type":"boolean"}}}}`)
-	defStrMap := op.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMap := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
-	defFilterIn := op.ParsePortDef(`{"type":"map","map":{
+	defFilterIn := slang.ParsePortDef(`{"type":"map","map":{
 		"o":{"type":"any"},
 		"b":{"type":"boolean"}}}`)
-	defFilterOut := op.ParsePortDef(`{"type":"any"}`)
-	defAddIn := op.ParsePortDef(`{"type":"map","map":{
+	defFilterOut := slang.ParsePortDef(`{"type":"any"}`)
+	defAddIn := slang.ParsePortDef(`{"type":"map","map":{
 		"a":{"type":"number"},
 		"b":{"type":"number"}}}`)
-	defAddOut := op.ParsePortDef(`{"type":"number"}`)
-	defSumIn := op.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	defSumOut := op.ParsePortDef(`{"type":"number"}`)
+	defAddOut := slang.ParsePortDef(`{"type":"number"}`)
+	defSumIn := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	defSumOut := slang.ParsePortDef(`{"type":"number"}`)
 
 	sumEval := func(in, out *op.Port, store interface{}) {
 		for true {
@@ -463,11 +469,11 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	o, _ := op.MakeOperator("Global", nil, defStrMapStr, defStrMap, nil)
-	sum, _ := op.MakeOperator("Sum", sumEval, defSumIn, defSumOut, o)
-	add, _ := op.MakeOperator("Add", addEval, defAddIn, defAddOut, o)
-	filter1, _ := op.MakeOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
-	filter2, _ := op.MakeOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
+	o, _ := op.NewOperator("Global", nil, defStrMapStr, defStrMap, nil)
+	sum, _ := op.NewOperator("Sum", sumEval, defSumIn, defSumOut, o)
+	add, _ := op.NewOperator("Add", addEval, defAddIn, defAddOut, o)
+	filter1, _ := op.NewOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
+	filter2, _ := op.NewOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
 
 	o.In().Stream().Map("N").Connect(sum.In())
 	o.In().Stream().Map("n").Connect(add.In().Map("b"))
@@ -499,5 +505,5 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	AssertPortItems(t, parseJSON(results).([]interface{}), o.Out())
+	a.PortPushes(parseJSON(results).([]interface{}), o.Out())
 }

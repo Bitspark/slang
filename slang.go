@@ -1,20 +1,34 @@
 package slang
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
+	"path/filepath"
 	"slang/builtin"
 	"slang/op"
 	"strings"
 )
 
 func ReadOperator(opDefFilePath string) (*op.Operator, error) {
-	return readOperator(opDefFilePath, opDefFilePath, nil)
+	return readOperator(opDefFilePath, opDefFilePath, nil, nil)
 }
 
-func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
+func ParsePortDef(defStr string) op.PortDef {
+	def := op.PortDef{}
+	json.Unmarshal([]byte(defStr), &def)
+	return def
+}
+
+func ParseOperatorDef(defStr string) op.OperatorDef {
+	def := op.OperatorDef{}
+	json.Unmarshal([]byte(defStr), &def)
+	return def
+}
+
+func ParsePort(connStr string, par *op.Operator) (*op.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -77,14 +91,14 @@ func ParseConnection(connStr string, par *op.Operator) (*op.Port, error) {
 	return p, nil
 }
 
-func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.Operator, error) {
+func readOperator(insName string, opDefFilePath string, par *op.Operator, pathsRead []string) (*op.Operator, error) {
 	b, err := ioutil.ReadFile(opDefFilePath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	def := op.ParseOperatorDef(string(b))
+	def := ParseOperatorDef(string(b))
 
 	if !def.Valid() {
 		err := def.Validate()
@@ -93,7 +107,19 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.O
 		}
 	}
 
-	o, err := op.MakeOperator(insName, nil, *def.In, *def.Out, par)
+	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
+		for _, p := range pathsRead {
+			if p == absPath {
+				return nil, errors.New(fmt.Sprintf("recursion in %s", absPath))
+			}
+		}
+
+		pathsRead = append(pathsRead, absPath)
+	} else {
+		return nil, err
+	}
+
+	o, err := op.NewOperator(insName, nil, *def.In, *def.Out, par)
 
 	if err != nil {
 		return nil, err
@@ -102,7 +128,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.O
 	currDir := path.Dir(opDefFilePath)
 
 	for _, childOpInsDef := range def.Operators {
-		_, err := getOperator(childOpInsDef, o, currDir)
+		_, err := getOperator(childOpInsDef, o, currDir, pathsRead)
 
 		if err != nil {
 			return nil, err
@@ -110,9 +136,9 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.O
 	}
 
 	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := ParseConnection(srcConnDef, o); err == nil {
+		if pSrc, err := ParsePort(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := ParseConnection(dstConnDef, o); err == nil {
+				if pDst, err := ParsePort(dstConnDef, o); err == nil {
 					pSrc.Connect(pDst)
 				} else {
 					return nil, err
@@ -126,7 +152,7 @@ func readOperator(insName string, opDefFilePath string, par *op.Operator) (*op.O
 	return o, nil
 }
 
-func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.Operator, error) {
+func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string, pathsRead []string) (*op.Operator, error) {
 	if builtinOp, err := builtin.MakeOperator(insDef, par); err == nil {
 		return builtinOp, nil
 	}
@@ -135,7 +161,7 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 
 	if strings.HasPrefix(insDef.Operator, ".") {
 		defFilePath := path.Join(currDir, relFilePath)
-		o, err := readOperator(insDef.Name, defFilePath, par)
+		o, err := readOperator(insDef.Name, defFilePath, par, pathsRead)
 
 		if err != nil {
 			return nil, err
@@ -151,7 +177,7 @@ func getOperator(insDef op.InstanceDef, par *op.Operator, currDir string) (*op.O
 		defFilePath := path.Join(p, relFilePath)
 
 		var o *op.Operator
-		o, err = readOperator(insDef.Name, defFilePath, par)
+		o, err = readOperator(insDef.Name, defFilePath, par, pathsRead)
 
 		if err != nil {
 			continue

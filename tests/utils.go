@@ -2,9 +2,8 @@ package tests
 
 import (
 	"encoding/json"
-	"reflect"
+	"slang"
 	"slang/op"
-	"testing"
 )
 
 func parseJSON(str string) interface{} {
@@ -14,7 +13,7 @@ func parseJSON(str string) interface{} {
 }
 
 func validateJSONOperatorDef(jsonDef string) (op.OperatorDef, error) {
-	def := op.ParseOperatorDef(jsonDef)
+	def := slang.ParseOperatorDef(jsonDef)
 	return def, def.Validate()
 }
 
@@ -22,15 +21,4 @@ func validateJSONInstanceDef(jsonDef string) (op.InstanceDef, error) {
 	def := op.InstanceDef{}
 	json.Unmarshal([]byte(jsonDef), &def)
 	return def, def.Validate()
-}
-
-func AssertPortItems(t *testing.T, i []interface{}, p *op.Port) {
-	t.Helper()
-	for _, e := range i {
-		a := p.Pull()
-		if !reflect.DeepEqual(e, a) {
-			t.Errorf("wrong value:\nexpected: %#v,\nactual:   %#v", e, a)
-			break
-		}
-	}
 }

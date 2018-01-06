@@ -1,7 +1,6 @@
 package op
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -46,61 +45,8 @@ type Port struct {
 	buf chan interface{}
 }
 
-type PortDef struct {
-	Type   string             `json:"type"`
-	Stream *PortDef           `json:"stream"`
-	Map    map[string]PortDef `json:"map"`
-	valid  bool
-}
-
-// PUBLIC METHODS
-
-func (d *PortDef) Valid() bool {
-	return d.valid
-}
-
-func (d *PortDef) Validate() error {
-	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
-	found := false
-	for _, t := range validTypes {
-		if t == d.Type {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return errors.New("unknown type")
-	}
-
-	if d.Type == "stream" {
-		if d.Stream == nil {
-			return errors.New("stream missing")
-		}
-		return d.Stream.Validate()
-	} else if d.Type == "map" {
-		if len(d.Map) == 0 {
-			return errors.New("map missing or empty")
-		}
-		for _, e := range d.Map {
-			err := e.Validate()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	d.valid = true
-	return nil
-}
-
-func ParsePortDef(str string) PortDef {
-	def := PortDef{}
-	json.Unmarshal([]byte(str), &def)
-	return def
-}
-
 // Makes a new port.
-func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
+func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -123,7 +69,7 @@ func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = MakePort(o, e, dir)
+			p.subs[k], err = NewPort(o, e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -132,7 +78,7 @@ func MakePort(o *Operator, def PortDef, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = MakePort(o, *def.Stream, dir)
+		p.sub, err = NewPort(o, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}

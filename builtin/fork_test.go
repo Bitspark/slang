@@ -1,21 +1,20 @@
 package builtin
 
 import (
+	"slang/assertions"
 	"slang/op"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestOperatorCreator_Fork_IsRegistered(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	ocFork := getCreatorFunc("fork")
 	a.NotNil(ocFork)
 }
 
 func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
@@ -25,7 +24,7 @@ func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 }
 
 func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
@@ -35,7 +34,7 @@ func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 }
 
 func TestBuiltin_OperatorFork__Correct(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(op.InstanceDef{Operator: "fork"}, nil)
 	a.NoError(err)
@@ -63,6 +62,6 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 		},
 	})
 
-	assert.PortItems(t, []interface{}{"hallo", 100}, o.Out().Map("true").Stream())
-	assert.PortItems(t, []interface{}{"welt", 101}, o.Out().Map("false").Stream())
+	a.PortPushes([]interface{}{"hallo", 100}, o.Out().Map("true").Stream())
+	a.PortPushes([]interface{}{"welt", 101}, o.Out().Map("false").Stream())
 }

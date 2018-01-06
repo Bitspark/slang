@@ -2,13 +2,13 @@ package tests
 
 import (
 	"slang"
+	"slang/assertions"
 	"slang/op"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
+	a := assertions.New(t)
 	defIn := slang.ParsePortDef(`{"type":"number"}`)
 	defOut := slang.ParsePortDef(`{"type":"number"}`)
 	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
@@ -18,10 +18,11 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	assert.PortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
+	a := assertions.New(t)
 	defIn := slang.ParsePortDef(`{"type":"number"}`)
 	defOut := slang.ParsePortDef(`{"type":"number"}`)
 	o1, _ := op.NewOperator("o1", nil, defIn, defOut, nil)
@@ -60,10 +61,11 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	assert.PortItems(t, parseJSON(`[1]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
+	a := assertions.New(t)
 	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
 	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := slang.ParsePortDef(`{"type":"number"}`)
@@ -100,11 +102,11 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o4, _ := op.NewOperator("O4", sum, defStr, def, o2)
 
 	err := o2.In().Stream().Connect(o3.In())
-	assert.NoError(t, err)
+	a.NoError(err)
 	err = o3.Out().Connect(o4.In().Stream())
-	assert.NoError(t, err)
+	a.NoError(err)
 	err = o4.Out().Connect(o2.Out())
-	assert.NoError(t, err)
+	a.NoError(err)
 
 	if !o2.In().Stream().Connected(o3.In()) {
 		t.Error("should be connected")
@@ -129,9 +131,9 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	//
 
 	err = o1.In().Stream().Stream().Connect(o2.In().Stream())
-	assert.NoError(t, err)
+	a.NoError(err)
 	err = o2.Out().Connect(o1.Out().Stream())
-	assert.NoError(t, err)
+	a.NoError(err)
 
 	if !o1.In().Stream().Stream().Connected(o2.In().Stream()) {
 		t.Error("should be connected")
@@ -183,10 +185,11 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[[1,2,3],[4,5]]`))
 	o1.In().Push(parseJSON(`[[],[2]]`))
 	o1.In().Push(parseJSON(`[]`))
-	assert.PortItems(t, parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
+	a := assertions.New(t)
 	defStrStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
 	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
 	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
@@ -333,10 +336,11 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[1,2,3]`))
 	o1.In().Push(parseJSON(`[]`))
 	o1.In().Push(parseJSON(`[4]`))
-	assert.PortItems(t, parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
+	a.PortPushes(parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
+	a := assertions.New(t)
 	defIn := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 	defOut := defIn
 
@@ -399,11 +403,12 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	assert.PortItems(t, parseJSON(results).([]interface{}), o.Out())
+	a.PortPushes(parseJSON(results).([]interface{}), o.Out())
 
 }
 
 func TestNetwork_Maps_Complex(t *testing.T) {
+	a := assertions.New(t)
 	defStrMapStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"N":{"type":"stream","stream":{"type":"number"}},
 		"n":{"type":"number"},
@@ -500,5 +505,5 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	assert.PortItems(t, parseJSON(results).([]interface{}), o.Out())
+	a.PortPushes(parseJSON(results).([]interface{}), o.Out())
 }

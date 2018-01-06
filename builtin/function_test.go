@@ -1,14 +1,13 @@
 package builtin
 
 import (
+	"slang/assertions"
 	"slang/op"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestOperatorCreator_Function_IsRegistered(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	ocFunction := getCreatorFunc("function")
 	a.NotNil(ocFunction)

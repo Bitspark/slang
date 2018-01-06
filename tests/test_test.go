@@ -1,14 +1,14 @@
 package tests
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
-	"slang"
 	"io/ioutil"
+	"slang"
+	"slang/assertions"
+	"testing"
 )
 
 func TestTestOperator__TrivialTests(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 	succs, fails, err := slang.TestOperator("test_data/voidOp_test.json", ioutil.Discard, true)
 	a.Nil(err)
 	a.Equal(1, succs)
@@ -16,7 +16,7 @@ func TestTestOperator__TrivialTests(t *testing.T) {
 }
 
 func TestTestOperator__SimpleFail(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 	succs, fails, err := slang.TestOperator("test_data/voidOp_corruptTest.json", ioutil.Discard, true)
 	a.Nil(err)
 	a.Equal(0, succs)
@@ -24,7 +24,7 @@ func TestTestOperator__SimpleFail(t *testing.T) {
 }
 
 func TestTestOperator__ComplexTest(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 	succs, fails, err := slang.TestOperator("test_data/nested_op/usingSubCustomOpDouble_test.json", ioutil.Discard, true)
 	a.Nil(err)
 	a.Equal(2, succs)
@@ -32,7 +32,7 @@ func TestTestOperator__ComplexTest(t *testing.T) {
 }
 
 func TestTestOperator__SuiteTests(t *testing.T) {
-	a := assert.New(t)
+	a := assertions.New(t)
 
 	succs, fails, err := slang.TestOperator("test_data/suite/polynomial_test.json", ioutil.Discard, false)
 	a.Nil(err)

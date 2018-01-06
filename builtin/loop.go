@@ -12,13 +12,13 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 		return nil, errors.New("need port definitions")
 	} else {
 		iType := def.In.Map["init"]
-		if !def.In.Map["iteration"].Stream.Map["newState"].Equals(iType) {
+		if !def.In.Map["iteration"].Stream.Map["state"].Equals(iType) {
 			return nil, errors.New("in item and true output not equal")
 		}
 		if !def.Out.Map["end"].Equals(iType) {
 			return nil, errors.New("in item and true output not equal")
 		}
-		if !def.Out.Map["oldState"].Stream.Equals(iType) {
+		if !def.Out.Map["state"].Stream.Equals(iType) {
 			return nil, errors.New("in item and true output not equal")
 		}
 		inDef = *def.In
@@ -35,8 +35,8 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 				continue
 			}
 
-			out.Map("oldState").PushBOS()
-			out.Map("oldState").Stream().Push(i)
+			out.Map("state").PushBOS()
+			out.Map("state").Stream().Push(i)
 
 			oldState := i
 
@@ -48,13 +48,13 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 
 			for true {
 				iter := in.Map("iteration").Stream().Pull().(map[string]interface{})
-				newState := iter["newState"]
+				newState := iter["state"]
 				cont := iter["continue"].(bool)
 
 				if cont {
-					out.Map("oldState").Push(newState)
+					out.Map("state").Push(newState)
 				} else {
-					out.Map("oldState").PushEOS()
+					out.Map("state").PushEOS()
 					i = in.Map("iteration").Stream().Pull()
 					if !in.Map("iteration").OwnEOS(i) {
 						panic("expected own BOS")

@@ -27,7 +27,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 					Type: "map",
 					Map: map[string]core.PortDef{
 						"continue": {Type: "boolean"},
-						"newState": idef,
+						"state":    idef,
 					},
 				},
 			},
@@ -37,7 +37,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 		Type: "map",
 		Map: map[string]core.PortDef{
 			"end": idef,
-			"oldState": {
+			"state": {
 				Type:   "stream",
 				Stream: &idef,
 			},
@@ -75,9 +75,9 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 
 	// Connect
-	a.NoError(lo.Out().Map("oldState").Stream().Connect(fo.In()))
-	a.NoError(fo.Out().Connect(co.In()))
-	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("newState")))
+	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))
+	a.NoError(lo.Out().Map("state").Stream().Connect(co.In()))
+	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
 	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
 
 	lo.Out().Map("end").Bufferize()
@@ -89,7 +89,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{8.0, 10.0}, lo.Out().Map("end"))
+	a.PortPushes([]interface{}{16.0, 10.0}, lo.Out().Map("end"))
 }
 
 func TestBuiltin_Loop__FibLoop(t *testing.T) {
@@ -113,7 +113,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 					Type: "map",
 					Map: map[string]core.PortDef{
 						"continue": {Type: "boolean"},
-						"newState": idef,
+						"state":    idef,
 					},
 				},
 			},
@@ -123,7 +123,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 		Type: "map",
 		Map: map[string]core.PortDef{
 			"end": idef,
-			"oldState": {
+			"state": {
 				Type:   "stream",
 				Stream: &idef,
 			},
@@ -165,9 +165,9 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	}, idef, idef, nil)
 
 	// Connect
-	a.NoError(lo.Out().Map("oldState").Stream().Connect(fo.In()))
-	a.NoError(fo.Out().Connect(co.In()))
-	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("newState")))
+	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))
+	a.NoError(lo.Out().Map("state").Stream().Connect(co.In()))
+	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
 	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
 
 	lo.Out().Map("end").Bufferize()
@@ -180,7 +180,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	co.Start()
 
 	a.PortPushes([]interface{}{
-		map[string]interface{}{"i": 1.0, "fib": 55.0, "oldFib": 34.0},
-		map[string]interface{}{"i": 1.0, "fib": 6765.0, "oldFib": 4181.0},
+		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
+		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
 	}, lo.Out().Map("end"))
 }

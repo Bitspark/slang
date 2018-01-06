@@ -243,12 +243,20 @@ func (p *Port) Push(item interface{}) {
 			return
 		}
 
-		p.sub.Push(BOS{p})
+		p.PushBOS()
 		for _, i := range items {
 			p.sub.Push(i)
 		}
-		p.sub.Push(EOS{p})
+		p.PushEOS()
 	}
+}
+
+func (p *Port) PushBOS() {
+	p.Push(BOS{p})
+}
+
+func (p *Port) PushEOS() {
+	p.Push(EOS{p})
 }
 
 // Pull an item from this port.
@@ -288,11 +296,7 @@ func (p *Port) Pull() interface{} {
 	if p.itemType == TYPE_STREAM {
 		i := p.sub.Pull()
 
-		if bos, ok := i.(BOS); ok {
-			if bos.src != p.src {
-				return i
-			}
-		} else {
+		if !p.OwnBOS(i) {
 			return i
 		}
 
@@ -301,10 +305,8 @@ func (p *Port) Pull() interface{} {
 		for true {
 			i := p.sub.Pull()
 
-			if eos, ok := i.(EOS); ok {
-				if eos.src == p.src {
-					return items
-				}
+			if p.OwnEOS(i) {
+				return items
 			}
 
 			items = append(items, i)
@@ -312,6 +314,34 @@ func (p *Port) Pull() interface{} {
 	}
 
 	panic("unknown type")
+}
+
+func (p *Port) NewBOS() BOS {
+	return BOS{p}
+}
+
+func (p *Port) NewEOS() EOS {
+	return EOS{p}
+}
+
+func (p *Port) OwnBOS(i interface{}) bool {
+	if bos, ok := i.(BOS); ok {
+		// (bos.src == p) is only the case if i has directly been pushed into p
+		if bos.src == p.src || bos.src == p {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *Port) OwnEOS(i interface{}) bool {
+	if eos, ok := i.(EOS); ok {
+		// (eos.src == p) is only the case if i has directly been pushed into p
+		if eos.src == p.src || eos.src == p {
+			return true
+		}
+	}
+	return false
 }
 
 // Name returns a name generated from operator, directions and port.

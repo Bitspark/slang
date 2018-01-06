@@ -1,15 +1,18 @@
 {
   "in": {
-    "type": "any"
+    "type": "any",
+    "any": "itemType"
   },
   "out": {
     "type": "map",
     "map": {
       "left": {
-        "type": "any"
+        "type": "any",
+        "any": "itemType"
       },
       "right": {
-        "type": "any"
+        "type": "any",
+        "any": "itemType"
       }
     }
   },

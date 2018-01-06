@@ -27,6 +27,7 @@ type PortDef struct {
 	Type   string             `json:"type"`
 	Stream *PortDef           `json:"stream"`
 	Map    map[string]PortDef `json:"map"`
+	Any    string             `json:"any"`
 	valid  bool
 }
 
@@ -42,6 +43,10 @@ func (d OperatorDef) Valid() bool {
 
 func (d *PortDef) Valid() bool {
 	return d.valid
+}
+
+func (d *PortDef) Primitive() bool {
+	return d.Type == "number" || d.Type == "string" || d.Type == "boolean" || d.Type == "primitive"
 }
 
 func (d *InstanceDef) Validate() error {
@@ -97,7 +102,7 @@ func (d *OperatorDef) Validate() error {
 		}
 
 		if _, ok := alreadyUsedInsNames[insDef.Name]; ok {
-			return fmt.Errorf(`Colliding instance names within same parent operator: "%s"`, insDef.Name)
+			return fmt.Errorf(`colliding instance names within same parent operator: "%s"`, insDef.Name)
 		}
 		alreadyUsedInsNames[insDef.Name] = true
 	}
@@ -107,7 +112,7 @@ func (d *OperatorDef) Validate() error {
 }
 
 func (d *PortDef) Validate() error {
-	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
+	validTypes := []string{"any", "primitive", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {
@@ -119,7 +124,11 @@ func (d *PortDef) Validate() error {
 		return errors.New("unknown type")
 	}
 
-	if d.Type == "stream" {
+	if d.Type == "any" {
+		if len(d.Any) == 0 {
+			return errors.New("any identifier missing")
+		}
+	} else if d.Type == "stream" {
 		if d.Stream == nil {
 			return errors.New("stream missing")
 		}
@@ -140,30 +149,30 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d PortDef) Equals(p PortDef) bool {
+func (d PortDef) Equals(p PortDef) error {
 	if d.Type != p.Type {
-		return false
+		return errors.New(fmt.Sprintf("different types: %s != %s", d.Type, p.Type))
 	}
 
 	if d.Type == "map" {
 		if len(d.Map) != len(p.Map) {
-			return false
+			return errors.New(fmt.Sprintf("different map lengths: %d != %d", len(d.Map), len(p.Map)))
 		}
 
 		for k, e := range d.Map {
 			pe, ok := p.Map[k]
 			if !ok {
-				return false
+				return errors.New(fmt.Sprintf("key not present: %s", k))
 			}
-			if !e.Equals(pe) {
-				return false
+			if err := e.Equals(pe); err != nil {
+				return err
 			}
 		}
 	} else if d.Type == "stream" {
-		if !d.Stream.Equals(*p.Stream) {
-			return false
+		if err := d.Stream.Equals(*p.Stream); err != nil {
+			return err
 		}
 	}
 
-	return true
+	return nil
 }

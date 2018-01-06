@@ -52,11 +52,11 @@ func TestManager_MakeOperator__Function__Add(t *testing.T) {
 		t.Error("expected map")
 	}
 
-	if fo.In().Map("a").Type() != core.TYPE_ANY {
+	if fo.In().Map("a").Type() != core.TYPE_PRIMITIVE {
 		t.Error("expected any input")
 	}
 
-	if fo.In().Map("b").Type() != core.TYPE_ANY {
+	if fo.In().Map("b").Type() != core.TYPE_PRIMITIVE {
 		t.Error("expected any input")
 	}
 
@@ -96,15 +96,15 @@ func TestManager_MakeOperator__Function__BoolArith(t *testing.T) {
 		t.Error("expected map")
 	}
 
-	if fo.In().Map("a").Type() != core.TYPE_ANY {
+	if fo.In().Map("a").Type() != core.TYPE_PRIMITIVE {
 		t.Error("expected any input")
 	}
 
-	if fo.In().Map("b").Type() != core.TYPE_ANY {
+	if fo.In().Map("b").Type() != core.TYPE_PRIMITIVE {
 		t.Error("expected any input")
 	}
 
-	if fo.In().Map("c").Type() != core.TYPE_ANY {
+	if fo.In().Map("c").Type() != core.TYPE_PRIMITIVE {
 		t.Error("expected any input")
 	}
 

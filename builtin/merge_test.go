@@ -38,8 +38,8 @@ func TestBuiltin_Merge__PortsConfigured_Correctly(t *testing.T) {
 
 	idef := core.PortDef{Type: "map",
 		Map: map[string]core.PortDef{
-			"a": {Type: "any"},
-			"b": {Type: "any"},
+			"a": {Type: "primitive"},
+			"b": {Type: "primitive"},
 		},
 	}
 	o, err := createOpMerge(core.InstanceDef{
@@ -119,6 +119,7 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 	o, err := createOpMerge(core.InstanceDef{Operator: "merge"}, nil)
 	a.NoError(err)
 
+	o.SpecifyAny("itemType", core.PortDef{Type: "primitive"})
 	o.Out().Stream().Bufferize()
 	o.Start()
 
@@ -138,8 +139,8 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 
 	idef := core.PortDef{Type: "map",
 		Map: map[string]core.PortDef{
-			"red":  {Type: "any"},
-			"blue": {Type: "any"},
+			"red":  {Type: "primitive"},
+			"blue": {Type: "primitive"},
 		},
 	}
 

@@ -418,9 +418,9 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
 	defFilterIn := slang.ParsePortDef(`{"type":"map","map":{
-		"o":{"type":"any"},
+		"o":{"type":"primitive"},
 		"b":{"type":"boolean"}}}`)
-	defFilterOut := slang.ParsePortDef(`{"type":"any"}`)
+	defFilterOut := slang.ParsePortDef(`{"type":"primitive"}`)
 	defAddIn := slang.ParsePortDef(`{"type":"map","map":{
 		"a":{"type":"number"},
 		"b":{"type":"number"}}}`)
@@ -472,7 +472,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	o, _ := core.NewOperator("Global", nil, defStrMapStr, defStrMap, nil)
 	sum, _ := core.NewOperator("Sum", sumEval, defSumIn, defSumOut, o)
 	add, _ := core.NewOperator("Add", addEval, defAddIn, defAddOut, o)
-	filter1, _ := core.NewOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
+	filter1, err := core.NewOperator("Filter1", filterEval, defFilterIn, defFilterOut, o)
+	a.NoError(err)
 	filter2, _ := core.NewOperator("Filter2", filterEval, defFilterIn, defFilterOut, o)
 
 	o.In().Stream().Map("N").Connect(sum.In())

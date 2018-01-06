@@ -8,7 +8,7 @@ import (
 func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
-	if def.In == nil || def.Out == nil {
+	if def.In == nil && def.Out == nil {
 		inDef = core.PortDef{
 			Type: "stream",
 			Stream: &core.PortDef{

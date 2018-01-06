@@ -29,6 +29,7 @@ func init() {
 	Register("function", createOpFunc)
 	Register("fork", createOpFork)
 	Register("loop", createOpLoop)
+	Register("merge", createOpMerge)
 }
 
 func getCreatorFunc(name string) CreatorFunc {

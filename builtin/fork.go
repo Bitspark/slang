@@ -8,7 +8,7 @@ import (
 func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
-	if def.In == nil || def.Out == nil {
+	if def.In == nil && def.Out == nil {
 		inDef = core.PortDef{
 			Type: "stream",
 			Stream: &core.PortDef{
@@ -34,6 +34,10 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			},
 		}
 	} else {
+		if def.In == nil || def.Out == nil {
+			return nil, errors.New("ports In and Out must be either defined or undefined")
+		}
+
 		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["true"].Stream) {
 			return nil, errors.New("in item and true output not equal")
 		}

@@ -3,7 +3,7 @@ package tests
 import (
 	"io/ioutil"
 	"slang"
-	"slang/assertions"
+	"slang/tests/assertions"
 	"testing"
 )
 

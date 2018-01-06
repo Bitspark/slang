@@ -2,8 +2,8 @@ package tests
 
 import (
 	"slang"
-	"slang/assertions"
 	"slang/op"
+	"slang/tests/assertions"
 	"testing"
 )
 

@@ -1,8 +1,8 @@
 package builtin
 
 import (
-	"slang/assertions"
 	"slang/op"
+	"slang/tests/assertions"
 	"testing"
 )
 

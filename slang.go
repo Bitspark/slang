@@ -38,7 +38,7 @@ func ParseOperatorDef(defStr string) core.OperatorDef {
 	return def
 }
 
-func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
+func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -78,11 +78,12 @@ func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
 		return nil, fmt.Errorf("invalid direction: %s", pathSplit[0])
 	}
 
-	for p.Type() == core.TYPE_STREAM {
-		p = p.Stream()
-	}
-
 	for i := 1; i < len(pathSplit); i++ {
+		if pathSplit[i] == "" {
+			p = p.Stream()
+			continue
+		}
+
 		if p.Type() != core.TYPE_MAP {
 			return nil, errors.New("descending too deep")
 		}
@@ -91,10 +92,6 @@ func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
 		p = p.Map(k)
 		if p == nil {
 			return nil, fmt.Errorf("unknown port: %s", k)
-		}
-
-		for p.Type() == core.TYPE_STREAM {
-			p = p.Stream()
 		}
 	}
 
@@ -147,9 +144,9 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 	}
 
 	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := ParsePort(srcConnDef, o); err == nil {
+		if pSrc, err := ParsePortReference(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := ParsePort(dstConnDef, o); err == nil {
+				if pDst, err := ParsePortReference(dstConnDef, o); err == nil {
 					if err := pSrc.Connect(pDst); err != nil {
 						return nil, err
 					}

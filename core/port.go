@@ -129,7 +129,7 @@ func (p *Port) Stream() *Port {
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
 	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType {
-		return errors.New(fmt.Sprintf("types don't match: %d != %d", p.itemType, q.itemType))
+		return fmt.Errorf("types don't match: %d != %d", p.itemType, q.itemType)
 	}
 
 	if p.primitive() {
@@ -144,7 +144,7 @@ func (p *Port) Connect(q *Port) error {
 		for k, pe := range p.subs {
 			qe, ok := q.subs[k]
 			if !ok {
-				return errors.New(fmt.Sprintf("maps are incompatible: %s not present", k))
+				return fmt.Errorf("maps are incompatible: %s not present", k)
 			}
 
 			err := pe.Connect(qe)

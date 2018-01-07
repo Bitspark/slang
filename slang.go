@@ -120,7 +120,7 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
 		for _, p := range pathsRead {
 			if p == absPath {
-				return nil, errors.New(fmt.Sprintf("recursion in %s", absPath))
+				return nil, fmt.Errorf("recursion in %s", absPath)
 			}
 		}
 

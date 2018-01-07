@@ -122,7 +122,7 @@ func (t TestDef) Validate() error {
 
 	for _, tc := range t.TestCases {
 		if len(tc.Data.In) != len(tc.Data.Out) {
-			return errors.New(fmt.Sprintf(`data count unequal in test case "%s"`, tc.Name))
+			return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
 		}
 	}
 

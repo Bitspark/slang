@@ -12,8 +12,18 @@ import (
 	"strings"
 )
 
-func ReadOperator(opDefFilePath string) (*core.Operator, error) {
-	return readOperator(opDefFilePath, opDefFilePath, nil, nil)
+func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
+	op, err := readOperator(opFile, opFile, nil, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if compile {
+		op.Compile()
+	}
+
+	return op, nil
 }
 
 func ParsePortDef(defStr string) core.PortDef {

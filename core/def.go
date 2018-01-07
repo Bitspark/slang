@@ -18,7 +18,7 @@ type InstanceDef struct {
 type OperatorDef struct {
 	In          *PortDef            `json:"in"`
 	Out         *PortDef            `json:"out"`
-	Operators   []InstanceDef       `json:"operators"`
+	Operators   []*InstanceDef      `json:"operators"`
 	Connections map[string][]string `json:"connections"`
 
 	valid bool

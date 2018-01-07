@@ -15,7 +15,7 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 
 func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(core.InstanceDef{Operator: "loop"})
+	lo, err := MakeOperator(&core.InstanceDef{Operator: "loop"})
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -65,7 +65,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 
 func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(core.InstanceDef{Operator: "loop"})
+	lo, err := MakeOperator(&core.InstanceDef{Operator: "loop"})
 	a.NoError(err)
 	a.NotNil(lo)
 

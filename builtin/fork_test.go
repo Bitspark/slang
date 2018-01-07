@@ -17,7 +17,7 @@ func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Fork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "fork"})
+	o, err := MakeOperator(&core.InstanceDef{Operator: "fork"})
 	require.NoError(t, err)
 
 	a.NotNil(o.In().Stream().Map("i"))
@@ -27,7 +27,7 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "fork"})
+	o, err := MakeOperator(&core.InstanceDef{Operator: "fork"})
 	require.NoError(t, err)
 
 	a.NotNil(o.Out().Map("true").Stream())
@@ -37,7 +37,7 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 func TestBuiltin_Fork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "fork"})
+	o, err := MakeOperator(&core.InstanceDef{Operator: "fork"})
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()
@@ -69,7 +69,7 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 
 func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-	o, err := MakeOperator(core.InstanceDef{Operator: "fork"})
+	o, err := MakeOperator(&core.InstanceDef{Operator: "fork"})
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()

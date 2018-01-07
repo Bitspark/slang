@@ -13,13 +13,22 @@ import (
 )
 
 func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
-	op, err := readOperator(opFile, opFile, nil, nil)
+	// Read operator definition and perform recursion detection
+	def, err := readOperatorDef(opFile, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Create and internally connect the operator
+	op, err := buildAndConnectOperator(opFile, def, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if compile {
+		// Compile when requested
 		op.Compile()
 	}
 
@@ -32,9 +41,9 @@ func ParsePortDef(defStr string) core.PortDef {
 	return def
 }
 
-func ParseOperatorDef(defStr string) core.OperatorDef {
-	def := core.OperatorDef{}
-	json.Unmarshal([]byte(defStr), &def)
+func ParseOperatorDef(defStr string) *core.OperatorDef {
+	def := &core.OperatorDef{}
+	json.Unmarshal([]byte(defStr), def)
 	return def
 }
 
@@ -98,7 +107,9 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 	return p, nil
 }
 
-func readOperator(insName string, opDefFilePath string, par *core.Operator, pathsRead []string) (*core.Operator, error) {
+// READ OPERATOR DEFINITION
+
+func readOperatorDef(opDefFilePath string, pathsRead []string) (*core.OperatorDef, error) {
 	b, err := ioutil.ReadFile(opDefFilePath)
 
 	if err != nil {
@@ -126,6 +137,69 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 		return nil, err
 	}
 
+	currDir := path.Dir(opDefFilePath)
+
+	for _, childOpInsDef := range def.Operators {
+		childDef, err := getOperatorDef(childOpInsDef, currDir, pathsRead)
+
+		if err != nil {
+			return nil, err
+		}
+
+		childOpInsDef.SetOperatorDef(childDef)
+	}
+
+	return def, nil
+}
+
+func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (*core.OperatorDef, error) {
+	if builtin.IsRegistered(insDef.Operator) {
+		return builtin.GetOperatorDef(insDef.Operator), nil
+	}
+
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
+
+	if strings.HasPrefix(insDef.Operator, ".") {
+		defFilePath := path.Join(currDir, relFilePath)
+		def, err := readOperatorDef(defFilePath, pathsRead)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return def, nil
+	}
+
+	// These are the paths where we search for operators
+	paths := []string{"."}
+
+	var err error
+	var def *core.OperatorDef
+	for _, p := range paths {
+		defFilePath := path.Join(p, relFilePath)
+
+		def, err = readOperatorDef(defFilePath, pathsRead)
+
+		if err != nil {
+			continue
+		}
+
+		return def, nil
+	}
+
+	return nil, err
+}
+
+// MAKE OPERATORS, PORTS AND CONNECTIONS
+
+func buildAndConnectOperator(insName string, def *core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+	if !def.Valid() {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	o, err := core.NewOperator(insName, nil, *def.In, *def.Out)
 	o.SetParent(par)
 
@@ -133,10 +207,8 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 		return nil, err
 	}
 
-	currDir := path.Dir(opDefFilePath)
-
 	for _, childOpInsDef := range def.Operators {
-		_, err := getOperator(childOpInsDef, o, currDir, pathsRead)
+		_, err := getOperator(childOpInsDef, o)
 
 		if err != nil {
 			return nil, err
@@ -162,40 +234,10 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 	return o, nil
 }
 
-func getOperator(insDef core.InstanceDef, par *core.Operator, currDir string, pathsRead []string) (*core.Operator, error) {
+func getOperator(insDef *core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
 		builtinOp.SetParent(par)
 		return builtinOp, nil
 	}
-
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
-
-	if strings.HasPrefix(insDef.Operator, ".") {
-		defFilePath := path.Join(currDir, relFilePath)
-		o, err := readOperator(insDef.Name, defFilePath, par, pathsRead)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return o, nil
-	}
-
-	paths := []string{"."}
-
-	var err error
-	for _, p := range paths {
-		defFilePath := path.Join(p, relFilePath)
-
-		var o *core.Operator
-		o, err = readOperator(insDef.Name, defFilePath, par, pathsRead)
-
-		if err != nil {
-			continue
-		}
-
-		return o, nil
-	}
-
-	return nil, err
+	return buildAndConnectOperator(insDef.Name, insDef.OperatorDef(), par)
 }

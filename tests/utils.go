@@ -12,7 +12,7 @@ func parseJSON(str string) interface{} {
 	return obj
 }
 
-func validateJSONOperatorDef(jsonDef string) (core.OperatorDef, error) {
+func validateJSONOperatorDef(jsonDef string) (*core.OperatorDef, error) {
 	def := slang.ParseOperatorDef(jsonDef)
 	return def, def.Validate()
 }

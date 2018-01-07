@@ -1,25 +1,34 @@
 {
-    "in": {
-        "type": "number"
-    },
-    "out": {
-        "type": "number"
-    },
-    "operators": [
-        {
-            "operator": "function",
-            "name": "doubler",
-            "properties": {
-                "expression": "a+a"
-            }
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": [
+    {
+      "operator": "eval",
+      "name": "doubler",
+      "properties": {
+        "expression": "a+a"
+      },
+      "in": {
+        "type": "map",
+        "map": {
+          "a": {"type": "number"}
         }
-    ],
-    "connections": {
-        ":in": [
-            "doubler:in.a"
-        ],
-        "doubler:out": [
-            ":out"
-        ]
+      },
+      "out": {
+        "type": "number"
+      }
     }
+  ],
+  "connections": {
+    ":in": [
+      "doubler:in.a"
+    ],
+    "doubler:out": [
+      ":out"
+    ]
+  }
 }

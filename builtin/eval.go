@@ -73,12 +73,20 @@ func NewEvaluableExpression(expression string) (*EvaluableExpression, error) {
 
 type functionStore struct {
 	expr     string
-	evalExpr *govaluate.EvaluableExpression
+	evalExpr *EvaluableExpression
 }
 
 func createOpEval(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if def.Properties == nil {
 		return nil, errors.New("no properties given")
+	}
+
+	if def.In == nil {
+		return nil, errors.New("port in must be given")
+	}
+
+	if def.Out == nil {
+		return nil, errors.New("port out must be given")
 	}
 
 	exprStr, ok := def.Properties["expression"]
@@ -93,26 +101,14 @@ func createOpEval(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 		return nil, errors.New("expression must be string")
 	}
 
-	evalExpr, err := govaluate.NewEvaluableExpression(expr)
+	evalExpr, err := NewEvaluableExpression(expr)
 
 	if err != nil {
 		return nil, err
 	}
 
-	inDef := core.PortDef{
-		Type: "map",
-		Map:  make(map[string]core.PortDef),
-	}
-
-	vars := evalExpr.Vars()
-
-	for _, v := range vars {
-		inDef.Map[v] = core.PortDef{Type: "any"}
-	}
-
-	outDef := core.PortDef{
-		Type: "any",
-	}
+	inDef := *def.In
+	outDef := *def.Out
 
 	o, err := core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
 		expr := store.(functionStore).evalExpr
@@ -132,7 +128,10 @@ func createOpEval(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			}
 		}
 	}, inDef, outDef, par)
-	o.SetStore(functionStore{expr, evalExpr})
+
+	if o != nil {
+		o.SetStore(functionStore{expr, evalExpr})
+	}
 
 	return o, nil
 }

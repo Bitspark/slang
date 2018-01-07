@@ -1,26 +1,35 @@
 {
-    "name": "opr",
-    "in": {
-        "type": "number"
-    },
-    "out": {
-        "type": "number"
-    },
-    "operators": [
-        {
-            "operator": "function",
-            "name": "passer",
-            "properties": {
-                "expression": "a"
-            }
+  "name": "opr",
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": [
+    {
+      "operator": "eval",
+      "name": "passer",
+      "properties": {
+        "expression": "a"
+      },
+      "in": {
+        "type": "map",
+        "map": {
+          "a": {"type": "number"}
         }
-    ],
-    "connections": {
-        ":in": [
-            "passer:in.a"
-        ],
-        "passer:out": [
-            ":out"
-        ]
+      },
+      "out": {
+        "type": "number"
+      }
     }
+  ],
+  "connections": {
+    ":in": [
+      "passer:in.a"
+    ],
+    "passer:out": [
+      ":out"
+    ]
+  }
 }

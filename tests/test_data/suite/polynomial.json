@@ -22,9 +22,18 @@
   "operators": [
     {
       "name": "pfunc",
-      "operator": "function",
+      "operator": "eval",
       "properties": {
         "expression": "a*x*x + b*x + c"
+      },
+      "in": {
+        "type": "map",
+        "map": {
+          "a": {"type": "number"}
+        }
+      },
+      "out": {
+        "type": "number"
       }
     }
   ],

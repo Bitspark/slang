@@ -304,10 +304,10 @@ func TestNewPort__Complex(t *testing.T) {
 // Port.Type (6 tests)
 
 func TestPort_Type__Simple__Any(t *testing.T) {
-	def := slang.ParsePortDef(`{"type":"any"}`)
+	def := slang.ParsePortDef(`{"type":"primitive"}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
 
-	if p.Type() != core.TYPE_ANY {
+	if p.Type() != core.TYPE_PRIMITIVE {
 		t.Error("wrong type")
 	}
 }

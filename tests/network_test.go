@@ -430,9 +430,9 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
 	defFilterIn := slang.ParsePortDef(`{"type":"map","map":{
-		"o":{"type":"any"},
+		"o":{"type":"primitive"},
 		"b":{"type":"boolean"}}}`)
-	defFilterOut := slang.ParsePortDef(`{"type":"any"}`)
+	defFilterOut := slang.ParsePortDef(`{"type":"primitive"}`)
 	defAddIn := slang.ParsePortDef(`{"type":"map","map":{
 		"a":{"type":"number"},
 		"b":{"type":"number"}}}`)

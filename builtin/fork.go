@@ -14,7 +14,7 @@ func createOpFork(def core.InstanceDef) (*core.Operator, error) {
 			Stream: &core.PortDef{
 				Type: "map",
 				Map: map[string]core.PortDef{
-					"i":      {Type: "any"},
+					"i":      {Type: "primitive"},
 					"select": {Type: "boolean"},
 				},
 			},
@@ -25,11 +25,11 @@ func createOpFork(def core.InstanceDef) (*core.Operator, error) {
 			Map: map[string]core.PortDef{
 				"true": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 				"false": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 			},
 		}

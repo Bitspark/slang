@@ -1,15 +1,15 @@
 {
   "in": {
-    "type": "any"
+    "type": "primitive"
   },
   "out": {
     "type": "map",
     "map": {
       "left": {
-        "type": "any"
+        "type": "primitive"
       },
       "right": {
-        "type": "any"
+        "type": "primitive"
       }
     }
   },

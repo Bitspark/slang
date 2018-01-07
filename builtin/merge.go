@@ -14,11 +14,11 @@ func createOpMerge(def core.InstanceDef) (*core.Operator, error) {
 			Map: map[string]core.PortDef{
 				"true": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 				"false": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 				"select": {
 					Type:   "stream",
@@ -28,7 +28,7 @@ func createOpMerge(def core.InstanceDef) (*core.Operator, error) {
 		}
 		outDef = core.PortDef{
 			Type:   "stream",
-			Stream: &core.PortDef{Type: "any"},
+			Stream: &core.PortDef{Type: "primitive"},
 		}
 
 	} else {

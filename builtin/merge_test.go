@@ -38,8 +38,8 @@ func TestBuiltin_Merge__PortsConfigured_Correctly(t *testing.T) {
 
 	idef := core.PortDef{Type: "map",
 		Map: map[string]core.PortDef{
-			"a": {Type: "any"},
-			"b": {Type: "any"},
+			"a": {Type: "primitive"},
+			"b": {Type: "primitive"},
 		},
 	}
 	o, err := createOpMerge(core.InstanceDef{
@@ -75,8 +75,8 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingIn(t *testing.T) {
 
 	idef := core.PortDef{Type: "map",
 		Map: map[string]core.PortDef{
-			"a": {Type: "any"},
-			"b": {Type: "any"},
+			"a": {Type: "primitive"},
+			"b": {Type: "primitive"},
 		},
 	}
 
@@ -95,8 +95,8 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingOut(t *testing.T) {
 
 	idef := core.PortDef{Type: "map",
 		Map: map[string]core.PortDef{
-			"a": {Type: "any"},
-			"b": {Type: "any"},
+			"a": {Type: "primitive"},
+			"b": {Type: "primitive"},
 		},
 	}
 	_, err := createOpMerge(core.InstanceDef{
@@ -138,8 +138,8 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 
 	idef := core.PortDef{Type: "map",
 		Map: map[string]core.PortDef{
-			"red":  {Type: "any"},
-			"blue": {Type: "any"},
+			"red":  {Type: "primitive"},
+			"blue": {Type: "primitive"},
 		},
 	}
 

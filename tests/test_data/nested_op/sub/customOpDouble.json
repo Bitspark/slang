@@ -25,7 +25,7 @@
   ],
   "connections": {
     ":in": [
-      "doubler:in.a"
+      "doubler:in"
     ],
     "doubler:out": [
       ":out"

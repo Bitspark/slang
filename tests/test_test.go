@@ -31,7 +31,7 @@ func TestTestOperator__ComplexTest(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator__SuiteTests(t *testing.T) {
+/*func TestTestOperator__SuiteTests(t *testing.T) {
 	a := assertions.New(t)
 
 	succs, fails, err := slang.TestOperator("test_data/suite/polynomial_test.json", ioutil.Discard, false)
@@ -43,4 +43,4 @@ func TestTestOperator__SuiteTests(t *testing.T) {
 	a.Nil(err)
 	a.Equal(2, succs)
 	a.Equal(0, fails)
-}
+}*/

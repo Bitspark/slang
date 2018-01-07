@@ -32,11 +32,11 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 	oPasser := o.Child("passer")
 	a.NotNil(oPasser)
-	a.True(o.In().Connected(oPasser.In().Map("a")))
+	a.True(o.In().Connected(oPasser.In()))
 	a.True(oPasser.Out().Connected(o.Out()))
 
 	o.Out().Bufferize()
-	o.In().Push("hallo")
+	o.In().Push(map[string]interface{}{"a": "hallo"})
 
 	o.Start()
 
@@ -49,7 +49,7 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 	a.NoError(err)
 
 	o.Out().Bufferize()
-	o.In().Push("hallo")
+	o.In().Push(map[string]interface{}{"a": "hallo"})
 
 	o.Start()
 
@@ -75,8 +75,8 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 	a.NoError(err)
 
 	o.Out().Bufferize()
-	o.In().Push("hallo")
-	o.In().Push(2.0)
+	o.In().Push(map[string]interface{}{"a": "hallo"})
+	o.In().Push(map[string]interface{}{"a": 2.0})
 
 	o.Start()
 

@@ -8,15 +8,15 @@
     },
     "operators": [
         {
-            "operator": ".customOp",
+            "operator": ".customPasser",
             "name": "left"
         },
         {
-            "operator": ".customOp",
+            "operator": ".customPasser",
             "name": "middle"
         },
         {
-            "operator": ".customOp",
+            "operator": ".customPasser",
             "name": "right"
         }
     ],

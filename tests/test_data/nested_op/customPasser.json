@@ -1,0 +1,15 @@
+{
+  "name": "customOp",
+  "in": {
+    "type": "primitive"
+  },
+  "out": {
+    "type": "primitive"
+  },
+  "operators": [],
+  "connections": {
+    ":in": [
+      ":out"
+    ]
+  }
+}

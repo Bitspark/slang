@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestBuiltin_Merge_CreatorFuncIsRegistered(t *testing.T) {
+func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
 	ocFork := getCreatorFunc("merge")

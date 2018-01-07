@@ -4,20 +4,21 @@ import (
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getCreatorFunc("merge")
+	ocFork := getBuiltinCfg("merge")
 	a.NotNil(ocFork)
 }
 
 func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
-	a.NoError(err)
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge"})
+	require.NoError(t, err)
 
 	a.NotNil(o.In().Map("true").Stream())
 	a.NotNil(o.In().Map("false").Stream())
@@ -27,97 +28,17 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
-	a.NoError(err)
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge"})
+	require.NoError(t, err)
 
 	a.NotNil(o.Out().Stream())
-}
-
-func TestBuiltin_Merge__PortsConfigured_Correctly(t *testing.T) {
-	a := assertions.New(t)
-
-	idef := core.PortDef{Type: "map",
-		Map: map[string]core.PortDef{
-			"a": {Type: "primitive"},
-			"b": {Type: "primitive"},
-		},
-	}
-	o, err := createOpMerge(core.InstanceDef{
-		Operator: "merge",
-		In: &core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"select": {Type: "stream", Stream: &core.PortDef{Type: "boolean"}},
-				"true":   {Type: "stream", Stream: &idef},
-				"false":  {Type: "stream", Stream: &idef},
-			},
-		},
-		Out: &core.PortDef{
-			Type:   "stream",
-			Stream: &idef,
-		},
-	})
-	a.NoError(err)
-
-	a.NotNil(o.In().Map("true").Stream())
-	a.NotNil(o.In().Map("false").Stream())
-	a.NotNil(o.In().Map("select").Stream())
-	a.NotNil(o.In().Map("true").Stream().Map("a"))
-	a.NotNil(o.In().Map("true").Stream().Map("b"))
-
-	a.NotNil(o.Out().Stream())
-	a.NotNil(o.Out().Stream().Map("a"))
-	a.NotNil(o.Out().Stream().Map("b"))
-}
-
-func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingIn(t *testing.T) {
-	a := assertions.New(t)
-
-	idef := core.PortDef{Type: "map",
-		Map: map[string]core.PortDef{
-			"a": {Type: "primitive"},
-			"b": {Type: "primitive"},
-		},
-	}
-
-	_, err := createOpMerge(core.InstanceDef{
-		Operator: "merge",
-		Out: &core.PortDef{
-			Type:   "stream",
-			Stream: &idef,
-		},
-	})
-	a.Error(err)
-}
-
-func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingOut(t *testing.T) {
-	a := assertions.New(t)
-
-	idef := core.PortDef{Type: "map",
-		Map: map[string]core.PortDef{
-			"a": {Type: "primitive"},
-			"b": {Type: "primitive"},
-		},
-	}
-	_, err := createOpMerge(core.InstanceDef{
-		Operator: "merge",
-		In: &core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"select": {Type: "boolean"},
-				"true":   {Type: "stream", Stream: &idef},
-				"false":  {Type: "stream", Stream: &idef},
-			},
-		},
-	})
-	a.Error(err)
 }
 
 func TestBuiltin_Merge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
-	a.NoError(err)
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge"})
+	require.NoError(t, err)
 
 	o.Out().Stream().Bufferize()
 	o.Start()
@@ -135,30 +56,10 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 
 func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-
-	idef := core.PortDef{Type: "map",
-		Map: map[string]core.PortDef{
-			"red":  {Type: "primitive"},
-			"blue": {Type: "primitive"},
-		},
-	}
-
-	o, err := createOpMerge(core.InstanceDef{
+	o, err := MakeOperator(core.InstanceDef{
 		Operator: "merge",
-		In: &core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"select": {Type: "stream", Stream: &core.PortDef{Type: "boolean"}},
-				"true":   {Type: "stream", Stream: &idef},
-				"false":  {Type: "stream", Stream: &idef},
-			},
-		},
-		Out: &core.PortDef{
-			Type:   "stream",
-			Stream: &idef,
-		},
 	})
-	a.NoError(err)
+	require.NoError(t, err)
 
 	o.Out().Stream().Bufferize()
 	o.Start()

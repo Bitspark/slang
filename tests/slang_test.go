@@ -9,7 +9,7 @@ import (
 
 func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/voidOp.json")
+	o, err := slang.BuildOperator("test_data/voidOp.json", false)
 	a.NoError(err)
 	a.True(o.In().Connected(o.Out()))
 
@@ -21,22 +21,22 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 
 func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
 	a := assertions.New(t)
-	_, err := slang.ReadOperator(`test_data/unknownOp.json`)
+	_, err := slang.BuildOperator(`test_data/unknownOp.json`, false)
 	a.Error(err)
 }
 
 func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/usingBuiltinOp.json")
+	o, err := slang.BuildOperator("test_data/usingBuiltinOp.json", false)
 	a.NoError(err)
 
 	oPasser := o.Child("passer")
 	a.NotNil(oPasser)
-	a.True(o.In().Connected(oPasser.In().Map("a")))
+	a.True(o.In().Connected(oPasser.In()))
 	a.True(oPasser.Out().Connected(o.Out()))
 
 	o.Out().Bufferize()
-	o.In().Push("hallo")
+	o.In().Push(map[string]interface{}{"a": "hallo"})
 
 	o.Start()
 
@@ -45,11 +45,11 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/nested_op/usingCustomOp1.json")
+	o, err := slang.BuildOperator("test_data/nested_op/usingCustomOp1.json", false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
-	o.In().Push("hallo")
+	o.In().Push(map[string]interface{}{"a": "hallo"})
 
 	o.Start()
 
@@ -58,7 +58,7 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/nested_op/usingCustomOpN.json")
+	o, err := slang.BuildOperator("test_data/nested_op/usingCustomOpN.json", false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
@@ -71,12 +71,12 @@ func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/nested_op/usingSubCustomOpDouble.json")
+	o, err := slang.BuildOperator("test_data/nested_op/usingSubCustomOpDouble.json", false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
-	o.In().Push("hallo")
-	o.In().Push(2.0)
+	o.In().Push(map[string]interface{}{"a": "hallo"})
+	o.In().Push(map[string]interface{}{"a": 2.0})
 
 	o.Start()
 
@@ -85,7 +85,7 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/cwdOp.json")
+	o, err := slang.BuildOperator("test_data/cwdOp.json", false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
@@ -99,7 +99,7 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 
 func TestOperator_ReadOperator__Recursion(t *testing.T) {
 	a := assertions.New(t)
-	o, err := slang.ReadOperator("test_data/recOp1.json")
+	o, err := slang.BuildOperator("test_data/recOp1.json", false)
 	a.Error(err)
 	a.Nil(o)
 }

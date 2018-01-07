@@ -10,9 +10,9 @@ type InstanceDef struct {
 	Operator   string                 `json:"operator"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
-	In         *PortDef               `json:"in"`
-	Out        *PortDef               `json:"out"`
-	valid      bool
+
+	valid       bool
+	operatorDef *OperatorDef
 }
 
 type OperatorDef struct {
@@ -20,17 +20,31 @@ type OperatorDef struct {
 	Out         *PortDef            `json:"out"`
 	Operators   []InstanceDef       `json:"operators"`
 	Connections map[string][]string `json:"connections"`
-	valid       bool
+
+	valid bool
 }
 
 type PortDef struct {
 	Type   string             `json:"type"`
 	Stream *PortDef           `json:"stream"`
 	Map    map[string]PortDef `json:"map"`
-	valid  bool
+
+	valid bool
 }
 
 // PUBLIC METHODS
+
+func (d *InstanceDef) SetOperatorDef(operatorDef *OperatorDef) error {
+	if !operatorDef.Valid() {
+		return errors.New("operator definition not validated")
+	}
+	d.operatorDef = operatorDef
+	return nil
+}
+
+func (d *InstanceDef) OperatorDef() *OperatorDef {
+	return d.operatorDef
+}
 
 func (d InstanceDef) Valid() bool {
 	return d.valid
@@ -59,18 +73,6 @@ func (d *InstanceDef) Validate() error {
 
 	if strings.Contains(d.Operator, " ") {
 		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
-	}
-
-	if d.In != nil {
-		if err := d.In.Validate(); err != nil {
-			return err
-		}
-	}
-
-	if d.Out != nil {
-		if err := d.Out.Validate(); err != nil {
-			return err
-		}
 	}
 
 	d.valid = true
@@ -107,6 +109,10 @@ func (d *OperatorDef) Validate() error {
 }
 
 func (d *PortDef) Validate() error {
+	if d.Type == "" {
+		return errors.New("type must not be empty")
+	}
+
 	validTypes := []string{"primitive", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {

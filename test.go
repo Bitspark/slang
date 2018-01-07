@@ -46,7 +46,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		}
 	}
 
-	o, err := ReadOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile))
+	o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), false)
 
 	if err != nil {
 		return 0, 0, err

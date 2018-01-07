@@ -2,30 +2,48 @@ package builtin
 
 import (
 	"slang/core"
-	"errors"
 )
 
-func createOpLoop(def core.InstanceDef) (*core.Operator, error) {
-	var inDef, outDef core.PortDef
-
-	if def.In == nil || def.Out == nil {
-		return nil, errors.New("need port definitions")
-	} else {
-		iType := def.In.Map["init"]
-		if !def.In.Map["iteration"].Stream.Map["state"].Equals(iType) {
-			return nil, errors.New("in item and true output not equal")
-		}
-		if !def.Out.Map["end"].Equals(iType) {
-			return nil, errors.New("in item and true output not equal")
-		}
-		if !def.Out.Map["state"].Stream.Equals(iType) {
-			return nil, errors.New("in item and true output not equal")
-		}
-		inDef = *def.In
-		outDef = *def.Out
-	}
-
-	return core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
+var loopOpCfg = &builtinConfig{
+	oDef: &core.OperatorDef{
+		In: &core.PortDef{
+			Type: "map",
+			Map: map[string]core.PortDef{
+				"init": {
+					Type: "primitive",
+				},
+				"iteration": {
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type: "map",
+						Map: map[string]core.PortDef{
+							"continue": {
+								Type: "boolean",
+							},
+							"state": {
+								Type: "primitive",
+							},
+						},
+					},
+				},
+			},
+		},
+		Out: &core.PortDef{
+			Type: "map",
+			Map: map[string]core.PortDef{
+				"end": {
+					Type: "primitive",
+				},
+				"state": {
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type: "primitive",
+					},
+				},
+			},
+		},
+	},
+	oFunc: func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Map("init").Pull()
 
@@ -66,5 +84,5 @@ func createOpLoop(def core.InstanceDef) (*core.Operator, error) {
 				oldState = newState
 			}
 		}
-	}, inDef, outDef)
+	},
 }

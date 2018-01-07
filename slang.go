@@ -12,8 +12,18 @@ import (
 	"strings"
 )
 
-func ReadOperator(opDefFilePath string) (*core.Operator, error) {
-	return readOperator(opDefFilePath, opDefFilePath, nil, nil)
+func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
+	op, err := readOperator(opFile, opFile, nil, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if compile {
+		op.Compile()
+	}
+
+	return op, nil
 }
 
 func ParsePortDef(defStr string) core.PortDef {
@@ -140,7 +150,9 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 		if pSrc, err := ParsePort(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
 				if pDst, err := ParsePort(dstConnDef, o); err == nil {
-					pSrc.Connect(pDst)
+					if err := pSrc.Connect(pDst); err != nil {
+						return nil, err
+					}
 				} else {
 					return nil, err
 				}

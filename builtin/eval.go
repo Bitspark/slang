@@ -76,41 +76,16 @@ type functionStore struct {
 	evalExpr *EvaluableExpression
 }
 
-func createOpEval(def core.InstanceDef) (*core.Operator, error) {
-	if def.Properties == nil {
-		return nil, errors.New("no properties given")
-	}
-
-	if def.In == nil {
-		return nil, errors.New("port in must be given")
-	}
-
-	if def.Out == nil {
-		return nil, errors.New("port out must be given")
-	}
-
-	exprStr, ok := def.Properties["expression"]
-
-	if !ok {
-		return nil, errors.New("no expression given")
-	}
-
-	expr, ok := exprStr.(string)
-
-	if !ok {
-		return nil, errors.New("expression must be string")
-	}
-
-	evalExpr, err := NewEvaluableExpression(expr)
-
-	if err != nil {
-		return nil, err
-	}
-
-	inDef := *def.In
-	outDef := *def.Out
-
-	o, err := core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
+var evalOpCfg = &builtinConfig{
+	oDef: &core.OperatorDef{
+		In: &core.PortDef{
+			Type: "primitive",
+		},
+		Out: &core.PortDef{
+			Type: "primitive",
+		},
+	},
+	oFunc: func(in, out *core.Port, store interface{}) {
 		expr := store.(functionStore).evalExpr
 		for true {
 			i := in.Pull()
@@ -127,11 +102,30 @@ func createOpEval(def core.InstanceDef) (*core.Operator, error) {
 				panic("invalid item")
 			}
 		}
-	}, inDef, outDef)
+	},
+	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
+		exprStr, ok := props["expression"]
 
-	if o != nil {
-		o.SetStore(functionStore{expr, evalExpr})
-	}
+		if !ok {
+			return errors.New("no expression given")
+		}
 
-	return o, nil
+		expr, ok := exprStr.(string)
+
+		if !ok {
+			return errors.New("expression must be string")
+		}
+
+		evalExpr, err := NewEvaluableExpression(expr)
+
+		if err != nil {
+			return err
+		}
+
+		if o != nil {
+			o.SetStore(functionStore{expr, evalExpr})
+		}
+
+		return nil
+	},
 }

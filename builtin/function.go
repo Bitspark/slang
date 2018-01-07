@@ -12,7 +12,7 @@ type functionStore struct {
 	evalExpr *govaluate.EvaluableExpression
 }
 
-func createOpFunc(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpFunc(def core.InstanceDef) (*core.Operator, error) {
 	if def.Properties == nil {
 		return nil, errors.New("no properties given")
 	}
@@ -43,11 +43,11 @@ func createOpFunc(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 	vars := evalExpr.Vars()
 
 	for _, v := range vars {
-		inDef.Map[v] = core.PortDef{Type: "any"}
+		inDef.Map[v] = core.PortDef{Type: "primitive"}
 	}
 
 	outDef := core.PortDef{
-		Type: "any",
+		Type: "primitive",
 	}
 
 	o, err := core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
@@ -67,7 +67,7 @@ func createOpFunc(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 				panic("invalid item")
 			}
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 	o.SetStore(functionStore{expr, evalExpr})
 
 	return o, nil

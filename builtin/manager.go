@@ -5,7 +5,7 @@ import (
 	"slang/core"
 )
 
-type CreatorFunc func(core.InstanceDef, *core.Operator) (*core.Operator, error)
+type CreatorFunc func(core.InstanceDef) (*core.Operator, error)
 
 type Manager struct {
 	creators map[string]CreatorFunc
@@ -13,9 +13,9 @@ type Manager struct {
 
 var m = Manager{}
 
-func MakeOperator(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	if creator := getCreatorFunc(def.Operator); creator != nil {
-		return creator(def, par)
+		return creator(def)
 	}
 	return nil, errors.New("unknown builtin operator")
 }

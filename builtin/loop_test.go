@@ -44,7 +44,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 		},
 	}
 
-	lo, err := getCreatorFunc("loop")(core.InstanceDef{Operator: "loop", In: &in, Out: &out}, nil)
+	lo, err := getCreatorFunc("loop")(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -59,7 +59,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 				out.Push(f < 10.0)
 			}
 		}
-	}, core.PortDef{Type: "number"}, core.PortDef{Type: "boolean"}, nil)
+	}, core.PortDef{Type: "number"}, core.PortDef{Type: "boolean"})
 
 	// Double function operator
 	fo, _ := core.NewOperator("double", func(in, out *core.Port, store interface{}) {
@@ -72,7 +72,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 				out.Push(f * 2.0)
 			}
 		}
-	}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
+	}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 
 	// Connect
 	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))
@@ -130,7 +130,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 		},
 	}
 
-	lo, err := getCreatorFunc("loop")(core.InstanceDef{Operator: "loop", In: &in, Out: &out}, nil)
+	lo, err := getCreatorFunc("loop")(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -146,7 +146,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 				out.Push(i > 0.0)
 			}
 		}
-	}, idef, core.PortDef{Type: "boolean"}, nil)
+	}, idef, core.PortDef{Type: "boolean"})
 
 	// Fibonacci function operator
 	fo, _ := core.NewOperator("fib", func(in, out *core.Port, store interface{}) {
@@ -162,7 +162,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 				out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
 			}
 		}
-	}, idef, idef, nil)
+	}, idef, idef)
 
 	// Connect
 	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))

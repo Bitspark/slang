@@ -150,7 +150,9 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 		if pSrc, err := ParsePort(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
 				if pDst, err := ParsePort(dstConnDef, o); err == nil {
-					pSrc.Connect(pDst)
+					if err := pSrc.Connect(pDst); err != nil {
+						return nil, err
+					}
 				} else {
 					return nil, err
 				}

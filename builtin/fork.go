@@ -5,7 +5,7 @@ import (
 	"slang/core"
 )
 
-func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpFork(def core.InstanceDef) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
 	if def.In == nil && def.Out == nil {
@@ -14,7 +14,7 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			Stream: &core.PortDef{
 				Type: "map",
 				Map: map[string]core.PortDef{
-					"i":      {Type: "any"},
+					"i":      {Type: "primitive"},
 					"select": {Type: "boolean"},
 				},
 			},
@@ -25,11 +25,11 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 			Map: map[string]core.PortDef{
 				"true": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 				"false": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 			},
 		}
@@ -83,5 +83,5 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 				}
 			}
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 }

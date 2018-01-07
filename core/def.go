@@ -107,7 +107,7 @@ func (d *OperatorDef) Validate() error {
 }
 
 func (d *PortDef) Validate() error {
-	validTypes := []string{"any", "number", "string", "boolean", "stream", "map"}
+	validTypes := []string{"primitive", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {

@@ -5,7 +5,7 @@ import (
 	"slang/core"
 )
 
-func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpMerge(def core.InstanceDef) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
 	if def.In == nil && def.Out == nil {
@@ -14,11 +14,11 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 			Map: map[string]core.PortDef{
 				"true": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 				"false": {
 					Type:   "stream",
-					Stream: &core.PortDef{Type: "any"},
+					Stream: &core.PortDef{Type: "primitive"},
 				},
 				"select": {
 					Type:   "stream",
@@ -28,7 +28,7 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 		}
 		outDef = core.PortDef{
 			Type:   "stream",
-			Stream: &core.PortDef{Type: "any"},
+			Stream: &core.PortDef{Type: "primitive"},
 		}
 
 	} else {
@@ -103,5 +103,5 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 			}
 
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 }

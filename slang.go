@@ -119,7 +119,8 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 		return nil, err
 	}
 
-	o, err := core.NewOperator(insName, nil, *def.In, *def.Out, par)
+	o, err := core.NewOperator(insName, nil, *def.In, *def.Out)
+	o.SetParent(par)
 
 	if err != nil {
 		return nil, err
@@ -153,7 +154,8 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 }
 
 func getOperator(insDef core.InstanceDef, par *core.Operator, currDir string, pathsRead []string) (*core.Operator, error) {
-	if builtinOp, err := builtin.MakeOperator(insDef, par); err == nil {
+	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
+		builtinOp.SetParent(par)
 		return builtinOp, nil
 	}
 

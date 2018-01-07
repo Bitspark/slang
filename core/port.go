@@ -6,12 +6,12 @@ import (
 )
 
 const (
-	TYPE_ANY     = iota
-	TYPE_NUMBER  = iota
-	TYPE_STRING  = iota
-	TYPE_BOOLEAN = iota
-	TYPE_STREAM  = iota
-	TYPE_MAP     = iota
+	TYPE_PRIMITIVE = iota
+	TYPE_NUMBER    = iota
+	TYPE_STRING    = iota
+	TYPE_BOOLEAN   = iota
+	TYPE_STREAM    = iota
+	TYPE_MAP       = iota
 )
 
 const (
@@ -89,8 +89,8 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_STRING
 	case "boolean":
 		p.itemType = TYPE_BOOLEAN
-	case "any":
-		p.itemType = TYPE_ANY
+	case "primitive":
+		p.itemType = TYPE_PRIMITIVE
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
@@ -128,7 +128,7 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != TYPE_ANY && q.itemType != TYPE_ANY && p.itemType != q.itemType {
+	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType {
 		return errors.New(fmt.Sprintf("types don't match: %d != %d", p.itemType, q.itemType))
 	}
 
@@ -353,8 +353,8 @@ func (p *Port) Name() string {
 	var name string
 
 	switch p.itemType {
-	case TYPE_ANY:
-		name = "ANY"
+	case TYPE_PRIMITIVE:
+		name = "PRIMITIVE"
 	case TYPE_NUMBER:
 		name = "NUMBER"
 	case TYPE_STRING:
@@ -478,5 +478,5 @@ func (p *Port) connect(q *Port) error {
 }
 
 func (p *Port) primitive() bool {
-	return p.itemType == TYPE_ANY || p.itemType == TYPE_NUMBER || p.itemType == TYPE_STRING || p.itemType == TYPE_BOOLEAN
+	return p.itemType == TYPE_PRIMITIVE || p.itemType == TYPE_NUMBER || p.itemType == TYPE_STRING || p.itemType == TYPE_BOOLEAN
 }

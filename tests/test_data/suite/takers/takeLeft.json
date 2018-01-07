@@ -3,15 +3,15 @@
     "type": "map",
     "map": {
       "left": {
-        "type": "any"
+        "type": "primitive"
       },
       "right": {
-        "type": "any"
+        "type": "primitive"
       }
     }
   },
   "out": {
-    "type": "any"
+    "type": "primitive"
   },
   "operators": [],
   "connections": {

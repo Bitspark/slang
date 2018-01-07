@@ -6,14 +6,14 @@ import (
 	"testing"
 )
 
-func TestOperatorCreator_Fork_IsRegistered(t *testing.T) {
+func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
 	ocFork := getCreatorFunc("fork")
 	a.NotNil(ocFork)
 }
 
-func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
+func TestBuiltin_Fork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"})
@@ -23,7 +23,7 @@ func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 	a.NotNil(o.In().Stream().Map("select"))
 }
 
-func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
+func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"})
@@ -33,7 +33,7 @@ func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 	a.NotNil(o.Out().Map("false").Stream())
 }
 
-func TestBuiltin_OperatorFork__Correct(t *testing.T) {
+func TestBuiltin_Fork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
 	idef := core.PortDef{Type: "primitive"}
@@ -82,7 +82,7 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.Out().Map("false"))
 }
 
-func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
+func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 
 	idef := core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "primitive"}, "b": {Type: "primitive"}}}

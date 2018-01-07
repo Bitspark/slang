@@ -25,7 +25,7 @@ func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
 	a.Error(err)
 }
 
-func TestOperator_ReadOperator_1_BuiltinOperator_Function(t *testing.T) {
+func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 	a := assertions.New(t)
 	o, err := slang.ReadOperator("test_data/usingBuiltinOp.json")
 	a.NoError(err)

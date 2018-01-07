@@ -76,7 +76,7 @@ type functionStore struct {
 	evalExpr *EvaluableExpression
 }
 
-func createOpEval(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpEval(def core.InstanceDef) (*core.Operator, error) {
 	if def.Properties == nil {
 		return nil, errors.New("no properties given")
 	}
@@ -127,7 +127,7 @@ func createOpEval(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 				panic("invalid item")
 			}
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 
 	if o != nil {
 		o.SetStore(functionStore{expr, evalExpr})

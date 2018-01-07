@@ -250,31 +250,31 @@ func TestBuiltin_Eval__CreatorFuncIsRegistered(t *testing.T) {
 
 func TestBuiltin_Eval__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := createOpEval(core.InstanceDef{Operator: "eval"}, nil)
+	_, err := createOpEval(core.InstanceDef{Operator: "eval"})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": ""}}, nil)
+	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "+"}}, nil)
+	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__NilIn(t *testing.T) {
 	a := assertions.New(t)
-	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "100"}}, nil)
+	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "100"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__NilOut(t *testing.T) {
 	a := assertions.New(t)
-	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "100"}}, nil)
+	_, err := createOpEval(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "100"}})
 	a.Error(err)
 }
 
@@ -291,7 +291,7 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 			},
 		},
 		Out: &core.PortDef{Type: "number"},
-	}, nil)
+	})
 	a.NoError(err)
 	a.NotNil(fo)
 	fo.Out().Bufferize()
@@ -319,7 +319,7 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 			},
 		},
 		Out: &core.PortDef{Type: "boolean"},
-	}, nil)
+	})
 	a.NoError(err)
 	a.NotNil(fo)
 	fo.Out().Bufferize()
@@ -360,7 +360,7 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 			},
 		},
 		Out: &core.PortDef{Type: "boolean"},
-	}, nil)
+	})
 	a.NoError(err)
 	a.NotNil(fo)
 	fo.Out().Bufferize()

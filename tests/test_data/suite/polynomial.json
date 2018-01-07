@@ -29,7 +29,10 @@
       "in": {
         "type": "map",
         "map": {
-          "a": {"type": "number"}
+          "a": {"type": "number"},
+          "b": {"type": "number"},
+          "c": {"type": "number"},
+          "x": {"type": "number"}
         }
       },
       "out": {

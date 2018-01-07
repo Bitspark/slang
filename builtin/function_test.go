@@ -14,7 +14,7 @@ func TestOperatorCreator_Function_IsRegistered(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__NilProperties(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function"}, nil)
+	fo, err := MakeOperator(core.InstanceDef{Operator: "function"})
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
@@ -22,7 +22,7 @@ func TestManager_MakeOperator__Function__NilProperties(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__EmptyExpression(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": ""}}, nil)
+	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": ""}})
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
@@ -30,7 +30,7 @@ func TestManager_MakeOperator__Function__EmptyExpression(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__InvalidExpression(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "+"}}, nil)
+	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "+"}})
 
 	if fo != nil || err == nil {
 		t.Error("expected error")
@@ -38,7 +38,7 @@ func TestManager_MakeOperator__Function__InvalidExpression(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__Add(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a+b"}}, nil)
+	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a+b"}})
 
 	if fo == nil {
 		t.Error("operator not defined")
@@ -82,7 +82,7 @@ func TestManager_MakeOperator__Function__Add(t *testing.T) {
 }
 
 func TestManager_MakeOperator__Function__BoolArith(t *testing.T) {
-	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a && (b != c)"}}, nil)
+	fo, err := MakeOperator(core.InstanceDef{Operator: "function", Properties: map[string]interface{}{"expression": "a && (b != c)"}})
 
 	if fo == nil {
 		t.Error("operator not defined")

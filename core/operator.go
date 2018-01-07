@@ -13,16 +13,11 @@ type Operator struct {
 	store    interface{}
 }
 
-func NewOperator(name string, f OFunc, defIn, defOut PortDef, par *Operator) (*Operator, error) {
+func NewOperator(name string, f OFunc, defIn, defOut PortDef) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
-	o.parent = par
 	o.name = name
 	o.children = make(map[string]*Operator)
-
-	if par != nil {
-		par.children[o.name] = o
-	}
 
 	var err error
 
@@ -53,6 +48,13 @@ func (o *Operator) Name() string {
 
 func (o *Operator) BasePort() *Port {
 	return o.basePort
+}
+
+func (o *Operator) SetParent(par *Operator) {
+	o.parent = par
+	if par != nil {
+		par.children[o.name] = o
+	}
 }
 
 func (o *Operator) Parent() *Operator {

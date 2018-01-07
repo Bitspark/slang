@@ -5,7 +5,7 @@ import (
 	"slang/core"
 )
 
-func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpMerge(def core.InstanceDef) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
 	if def.In == nil && def.Out == nil {
@@ -103,5 +103,5 @@ func createOpMerge(def core.InstanceDef, par *core.Operator) (*core.Operator, er
 			}
 
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 }

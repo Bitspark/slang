@@ -16,7 +16,7 @@ func TestOperatorCreator_Fork_IsRegistered(t *testing.T) {
 func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"})
 	a.NoError(err)
 
 	a.NotNil(o.In().Stream().Map("i"))
@@ -26,7 +26,7 @@ func TestBuiltin_OperatorFork__InPorts(t *testing.T) {
 func TestBuiltin_OperatorFork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork"})
 	a.NoError(err)
 
 	a.NotNil(o.Out().Map("true").Stream())
@@ -52,7 +52,7 @@ func TestBuiltin_OperatorFork__Correct(t *testing.T) {
 		},
 	}
 
-	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork", In: &in, Out: &out}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork", In: &in, Out: &out})
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()
@@ -101,7 +101,7 @@ func TestBuiltin_OperatorFork__ComplexItems(t *testing.T) {
 		},
 	}
 
-	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork", In: &in, Out: &out}, nil)
+	o, err := getCreatorFunc("fork")(core.InstanceDef{Operator: "fork", In: &in, Out: &out})
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()

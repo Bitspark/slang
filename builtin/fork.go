@@ -5,7 +5,7 @@ import (
 	"slang/core"
 )
 
-func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpFork(def core.InstanceDef) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
 	if def.In == nil && def.Out == nil {
@@ -83,5 +83,5 @@ func createOpFork(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 				}
 			}
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 }

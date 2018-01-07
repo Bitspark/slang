@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func createOpLoop(def core.InstanceDef) (*core.Operator, error) {
 	var inDef, outDef core.PortDef
 
 	if def.In == nil || def.Out == nil {
@@ -66,5 +66,5 @@ func createOpLoop(def core.InstanceDef, par *core.Operator) (*core.Operator, err
 				oldState = newState
 			}
 		}
-	}, inDef, outDef, par)
+	}, inDef, outDef)
 }

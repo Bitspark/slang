@@ -16,7 +16,7 @@ func TestBuiltin_Merge_CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"}, nil)
+	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
 	a.NoError(err)
 
 	a.NotNil(o.In().Map("true").Stream())
@@ -27,7 +27,7 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"}, nil)
+	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
 	a.NoError(err)
 
 	a.NotNil(o.Out().Stream())
@@ -56,7 +56,7 @@ func TestBuiltin_Merge__PortsConfigured_Correctly(t *testing.T) {
 			Type:   "stream",
 			Stream: &idef,
 		},
-	}, nil)
+	})
 	a.NoError(err)
 
 	a.NotNil(o.In().Map("true").Stream())
@@ -86,7 +86,7 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingIn(t *testing.T) {
 			Type:   "stream",
 			Stream: &idef,
 		},
-	}, nil)
+	})
 	a.Error(err)
 }
 
@@ -109,14 +109,14 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingOut(t *testing.T) {
 				"false":  {Type: "stream", Stream: &idef},
 			},
 		},
-	}, nil)
+	})
 	a.Error(err)
 }
 
 func TestBuiltin_Merge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"}, nil)
+	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
 	a.NoError(err)
 
 	o.Out().Stream().Bufferize()
@@ -157,7 +157,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 			Type:   "stream",
 			Stream: &idef,
 		},
-	}, nil)
+	})
 	a.NoError(err)
 
 	o.Out().Stream().Bufferize()

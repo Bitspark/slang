@@ -1,54 +1,11 @@
 package builtin
 
 import (
-	"errors"
 	"slang/core"
 )
 
-func createOpFork(def core.InstanceDef) (*core.Operator, error) {
-	var inDef, outDef core.PortDef
-
-	if def.In == nil && def.Out == nil {
-		inDef = core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type: "map",
-				Map: map[string]core.PortDef{
-					"i":      {Type: "primitive"},
-					"select": {Type: "boolean"},
-				},
-			},
-		}
-
-		outDef = core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"true": {
-					Type:   "stream",
-					Stream: &core.PortDef{Type: "primitive"},
-				},
-				"false": {
-					Type:   "stream",
-					Stream: &core.PortDef{Type: "primitive"},
-				},
-			},
-		}
-	} else {
-		if def.In == nil || def.Out == nil {
-			return nil, errors.New("ports In and Out must be either defined or undefined")
-		}
-
-		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["true"].Stream) {
-			return nil, errors.New("in item and true output not equal")
-		}
-		if !def.In.Stream.Map["i"].Equals(*def.Out.Map["false"].Stream) {
-			return nil, errors.New("in item and false output not equal")
-		}
-		inDef = *def.In
-		outDef = *def.Out
-	}
-
-	return core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
+var forkOpCfg = &builtinConfig{
+	oFunc: func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Stream().Pull()
 
@@ -83,5 +40,6 @@ func createOpFork(def core.InstanceDef) (*core.Operator, error) {
 				}
 			}
 		}
-	}, inDef, outDef)
+	},
+	oDef: nil,
 }

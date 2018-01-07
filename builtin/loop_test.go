@@ -9,7 +9,7 @@ import (
 func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocLoop := getCreatorFunc("loop")
+	ocLoop := getBuiltinCfg("loop")
 	a.NotNil(ocLoop)
 }
 
@@ -44,7 +44,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 		},
 	}
 
-	lo, err := getCreatorFunc("loop")(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
+	lo, err := MakeOperator(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -130,7 +130,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 		},
 	}
 
-	lo, err := getCreatorFunc("loop")(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
+	lo, err := MakeOperator(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
 	a.NoError(err)
 	a.NotNil(lo)
 

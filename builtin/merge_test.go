@@ -4,20 +4,21 @@ import (
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getCreatorFunc("merge")
+	ocFork := getBuiltinCfg("merge")
 	a.NotNil(ocFork)
 }
 
 func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
-	a.NoError(err)
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge"})
+	require.NoError(t, err)
 
 	a.NotNil(o.In().Map("true").Stream())
 	a.NotNil(o.In().Map("false").Stream())
@@ -27,8 +28,8 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
-	a.NoError(err)
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge"})
+	require.NoError(t, err)
 
 	a.NotNil(o.Out().Stream())
 }
@@ -42,7 +43,7 @@ func TestBuiltin_Merge__PortsConfigured_Correctly(t *testing.T) {
 			"b": {Type: "primitive"},
 		},
 	}
-	o, err := createOpMerge(core.InstanceDef{
+	o, err := MakeOperator(core.InstanceDef{
 		Operator: "merge",
 		In: &core.PortDef{
 			Type: "map",
@@ -80,7 +81,7 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingIn(t *testing.T) {
 		},
 	}
 
-	_, err := createOpMerge(core.InstanceDef{
+	_, err := MakeOperator(core.InstanceDef{
 		Operator: "merge",
 		Out: &core.PortDef{
 			Type:   "stream",
@@ -99,7 +100,7 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingOut(t *testing.T) {
 			"b": {Type: "primitive"},
 		},
 	}
-	_, err := createOpMerge(core.InstanceDef{
+	_, err := MakeOperator(core.InstanceDef{
 		Operator: "merge",
 		In: &core.PortDef{
 			Type: "map",
@@ -116,8 +117,8 @@ func TestBuiltin_Merge__PortsConfigured_Incorrectly_MissingOut(t *testing.T) {
 func TestBuiltin_Merge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := createOpMerge(core.InstanceDef{Operator: "merge"})
-	a.NoError(err)
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge"})
+	require.NoError(t, err)
 
 	o.Out().Stream().Bufferize()
 	o.Start()
@@ -143,7 +144,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 		},
 	}
 
-	o, err := createOpMerge(core.InstanceDef{
+	o, err := MakeOperator(core.InstanceDef{
 		Operator: "merge",
 		In: &core.PortDef{
 			Type: "map",
@@ -158,7 +159,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 			Stream: &idef,
 		},
 	})
-	a.NoError(err)
+	require.NoError(t, err)
 
 	o.Out().Stream().Bufferize()
 	o.Start()

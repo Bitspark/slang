@@ -1,56 +1,11 @@
 package builtin
 
 import (
-	"errors"
 	"slang/core"
 )
 
-func createOpMerge(def core.InstanceDef) (*core.Operator, error) {
-	var inDef, outDef core.PortDef
-
-	if def.In == nil && def.Out == nil {
-		inDef = core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"true": {
-					Type:   "stream",
-					Stream: &core.PortDef{Type: "primitive"},
-				},
-				"false": {
-					Type:   "stream",
-					Stream: &core.PortDef{Type: "primitive"},
-				},
-				"select": {
-					Type:   "stream",
-					Stream: &core.PortDef{Type: "boolean"},
-				},
-			},
-		}
-		outDef = core.PortDef{
-			Type:   "stream",
-			Stream: &core.PortDef{Type: "primitive"},
-		}
-
-	} else {
-		if def.In == nil || def.Out == nil {
-			return nil, errors.New("ports In and Out must be either defined or undefined")
-		}
-
-		if !def.In.Map["true"].Equals(*def.Out) {
-			return nil, errors.New("out item and true output not equal")
-		}
-		if !def.In.Map["false"].Equals(*def.Out) {
-			return nil, errors.New("out item and false output not equal")
-		}
-		if !def.In.Map["select"].Equals(core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "boolean"}}) {
-			return nil, errors.New("select output def not correct")
-		}
-
-		inDef = *def.In
-		outDef = *def.Out
-	}
-
-	return core.NewOperator(def.Name, func(in, out *core.Port, store interface{}) {
+var mergeOpCfg = &builtinConfig{
+	oFunc: func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Map("select").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
@@ -103,5 +58,5 @@ func createOpMerge(def core.InstanceDef) (*core.Operator, error) {
 			}
 
 		}
-	}, inDef, outDef)
+	},
 }

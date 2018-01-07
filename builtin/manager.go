@@ -16,7 +16,7 @@ type builtinConfig struct {
 
 var cfgs map[string]*builtinConfig
 
-func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
+func MakeOperator(def *core.InstanceDef) (*core.Operator, error) {
 	cfg := getBuiltinCfg(def.Operator)
 
 	if cfg == nil {

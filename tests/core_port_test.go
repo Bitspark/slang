@@ -21,90 +21,70 @@ func TestPortDef_Validate__Stream__StreamNotPresent(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"stream"}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Stream__NilStream(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"stream","stream":null}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Stream__EmptyStream(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"stream","stream":{}}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Map__MapNotPresent(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map"}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Map__NilMap(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map","map":null}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Map__EmptyMap(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map","map":{}}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Map__NullEntry(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map","map":{"a":null}}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Map__EmptyEntry(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map","map":{"a":{}}}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
 	a.Error(def.Validate())
-	if def.Valid() {
-		t.Error("should not be valid")
-	}
+	a.False(def.Valid(), "should not be valid")
 }
 
 // core.NewPort (10 tests)
@@ -138,14 +118,8 @@ func TestNewPort__Stream(t *testing.T) {
 	def := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
 	a.NoError(err)
-
-	if p.Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Stream().Type() != core.TYPE_NUMBER {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
+	a.Equal(core.TYPE_NUMBER, p.Stream().Type(), "wrong type")
 }
 
 func TestNewPort__Number(t *testing.T) {
@@ -155,14 +129,8 @@ func TestNewPort__Number(t *testing.T) {
 
 	a.NoError(err)
 	a.NotNil(p)
-
-	if p.Type() != core.TYPE_NUMBER {
-		t.Error("wrong type")
-	}
-
-	if p.Direction() != core.DIRECTION_IN {
-		t.Error("Wrong direction")
-	}
+	a.Equal(core.TYPE_NUMBER, p.Type(), "wrong type")
+	a.Equal(core.DIRECTION_IN, p.Direction(), "wrong direction")
 }
 
 func TestNewPort__Map(t *testing.T) {
@@ -170,14 +138,8 @@ func TestNewPort__Map(t *testing.T) {
 	def := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
 	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
 	a.NoError(err)
-
-	if p.Type() != core.TYPE_MAP {
-		t.Error("wrong type")
-	}
-
-	if p.Map("a").Type() != core.TYPE_NUMBER {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_MAP, p.Type(), "wrong type")
+	a.Equal(core.TYPE_NUMBER, p.Map("a").Type(), "wrong type")
 }
 
 func TestNewPort__NestedStreams(t *testing.T) {
@@ -185,18 +147,9 @@ func TestNewPort__NestedStreams(t *testing.T) {
 	def := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"string"}}}`)
 	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
 	a.NoError(err)
-
-	if p.Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Stream().Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Stream().Stream().Type() != core.TYPE_STRING {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
+	a.Equal(core.TYPE_STREAM, p.Stream().Type(), "wrong type")
+	a.Equal(core.TYPE_STRING, p.Stream().Stream().Type(), "wrong type")
 }
 
 func TestNewPort__MapStream(t *testing.T) {
@@ -205,22 +158,10 @@ func TestNewPort__MapStream(t *testing.T) {
 		`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"string"}},"b":{"type":"boolean"}}}`)
 	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
 	a.NoError(err)
-
-	if p.Type() != core.TYPE_MAP {
-		t.Error("wrong type")
-	}
-
-	if p.Map("a").Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Map("a").Stream().Type() != core.TYPE_STRING {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Type() != core.TYPE_BOOLEAN {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_MAP, p.Type(), "wrong type")
+	a.Equal(core.TYPE_STREAM, p.Map("a").Type(), "wrong type")
+	a.Equal(core.TYPE_STRING, p.Map("a").Stream().Type(), "wrong type")
+	a.Equal(core.TYPE_BOOLEAN, p.Map("b").Type(), "wrong type")
 }
 
 func TestNewPort__NestedMap(t *testing.T) {
@@ -229,18 +170,9 @@ func TestNewPort__NestedMap(t *testing.T) {
 	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
 	a.NoError(err)
 	a.NotNil(p)
-
-	if p.Map("a") == nil || p.Map("a").Type() != core.TYPE_NUMBER {
-		t.Error("map not correct")
-	}
-
-	if p.Map("b") == nil || p.Map("b").Type() != core.TYPE_MAP {
-		t.Error("map not correct")
-	}
-
-	if p.Map("b").Map("a") == nil || p.Map("b").Map("a").Type() != core.TYPE_NUMBER {
-		t.Error("map not correct")
-	}
+	a.Equal(core.TYPE_NUMBER, p.Map("a").Type(), "wrong type")
+	a.Equal(core.TYPE_MAP, p.Map("b").Type(), "wrong type")
+	a.Equal(core.TYPE_NUMBER,p.Map("b").Map("a").Type(), "wrong type")
 }
 
 func TestNewPort__Complex(t *testing.T) {
@@ -251,118 +183,64 @@ func TestNewPort__Complex(t *testing.T) {
 "b":{"type":"string"},"c":{"type":"boolean"}}}}},"b":{"type":"string"}}},"c":{"type":"boolean"}}}`)
 	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
 	a.NoError(err)
-
-	if p.Type() != core.TYPE_MAP {
-		t.Error("wrong type")
-	}
-
-	if p.Map("a").Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Map("a").Stream().Type() != core.TYPE_BOOLEAN {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Type() != core.TYPE_MAP {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("a").Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("a").Stream().Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("a").Stream().Stream().Type() != core.TYPE_MAP {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("a").Stream().Stream().Map("a").Type() != core.TYPE_NUMBER {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("a").Stream().Stream().Map("b").Type() != core.TYPE_STRING {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("a").Stream().Stream().Map("c").Type() != core.TYPE_BOOLEAN {
-		t.Error("wrong type")
-	}
-
-	if p.Map("b").Map("b").Type() != core.TYPE_STRING {
-		t.Error("wrong type")
-	}
-
-	if p.Map("c").Type() != core.TYPE_BOOLEAN {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_MAP, p.Type(), "wrong type")
+	a.Equal(core.TYPE_STREAM, p.Map("a").Type(), "wrong type")
+	a.Equal(core.TYPE_BOOLEAN, p.Map("a").Stream().Type(), "wrong type")
+	a.Equal(core.TYPE_MAP, p.Map("b").Type(), "wrong type")
+	a.Equal(core.TYPE_STREAM, p.Map("b").Map("a").Type(), "wrong type")
+	a.Equal(core.TYPE_STREAM, p.Map("b").Map("a").Stream().Type(), "wrong type")
+	a.Equal(core.TYPE_MAP, p.Map("b").Map("a").Stream().Stream().Type(), "wrong type")
+	a.Equal(core.TYPE_NUMBER, p.Map("b").Map("a").Stream().Stream().Map("a").Type(), "wrong type")
+	a.Equal(core.TYPE_STRING, p.Map("b").Map("a").Stream().Stream().Map("b").Type(), "wrong type")
+	a.Equal(core.TYPE_BOOLEAN, p.Map("b").Map("a").Stream().Stream().Map("c").Type(), "wrong type")
+	a.Equal(core.TYPE_STRING, p.Map("b").Map("b").Type(), "wrong type")
+	a.Equal(core.TYPE_BOOLEAN, p.Map("c").Type(), "wrong type")
 }
 
 // Port.Type (6 tests)
 
 func TestPort_Type__Simple__Any(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"primitive"}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
-
-	if p.Type() != core.TYPE_PRIMITIVE {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_PRIMITIVE, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__Number(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"number"}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
-
-	if p.Type() != core.TYPE_NUMBER {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_NUMBER, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__String(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"string"}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
-
-	if p.Type() != core.TYPE_STRING {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_STRING, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__Boolean(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"boolean"}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
-
-	if p.Type() != core.TYPE_BOOLEAN {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_BOOLEAN, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Map(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"boolean"}}}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
-
-	if p.Type() != core.TYPE_MAP {
-		t.Error("wrong type")
-	}
-
-	if p.Map("a").Type() != core.TYPE_BOOLEAN {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_MAP, p.Type(), "wrong type")
+	a.Equal(core.TYPE_BOOLEAN, p.Map("a").Type(), "wrong type")
 }
 
 func TestPort_Type__Stream(t *testing.T) {
+	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"stream","stream":{"type":"string"}}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
-
-	if p.Type() != core.TYPE_STREAM {
-		t.Error("wrong type")
-	}
-
-	if p.Stream().Type() != core.TYPE_STRING {
-		t.Error("wrong type")
-	}
+	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
+	a.Equal(core.TYPE_STRING, p.Stream().Type(), "wrong type")
 }
 
 // Port.Connect (6 tests)
@@ -377,10 +255,7 @@ func TestPort_Connect__Map__KeysNotMatching(t *testing.T) {
 
 	err := p.Connect(q)
 	a.Error(err)
-
-	if p.Connected(q) {
-		t.Error("connection not expected")
-	}
+	a.False(p.Connected(q), "connection not expected")
 }
 
 func TestPort_Connect__Map__LeftIsSubsetOfRight(t *testing.T) {
@@ -393,10 +268,7 @@ func TestPort_Connect__Map__LeftIsSubsetOfRight(t *testing.T) {
 
 	err := p.Connect(q)
 	a.Error(err)
-
-	if p.Connected(q) {
-		t.Error("connection not expected")
-	}
+	a.False(p.Connected(q), "connection not expected")
 }
 
 func TestPort_Connect__Map__RightIsSubsetOfRight(t *testing.T) {
@@ -409,10 +281,7 @@ func TestPort_Connect__Map__RightIsSubsetOfRight(t *testing.T) {
 
 	err := p.Connect(q)
 	a.Error(err)
-
-	if p.Connected(q) {
-		t.Error("connection not expected")
-	}
+	a.False(p.Connected(q), "connection not expected")
 }
 
 func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
@@ -425,10 +294,7 @@ func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
 
 	err := p.Connect(q)
 	a.Error(err)
-
-	if p.Connected(q) {
-		t.Error("connection not expected")
-	}
+	a.False(p.Connected(q), "connection not expected")
 }
 
 func TestPort_Connect__Map__SameKeys(t *testing.T) {
@@ -440,14 +306,8 @@ func TestPort_Connect__Map__SameKeys(t *testing.T) {
 
 	err := p.Connect(q)
 	a.NoError(err)
-
-	if !p.Map("a").Connected(q.Map("a")) {
-		t.Error("port 'a' must be connected")
-	}
-
-	if p.Connected(q) {
-		t.Error("maps must not be connected")
-	}
+	a.True(p.Map("a").Connected(q.Map("a")), "port 'a' must be connected")
+	a.False(p.Connected(q), "maps must not be connected")
 }
 
 func TestPort_Connect__Map__Subport2Primitive(t *testing.T) {
@@ -460,8 +320,5 @@ func TestPort_Connect__Map__Subport2Primitive(t *testing.T) {
 
 	err := p.Map("a").Connect(q)
 	a.NoError(err)
-
-	if !p.Map("a").Connected(q) {
-		t.Error("connection expected")
-	}
+	a.True(p.Map("a").Connected(q), "connection expected")
 }

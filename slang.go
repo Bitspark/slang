@@ -13,13 +13,22 @@ import (
 )
 
 func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
-	op, err := readOperator(opFile, opFile, nil, nil)
+	// Read operator definition and perform recursion detection
+	def, err := readOperatorDef(opFile, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Create and internally connect the operator
+	op, err := buildAndConnectOperator(opFile, def, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if compile {
+		// Compile when requested
 		op.Compile()
 	}
 
@@ -38,7 +47,7 @@ func ParseOperatorDef(defStr string) core.OperatorDef {
 	return def
 }
 
-func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
+func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
@@ -78,11 +87,12 @@ func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
 		return nil, fmt.Errorf("invalid direction: %s", pathSplit[0])
 	}
 
-	for p.Type() == core.TYPE_STREAM {
-		p = p.Stream()
-	}
-
 	for i := 1; i < len(pathSplit); i++ {
+		if pathSplit[i] == "" {
+			p = p.Stream()
+			continue
+		}
+
 		if p.Type() != core.TYPE_MAP {
 			return nil, errors.New("descending too deep")
 		}
@@ -92,16 +102,14 @@ func ParsePort(connStr string, par *core.Operator) (*core.Port, error) {
 		if p == nil {
 			return nil, fmt.Errorf("unknown port: %s", k)
 		}
-
-		for p.Type() == core.TYPE_STREAM {
-			p = p.Stream()
-		}
 	}
 
 	return p, nil
 }
 
-func readOperator(insName string, opDefFilePath string, par *core.Operator, pathsRead []string) (*core.Operator, error) {
+// READ OPERATOR DEFINITION
+
+func readOperatorDef(opDefFilePath string, pathsRead []string) (*core.OperatorDef, error) {
 	b, err := ioutil.ReadFile(opDefFilePath)
 
 	if err != nil {
@@ -120,13 +128,76 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
 		for _, p := range pathsRead {
 			if p == absPath {
-				return nil, errors.New(fmt.Sprintf("recursion in %s", absPath))
+				return nil, fmt.Errorf("recursion in %s", absPath)
 			}
 		}
 
 		pathsRead = append(pathsRead, absPath)
 	} else {
 		return nil, err
+	}
+
+	currDir := path.Dir(opDefFilePath)
+
+	for _, childOpInsDef := range def.Operators {
+		childDef, err := getOperatorDef(childOpInsDef, currDir, pathsRead)
+
+		if err != nil {
+			return nil, err
+		}
+
+		childOpInsDef.SetOperatorDef(childDef)
+	}
+
+	return &def, nil
+}
+
+func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (*core.OperatorDef, error) {
+	if builtin.IsRegistered(insDef.Operator) {
+		return builtin.GetOperatorDef(insDef.Operator), nil
+	}
+
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
+
+	if strings.HasPrefix(insDef.Operator, ".") {
+		defFilePath := path.Join(currDir, relFilePath)
+		def, err := readOperatorDef(defFilePath, pathsRead)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return def, nil
+	}
+
+	// These are the paths where we search for operators
+	paths := []string{"."}
+
+	var err error
+	var def *core.OperatorDef
+	for _, p := range paths {
+		defFilePath := path.Join(p, relFilePath)
+
+		def, err = readOperatorDef(defFilePath, pathsRead)
+
+		if err != nil {
+			continue
+		}
+
+		return def, nil
+	}
+
+	return nil, err
+}
+
+// MAKE OPERATORS, PORTS AND CONNECTIONS
+
+func buildAndConnectOperator(insName string, def *core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+	if !def.Valid() {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	o, err := core.NewOperator(insName, nil, *def.In, *def.Out)
@@ -136,10 +207,8 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 		return nil, err
 	}
 
-	currDir := path.Dir(opDefFilePath)
-
 	for _, childOpInsDef := range def.Operators {
-		_, err := getOperator(childOpInsDef, o, currDir, pathsRead)
+		_, err := getOperator(childOpInsDef, o)
 
 		if err != nil {
 			return nil, err
@@ -147,9 +216,9 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 	}
 
 	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := ParsePort(srcConnDef, o); err == nil {
+		if pSrc, err := ParsePortReference(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := ParsePort(dstConnDef, o); err == nil {
+				if pDst, err := ParsePortReference(dstConnDef, o); err == nil {
 					if err := pSrc.Connect(pDst); err != nil {
 						return nil, err
 					}
@@ -165,40 +234,10 @@ func readOperator(insName string, opDefFilePath string, par *core.Operator, path
 	return o, nil
 }
 
-func getOperator(insDef core.InstanceDef, par *core.Operator, currDir string, pathsRead []string) (*core.Operator, error) {
+func getOperator(insDef *core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
 		builtinOp.SetParent(par)
 		return builtinOp, nil
 	}
-
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
-
-	if strings.HasPrefix(insDef.Operator, ".") {
-		defFilePath := path.Join(currDir, relFilePath)
-		o, err := readOperator(insDef.Name, defFilePath, par, pathsRead)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return o, nil
-	}
-
-	paths := []string{"."}
-
-	var err error
-	for _, p := range paths {
-		defFilePath := path.Join(p, relFilePath)
-
-		var o *core.Operator
-		o, err = readOperator(insDef.Name, defFilePath, par, pathsRead)
-
-		if err != nil {
-			continue
-		}
-
-		return o, nil
-	}
-
-	return nil, err
+	return buildAndConnectOperator(insDef.Name, insDef.OperatorDef(), par)
 }

@@ -104,27 +104,27 @@ func TestOperator_ReadOperator__Recursion(t *testing.T) {
 	a.Nil(o)
 }
 
-func TestParseConnection__NilOperator(t *testing.T) {
+func TestParsePortReference__NilOperator(t *testing.T) {
 	a := assertions.New(t)
-	p, err := slang.ParsePort("test.in", nil)
+	p, err := slang.ParsePortReference("test.in", nil)
 	a.Error(err)
 	a.Nil(p)
 }
 
-func TestParseConnection__NilConnection(t *testing.T) {
+func TestParsePortReference__NilConnection(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("", o1)
+	p, err := slang.ParsePortReference("", o1)
 	a.Error(err)
 	a.Nil(p)
 }
 
-func TestParseConnection__SelfIn(t *testing.T) {
+func TestParsePortReference__SelfIn(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	p, err := slang.ParsePort(":in", o1)
+	p, err := slang.ParsePortReference(":in", o1)
 	a.NoError(err)
 
 	if p != o1.In() {
@@ -132,10 +132,10 @@ func TestParseConnection__SelfIn(t *testing.T) {
 	}
 }
 
-func TestParseConnection__SelfOut(t *testing.T) {
+func TestParsePortReference__SelfOut(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	p, err := slang.ParsePort(":out", o1)
+	p, err := slang.ParsePortReference(":out", o1)
 	a.NoError(err)
 
 	if p != o1.Out() {
@@ -143,12 +143,12 @@ func TestParseConnection__SelfOut(t *testing.T) {
 	}
 }
 
-func TestParseConnection__SingleIn(t *testing.T) {
+func TestParsePortReference__SingleIn(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in", o1)
+	p, err := slang.ParsePortReference("o2:in", o1)
 	a.NoError(err)
 
 	if p != o2.In() {
@@ -156,12 +156,12 @@ func TestParseConnection__SingleIn(t *testing.T) {
 	}
 }
 
-func TestParseConnection__SingleOut(t *testing.T) {
+func TestParsePortReference__SingleOut(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:out", o1)
+	p, err := slang.ParsePortReference("o2:out", o1)
 	a.NoError(err)
 
 	if p != o2.Out() {
@@ -169,12 +169,12 @@ func TestParseConnection__SingleOut(t *testing.T) {
 	}
 }
 
-func TestParseConnection__Map(t *testing.T) {
+func TestParsePortReference__Map(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in.a", o1)
+	p, err := slang.ParsePortReference("o2:in.a", o1)
 	a.NoError(err)
 
 	if p != o2.In().Map("a") {
@@ -182,32 +182,32 @@ func TestParseConnection__Map(t *testing.T) {
 	}
 }
 
-func TestParseConnection__Map__UnknownKey(t *testing.T) {
+func TestParsePortReference__Map__UnknownKey(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in.b", o1)
+	p, err := slang.ParsePortReference("o2:in.b", o1)
 	a.Error(err)
 	a.Nil(p)
 }
 
-func TestParseConnection__Map__DescendingTooDeep(t *testing.T) {
+func TestParsePortReference__Map__DescendingTooDeep(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in.b.c", o1)
+	p, err := slang.ParsePortReference("o2:in.b.c", o1)
 	a.Error(err)
 	a.Nil(p)
 }
 
-func TestParseConnection__NestedMap(t *testing.T) {
+func TestParsePortReference__NestedMap(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "map", Map: map[string]core.PortDef{"b": {Type: "number"}}}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in.a.b", o1)
+	p, err := slang.ParsePortReference("o2:in.a.b", o1)
 	a.NoError(err)
 
 	if p != o2.In().Map("a").Map("b") {
@@ -215,12 +215,12 @@ func TestParseConnection__NestedMap(t *testing.T) {
 	}
 }
 
-func TestParseConnection__Stream(t *testing.T) {
+func TestParsePortReference__Stream(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "number"}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in", o1)
+	p, err := slang.ParsePortReference("o2:in.", o1)
 	a.NoError(err)
 
 	if p != o2.In().Stream() {
@@ -228,7 +228,7 @@ func TestParseConnection__Stream(t *testing.T) {
 	}
 }
 
-func TestParseConnection__StreamMap(t *testing.T) {
+func TestParsePortReference__StreamMap(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	o2, _ := core.NewOperator("o2", nil,
@@ -251,14 +251,12 @@ func TestParseConnection__StreamMap(t *testing.T) {
 							},
 						},
 					},
-				}},
+				},
+			},
 		},
 		core.PortDef{Type: "number"})
 	o2.SetParent(o1)
-	p, err := slang.ParsePort("o2:in.a.a", o1)
+	p, err := slang.ParsePortReference("o2:in..a..a.", o1)
 	a.NoError(err)
-
-	if p != o2.In().Stream().Map("a").Stream().Map("a").Stream() {
-		t.Error("wrong port")
-	}
+	a.Equal(p, o2.In().Stream().Map("a").Stream().Map("a").Stream(), "wrong port")
 }

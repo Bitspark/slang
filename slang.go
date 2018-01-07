@@ -41,9 +41,9 @@ func ParsePortDef(defStr string) core.PortDef {
 	return def
 }
 
-func ParseOperatorDef(defStr string) *core.OperatorDef {
-	def := &core.OperatorDef{}
-	json.Unmarshal([]byte(defStr), def)
+func ParseOperatorDef(defStr string) core.OperatorDef {
+	def := core.OperatorDef{}
+	json.Unmarshal([]byte(defStr), &def)
 	return def
 }
 
@@ -149,7 +149,7 @@ func readOperatorDef(opDefFilePath string, pathsRead []string) (*core.OperatorDe
 		childOpInsDef.SetOperatorDef(childDef)
 	}
 
-	return def, nil
+	return &def, nil
 }
 
 func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (*core.OperatorDef, error) {

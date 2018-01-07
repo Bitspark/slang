@@ -23,13 +23,8 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	if def.In == nil || def.Out == nil {
-		return nil, errors.New("port definitions missing")
-	}
 
-	// TODO: use this:
-	// o, err := core.NewOperator(def.Name, cfg.ofunc, *cfg.odef.In, *cfg.odef.Out)
-	o, err := core.NewOperator(def.Name, cfg.oFunc, *def.In, *def.Out)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, *cfg.oDef.In, *cfg.oDef.Out)
 	if err != nil {
 		return nil, err
 	}

@@ -264,31 +264,11 @@ func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a.Error(err)
 }
 
-func TestBuiltin_Eval__NilIn(t *testing.T) {
-	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "100"}})
-	a.Error(err)
-}
-
-func TestBuiltin_Eval__NilOut(t *testing.T) {
-	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "100"}})
-	a.Error(err)
-}
-
 func TestBuiltin_Eval__Add(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "a+b"},
-		In: &core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"a": {Type: "number"},
-				"b": {Type: "number"},
-			},
-		},
-		Out: &core.PortDef{Type: "number"},
 	})
 	a.NoError(err)
 	a.NotNil(fo)
@@ -308,15 +288,6 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "a && (b != c)"},
-		In: &core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"a": {Type: "boolean"},
-				"b": {Type: "boolean"},
-				"c": {Type: "boolean"},
-			},
-		},
-		Out: &core.PortDef{Type: "boolean"},
 	})
 	a.NoError(err)
 	a.NotNil(fo)
@@ -338,26 +309,6 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "vec0.x*vec1.x+vec0.y*vec1.y"},
-		In: &core.PortDef{
-			Type: "map",
-			Map: map[string]core.PortDef{
-				"vec0": {
-					Type: "map",
-					Map: map[string]core.PortDef{
-						"x": {Type: "number"},
-						"y": {Type: "number"},
-					},
-				},
-				"vec1": {
-					Type: "map",
-					Map: map[string]core.PortDef{
-						"x": {Type: "number"},
-						"y": {Type: "number"},
-					},
-				},
-			},
-		},
-		Out: &core.PortDef{Type: "boolean"},
 	})
 	a.NoError(err)
 	a.NotNil(fo)

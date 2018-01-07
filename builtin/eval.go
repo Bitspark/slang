@@ -77,6 +77,14 @@ type functionStore struct {
 }
 
 var evalOpCfg = &builtinConfig{
+	oDef: &core.OperatorDef{
+		In: &core.PortDef{
+			Type: "primitive",
+		},
+		Out: &core.PortDef{
+			Type: "primitive",
+		},
+	},
 	oFunc: func(in, out *core.Port, store interface{}) {
 		expr := store.(functionStore).evalExpr
 		for true {

@@ -37,23 +37,7 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 func TestBuiltin_Fork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	idef := core.PortDef{Type: "primitive"}
-	in := core.PortDef{
-		Type: "stream",
-		Stream: &core.PortDef{
-			Type: "map",
-			Map:  map[string]core.PortDef{"select": {Type: "boolean"}, "i": idef},
-		},
-	}
-	out := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"true":  {Type: "stream", Stream: &idef},
-			"false": {Type: "stream", Stream: &idef},
-		},
-	}
-
-	o, err := MakeOperator(core.InstanceDef{Operator: "fork", In: &in, Out: &out})
+	o, err := MakeOperator(core.InstanceDef{Operator: "fork"})
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()
@@ -85,24 +69,7 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 
 func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-
-	idef := core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "primitive"}, "b": {Type: "primitive"}}}
-	in := core.PortDef{
-		Type: "stream",
-		Stream: &core.PortDef{
-			Type: "map",
-			Map:  map[string]core.PortDef{"select": {Type: "boolean"}, "i": idef},
-		},
-	}
-	out := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"true":  {Type: "stream", Stream: &idef},
-			"false": {Type: "stream", Stream: &idef},
-		},
-	}
-
-	o, err := MakeOperator(core.InstanceDef{Operator: "fork", In: &in, Out: &out})
+	o, err := MakeOperator(core.InstanceDef{Operator: "fork"})
 	a.NoError(err)
 
 	o.Out().Map("true").Stream().Bufferize()

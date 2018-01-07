@@ -15,36 +15,7 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 
 func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	a := assertions.New(t)
-
-	idef := core.PortDef{Type: "number"}
-	in := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"init": idef,
-			"iteration": {
-				Type: "stream",
-				Stream: &core.PortDef{
-					Type: "map",
-					Map: map[string]core.PortDef{
-						"continue": {Type: "boolean"},
-						"state":    idef,
-					},
-				},
-			},
-		},
-	}
-	out := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"end": idef,
-			"state": {
-				Type:   "stream",
-				Stream: &idef,
-			},
-		},
-	}
-
-	lo, err := MakeOperator(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
+	lo, err := MakeOperator(core.InstanceDef{Operator: "loop"})
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -94,43 +65,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 
 func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	a := assertions.New(t)
-
-	idef := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"i":      {Type: "number"},
-			"fib":    {Type: "number"},
-			"oldFib": {Type: "number"},
-		},
-	}
-	in := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"init": idef,
-			"iteration": {
-				Type: "stream",
-				Stream: &core.PortDef{
-					Type: "map",
-					Map: map[string]core.PortDef{
-						"continue": {Type: "boolean"},
-						"state":    idef,
-					},
-				},
-			},
-		},
-	}
-	out := core.PortDef{
-		Type: "map",
-		Map: map[string]core.PortDef{
-			"end": idef,
-			"state": {
-				Type:   "stream",
-				Stream: &idef,
-			},
-		},
-	}
-
-	lo, err := MakeOperator(core.InstanceDef{Operator: "loop", In: &in, Out: &out})
+	lo, err := MakeOperator(core.InstanceDef{Operator: "loop"})
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -146,7 +81,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 				out.Push(i > 0.0)
 			}
 		}
-	}, idef, core.PortDef{Type: "boolean"})
+	}, core.PortDef{Type: "primitive"}, core.PortDef{Type: "boolean"})
 
 	// Fibonacci function operator
 	fo, _ := core.NewOperator("fib", func(in, out *core.Port, store interface{}) {
@@ -162,7 +97,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 				out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
 			}
 		}
-	}, idef, idef)
+	}, core.PortDef{Type: "primitive"}, core.PortDef{Type: "primitive"})
 
 	// Connect
 	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))

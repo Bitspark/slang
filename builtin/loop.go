@@ -5,6 +5,44 @@ import (
 )
 
 var loopOpCfg = &builtinConfig{
+	oDef: &core.OperatorDef{
+		In: &core.PortDef{
+			Type: "map",
+			Map: map[string]core.PortDef{
+				"init": {
+					Type: "primitive",
+				},
+				"iteration": {
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type: "map",
+						Map: map[string]core.PortDef{
+							"continue": {
+								Type: "boolean",
+							},
+							"state": {
+								Type: "primitive",
+							},
+						},
+					},
+				},
+			},
+		},
+		Out: &core.PortDef{
+			Type: "map",
+			Map: map[string]core.PortDef{
+				"end": {
+					Type: "primitive",
+				},
+				"state": {
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type: "primitive",
+					},
+				},
+			},
+		},
+	},
 	oFunc: func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Map("init").Pull()

@@ -37,3 +37,9 @@ func TestOperatorDef_SpecifyGenericPorts__OutPortGenerics(t *testing.T) {
 	}))
 	a.Equal("boolean", op.Out.Type)
 }
+
+// TODO: Write more tests for OperatorDef.SpecifyGenericPorts(...)
+// TODO: Write tests for PortDef.SpecifyGenericPorts(...)
+// TODO: Write tests for OperatorDef.FreeOfGenerics()
+// TODO: Write tests for PortDef.FreeOfGenerics()
+// TODO: Write tests for PortDef.Copy()

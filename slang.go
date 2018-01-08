@@ -109,9 +109,19 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 
 // READ OPERATOR DEFINITION
 
+// readOperatorDef reads the operator definition for the given file and replaces all generic types according to the
+// generics map given. The generics map must not contain any further generic types.
 func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
 
+	// Make sure generics is free of further generics
+	for _, g := range generics {
+		if err := g.FreeOfGenerics(); err != nil {
+			return def, err
+		}
+	}
+
+	// Recursion detection: chick if absolute path is contained in pathsRead
 	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
 		for _, p := range pathsRead {
 			if p == absPath {
@@ -124,14 +134,16 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 		return def, err
 	}
 
+	// Read the file
 	b, err := ioutil.ReadFile(opDefFilePath)
-
 	if err != nil {
 		return def, err
 	}
 
+	// Parse the file, just read it in
 	def = ParseOperatorDef(string(b))
 
+	// Validate the file
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -139,16 +151,19 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 		}
 	}
 
+	// Replace all generics in the definition
 	if err := def.SpecifyGenericPorts(generics); err != nil {
 		return def, err
 	}
 
+	// Make sure we replaced all generics in the definition
 	if err := def.FreeOfGenerics(); err != nil {
 		return def, err
 	}
 
 	currDir := path.Dir(opDefFilePath)
 
+	// Descend to child operators
 	for _, childOpInsDef := range def.Operators {
 		childDef, err := getOperatorDef(childOpInsDef, currDir, pathsRead)
 
@@ -160,20 +175,27 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 			return def, err
 		}
 
+		// Save the definition in the instance for the next build step: creating operators and connecting
 		childOpInsDef.SetOperatorDef(childDef)
 	}
 
 	return def, nil
 }
 
+// getOperatorDef tries to get the operator definition from the builtin package or the file system.
 func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
+		// Case 1: We found it in the builtin package, return
 		return builtin.GetOperatorDef(insDef)
 	}
 
+	// Case 2: We have to read it from the file system
+
 	var def core.OperatorDef
+
 	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
 
+	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {
 		defFilePath := path.Join(currDir, relFilePath)
 		def, err := readOperatorDef(defFilePath, insDef.Generics, pathsRead)
@@ -188,6 +210,7 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	// These are the paths where we search for operators
 	paths := []string{"."}
 
+	// Iterate through the paths and take the first operator we find
 	var err error
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
@@ -198,9 +221,11 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 			continue
 		}
 
+		// We found an operator, return
 		return def, nil
 	}
 
+	// We haven't found an operator, return error
 	return def, err
 }
 

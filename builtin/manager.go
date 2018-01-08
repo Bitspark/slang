@@ -23,22 +23,24 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	var defIn, defOut core.PortDef
+	in := cfg.oDef.In.Copy()
+	out := cfg.oDef.Out.Copy()
 
-	for identifier, pd := range def.Generics {
-		if pDef, err := cfg.oDef.In.SpecifyGenericPort(identifier, pd); err != nil {
-			return nil, err
-		} else {
-			defIn = pDef
-		}
-		if pDef, err  := cfg.oDef.Out.SpecifyGenericPort(identifier, pd); err != nil {
-			return nil, err
-		} else {
-			defOut = pDef
-		}
+	if err := in.SpecifyGenericPorts(def.Generics); err != nil {
+		return nil, err
+	}
+	if err := out.SpecifyGenericPorts(def.Generics); err != nil {
+		return nil, err
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, defIn, defOut)
+	if err := in.FreeOfGenerics(); err != nil {
+		return nil, err
+	}
+	if err := out.FreeOfGenerics(); err != nil {
+		return nil, err
+	}
+
+	o, err := core.NewOperator(def.Name, cfg.oFunc, in, out)
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +55,19 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetOperatorDef(name string) core.OperatorDef {
-	cfg, _ := cfgs[name]
-	return cfg.oDef
+func GetOperatorDef(insDef *core.InstanceDef) (core.OperatorDef, error) {
+	cfg, ok := cfgs[insDef.Operator]
+	oDef := cfg.oDef
+
+	if !ok {
+		return oDef, errors.New("builtin operator not found")
+	}
+
+	if err := oDef.SpecifyGenericPorts(insDef.Generics); err != nil {
+		return oDef, err
+	}
+
+	return oDef, nil
 }
 
 func IsRegistered(name string) bool {

@@ -10,7 +10,7 @@ var forkOpCfg = &builtinConfig{
 			Type: "stream",
 			Stream: &core.PortDef{
 				Type: "map",
-				Map: map[string]core.PortDef{
+				Map: map[string]*core.PortDef{
 					"i": {
 						Type:    "generic",
 						Generic: "itemType",
@@ -23,7 +23,7 @@ var forkOpCfg = &builtinConfig{
 		},
 		Out: core.PortDef{
 			Type: "map",
-			Map: map[string]core.PortDef{
+			Map: map[string]*core.PortDef{
 				"true": {
 					Type: "stream",
 					Stream: &core.PortDef{

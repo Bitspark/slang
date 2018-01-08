@@ -5,6 +5,7 @@ import (
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
@@ -107,9 +108,10 @@ func TestOperator_ReadOperator__Recursion(t *testing.T) {
 func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
 	a := assertions.New(t)
 	o, err := slang.BuildOperator("test_data/nested_generic/main.json", false)
-	a.NoError(err)
+	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.Out().Map("left").Bufferize()
+	o.Out().Map("right").Bufferize()
 	o.In().Push("hallo")
 
 	a.PortPushes([]interface{}{"hallo"}, o.Out().Map("left"))
@@ -184,7 +186,7 @@ func TestParsePortReference__SingleOut(t *testing.T) {
 func TestParsePortReference__Map(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
+	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("o2:in.a", o1)
 	a.NoError(err)
@@ -197,7 +199,7 @@ func TestParsePortReference__Map(t *testing.T) {
 func TestParsePortReference__Map__UnknownKey(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
+	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("o2:in.b", o1)
 	a.Error(err)
@@ -207,7 +209,7 @@ func TestParsePortReference__Map__UnknownKey(t *testing.T) {
 func TestParsePortReference__Map__DescendingTooDeep(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
+	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("o2:in.b.c", o1)
 	a.Error(err)
@@ -217,7 +219,7 @@ func TestParsePortReference__Map__DescendingTooDeep(t *testing.T) {
 func TestParsePortReference__NestedMap(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]core.PortDef{"a": {Type: "map", Map: map[string]core.PortDef{"b": {Type: "number"}}}}}, core.PortDef{Type: "number"})
+	o2, _ := core.NewOperator("o2", nil, core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "map", Map: map[string]*core.PortDef{"b": {Type: "number"}}}}}, core.PortDef{Type: "number"})
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("o2:in.a.b", o1)
 	a.NoError(err)
@@ -248,12 +250,12 @@ func TestParsePortReference__StreamMap(t *testing.T) {
 			Type: "stream",
 			Stream: &core.PortDef{
 				Type: "map",
-				Map: map[string]core.PortDef{
+				Map: map[string]*core.PortDef{
 					"a": {
 						Type: "stream",
 						Stream: &core.PortDef{
 							Type: "map",
-							Map: map[string]core.PortDef{
+							Map: map[string]*core.PortDef{
 								"a": {
 									Type: "stream",
 									Stream: &core.PortDef{

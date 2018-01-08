@@ -70,7 +70,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = NewPort(o, e, dir)
+			p.subs[k], err = NewPort(o, *e, dir)
 			if err != nil {
 				return nil, err
 			}

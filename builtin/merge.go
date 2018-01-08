@@ -8,7 +8,7 @@ var mergeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
 			Type: "map",
-			Map: map[string]core.PortDef{
+			Map: map[string]*core.PortDef{
 				"true": {
 					Type: "stream",
 					Stream: &core.PortDef{

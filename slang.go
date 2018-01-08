@@ -14,7 +14,7 @@ import (
 
 func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
 	// Read operator definition and perform recursion detection
-	def, err := readOperatorDef(opFile, nil)
+	def, err := readOperatorDef(opFile, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -109,8 +109,20 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 
 // READ OPERATOR DEFINITION
 
-func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef, error) {
+func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
+
+	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
+		for _, p := range pathsRead {
+			if p == absPath {
+				return def, fmt.Errorf("recursion in %s", absPath)
+			}
+		}
+
+		pathsRead = append(pathsRead, absPath)
+	} else {
+		return def, err
+	}
 
 	b, err := ioutil.ReadFile(opDefFilePath)
 
@@ -127,32 +139,21 @@ func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef
 		}
 	}
 
-	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
-		for _, p := range pathsRead {
-			if p == absPath {
-				return def, fmt.Errorf("recursion in %s", absPath)
-			}
-		}
+	if err := def.SpecifyGenericPorts(generics); err != nil {
+		return def, err
+	}
 
-		pathsRead = append(pathsRead, absPath)
-	} else {
+	if err := def.FreeOfGenerics(); err != nil {
 		return def, err
 	}
 
 	currDir := path.Dir(opDefFilePath)
 
 	for _, childOpInsDef := range def.Operators {
-		childDef, err := getOperatorDef(*childOpInsDef, currDir, pathsRead)
+		childDef, err := getOperatorDef(childOpInsDef, currDir, pathsRead)
 
 		if err != nil {
 			return def, err
-		}
-
-		// Replace generic ports in generic operators with according instance port type specifications
-		for identifier, pd := range childOpInsDef.Generics {
-			if childDef, err = childDef.SpecifyGenericPort(identifier, pd); err != nil {
-				return def, err
-			}
 		}
 
 		if err := childDef.FreeOfGenerics(); err != nil {
@@ -165,9 +166,9 @@ func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef
 	return def, nil
 }
 
-func getOperatorDef(insDef core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
+func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
-		return builtin.GetOperatorDef(insDef.Operator), nil
+		return builtin.GetOperatorDef(insDef)
 	}
 
 	var def core.OperatorDef
@@ -175,7 +176,7 @@ func getOperatorDef(insDef core.InstanceDef, currDir string, pathsRead []string)
 
 	if strings.HasPrefix(insDef.Operator, ".") {
 		defFilePath := path.Join(currDir, relFilePath)
-		def, err := readOperatorDef(defFilePath, pathsRead)
+		def, err := readOperatorDef(defFilePath, insDef.Generics, pathsRead)
 
 		if err != nil {
 			return def, err
@@ -191,7 +192,7 @@ func getOperatorDef(insDef core.InstanceDef, currDir string, pathsRead []string)
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
 
-		def, err = readOperatorDef(defFilePath, pathsRead)
+		def, err = readOperatorDef(defFilePath, insDef.Generics, pathsRead)
 
 		if err != nil {
 			continue
@@ -251,6 +252,8 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
 		builtinOp.SetParent(par)
 		return builtinOp, nil
+	} else if builtin.IsRegistered(insDef.Operator) {
+		return nil, err
 	}
 	return buildAndConnectOperator(insDef.Name, insDef.OperatorDef(), par)
 }

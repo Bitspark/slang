@@ -8,7 +8,7 @@ var loopOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
 			Type: "map",
-			Map: map[string]core.PortDef{
+			Map: map[string]*core.PortDef{
 				"init": {
 					Type:    "generic",
 					Generic: "stateType",
@@ -17,7 +17,7 @@ var loopOpCfg = &builtinConfig{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
-						Map: map[string]core.PortDef{
+						Map: map[string]*core.PortDef{
 							"continue": {
 								Type: "boolean",
 							},
@@ -32,7 +32,7 @@ var loopOpCfg = &builtinConfig{
 		},
 		Out: core.PortDef{
 			Type: "map",
-			Map: map[string]core.PortDef{
+			Map: map[string]*core.PortDef{
 				"end": {
 					Type:    "generic",
 					Generic: "stateType",

@@ -19,7 +19,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "loop",
-			Generics: map[string]core.PortDef{
+			Generics: map[string]*core.PortDef{
 				"stateType": {
 					Type: "number",
 				},
@@ -77,7 +77,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	a := assertions.New(t)
 	stateType := core.PortDef{
 		Type: "map",
-		Map: map[string]core.PortDef{
+		Map: map[string]*core.PortDef{
 			"i":      {Type: "number"},
 			"fib":    {Type: "number"},
 			"oldFib": {Type: "number"},
@@ -86,12 +86,12 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "loop",
-			Generics: map[string]core.PortDef{
-				"stateType": stateType,
+			Generics: map[string]*core.PortDef{
+				"stateType": &stateType,
 			},
 		},
 	)
-	a.NoError(err)
+	require.NoError(t, err)
 	a.NotNil(lo)
 	require.Equal(t, core.TYPE_MAP, lo.In().Map("init").Type())
 	require.Equal(t, core.TYPE_NUMBER, lo.In().Map("init").Map("i").Type())

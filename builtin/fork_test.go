@@ -20,7 +20,7 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "fork",
-			Generics: map[string]core.PortDef{
+			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -39,7 +39,7 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "fork",
-			Generics: map[string]core.PortDef{
+			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -58,14 +58,14 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "fork",
-			Generics: map[string]core.PortDef{
+			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
 				},
 			},
 		},
 	)
-	a.NoError(err)
+	require.NoError(t, err)
 
 	o.Out().Map("true").Stream().Bufferize()
 	o.Out().Map("false").Stream().Bufferize()
@@ -99,10 +99,10 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "fork",
-			Generics: map[string]core.PortDef{
+			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "map",
-					Map: map[string]core.PortDef{
+					Map: map[string]*core.PortDef{
 						"a": {Type: "number"},
 						"b": {Type: "string"},
 					},

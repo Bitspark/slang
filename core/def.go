@@ -10,7 +10,7 @@ type InstanceDef struct {
 	Operator   string                 `json:"operator"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
-	Generics   map[string]PortDef     `json:"generics"`
+	Generics   map[string]*PortDef     `json:"generics"`
 
 	valid       bool
 	operatorDef OperatorDef
@@ -26,10 +26,10 @@ type OperatorDef struct {
 }
 
 type PortDef struct {
-	Type    string             `json:"type"`
-	Stream  *PortDef           `json:"stream"`
-	Map     map[string]PortDef `json:"map"`
-	Generic string             `json:"generic"`
+	Type    string              `json:"type"`
+	Stream  *PortDef            `json:"stream"`
+	Map     map[string]*PortDef `json:"map"`
+	Generic string              `json:"generic"`
 
 	valid bool
 }
@@ -37,9 +37,6 @@ type PortDef struct {
 // PUBLIC METHODS
 
 func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
-	if !operatorDef.Valid() {
-		return errors.New("operator definition not validated")
-	}
 	d.operatorDef = operatorDef
 	return nil
 }
@@ -137,6 +134,9 @@ func (d *PortDef) Validate() error {
 			return errors.New("map missing or empty")
 		}
 		for _, e := range d.Map {
+			if e == nil {
+				return errors.New("map entry must not be null")
+			}
 			err := e.Validate()
 			if err != nil {
 				return err
@@ -148,47 +148,59 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d OperatorDef) SpecifyGenericPort(identifier string, def PortDef) (OperatorDef, error) {
-	if pd, err := d.In.SpecifyGenericPort(identifier, def); err != nil {
-		return d, err
-	} else {
-		d.In = pd
+func (d *PortDef) Copy() PortDef {
+	cpy := PortDef{Type: d.Type, Generic: d.Generic}
+
+	if d.Stream != nil {
+		strCpy := d.Stream.Copy()
+		cpy.Stream = &strCpy
 	}
-	if pd, err := d.Out.SpecifyGenericPort(identifier, def); err != nil {
-		return d, err
-	} else {
-		d.Out = pd
+	if d.Map != nil {
+		cpy.Map = make(map[string]*PortDef)
+		for k, e := range d.Map {
+			subCpy := e.Copy()
+			cpy.Map[k] = &subCpy
+		}
 	}
-	return d, nil
+
+	return cpy
 }
 
-func (d PortDef) SpecifyGenericPort(identifier string, def PortDef) (PortDef, error) {
-	if d.Generic == identifier {
-		return def, nil
+func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+	if err := d.In.SpecifyGenericPorts(generics); err != nil {
+		return err
 	}
-
-	portDef := PortDef{}
-	portDef.Type = d.Type
-
-	if d.Type == "stream" {
-		if portStr, err := d.Stream.SpecifyGenericPort(identifier, def); err == nil {
-			portDef.Stream = &portStr
-			return portDef, nil
-		} else {
-			return portDef, err
-		}
-	} else if d.Type == "map" {
-		portDef.Map = make(map[string]PortDef)
-		for k, e := range d.Map {
-			var err error
-			portDef.Map[k], err = e.SpecifyGenericPort(identifier, def)
-			if err != nil {
-				return portDef, err
+	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
+		return err
+	}
+	for _, op := range d.Operators {
+		for _, gp := range op.Generics {
+			if err := gp.SpecifyGenericPorts(generics); err != nil {
+				return err
 			}
 		}
 	}
+	return nil
+}
 
-	return portDef, nil
+func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+	for identifier, pd := range generics {
+		if d.Generic == identifier {
+			*d = pd.Copy()
+			return nil
+		}
+
+		if d.Type == "stream" {
+			return d.Stream.SpecifyGenericPorts(generics)
+		} else if d.Type == "map" {
+			for _, e := range d.Map {
+				if err := e.SpecifyGenericPorts(generics); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (d OperatorDef) FreeOfGenerics() error {
@@ -197,6 +209,13 @@ func (d OperatorDef) FreeOfGenerics() error {
 	}
 	if err := d.Out.FreeOfGenerics(); err != nil {
 		return err
+	}
+	for _, op := range d.Operators {
+		for _, gp := range op.Generics {
+			if err := gp.FreeOfGenerics(); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -234,7 +253,7 @@ func (d PortDef) Equals(p PortDef) bool {
 			if !ok {
 				return false
 			}
-			if !e.Equals(pe) {
+			if !e.Equals(*pe) {
 				return false
 			}
 		}

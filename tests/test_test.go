@@ -39,8 +39,8 @@ func TestTestOperator__SuiteTests(t *testing.T) {
 	a.Equal(1, succs)
 	a.Equal(0, fails)
 
-	/*succs, fails, err = slang.TestOperator("test_data/suite/main_test.json", ioutil.Discard, false)
+	succs, fails, err = slang.TestOperator("test_data/suite/main_test.json", ioutil.Discard, false)
 	a.Nil(err)
 	a.Equal(2, succs)
-	a.Equal(0, fails)*/
+	a.Equal(0, fails)
 }

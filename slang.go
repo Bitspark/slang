@@ -158,6 +158,13 @@ func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef
 			}
 		}
 
+		if err := childDef.In.FreeOfAnys(); err != nil {
+			return def, err
+		}
+		if err := childDef.Out.FreeOfAnys(); err != nil {
+			return def, err
+		}
+
 		if err != nil {
 			return def, err
 		}

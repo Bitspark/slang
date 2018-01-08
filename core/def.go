@@ -148,7 +148,7 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d *PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error) {
+func (d PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error) {
 	if d.Any == identifier {
 		return def, nil
 	}
@@ -175,6 +175,24 @@ func (d *PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error
 	}
 
 	return portDef, nil
+}
+
+func (d PortDef) FreeOfAnys() error {
+	if d.Type == "any" || d.Any != "" {
+		return errors.New("generic any not replaced: " + d.Any)
+	}
+
+	if d.Type == "stream" {
+		return d.Stream.FreeOfAnys()
+	} else if d.Type == "map" {
+		for _, e := range d.Map {
+			if err := e.FreeOfAnys(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (d PortDef) Equals(p PortDef) bool {

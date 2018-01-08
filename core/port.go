@@ -130,7 +130,7 @@ func (p *Port) Stream() *Port {
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
 	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType {
-		return fmt.Errorf("types don't match: %d != %d", p.itemType, q.itemType)
+		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
 	if p.primitive() {
@@ -139,13 +139,13 @@ func (p *Port) Connect(q *Port) error {
 
 	if p.itemType == TYPE_MAP {
 		if len(p.subs) != len(q.subs) {
-			return fmt.Errorf("%s -> %s: maps are incompatible: unequal lengths %d and %d", p.Name(), q.Name(), len(p.subs), len(q.subs))
+			return fmt.Errorf("%s -> %s: maps are incompatible - unequal lengths %d and %d", p.Name(), q.Name(), len(p.subs), len(q.subs))
 		}
 
 		for k, pe := range p.subs {
 			qe, ok := q.subs[k]
 			if !ok {
-				return fmt.Errorf("%s -> %s: maps are incompatible: %s not present", p.Name(), q.Name(), k)
+				return fmt.Errorf("%s -> %s: maps are incompatible - %s not present", p.Name(), q.Name(), k)
 			}
 
 			err := pe.Connect(qe)
@@ -160,13 +160,17 @@ func (p *Port) Connect(q *Port) error {
 
 	if p.itemType == TYPE_STREAM {
 		if q.sub == nil {
-			return errors.New("streams are incompatible: no sub present")
+			return fmt.Errorf("%s -> %s: streams are incompatible - no sub present", p.Name(), q.Name())
 		}
 
 		return p.sub.Connect(q.sub)
 	}
 
-	return errors.New("can only connect primitives and maps")
+	if p.itemType == TYPE_ANY {
+		return fmt.Errorf("%s -> %s: cannot connect any type", p.Name(), q.Name())
+	}
+
+	return fmt.Errorf("%s -> %s: unknown type", p.Name(), q.Name())
 }
 
 // Disconnects this port from port q.

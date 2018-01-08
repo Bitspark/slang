@@ -13,7 +13,7 @@
       "properties": {
         "expression": "a"
       },
-      "ports": {
+      "generics": {
         "paramsMap": {
           "type": "map",
           "map": {

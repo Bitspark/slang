@@ -17,7 +17,7 @@ func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Ports: map[string]core.PortDef{"itemType": {Type: "primitive"}}})
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Generics: map[string]core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.In().Map("true").Stream())
@@ -28,7 +28,7 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Ports: map[string]core.PortDef{"itemType": {Type: "primitive"}}})
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Generics: map[string]core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Out().Stream())
@@ -37,7 +37,7 @@ func TestBuiltin_Merge__OutPorts(t *testing.T) {
 func TestBuiltin_Merge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Ports: map[string]core.PortDef{"itemType": {Type: "primitive"}}})
+	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Generics: map[string]core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	o.Out().Stream().Bufferize()
@@ -58,7 +58,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 	o, err := MakeOperator(core.InstanceDef{
 		Operator: "merge",
-		Ports:    map[string]core.PortDef{"itemType": {Type: "map", Map: map[string]core.PortDef{"red": {Type: "string"}, "blue": {Type: "string"}}}},
+		Generics: map[string]core.PortDef{"itemType": {Type: "map", Map: map[string]core.PortDef{"red": {Type: "string"}, "blue": {Type: "string"}}}},
 	})
 	require.NoError(t, err)
 

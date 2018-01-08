@@ -10,7 +10,7 @@ type InstanceDef struct {
 	Operator   string                 `json:"operator"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
-	Ports      map[string]PortDef     `json:"ports"`
+	Generics   map[string]PortDef     `json:"generics"`
 
 	valid       bool
 	operatorDef OperatorDef

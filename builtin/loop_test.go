@@ -19,7 +19,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "loop",
-			Ports: map[string]core.PortDef{
+			Generics: map[string]core.PortDef{
 				"stateType": {
 					Type: "number",
 				},
@@ -86,7 +86,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "loop",
-			Ports: map[string]core.PortDef{
+			Generics: map[string]core.PortDef{
 				"stateType": stateType,
 			},
 		},

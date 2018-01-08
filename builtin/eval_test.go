@@ -269,7 +269,7 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "a+b"},
-		Ports: map[string]core.PortDef{
+		Generics: map[string]core.PortDef{
 			"paramsMap": {
 				Type: "map",
 				Map: map[string]core.PortDef{
@@ -297,7 +297,7 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "a && (b != c)"},
-		Ports: map[string]core.PortDef{
+		Generics: map[string]core.PortDef{
 			"paramsMap": {
 				Type: "map",
 				Map: map[string]core.PortDef{
@@ -328,7 +328,7 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "vec0.x*vec1.x+vec0.y*vec1.y"},
-		Ports: map[string]core.PortDef{
+		Generics: map[string]core.PortDef{
 			"paramsMap": {
 				Type: "map",
 				Map: map[string]core.PortDef{

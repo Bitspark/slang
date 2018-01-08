@@ -149,7 +149,7 @@ func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef
 		}
 
 		// Replace generic ports in generic operators with according instance port type specifications
-		for identifier, pd := range childOpInsDef.Ports {
+		for identifier, pd := range childOpInsDef.Generics {
 			if childDef, err = childDef.SpecifyGenericPort(identifier, pd); err != nil {
 				return def, err
 			}

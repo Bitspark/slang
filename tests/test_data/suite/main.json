@@ -20,7 +20,7 @@
     {
       "name": "dbl1",
       "operator": ".duplicator",
-      "ports": {
+      "generics": {
         "itemType": {
           "type": "number"
         }
@@ -29,7 +29,7 @@
     {
       "name": "dbl2",
       "operator": ".duplicator",
-      "ports": {
+      "generics": {
         "itemType": {
           "type": "number"
         }
@@ -38,7 +38,7 @@
     {
       "name": "dbl3",
       "operator": ".duplicator",
-      "ports": {
+      "generics": {
         "itemType": {
           "type": "number"
         }
@@ -47,7 +47,7 @@
     {
       "name": "tl",
       "operator": ".takers.takeLeft",
-      "ports": {
+      "generics": {
         "itemType": {
           "type": "number"
         }
@@ -56,7 +56,7 @@
     {
       "name": "tr",
       "operator": ".takers.takeRight",
-      "ports": {
+      "generics": {
         "itemType": {
           "type": "number"
         }

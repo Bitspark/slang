@@ -25,7 +25,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 
 	var defIn, defOut core.PortDef
 
-	for identifier, pd := range def.Ports {
+	for identifier, pd := range def.Generics {
 		if pDef, err := cfg.oDef.In.SpecifyGenericPort(identifier, pd); err != nil {
 			return nil, err
 		} else {

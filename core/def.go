@@ -10,14 +10,15 @@ type InstanceDef struct {
 	Operator   string                 `json:"operator"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
+	Ports      map[string]PortDef     `json:"ports"`
 
 	valid       bool
-	operatorDef *OperatorDef
+	operatorDef OperatorDef
 }
 
 type OperatorDef struct {
-	In          *PortDef            `json:"in"`
-	Out         *PortDef            `json:"out"`
+	In          PortDef             `json:"in"`
+	Out         PortDef             `json:"out"`
 	Operators   []*InstanceDef      `json:"operators"`
 	Connections map[string][]string `json:"connections"`
 
@@ -28,13 +29,14 @@ type PortDef struct {
 	Type   string             `json:"type"`
 	Stream *PortDef           `json:"stream"`
 	Map    map[string]PortDef `json:"map"`
+	Any    string             `json:"any"`
 
 	valid bool
 }
 
 // PUBLIC METHODS
 
-func (d *InstanceDef) SetOperatorDef(operatorDef *OperatorDef) error {
+func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
 	if !operatorDef.Valid() {
 		return errors.New("operator definition not validated")
 	}
@@ -42,7 +44,7 @@ func (d *InstanceDef) SetOperatorDef(operatorDef *OperatorDef) error {
 	return nil
 }
 
-func (d *InstanceDef) OperatorDef() *OperatorDef {
+func (d *InstanceDef) OperatorDef() OperatorDef {
 	return d.operatorDef
 }
 
@@ -80,10 +82,6 @@ func (d *InstanceDef) Validate() error {
 }
 
 func (d *OperatorDef) Validate() error {
-	if d.In == nil || d.Out == nil {
-		return errors.New(`ports must be defined`)
-	}
-
 	if err := d.In.Validate(); err != nil {
 		return err
 	}
@@ -99,7 +97,7 @@ func (d *OperatorDef) Validate() error {
 		}
 
 		if _, ok := alreadyUsedInsNames[insDef.Name]; ok {
-			return fmt.Errorf(`Colliding instance names within same parent operator: "%s"`, insDef.Name)
+			return fmt.Errorf(`colliding instance names within same parent operator: "%s"`, insDef.Name)
 		}
 		alreadyUsedInsNames[insDef.Name] = true
 	}
@@ -113,7 +111,7 @@ func (d *PortDef) Validate() error {
 		return errors.New("type must not be empty")
 	}
 
-	validTypes := []string{"primitive", "number", "string", "boolean", "stream", "map"}
+	validTypes := []string{"any", "primitive", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {
@@ -125,7 +123,11 @@ func (d *PortDef) Validate() error {
 		return errors.New("unknown type")
 	}
 
-	if d.Type == "stream" {
+	if d.Type == "any" {
+		if d.Any == "" {
+			return errors.New("any identifier missing")
+		}
+	} else if d.Type == "stream" {
 		if d.Stream == nil {
 			return errors.New("stream missing")
 		}
@@ -144,6 +146,35 @@ func (d *PortDef) Validate() error {
 
 	d.valid = true
 	return nil
+}
+
+func (d *PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error) {
+	if d.Any == identifier {
+		return def, nil
+	}
+
+	portDef := PortDef{}
+	portDef.Type = d.Type
+
+	if d.Type == "stream" {
+		if portStr, err := d.Stream.SpecifyAnyPort(identifier, def); err == nil {
+			portDef.Stream = &portStr
+			return portDef, nil
+		} else {
+			return portDef, err
+		}
+	} else if d.Type == "map" {
+		portDef.Map = make(map[string]PortDef)
+		for k, e := range d.Map {
+			var err error
+			portDef.Map[k], err = e.SpecifyAnyPort(identifier, def)
+			if err != nil {
+				return portDef, err
+			}
+		}
+	}
+
+	return portDef, nil
 }
 
 func (d PortDef) Equals(p PortDef) bool {

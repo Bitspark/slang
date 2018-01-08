@@ -3,18 +3,23 @@
     "type": "map",
     "map": {
       "left": {
-        "type": "primitive"
+        "type": "any",
+        "any": "itemType"
       },
       "right": {
-        "type": "primitive"
+        "type": "any",
+        "any": "itemType"
       }
     }
   },
   "out": {
-    "type": "primitive"
+    "type": "any",
+    "any": "itemType"
   },
   "operators": [],
   "connections": {
-    ":in.right": [":out"]
+    ":in.right": [
+      ":out"
+    ]
   }
 }

@@ -5,14 +5,15 @@ import (
 )
 
 var forkOpCfg = &builtinConfig{
-	oDef: &core.OperatorDef{
-		In: &core.PortDef{
+	oDef: core.OperatorDef{
+		In: core.PortDef{
 			Type: "stream",
 			Stream: &core.PortDef{
 				Type: "map",
 				Map: map[string]core.PortDef{
 					"i": {
-						Type: "primitive",
+						Type: "any",
+						Any:  "itemType",
 					},
 					"select": {
 						Type: "boolean",
@@ -20,19 +21,21 @@ var forkOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Out: &core.PortDef{
+		Out: core.PortDef{
 			Type: "map",
 			Map: map[string]core.PortDef{
 				"true": {
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type: "primitive",
+						Type: "any",
+						Any:  "itemType",
 					},
 				},
 				"false": {
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type: "primitive",
+						Type: "any",
+						Any:  "itemType",
 					},
 				},
 			},

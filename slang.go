@@ -109,54 +109,71 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 
 // READ OPERATOR DEFINITION
 
-func readOperatorDef(opDefFilePath string, pathsRead []string) (*core.OperatorDef, error) {
+func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef, error) {
+	var def core.OperatorDef
+
 	b, err := ioutil.ReadFile(opDefFilePath)
 
 	if err != nil {
-		return nil, err
+		return def, err
 	}
 
-	def := ParseOperatorDef(string(b))
+	def = ParseOperatorDef(string(b))
 
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
-			return nil, err
+			return def, err
 		}
 	}
 
 	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
 		for _, p := range pathsRead {
 			if p == absPath {
-				return nil, fmt.Errorf("recursion in %s", absPath)
+				return def, fmt.Errorf("recursion in %s", absPath)
 			}
 		}
 
 		pathsRead = append(pathsRead, absPath)
 	} else {
-		return nil, err
+		return def, err
 	}
 
 	currDir := path.Dir(opDefFilePath)
 
 	for _, childOpInsDef := range def.Operators {
-		childDef, err := getOperatorDef(childOpInsDef, currDir, pathsRead)
+		childDef, err := getOperatorDef(*childOpInsDef, currDir, pathsRead)
+
+		// Replace any ports in generic operators with according instance port type specifications
+		for identifier, pd := range childOpInsDef.Ports {
+			if pDef, err := childDef.In.SpecifyAnyPort(identifier, pd); err != nil {
+				return def, err
+			} else {
+				childDef.In = pDef
+			}
+			if pDef, err  := childDef.Out.SpecifyAnyPort(identifier, pd); err != nil {
+				return def, err
+			} else {
+				childDef.Out = pDef
+			}
+		}
 
 		if err != nil {
-			return nil, err
+			return def, err
 		}
 
 		childOpInsDef.SetOperatorDef(childDef)
 	}
 
-	return &def, nil
+	return def, nil
 }
 
-func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (*core.OperatorDef, error) {
+func getOperatorDef(insDef core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
 		return builtin.GetOperatorDef(insDef.Operator), nil
 	}
 
+	var def core.OperatorDef
 	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
 
 	if strings.HasPrefix(insDef.Operator, ".") {
@@ -164,7 +181,7 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 		def, err := readOperatorDef(defFilePath, pathsRead)
 
 		if err != nil {
-			return nil, err
+			return def, err
 		}
 
 		return def, nil
@@ -174,7 +191,6 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	paths := []string{"."}
 
 	var err error
-	var def *core.OperatorDef
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
 
@@ -187,12 +203,12 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 		return def, nil
 	}
 
-	return nil, err
+	return def, err
 }
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
-func buildAndConnectOperator(insName string, def *core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -200,7 +216,7 @@ func buildAndConnectOperator(insName string, def *core.OperatorDef, par *core.Op
 		}
 	}
 
-	o, err := core.NewOperator(insName, nil, *def.In, *def.Out)
+	o, err := core.NewOperator(insName, nil, def.In, def.Out)
 	o.SetParent(par)
 
 	if err != nil {
@@ -208,7 +224,7 @@ func buildAndConnectOperator(insName string, def *core.OperatorDef, par *core.Op
 	}
 
 	for _, childOpInsDef := range def.Operators {
-		_, err := getOperator(childOpInsDef, o)
+		_, err := getOperator(*childOpInsDef, o)
 
 		if err != nil {
 			return nil, err
@@ -234,7 +250,7 @@ func buildAndConnectOperator(insName string, def *core.OperatorDef, par *core.Op
 	return o, nil
 }
 
-func getOperator(insDef *core.InstanceDef, par *core.Operator) (*core.Operator, error) {
+func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
 		builtinOp.SetParent(par)
 		return builtinOp, nil

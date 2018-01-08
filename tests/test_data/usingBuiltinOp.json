@@ -12,6 +12,16 @@
       "name": "passer",
       "properties": {
         "expression": "a"
+      },
+      "ports": {
+        "paramsMap": {
+          "type": "map",
+          "map": {
+            "a": {
+              "type": "primitive"
+            }
+          }
+        }
       }
     }
   ],

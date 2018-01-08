@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	TYPE_ANY       = iota
 	TYPE_PRIMITIVE = iota
 	TYPE_NUMBER    = iota
 	TYPE_STRING    = iota
@@ -138,13 +139,13 @@ func (p *Port) Connect(q *Port) error {
 
 	if p.itemType == TYPE_MAP {
 		if len(p.subs) != len(q.subs) {
-			return errors.New("maps are incompatible: unequal lengths")
+			return fmt.Errorf("%s -> %s: maps are incompatible: unequal lengths %d and %d", p.Name(), q.Name(), len(p.subs), len(q.subs))
 		}
 
 		for k, pe := range p.subs {
 			qe, ok := q.subs[k]
 			if !ok {
-				return fmt.Errorf("maps are incompatible: %s not present", k)
+				return fmt.Errorf("%s -> %s: maps are incompatible: %s not present", p.Name(), q.Name(), k)
 			}
 
 			err := pe.Connect(qe)
@@ -261,6 +262,10 @@ func (p *Port) PushEOS() {
 
 // Pull an item from this port.
 func (p *Port) Pull() interface{} {
+	if p.itemType == TYPE_ANY {
+		panic("cannot pull from any")
+	}
+
 	if p.buf != nil {
 		return <-p.buf
 	}
@@ -353,6 +358,8 @@ func (p *Port) Name() string {
 	var name string
 
 	switch p.itemType {
+	case TYPE_ANY:
+		name = "ANY"
 	case TYPE_PRIMITIVE:
 		name = "PRIMITIVE"
 	case TYPE_NUMBER:

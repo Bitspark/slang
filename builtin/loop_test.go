@@ -4,6 +4,7 @@ import (
 	"testing"
 	"slang/tests/assertions"
 	"slang/core"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
@@ -15,7 +16,16 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 
 func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(&core.InstanceDef{Operator: "loop"})
+	lo, err := MakeOperator(
+		core.InstanceDef{
+			Operator: "loop",
+			Ports: map[string]core.PortDef{
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
 	a.NoError(err)
 	a.NotNil(lo)
 
@@ -65,9 +75,26 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 
 func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(&core.InstanceDef{Operator: "loop"})
+	stateType := core.PortDef{
+		Type: "map",
+		Map: map[string]core.PortDef{
+			"i":      {Type: "number"},
+			"fib":    {Type: "number"},
+			"oldFib": {Type: "number"},
+		},
+	}
+	lo, err := MakeOperator(
+		core.InstanceDef{
+			Operator: "loop",
+			Ports: map[string]core.PortDef{
+				"stateType": stateType,
+			},
+		},
+	)
 	a.NoError(err)
 	a.NotNil(lo)
+	require.Equal(t, core.TYPE_MAP, lo.In().Map("init").Type())
+	require.Equal(t, core.TYPE_NUMBER, lo.In().Map("init").Map("i").Type())
 
 	// Condition operator
 	co, _ := core.NewOperator("cond", func(in, out *core.Port, store interface{}) {
@@ -81,7 +108,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 				out.Push(i > 0.0)
 			}
 		}
-	}, core.PortDef{Type: "primitive"}, core.PortDef{Type: "boolean"})
+	}, stateType, core.PortDef{Type: "boolean"})
 
 	// Fibonacci function operator
 	fo, _ := core.NewOperator("fib", func(in, out *core.Port, store interface{}) {
@@ -97,7 +124,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 				out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
 			}
 		}
-	}, core.PortDef{Type: "primitive"}, core.PortDef{Type: "primitive"})
+	}, stateType, stateType)
 
 	// Connect
 	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))

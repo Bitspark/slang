@@ -11,20 +11,34 @@ type PropertyFunc func(*core.Operator, map[string]interface{}) error
 type builtinConfig struct {
 	oPropFunc PropertyFunc
 	oFunc     core.OFunc
-	oDef      *core.OperatorDef
+	oDef      core.OperatorDef
 }
 
 var cfgs map[string]*builtinConfig
 
-func MakeOperator(def *core.InstanceDef) (*core.Operator, error) {
+func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	cfg := getBuiltinCfg(def.Operator)
 
 	if cfg == nil {
 		return nil, errors.New("unknown builtin operator")
 	}
 
+	var defIn, defOut core.PortDef
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, *cfg.oDef.In, *cfg.oDef.Out)
+	for identifier, pd := range def.Ports {
+		if pDef, err := cfg.oDef.In.SpecifyAnyPort(identifier, pd); err != nil {
+			return nil, err
+		} else {
+			defIn = pDef
+		}
+		if pDef, err  := cfg.oDef.Out.SpecifyAnyPort(identifier, pd); err != nil {
+			return nil, err
+		} else {
+			defOut = pDef
+		}
+	}
+
+	o, err := core.NewOperator(def.Name, cfg.oFunc, defIn, defOut)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +53,7 @@ func MakeOperator(def *core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetOperatorDef(name string) *core.OperatorDef {
+func GetOperatorDef(name string) core.OperatorDef {
 	cfg, _ := cfgs[name]
 	return cfg.oDef
 }

@@ -12,12 +12,22 @@
       "name": "passer",
       "properties": {
         "expression": "a"
+      },
+      "ports": {
+        "paramsMap": {
+          "type": "map",
+          "map": {
+            "a": {
+              "type": "primitive"
+            }
+          }
+        }
       }
     }
   ],
   "connections": {
     ":in": [
-      "passer:in"
+      "passer:in.a"
     ],
     "passer:out": [
       ":out"

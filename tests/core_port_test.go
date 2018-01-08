@@ -87,6 +87,20 @@ func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 	a.False(def.Valid(), "should not be valid")
 }
 
+func TestPortDef_Validate__Any__IdentifierMissing(t *testing.T) {
+	a := assertions.New(t)
+	def := slang.ParsePortDef(`{"type":"any"}`)
+	a.Error(def.Validate())
+	a.False(def.Valid(), "should not be valid")
+}
+
+func TestPortDef_Validate__Any__Correct(t *testing.T) {
+	a := assertions.New(t)
+	def := slang.ParsePortDef(`{"type":"any", "any":"id1"}`)
+	a.NoError(def.Validate())
+	a.True(def.Valid(), "should be valid")
+}
+
 // core.NewPort (10 tests)
 
 func TestNewPort__InvalidDefinition(t *testing.T) {

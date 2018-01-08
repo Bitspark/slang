@@ -104,6 +104,18 @@ func TestOperator_ReadOperator__Recursion(t *testing.T) {
 	a.Nil(o)
 }
 
+func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
+	a := assertions.New(t)
+	o, err := slang.BuildOperator("test_data/nested_generic/main.json", false)
+	a.NoError(err)
+
+	o.Out().Bufferize()
+	o.In().Push("hallo")
+
+	a.PortPushes([]interface{}{"hallo"}, o.Out().Map("left"))
+	a.PortPushes([]interface{}{"hallo"}, o.Out().Map("right"))
+}
+
 func TestParsePortReference__NilOperator(t *testing.T) {
 	a := assertions.New(t)
 	p, err := slang.ParsePortReference("test.in", nil)

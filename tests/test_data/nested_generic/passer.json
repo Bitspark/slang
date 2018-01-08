@@ -1,0 +1,42 @@
+{
+  "in": {
+    "type": "generic",
+    "generic": "itemType"
+  },
+  "out": {
+    "type": "map",
+    "map": {
+      "left": {
+        "type": "generic",
+        "generic": "itemType"
+      },
+      "right": {
+        "type": "generic",
+        "generic": "itemType"
+      }
+    }
+  },
+  "operators": [
+    {
+      "name": "dupl1",
+      "operator": ".duplicator",
+      "generics": {
+        "itemType": {
+          "type": "generic",
+          "generic": "itemType"
+        }
+      }
+    }
+  ],
+  "connections": {
+    ":in": [
+      "dupl1:in"
+    ],
+    "dupl1:out.left": [
+      ":out.left"
+    ],
+    "dupl1:out.right": [
+      ":out.right"
+    ]
+  }
+}

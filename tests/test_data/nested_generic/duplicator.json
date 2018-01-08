@@ -1,0 +1,25 @@
+{
+  "in": {
+    "type": "primitive"
+  },
+  "out": {
+    "type": "map",
+    "map": {
+      "left": {
+        "type": "generic",
+        "generic": "itemType"
+      },
+      "right": {
+        "type": "generic",
+        "generic": "itemType"
+      }
+    }
+  },
+  "operators": [],
+  "connections": {
+    ":in": [
+      ":out.left",
+      ":out.right"
+    ]
+  }
+}

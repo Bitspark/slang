@@ -10,8 +10,8 @@ var loopOpCfg = &builtinConfig{
 			Type: "map",
 			Map: map[string]core.PortDef{
 				"init": {
-					Type: "any",
-					Any:  "stateType",
+					Type:    "generic",
+					Generic: "stateType",
 				},
 				"iteration": {
 					Type: "stream",
@@ -22,8 +22,8 @@ var loopOpCfg = &builtinConfig{
 								Type: "boolean",
 							},
 							"state": {
-								Type: "any",
-								Any:  "stateType",
+								Type:    "generic",
+								Generic: "stateType",
 							},
 						},
 					},
@@ -34,14 +34,14 @@ var loopOpCfg = &builtinConfig{
 			Type: "map",
 			Map: map[string]core.PortDef{
 				"end": {
-					Type: "any",
-					Any:  "stateType",
+					Type:    "generic",
+					Generic: "stateType",
 				},
 				"state": {
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type: "any",
-						Any:  "stateType",
+						Type:    "generic",
+						Generic: "stateType",
 					},
 				},
 			},

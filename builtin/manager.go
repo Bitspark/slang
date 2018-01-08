@@ -26,12 +26,12 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	var defIn, defOut core.PortDef
 
 	for identifier, pd := range def.Ports {
-		if pDef, err := cfg.oDef.In.SpecifyAnyPort(identifier, pd); err != nil {
+		if pDef, err := cfg.oDef.In.SpecifyGenericPort(identifier, pd); err != nil {
 			return nil, err
 		} else {
 			defIn = pDef
 		}
-		if pDef, err  := cfg.oDef.Out.SpecifyAnyPort(identifier, pd); err != nil {
+		if pDef, err  := cfg.oDef.Out.SpecifyGenericPort(identifier, pd); err != nil {
 			return nil, err
 		} else {
 			defOut = pDef

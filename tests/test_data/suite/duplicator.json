@@ -6,12 +6,12 @@
     "type": "map",
     "map": {
       "left": {
-        "type": "any",
-        "any": "itemType"
+        "type": "generic",
+        "generic": "itemType"
       },
       "right": {
-        "type": "any",
-        "any": "itemType"
+        "type": "generic",
+        "generic": "itemType"
       }
     }
   },

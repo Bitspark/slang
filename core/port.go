@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	TYPE_ANY       = iota
+	TYPE_GENERIC   = iota
 	TYPE_PRIMITIVE = iota
 	TYPE_NUMBER    = iota
 	TYPE_STRING    = iota
@@ -166,8 +166,8 @@ func (p *Port) Connect(q *Port) error {
 		return p.sub.Connect(q.sub)
 	}
 
-	if p.itemType == TYPE_ANY {
-		return fmt.Errorf("%s -> %s: cannot connect any type", p.Name(), q.Name())
+	if p.itemType == TYPE_GENERIC {
+		return fmt.Errorf("%s -> %s: cannot connect generic type", p.Name(), q.Name())
 	}
 
 	return fmt.Errorf("%s -> %s: unknown type", p.Name(), q.Name())
@@ -266,8 +266,8 @@ func (p *Port) PushEOS() {
 
 // Pull an item from this port.
 func (p *Port) Pull() interface{} {
-	if p.itemType == TYPE_ANY {
-		panic("cannot pull from any")
+	if p.itemType == TYPE_GENERIC {
+		panic("cannot pull from generic")
 	}
 
 	if p.buf != nil {
@@ -362,8 +362,8 @@ func (p *Port) Name() string {
 	var name string
 
 	switch p.itemType {
-	case TYPE_ANY:
-		name = "ANY"
+	case TYPE_GENERIC:
+		name = "generic"
 	case TYPE_PRIMITIVE:
 		name = "PRIMITIVE"
 	case TYPE_NUMBER:

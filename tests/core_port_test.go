@@ -87,16 +87,16 @@ func TestPortDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 	a.False(def.Valid(), "should not be valid")
 }
 
-func TestPortDef_Validate__Any__IdentifierMissing(t *testing.T) {
+func TestPortDef_Validate__Generic__IdentifierMissing(t *testing.T) {
 	a := assertions.New(t)
-	def := slang.ParsePortDef(`{"type":"any"}`)
+	def := slang.ParsePortDef(`{"type":"generic"}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
-func TestPortDef_Validate__Any__Correct(t *testing.T) {
+func TestPortDef_Validate__Generic__Correct(t *testing.T) {
 	a := assertions.New(t)
-	def := slang.ParsePortDef(`{"type":"any", "any":"id1"}`)
+	def := slang.ParsePortDef(`{"type":"generic", "generic":"id1"}`)
 	a.NoError(def.Validate())
 	a.True(def.Valid(), "should be valid")
 }
@@ -213,7 +213,7 @@ func TestNewPort__Complex(t *testing.T) {
 
 // Port.Type (6 tests)
 
-func TestPort_Type__Simple__Any(t *testing.T) {
+func TestPort_Type__Simple__Primitive(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"primitive"}`)
 	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)

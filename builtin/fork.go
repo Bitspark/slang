@@ -12,8 +12,8 @@ var forkOpCfg = &builtinConfig{
 				Type: "map",
 				Map: map[string]core.PortDef{
 					"i": {
-						Type: "any",
-						Any:  "itemType",
+						Type:    "generic",
+						Generic: "itemType",
 					},
 					"select": {
 						Type: "boolean",
@@ -27,15 +27,15 @@ var forkOpCfg = &builtinConfig{
 				"true": {
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type: "any",
-						Any:  "itemType",
+						Type:    "generic",
+						Generic: "itemType",
 					},
 				},
 				"false": {
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type: "any",
-						Any:  "itemType",
+						Type:    "generic",
+						Generic: "itemType",
 					},
 				},
 			},

@@ -26,10 +26,10 @@ type OperatorDef struct {
 }
 
 type PortDef struct {
-	Type   string             `json:"type"`
-	Stream *PortDef           `json:"stream"`
-	Map    map[string]PortDef `json:"map"`
-	Any    string             `json:"any"`
+	Type    string             `json:"type"`
+	Stream  *PortDef           `json:"stream"`
+	Map     map[string]PortDef `json:"map"`
+	Generic string             `json:"generic"`
 
 	valid bool
 }
@@ -111,7 +111,7 @@ func (d *PortDef) Validate() error {
 		return errors.New("type must not be empty")
 	}
 
-	validTypes := []string{"any", "primitive", "number", "string", "boolean", "stream", "map"}
+	validTypes := []string{"generic", "primitive", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {
@@ -123,9 +123,9 @@ func (d *PortDef) Validate() error {
 		return errors.New("unknown type")
 	}
 
-	if d.Type == "any" {
-		if d.Any == "" {
-			return errors.New("any identifier missing")
+	if d.Type == "generic" {
+		if d.Generic == "" {
+			return errors.New("generic identifier missing")
 		}
 	} else if d.Type == "stream" {
 		if d.Stream == nil {
@@ -148,8 +148,22 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error) {
-	if d.Any == identifier {
+func (d OperatorDef) SpecifyGenericPort(identifier string, def PortDef) (OperatorDef, error) {
+	if pd, err := d.In.SpecifyGenericPort(identifier, def); err != nil {
+		return d, err
+	} else {
+		d.In = pd
+	}
+	if pd, err := d.Out.SpecifyGenericPort(identifier, def); err != nil {
+		return d, err
+	} else {
+		d.Out = pd
+	}
+	return d, nil
+}
+
+func (d PortDef) SpecifyGenericPort(identifier string, def PortDef) (PortDef, error) {
+	if d.Generic == identifier {
 		return def, nil
 	}
 
@@ -157,7 +171,7 @@ func (d PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error)
 	portDef.Type = d.Type
 
 	if d.Type == "stream" {
-		if portStr, err := d.Stream.SpecifyAnyPort(identifier, def); err == nil {
+		if portStr, err := d.Stream.SpecifyGenericPort(identifier, def); err == nil {
 			portDef.Stream = &portStr
 			return portDef, nil
 		} else {
@@ -167,7 +181,7 @@ func (d PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error)
 		portDef.Map = make(map[string]PortDef)
 		for k, e := range d.Map {
 			var err error
-			portDef.Map[k], err = e.SpecifyAnyPort(identifier, def)
+			portDef.Map[k], err = e.SpecifyGenericPort(identifier, def)
 			if err != nil {
 				return portDef, err
 			}
@@ -177,16 +191,26 @@ func (d PortDef) SpecifyAnyPort(identifier string, def PortDef) (PortDef, error)
 	return portDef, nil
 }
 
-func (d PortDef) FreeOfAnys() error {
-	if d.Type == "any" || d.Any != "" {
-		return errors.New("generic any not replaced: " + d.Any)
+func (d OperatorDef) FreeOfGenerics() error {
+	if err := d.In.FreeOfGenerics(); err != nil {
+		return err
+	}
+	if err := d.Out.FreeOfGenerics(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d PortDef) FreeOfGenerics() error {
+	if d.Type == "generic" || d.Generic != "" {
+		return errors.New("generic not replaced: " + d.Generic)
 	}
 
 	if d.Type == "stream" {
-		return d.Stream.FreeOfAnys()
+		return d.Stream.FreeOfGenerics()
 	} else if d.Type == "map" {
 		for _, e := range d.Map {
-			if err := e.FreeOfAnys(); err != nil {
+			if err := e.FreeOfGenerics(); err != nil {
 				return err
 			}
 		}

@@ -144,28 +144,18 @@ func readOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef
 	for _, childOpInsDef := range def.Operators {
 		childDef, err := getOperatorDef(*childOpInsDef, currDir, pathsRead)
 
-		// Replace any ports in generic operators with according instance port type specifications
-		for identifier, pd := range childOpInsDef.Ports {
-			if pDef, err := childDef.In.SpecifyAnyPort(identifier, pd); err != nil {
-				return def, err
-			} else {
-				childDef.In = pDef
-			}
-			if pDef, err  := childDef.Out.SpecifyAnyPort(identifier, pd); err != nil {
-				return def, err
-			} else {
-				childDef.Out = pDef
-			}
-		}
-
-		if err := childDef.In.FreeOfAnys(); err != nil {
-			return def, err
-		}
-		if err := childDef.Out.FreeOfAnys(); err != nil {
-			return def, err
-		}
-
 		if err != nil {
+			return def, err
+		}
+
+		// Replace generic ports in generic operators with according instance port type specifications
+		for identifier, pd := range childOpInsDef.Ports {
+			if childDef, err = childDef.SpecifyGenericPort(identifier, pd); err != nil {
+				return def, err
+			}
+		}
+
+		if err := childDef.FreeOfGenerics(); err != nil {
 			return def, err
 		}
 

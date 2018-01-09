@@ -231,6 +231,9 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
+// buildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
+// It recursively creates child operators which might as well be builtin operators. It also connects the operators
+// according to the given operator definition.
 func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
 	if !def.Valid() {
 		err := def.Validate()
@@ -239,13 +242,16 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 		}
 	}
 
+	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, def.In, def.Out)
-	o.SetParent(par)
-
 	if err != nil {
 		return nil, err
 	}
 
+	// Attach it to the parent
+	o.SetParent(par)
+
+	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.Operators {
 		_, err := getOperator(*childOpInsDef, o)
 
@@ -254,6 +260,7 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 		}
 	}
 
+	// After having created all operators, connect all operators from bottom to top
 	for srcConnDef, dstConnDefs := range def.Connections {
 		if pSrc, err := ParsePortReference(srcConnDef, o); err == nil {
 			for _, dstConnDef := range dstConnDefs {
@@ -273,12 +280,20 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 	return o, nil
 }
 
+// getOperator creates and returns an operator according to the instance definition. If there exists a suitable
+// builtin operator it will be returned. Otherwise, a new operator will be created.
 func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, error) {
 	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
+		// Builtin operator has been found
 		builtinOp.SetParent(par)
 		return builtinOp, nil
 	} else if builtin.IsRegistered(insDef.Operator) {
 		return nil, err
 	}
+	// Instance definition must have an appropriate operator definition
+	if !insDef.HasOperatorDef() {
+		return nil, errors.New("instance has no operator definition")
+	}
+	// No builtin operator, so create new one according to the operator definition saved in the instance definition
 	return buildAndConnectOperator(insDef.Name, insDef.OperatorDef(), par)
 }

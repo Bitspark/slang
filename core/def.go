@@ -10,10 +10,11 @@ type InstanceDef struct {
 	Operator   string                 `json:"operator"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
-	Generics   map[string]*PortDef     `json:"generics"`
+	Generics   map[string]*PortDef    `json:"generics"`
 
-	valid       bool
-	operatorDef OperatorDef
+	valid          bool
+	operatorDef    OperatorDef
+	operatorDefSet bool
 }
 
 type OperatorDef struct {
@@ -34,26 +35,9 @@ type PortDef struct {
 	valid bool
 }
 
-// PUBLIC METHODS
-
-func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
-	d.operatorDef = operatorDef
-	return nil
-}
-
-func (d *InstanceDef) OperatorDef() OperatorDef {
-	return d.operatorDef
-}
+// INSTANCE DEFINITION
 
 func (d InstanceDef) Valid() bool {
-	return d.valid
-}
-
-func (d OperatorDef) Valid() bool {
-	return d.valid
-}
-
-func (d *PortDef) Valid() bool {
 	return d.valid
 }
 
@@ -76,6 +60,26 @@ func (d *InstanceDef) Validate() error {
 
 	d.valid = true
 	return nil
+}
+
+func (d InstanceDef) OperatorDef() OperatorDef {
+	return d.operatorDef
+}
+
+func (d InstanceDef) HasOperatorDef() bool {
+	return d.operatorDefSet
+}
+
+func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
+	d.operatorDef = operatorDef
+	d.operatorDefSet = true
+	return nil
+}
+
+// OPERATOR DEFINITION
+
+func (d OperatorDef) Valid() bool {
+	return d.valid
 }
 
 func (d *OperatorDef) Validate() error {
@@ -101,6 +105,74 @@ func (d *OperatorDef) Validate() error {
 
 	d.valid = true
 	return nil
+}
+
+func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+	if err := d.In.SpecifyGenericPorts(generics); err != nil {
+		return err
+	}
+	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
+		return err
+	}
+	for _, op := range d.Operators {
+		for _, gp := range op.Generics {
+			if err := gp.SpecifyGenericPorts(generics); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (d OperatorDef) FreeOfGenerics() error {
+	if err := d.In.FreeOfGenerics(); err != nil {
+		return err
+	}
+	if err := d.Out.FreeOfGenerics(); err != nil {
+		return err
+	}
+	for _, op := range d.Operators {
+		for _, gp := range op.Generics {
+			if err := gp.FreeOfGenerics(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// PORT DEFINITION
+
+func (d PortDef) Equals(p PortDef) bool {
+	if d.Type != p.Type {
+		return false
+	}
+
+	if d.Type == "map" {
+		if len(d.Map) != len(p.Map) {
+			return false
+		}
+
+		for k, e := range d.Map {
+			pe, ok := p.Map[k]
+			if !ok {
+				return false
+			}
+			if !e.Equals(*pe) {
+				return false
+			}
+		}
+	} else if d.Type == "stream" {
+		if !d.Stream.Equals(*p.Stream) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (d *PortDef) Valid() bool {
+	return d.valid
 }
 
 func (d *PortDef) Validate() error {
@@ -148,7 +220,7 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d *PortDef) Copy() PortDef {
+func (d PortDef) Copy() PortDef {
 	cpy := PortDef{Type: d.Type, Generic: d.Generic}
 
 	if d.Stream != nil {
@@ -164,23 +236,6 @@ func (d *PortDef) Copy() PortDef {
 	}
 
 	return cpy
-}
-
-func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
-	if err := d.In.SpecifyGenericPorts(generics); err != nil {
-		return err
-	}
-	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
-		return err
-	}
-	for _, op := range d.Operators {
-		for _, gp := range op.Generics {
-			if err := gp.SpecifyGenericPorts(generics); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
@@ -203,23 +258,6 @@ func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	return nil
 }
 
-func (d OperatorDef) FreeOfGenerics() error {
-	if err := d.In.FreeOfGenerics(); err != nil {
-		return err
-	}
-	if err := d.Out.FreeOfGenerics(); err != nil {
-		return err
-	}
-	for _, op := range d.Operators {
-		for _, gp := range op.Generics {
-			if err := gp.FreeOfGenerics(); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func (d PortDef) FreeOfGenerics() error {
 	if d.Type == "generic" || d.Generic != "" {
 		return errors.New("generic not replaced: " + d.Generic)
@@ -236,32 +274,4 @@ func (d PortDef) FreeOfGenerics() error {
 	}
 
 	return nil
-}
-
-func (d PortDef) Equals(p PortDef) bool {
-	if d.Type != p.Type {
-		return false
-	}
-
-	if d.Type == "map" {
-		if len(d.Map) != len(p.Map) {
-			return false
-		}
-
-		for k, e := range d.Map {
-			pe, ok := p.Map[k]
-			if !ok {
-				return false
-			}
-			if !e.Equals(*pe) {
-				return false
-			}
-		}
-	} else if d.Type == "stream" {
-		if !d.Stream.Equals(*p.Stream) {
-			return false
-		}
-	}
-
-	return true
 }

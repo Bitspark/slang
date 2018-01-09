@@ -63,6 +63,7 @@ func GetOperatorDef(insDef *core.InstanceDef) (core.OperatorDef, error) {
 		return oDef, errors.New("builtin operator not found")
 	}
 
+	// We must not change oDef in any way as this would affect other instances of this builtin operator
 	if err := oDef.SpecifyGenericPorts(insDef.Generics); err != nil {
 		return oDef, err
 	}

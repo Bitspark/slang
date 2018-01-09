@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestOperator_NewOperator_CorrectRelation(t *testing.T) {
+func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 	defPort := slang.ParsePortDef(`{"type":"number"}`)
 	oParent, _ := core.NewOperator("parent", nil, defPort, defPort)
 	oChild1, _ := core.NewOperator("child1", nil, defPort, defPort)
@@ -23,85 +23,7 @@ func TestOperator_NewOperator_CorrectRelation(t *testing.T) {
 	}
 }
 
-func TestInstanceDef_Validate_Fails_MissingName(t *testing.T) {
-	a := assertions.New(t)
-	_, err := validateJSONInstanceDef(`{
-		"operator": "opr"
-	}`)
-	a.Error(err)
-}
-
-func TestInstanceDef_Validate_Fails_SpacesInName(t *testing.T) {
-	a := assertions.New(t)
-	_, err := validateJSONInstanceDef(`{
-		"operator": "opr",
-		"name":"fun 4 ever",
-	}`)
-	a.Error(err)
-}
-
-func TestInstanceDef_Validate_Fails_MissingOperator(t *testing.T) {
-	a := assertions.New(t)
-	_, err := validateJSONInstanceDef(`{
-		"name":"oprInstance"
-	}`)
-	a.Error(err)
-}
-
-func TestInstanceDef_Validate_Succeeds(t *testing.T) {
-	a := assertions.New(t)
-	ins, err := validateJSONInstanceDef(`{
-		"operator": "opr",
-		"name":"oprInstance"
-	}`)
-	a.NoError(err)
-	a.True(ins.Valid())
-}
-
-func TestOperatorDef_Validate_Fails_PortMustBeDefined_In(t *testing.T) {
-	a := assertions.New(t)
-	_, err := validateJSONOperatorDef(`{
-		"name":"opr",
-		"out": {"type":"number"},
-	}`)
-	a.Error(err)
-}
-
-func TestOperatorDef_Validate_Fails_PortMustBeDefined_Out(t *testing.T) {
-	a := assertions.New(t)
-	_, err := validateJSONOperatorDef(`{
-		"name":"opr",
-		"in": {"type":"number"},
-	}`)
-	a.Error(err)
-}
-
-func TestOperatorDef_Validate_Succeeds(t *testing.T) {
-	a := assertions.New(t)
-	oDef, err := validateJSONOperatorDef(`{
-		"name": "opr",
-		"in": {
-			"type": "number"
-		},
-		"out": {
-			"type": "number"
-		},
-		"operators": [
-			{
-				"operator": "builtin_Adder",
-				"name": "add"
-			}
-		],
-		"connections": {
-			":in": ["add:in"],
-			"add:out": [":in"]
-		}
-	}`)
-	a.NoError(err)
-	a.True(oDef.Valid())
-}
-
-func TestOperator_Compile__Nested_1_Child(t *testing.T) {
+func TestOperator_Compile__Nested1Child(t *testing.T) {
 	a := assertions.New(t)
 	op1, _ := core.NewOperator("", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	op2, _ := core.NewOperator("a", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
@@ -135,7 +57,7 @@ func TestOperator_Compile__Nested_1_Child(t *testing.T) {
 	a.False(op2.Out().Connected(op1.Out()))
 }
 
-func TestOperator_Compile__Nested_Children(t *testing.T) {
+func TestOperator_Compile__NestedChildren(t *testing.T) {
 	a := assertions.New(t)
 	op1, _ := core.NewOperator("", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
 	op2, _ := core.NewOperator("a", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})

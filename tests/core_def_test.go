@@ -8,7 +8,87 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// INSTANCE DEFINITION
+
+func TestInstanceDef_Validate__FailsMissingName(t *testing.T) {
+	a := assertions.New(t)
+	_, err := validateJSONInstanceDef(`{
+		"operator": "opr"
+	}`)
+	a.Error(err)
+}
+
+func TestInstanceDef_Validate__FailsSpacesInName(t *testing.T) {
+	a := assertions.New(t)
+	_, err := validateJSONInstanceDef(`{
+		"operator": "opr",
+		"name":"fun 4 ever",
+	}`)
+	a.Error(err)
+}
+
+func TestInstanceDef_Validate__FailsMissingOperator(t *testing.T) {
+	a := assertions.New(t)
+	_, err := validateJSONInstanceDef(`{
+		"name":"oprInstance"
+	}`)
+	a.Error(err)
+}
+
+func TestInstanceDef_Validate__Succeeds(t *testing.T) {
+	a := assertions.New(t)
+	ins, err := validateJSONInstanceDef(`{
+		"operator": "opr",
+		"name":"oprInstance"
+	}`)
+	a.NoError(err)
+	a.True(ins.Valid())
+}
+
 // OPERATOR DEFINITION
+
+func TestOperatorDef_Validate__FailsPortMustBeDefined_In(t *testing.T) {
+	a := assertions.New(t)
+	_, err := validateJSONOperatorDef(`{
+		"name":"opr",
+		"out": {"type":"number"},
+	}`)
+	a.Error(err)
+}
+
+func TestOperatorDef_Validate__FailsPortMustBeDefined_Out(t *testing.T) {
+	a := assertions.New(t)
+	_, err := validateJSONOperatorDef(`{
+		"name":"opr",
+		"in": {"type":"number"},
+	}`)
+	a.Error(err)
+}
+
+func TestOperatorDef_Validate__Succeeds(t *testing.T) {
+	a := assertions.New(t)
+	oDef, err := validateJSONOperatorDef(`{
+		"name": "opr",
+		"in": {
+			"type": "number"
+		},
+		"out": {
+			"type": "number"
+		},
+		"operators": [
+			{
+				"operator": "builtin_Adder",
+				"name": "add"
+			}
+		],
+		"connections": {
+			":in": ["add:in"],
+			"add:out": [":in"]
+		}
+	}`)
+	a.NoError(err)
+	a.True(oDef.Valid())
+}
 
 func TestOperatorDef_SpecifyGenericPorts__NilGenerics(t *testing.T) {
 	a := assertions.New(t)

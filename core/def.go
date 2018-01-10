@@ -246,7 +246,8 @@ func (d PortDef) Copy() PortDef {
 func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	for identifier, pd := range generics {
 		if d.Generic == identifier {
-			*d = *pd
+			// Replace with copy!
+			*d = pd.Copy()
 			return nil
 		}
 

@@ -13,9 +13,8 @@
       }
     }
   },
-  "operators": [
-    {
-      "name": "pass1",
+  "operators": {
+    "pass1": {
       "operator": ".passer",
       "generics": {
         "itemType": {
@@ -23,7 +22,7 @@
         }
       }
     }
-  ],
+  },
   "connections": {
     ":in": [
       "pass1:in"

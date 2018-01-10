@@ -1,23 +1,22 @@
 {
-    "name": "opr",
-    "in": {
-        "type": "number"
-    },
-    "out": {
-        "type": "number"
-    },
-    "operators": [
-        {
-            "operator": ".customOp",
-            "name": "childOpr"
-        }
-    ],
-    "connections": {
-        ":in": [
-            "childOpr:in"
-        ],
-        "childOpr:out": [
-            ":out"
-        ]
+  "name": "opr",
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": {
+    "childOpr": {
+      "operator": ".customOp"
     }
+  },
+  "connections": {
+    ":in": [
+      "childOpr:in"
+    ],
+    "childOpr:out": [
+      ":out"
+    ]
+  }
 }

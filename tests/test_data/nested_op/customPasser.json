@@ -6,7 +6,6 @@
   "out": {
     "type": "primitive"
   },
-  "operators": [],
   "connections": {
     ":in": [
       ":out"

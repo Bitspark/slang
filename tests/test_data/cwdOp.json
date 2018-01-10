@@ -5,12 +5,11 @@
   "out": {
     "type": "number"
   },
-  "operators": [
-    {
-      "operator": "test_data.voidOp",
-      "name": "void"
+  "operators": {
+    "void": {
+      "operator": "test_data.voidOp"
     }
-  ],
+  },
   "connections": {
     ":in": [
       "void:in"

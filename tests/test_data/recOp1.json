@@ -5,14 +5,17 @@
   "out": {
     "type": "number"
   },
-  "operators": [
-    {
-      "operator": ".recOp2",
-      "name": "void"
+  "operators": {
+    "void": {
+      "operator": ".recOp2"
     }
-  ],
+  },
   "connections": {
-    ":in": ["void:in"],
-    ":void.out": [":out"]
+    ":in": [
+      "void:in"
+    ],
+    ":void.out": [
+      ":out"
+    ]
   }
 }

@@ -19,9 +19,8 @@
   "out": {
     "type": "number"
   },
-  "operators": [
-    {
-      "name": "pfunc",
+  "operators": {
+    "pfunc": {
       "operator": "eval",
       "properties": {
         "expression": "a*x*x + b*x + c"
@@ -46,7 +45,7 @@
         }
       }
     }
-  ],
+  },
   "connections": {
     ":in": [
       "pfunc:in"

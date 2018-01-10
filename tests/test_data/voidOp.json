@@ -1,14 +1,13 @@
 {
-    "name": "simpleOpr",
-    "in": {
-        "type": "number"
-    },
-    "out": {
-        "type": "number"
-    },
-    "connections": {
-        ":in": [
-            ":out"
-        ]
-    }
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "connections": {
+    ":in": [
+      ":out"
+    ]
+  }
 }

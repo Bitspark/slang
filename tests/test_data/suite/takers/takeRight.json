@@ -16,7 +16,6 @@
     "type": "generic",
     "generic": "itemType"
   },
-  "operators": [],
   "connections": {
     ":in.right": [
       ":out"

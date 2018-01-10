@@ -16,9 +16,8 @@
   "out": {
     "type": "number"
   },
-  "operators": [
-    {
-      "name": "dbl1",
+  "operators": {
+    "dbl1": {
       "operator": ".duplicator",
       "generics": {
         "itemType": {
@@ -26,8 +25,7 @@
         }
       }
     },
-    {
-      "name": "dbl2",
+    "dbl2": {
       "operator": ".duplicator",
       "generics": {
         "itemType": {
@@ -35,8 +33,7 @@
         }
       }
     },
-    {
-      "name": "dbl3",
+    "dbl3": {
       "operator": ".duplicator",
       "generics": {
         "itemType": {
@@ -44,8 +41,7 @@
         }
       }
     },
-    {
-      "name": "tl",
+    "tl": {
       "operator": ".takers.takeLeft",
       "generics": {
         "itemType": {
@@ -53,8 +49,7 @@
         }
       }
     },
-    {
-      "name": "tr",
+    "tr": {
       "operator": ".takers.takeRight",
       "generics": {
         "itemType": {
@@ -62,21 +57,40 @@
         }
       }
     },
-    {
-      "name": "p",
+    "p": {
       "operator": ".polynomial"
     }
-  ],
+  },
   "connections": {
-    ":in.first": ["dbl1:in"],
-    ":in.second": ["dbl2:in"],
-    ":in.third": ["dbl3:in"],
-    "dbl1:out": ["tl:in"],
-    "dbl2:out": ["tr:in"],
-    "dbl3:out.left": ["p:in.a"],
-    "dbl3:out.right": ["p:in.b"],
-    "tl:out": ["p:in.c"],
-    "tr:out": ["p:in.x"],
-    "p:out": [":out"]
+    ":in.first": [
+      "dbl1:in"
+    ],
+    ":in.second": [
+      "dbl2:in"
+    ],
+    ":in.third": [
+      "dbl3:in"
+    ],
+    "dbl1:out": [
+      "tl:in"
+    ],
+    "dbl2:out": [
+      "tr:in"
+    ],
+    "dbl3:out.left": [
+      "p:in.a"
+    ],
+    "dbl3:out.right": [
+      "p:in.b"
+    ],
+    "tl:out": [
+      "p:in.c"
+    ],
+    "tr:out": [
+      "p:in.x"
+    ],
+    "p:out": [
+      ":out"
+    ]
   }
 }

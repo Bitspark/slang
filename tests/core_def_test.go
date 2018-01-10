@@ -124,7 +124,7 @@ func TestOperatorDef_SpecifyGenericPorts__OutPortGenerics(t *testing.T) {
 func TestOperatorDef_SpecifyGenericPorts__GenericPortsGenerics(t *testing.T) {
 	a := assertions.New(t)
 	op := slang.ParseOperatorDef(
-		`{"in": {"type": "number"}, "out": {"type": "number"}, "operators": [{"name": "test", "operator": "fork", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}]}`)
+		`{"in": {"type": "number"}, "out": {"type": "number"}, "operators": {"test": {"operator": "fork", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.SpecifyGenericPorts(map[string]*core.PortDef{
 		"g1": {
@@ -177,7 +177,7 @@ func TestOperatorDef_GenericsSpecified__OutPortNoGenerics(t *testing.T) {
 func TestOperatorDef_GenericsSpecified__GenericPortsGenerics(t *testing.T) {
 	a := assertions.New(t)
 	op := slang.ParseOperatorDef(
-		`{"in": {"type": "number"}, "out": {"type": "number"}, "operators": [{"name": "test", "operator": "fork", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}]}`)
+		`{"in": {"type": "number"}, "out": {"type": "number"}, "operators": {"test": {"operator": "fork", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}}}`)
 	require.NoError(t, op.Validate())
 	a.Error(op.GenericsSpecified())
 }

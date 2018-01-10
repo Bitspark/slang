@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"encoding/json"
 )
+
+type OperatorsList []*InstanceDef
 
 type InstanceDef struct {
 	Operator   string                 `json:"operator"`
@@ -19,7 +22,7 @@ type InstanceDef struct {
 type OperatorDef struct {
 	In          PortDef             `json:"in"`
 	Out         PortDef             `json:"out"`
-	Operators   []*InstanceDef      `json:"operators"`
+	Operators   OperatorsList       `json:"operators"`
 	Connections map[string][]string `json:"connections"`
 
 	valid bool
@@ -281,5 +284,43 @@ func (d PortDef) GenericsSpecified() error {
 		}
 	}
 
+	return nil
+}
+
+// OPERATOR LIST
+
+func (il *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
+	var im map[string]*InstanceDef
+	if err := unmarshal(&im); err != nil {
+		return err
+	}
+
+	instances := make([]*InstanceDef, len(im))
+	i := 0
+	for name, inst := range im {
+		inst.Name = name
+		instances[i] = inst
+		i++
+	}
+
+	*il = instances
+	return nil
+}
+
+func (il *OperatorsList) UnmarshalJSON(data []byte) error {
+	var im map[string]*InstanceDef
+	if err := json.Unmarshal(data, &im); err != nil {
+		return err
+	}
+
+	instances := make([]*InstanceDef, len(im))
+	i := 0
+	for name, inst := range im {
+		inst.Name = name
+		instances[i] = inst
+		i++
+	}
+
+	*il = instances
 	return nil
 }

@@ -7,9 +7,9 @@
       "description": "Numbers must be doubled",
       "data": {
         "in": [
-          {"a": 1},
-          {"a": 7.5},
-          {"a": 0}
+          1,
+          7.5,
+          0
         ],
         "out": [
           2,
@@ -23,8 +23,8 @@
       "description": "Strings must be doubled",
       "data": {
         "in": [
-          {"a": "hello"},
-          {"a": "slang"}
+          "hello",
+          "slang"
         ],
         "out": [
           "hellohello",

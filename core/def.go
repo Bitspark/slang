@@ -10,14 +10,15 @@ type InstanceDef struct {
 	Operator   string                 `json:"operator"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
+	Generics   map[string]*PortDef    `json:"generics"`
 
 	valid       bool
-	operatorDef *OperatorDef
+	operatorDef OperatorDef
 }
 
 type OperatorDef struct {
-	In          *PortDef            `json:"in"`
-	Out         *PortDef            `json:"out"`
+	In          PortDef             `json:"in"`
+	Out         PortDef             `json:"out"`
 	Operators   []*InstanceDef      `json:"operators"`
 	Connections map[string][]string `json:"connections"`
 
@@ -25,36 +26,18 @@ type OperatorDef struct {
 }
 
 type PortDef struct {
-	Type   string             `json:"type"`
-	Stream *PortDef           `json:"stream"`
-	Map    map[string]PortDef `json:"map"`
+	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
+	Type    string              `json:"type"`
+	Stream  *PortDef            `json:"stream"`
+	Map     map[string]*PortDef `json:"map"`
+	Generic string              `json:"generic"`
 
 	valid bool
 }
 
-// PUBLIC METHODS
-
-func (d *InstanceDef) SetOperatorDef(operatorDef *OperatorDef) error {
-	if !operatorDef.Valid() {
-		return errors.New("operator definition not validated")
-	}
-	d.operatorDef = operatorDef
-	return nil
-}
-
-func (d *InstanceDef) OperatorDef() *OperatorDef {
-	return d.operatorDef
-}
+// INSTANCE DEFINITION
 
 func (d InstanceDef) Valid() bool {
-	return d.valid
-}
-
-func (d OperatorDef) Valid() bool {
-	return d.valid
-}
-
-func (d *PortDef) Valid() bool {
 	return d.valid
 }
 
@@ -79,11 +62,22 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
-func (d *OperatorDef) Validate() error {
-	if d.In == nil || d.Out == nil {
-		return errors.New(`ports must be defined`)
-	}
+func (d InstanceDef) OperatorDef() OperatorDef {
+	return d.operatorDef
+}
 
+func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
+	d.operatorDef = operatorDef
+	return nil
+}
+
+// OPERATOR DEFINITION
+
+func (d OperatorDef) Valid() bool {
+	return d.valid
+}
+
+func (d *OperatorDef) Validate() error {
 	if err := d.In.Validate(); err != nil {
 		return err
 	}
@@ -99,7 +93,7 @@ func (d *OperatorDef) Validate() error {
 		}
 
 		if _, ok := alreadyUsedInsNames[insDef.Name]; ok {
-			return fmt.Errorf(`Colliding instance names within same parent operator: "%s"`, insDef.Name)
+			return fmt.Errorf(`colliding instance names within same parent operator: "%s"`, insDef.Name)
 		}
 		alreadyUsedInsNames[insDef.Name] = true
 	}
@@ -108,43 +102,44 @@ func (d *OperatorDef) Validate() error {
 	return nil
 }
 
-func (d *PortDef) Validate() error {
-	if d.Type == "" {
-		return errors.New("type must not be empty")
+// SpecifyGenericPorts replaces generic types in the operator definition with the types given in the generics map.
+// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// replaces them with a reference on a copy.
+func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+	if err := d.In.SpecifyGenericPorts(generics); err != nil {
+		return err
 	}
-
-	validTypes := []string{"primitive", "number", "string", "boolean", "stream", "map"}
-	found := false
-	for _, t := range validTypes {
-		if t == d.Type {
-			found = true
-			break
-		}
+	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
+		return err
 	}
-	if !found {
-		return errors.New("unknown type")
-	}
-
-	if d.Type == "stream" {
-		if d.Stream == nil {
-			return errors.New("stream missing")
-		}
-		return d.Stream.Validate()
-	} else if d.Type == "map" {
-		if len(d.Map) == 0 {
-			return errors.New("map missing or empty")
-		}
-		for _, e := range d.Map {
-			err := e.Validate()
-			if err != nil {
+	for _, op := range d.Operators {
+		for _, gp := range op.Generics {
+			if err := gp.SpecifyGenericPorts(generics); err != nil {
 				return err
 			}
 		}
 	}
-
-	d.valid = true
 	return nil
 }
+
+func (d OperatorDef) GenericsSpecified() error {
+	if err := d.In.GenericsSpecified(); err != nil {
+		return err
+	}
+	if err := d.Out.GenericsSpecified(); err != nil {
+		return err
+	}
+	for _, op := range d.Operators {
+		for _, gp := range op.Generics {
+			if err := gp.GenericsSpecified(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// PORT DEFINITION
 
 func (d PortDef) Equals(p PortDef) bool {
 	if d.Type != p.Type {
@@ -161,7 +156,7 @@ func (d PortDef) Equals(p PortDef) bool {
 			if !ok {
 				return false
 			}
-			if !e.Equals(pe) {
+			if !e.Equals(*pe) {
 				return false
 			}
 		}
@@ -172,4 +167,119 @@ func (d PortDef) Equals(p PortDef) bool {
 	}
 
 	return true
+}
+
+func (d *PortDef) Valid() bool {
+	return d.valid
+}
+
+func (d *PortDef) Validate() error {
+	if d.Type == "" {
+		return errors.New("type must not be empty")
+	}
+
+	validTypes := []string{"generic", "primitive", "number", "string", "boolean", "stream", "map"}
+	found := false
+	for _, t := range validTypes {
+		if t == d.Type {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.New("unknown type")
+	}
+
+	if d.Type == "generic" {
+		if d.Generic == "" {
+			return errors.New("generic identifier missing")
+		}
+	} else if d.Type == "stream" {
+		if d.Stream == nil {
+			return errors.New("stream missing")
+		}
+		return d.Stream.Validate()
+	} else if d.Type == "map" {
+		if len(d.Map) == 0 {
+			return errors.New("map missing or empty")
+		}
+		for _, e := range d.Map {
+			if e == nil {
+				return errors.New("map entry must not be null")
+			}
+			err := e.Validate()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	d.valid = true
+	return nil
+}
+
+func (d PortDef) Copy() PortDef {
+	cpy := PortDef{Type: d.Type, Generic: d.Generic}
+
+	if d.Stream != nil {
+		strCpy := d.Stream.Copy()
+		cpy.Stream = &strCpy
+	}
+	if d.Map != nil {
+		cpy.Map = make(map[string]*PortDef)
+		for k, e := range d.Map {
+			subCpy := e.Copy()
+			cpy.Map[k] = &subCpy
+		}
+	}
+
+	return cpy
+}
+
+// SpecifyGenericPorts replaces generic types in the port definition with the types given in the generics map.
+// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// replaces them with a reference on a copy, which is very important to prevent unintended side effects.
+func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+	for identifier, pd := range generics {
+		if d.Generic == identifier {
+			// Replace with copy!
+			*d = pd.Copy()
+			return nil
+		}
+
+		if d.Type == "stream" {
+			strCpy := d.Stream.Copy()
+			// Replace with copy!
+			d.Stream = &strCpy
+			return strCpy.SpecifyGenericPorts(generics)
+		} else if d.Type == "map" {
+			for k, e := range d.Map {
+				eCpy := e.Copy()
+				if err := eCpy.SpecifyGenericPorts(generics); err != nil {
+					return err
+				}
+				// Replace with copy!
+				d.Map[k] = &eCpy
+			}
+		}
+	}
+	return nil
+}
+
+func (d PortDef) GenericsSpecified() error {
+	if d.Type == "generic" || d.Generic != "" {
+		return errors.New("generic not replaced: " + d.Generic)
+	}
+
+	if d.Type == "stream" {
+		return d.Stream.GenericsSpecified()
+	} else if d.Type == "map" {
+		for _, e := range d.Map {
+			if err := e.GenericsSpecified(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

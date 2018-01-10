@@ -26,17 +26,24 @@
       "properties": {
         "expression": "a*x*x + b*x + c"
       },
-      "in": {
-        "type": "map",
-        "map": {
-          "a": {"type": "number"},
-          "b": {"type": "number"},
-          "c": {"type": "number"},
-          "x": {"type": "number"}
+      "generics": {
+        "paramsMap": {
+          "type": "map",
+          "map": {
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "c": {
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            }
+          }
         }
-      },
-      "out": {
-        "type": "number"
       }
     }
   ],

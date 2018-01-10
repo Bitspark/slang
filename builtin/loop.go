@@ -5,39 +5,43 @@ import (
 )
 
 var loopOpCfg = &builtinConfig{
-	oDef: &core.OperatorDef{
-		In: &core.PortDef{
+	oDef: core.OperatorDef{
+		In: core.PortDef{
 			Type: "map",
-			Map: map[string]core.PortDef{
+			Map: map[string]*core.PortDef{
 				"init": {
-					Type: "primitive",
+					Type:    "generic",
+					Generic: "stateType",
 				},
 				"iteration": {
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
-						Map: map[string]core.PortDef{
+						Map: map[string]*core.PortDef{
 							"continue": {
 								Type: "boolean",
 							},
 							"state": {
-								Type: "primitive",
+								Type:    "generic",
+								Generic: "stateType",
 							},
 						},
 					},
 				},
 			},
 		},
-		Out: &core.PortDef{
+		Out: core.PortDef{
 			Type: "map",
-			Map: map[string]core.PortDef{
+			Map: map[string]*core.PortDef{
 				"end": {
-					Type: "primitive",
+					Type:    "generic",
+					Generic: "stateType",
 				},
 				"state": {
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type: "primitive",
+						Type:    "generic",
+						Generic: "stateType",
 					},
 				},
 			},

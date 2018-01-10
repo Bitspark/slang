@@ -1,5 +1,8 @@
 {
   "in": {
+    "type": "primitive"
+  },
+  "out": {
     "type": "map",
     "map": {
       "left": {
@@ -12,14 +15,11 @@
       }
     }
   },
-  "out": {
-    "type": "generic",
-    "generic": "itemType"
-  },
   "operators": [],
   "connections": {
-    ":in.right": [
-      ":out"
+    ":in": [
+      ":out.left",
+      ":out.right"
     ]
   }
 }

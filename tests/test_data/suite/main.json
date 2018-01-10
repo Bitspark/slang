@@ -19,23 +19,48 @@
   "operators": [
     {
       "name": "dbl1",
-      "operator": ".duplicator"
+      "operator": ".duplicator",
+      "generics": {
+        "itemType": {
+          "type": "number"
+        }
+      }
     },
     {
       "name": "dbl2",
-      "operator": ".duplicator"
+      "operator": ".duplicator",
+      "generics": {
+        "itemType": {
+          "type": "number"
+        }
+      }
     },
     {
       "name": "dbl3",
-      "operator": ".duplicator"
+      "operator": ".duplicator",
+      "generics": {
+        "itemType": {
+          "type": "number"
+        }
+      }
     },
     {
       "name": "tl",
-      "operator": ".takers.takeLeft"
+      "operator": ".takers.takeLeft",
+      "generics": {
+        "itemType": {
+          "type": "number"
+        }
+      }
     },
     {
       "name": "tr",
-      "operator": ".takers.takeRight"
+      "operator": ".takers.takeRight",
+      "generics": {
+        "itemType": {
+          "type": "number"
+        }
+      }
     },
     {
       "name": "p",

@@ -12,20 +12,21 @@
       "properties": {
         "expression": "a+a"
       },
-      "in": {
-        "type": "map",
-        "map": {
-          "a": {"type": "number"}
+      "generics": {
+        "paramsMap": {
+          "type": "map",
+          "map": {
+            "a": {
+              "type": "number"
+            }
+          }
         }
-      },
-      "out": {
-        "type": "number"
       }
     }
   ],
   "connections": {
     ":in": [
-      "doubler:in"
+      "doubler:in.a"
     ],
     "doubler:out": [
       ":out"

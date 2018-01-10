@@ -1,0 +1,38 @@
+{
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "map",
+    "map": {
+      "left": {
+        "type": "number"
+      },
+      "right": {
+        "type": "number"
+      }
+    }
+  },
+  "operators": [
+    {
+      "name": "pass1",
+      "operator": ".passer",
+      "generics": {
+        "itemType": {
+          "type": "number"
+        }
+      }
+    }
+  ],
+  "connections": {
+    ":in": [
+      "pass1:in"
+    ],
+    "pass1:out.left": [
+      ":out.left"
+    ],
+    "pass1:out.right": [
+      ":out.right"
+    ]
+  }
+}

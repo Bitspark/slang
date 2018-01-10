@@ -12,6 +12,16 @@
       "name": "passer",
       "properties": {
         "expression": "a"
+      },
+      "generics": {
+        "paramsMap": {
+          "type": "map",
+          "map": {
+            "a": {
+              "type": "primitive"
+            }
+          }
+        }
       }
     }
   ],

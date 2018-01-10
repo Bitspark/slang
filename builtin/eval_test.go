@@ -248,27 +248,36 @@ func TestBuiltin_Eval__IsRegistered(t *testing.T) {
 
 func TestBuiltin_Eval__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(&core.InstanceDef{Operator: "eval"})
+	_, err := MakeOperator(core.InstanceDef{Operator: "eval"})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(&core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": ""}})
+	_, err := MakeOperator(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(&core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "+"}})
+	_, err := MakeOperator(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__Add(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(&core.InstanceDef{
+	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "a+b"},
+		Generics: map[string]*core.PortDef{
+			"paramsMap": {
+				Type: "map",
+				Map: map[string]*core.PortDef{
+					"a": {Type: "number"},
+					"b": {Type: "number"},
+				},
+			},
+		},
 	})
 	a.NoError(err)
 	a.NotNil(fo)
@@ -285,9 +294,19 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(&core.InstanceDef{
+	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "a && (b != c)"},
+		Generics: map[string]*core.PortDef{
+			"paramsMap": {
+				Type: "map",
+				Map: map[string]*core.PortDef{
+					"a": {Type: "boolean"},
+					"b": {Type: "number"},
+					"c": {Type: "number"},
+				},
+			},
+		},
 	})
 	a.NoError(err)
 	a.NotNil(fo)
@@ -295,20 +314,29 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{"a": true, "b": true, "c": false})
-	fo.In().Push(map[string]interface{}{"a": false, "b": false, "c": false})
-	fo.In().Push(map[string]interface{}{"a": false, "b": false, "c": true})
-	fo.In().Push(map[string]interface{}{"a": true, "b": false, "c": true})
-	fo.In().Push(map[string]interface{}{"a": true, "b": false, "c": false})
+	fo.In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 2.0})
+	fo.In().Push(map[string]interface{}{"a": false, "b": 8.0, "c": 8.0})
+	fo.In().Push(map[string]interface{}{"a": false, "b": 3.0, "c": 2.0})
+	fo.In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 0.0})
+	fo.In().Push(map[string]interface{}{"a": true, "b": 8.0, "c": 8.0})
 
 	a.PortPushes([]interface{}{true, false, false, true, false}, fo.Out())
 }
 
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(&core.InstanceDef{
+	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "eval",
 		Properties: map[string]interface{}{"expression": "vec0.x*vec1.x+vec0.y*vec1.y"},
+		Generics: map[string]*core.PortDef{
+			"paramsMap": {
+				Type: "map",
+				Map: map[string]*core.PortDef{
+					"vec0": {Type: "map", Map: map[string]*core.PortDef{"x": {Type: "number"}, "y": {Type: "number"}}},
+					"vec1": {Type: "map", Map: map[string]*core.PortDef{"x": {Type: "number"}, "y": {Type: "number"}}},
+				},
+			},
+		},
 	})
 	a.NoError(err)
 	a.NotNil(fo)

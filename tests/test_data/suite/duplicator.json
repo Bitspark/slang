@@ -6,10 +6,12 @@
     "type": "map",
     "map": {
       "left": {
-        "type": "primitive"
+        "type": "generic",
+        "generic": "itemType"
       },
       "right": {
-        "type": "primitive"
+        "type": "generic",
+        "generic": "itemType"
       }
     }
   },

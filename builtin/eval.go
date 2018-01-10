@@ -77,11 +77,12 @@ type functionStore struct {
 }
 
 var evalOpCfg = &builtinConfig{
-	oDef: &core.OperatorDef{
-		In: &core.PortDef{
-			Type: "primitive",
+	oDef: core.OperatorDef{
+		In: core.PortDef{
+			Type:    "generic",
+			Generic: "paramsMap",
 		},
-		Out: &core.PortDef{
+		Out: core.PortDef{
 			Type: "primitive",
 		},
 	},

@@ -27,6 +27,7 @@ type OperatorDef struct {
 }
 
 type PortDef struct {
+	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
 	Type    string              `json:"type"`
 	Stream  *PortDef            `json:"stream"`
 	Map     map[string]*PortDef `json:"map"`
@@ -126,16 +127,16 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	return nil
 }
 
-func (d OperatorDef) FreeOfGenerics() error {
-	if err := d.In.FreeOfGenerics(); err != nil {
+func (d OperatorDef) GenericsSpecified() error {
+	if err := d.In.GenericsSpecified(); err != nil {
 		return err
 	}
-	if err := d.Out.FreeOfGenerics(); err != nil {
+	if err := d.Out.GenericsSpecified(); err != nil {
 		return err
 	}
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {
-			if err := gp.FreeOfGenerics(); err != nil {
+			if err := gp.GenericsSpecified(); err != nil {
 				return err
 			}
 		}
@@ -270,16 +271,16 @@ func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	return nil
 }
 
-func (d PortDef) FreeOfGenerics() error {
+func (d PortDef) GenericsSpecified() error {
 	if d.Type == "generic" || d.Generic != "" {
 		return errors.New("generic not replaced: " + d.Generic)
 	}
 
 	if d.Type == "stream" {
-		return d.Stream.FreeOfGenerics()
+		return d.Stream.GenericsSpecified()
 	} else if d.Type == "map" {
 		for _, e := range d.Map {
-			if err := e.FreeOfGenerics(); err != nil {
+			if err := e.GenericsSpecified(); err != nil {
 				return err
 			}
 		}

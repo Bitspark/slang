@@ -33,10 +33,10 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, err
 	}
 
-	if err := in.FreeOfGenerics(); err != nil {
+	if err := in.GenericsSpecified(); err != nil {
 		return nil, err
 	}
-	if err := out.FreeOfGenerics(); err != nil {
+	if err := out.GenericsSpecified(); err != nil {
 		return nil, err
 	}
 

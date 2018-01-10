@@ -363,7 +363,7 @@ func (p *Port) Name() string {
 
 	switch p.itemType {
 	case TYPE_GENERIC:
-		name = "generic"
+		name = "GENERIC"
 	case TYPE_PRIMITIVE:
 		name = "PRIMITIVE"
 	case TYPE_NUMBER:

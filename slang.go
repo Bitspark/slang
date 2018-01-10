@@ -116,7 +116,7 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 
 	// Make sure generics is free of further generics
 	for _, g := range generics {
-		if err := g.FreeOfGenerics(); err != nil {
+		if err := g.GenericsSpecified(); err != nil {
 			return def, err
 		}
 	}
@@ -157,7 +157,7 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 	}
 
 	// Make sure we replaced all generics in the definition
-	if err := def.FreeOfGenerics(); err != nil {
+	if err := def.GenericsSpecified(); err != nil {
 		return def, err
 	}
 
@@ -171,7 +171,7 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 			return def, err
 		}
 
-		if err := childDef.FreeOfGenerics(); err != nil {
+		if err := childDef.GenericsSpecified(); err != nil {
 			return def, err
 		}
 

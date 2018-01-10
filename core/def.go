@@ -108,8 +108,9 @@ func (d *OperatorDef) Validate() error {
 	return nil
 }
 
-// SpecifyGenericPorts specifies generic types in the operator definition. It does not touch referenced values
-// such as *PortDef but replaces them with a reference on a copy.
+// SpecifyGenericPorts replaces generic types in the operator definition with the types given in the generics map.
+// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// replaces them with a reference on a copy.
 func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	if err := d.In.SpecifyGenericPorts(generics); err != nil {
 		return err
@@ -241,9 +242,9 @@ func (d PortDef) Copy() PortDef {
 	return cpy
 }
 
-// SpecifyGenericPorts specifies generic types in the port definition. It does not touch referenced values
-// such as *PortDef but replaces them with a reference on a copy, which is very important to prevent unintended side
-// effects.
+// SpecifyGenericPorts replaces generic types in the port definition with the types given in the generics map.
+// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// replaces them with a reference on a copy, which is very important to prevent unintended side effects.
 func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	for identifier, pd := range generics {
 		if d.Generic == identifier {

@@ -291,7 +291,7 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 		return nil, err
 	}
 	// Instance definition must have an appropriate operator definition
-	if !insDef.HasOperatorDef() {
+	if !insDef.OperatorDef().Valid() {
 		return nil, errors.New("instance has no operator definition")
 	}
 	// No builtin operator, so create new one according to the operator definition saved in the instance definition

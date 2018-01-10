@@ -12,9 +12,8 @@ type InstanceDef struct {
 	Properties map[string]interface{} `json:"properties"`
 	Generics   map[string]*PortDef    `json:"generics"`
 
-	valid          bool
-	operatorDef    OperatorDef
-	operatorDefSet bool
+	valid       bool
+	operatorDef OperatorDef
 }
 
 type OperatorDef struct {
@@ -67,13 +66,8 @@ func (d InstanceDef) OperatorDef() OperatorDef {
 	return d.operatorDef
 }
 
-func (d InstanceDef) HasOperatorDef() bool {
-	return d.operatorDefSet
-}
-
 func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
 	d.operatorDef = operatorDef
-	d.operatorDefSet = true
 	return nil
 }
 

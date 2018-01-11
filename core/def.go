@@ -10,30 +10,30 @@ import (
 type OperatorsList []*InstanceDef
 
 type InstanceDef struct {
-	Operator   string                 `json:"operator"`
-	Name       string                 `json:"name"`
-	Properties map[string]interface{} `json:"properties"`
-	Generics   map[string]*PortDef    `json:"generics"`
+	Operator   string              `json:"operator" yaml:"operator"`
+	Name       string              `json:"name" yaml:"name"`
+	Properties MapStr              `json:"properties" yaml:"properties"`
+	Generics   map[string]*PortDef `json:"generics" yaml:"generics"`
 
 	valid       bool
 	operatorDef OperatorDef
 }
 
 type OperatorDef struct {
-	In          PortDef             `json:"in"`
-	Out         PortDef             `json:"out"`
-	Operators   OperatorsList       `json:"operators"`
-	Connections map[string][]string `json:"connections"`
+	In          PortDef             `json:"in" yaml:"in"`
+	Out         PortDef             `json:"out" yaml:"out"`
+	Operators   OperatorsList       `json:"operators" yaml:"operators"`
+	Connections map[string][]string `json:"connections" yaml:"connections"`
 
 	valid bool
 }
 
 type PortDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
-	Type    string              `json:"type"`
-	Stream  *PortDef            `json:"stream"`
-	Map     map[string]*PortDef `json:"map"`
-	Generic string              `json:"generic"`
+	Type    string              `json:"type" yaml:"type"`
+	Stream  *PortDef            `json:"stream" yaml:"stream"`
+	Map     map[string]*PortDef `json:"map" yaml:"map"`
+	Generic string              `json:"generic" yaml:"generic"`
 
 	valid bool
 }
@@ -287,9 +287,9 @@ func (d PortDef) GenericsSpecified() error {
 	return nil
 }
 
-// OPERATOR LIST
+// OPERATOR LIST MARSHALLING
 
-func (il *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
+func (ol *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
 	var im map[string]*InstanceDef
 	if err := unmarshal(&im); err != nil {
 		return err
@@ -303,11 +303,11 @@ func (il *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) erro
 		i++
 	}
 
-	*il = instances
+	*ol = instances
 	return nil
 }
 
-func (il *OperatorsList) UnmarshalJSON(data []byte) error {
+func (ol *OperatorsList) UnmarshalJSON(data []byte) error {
 	var im map[string]*InstanceDef
 	if err := json.Unmarshal(data, &im); err != nil {
 		return err
@@ -321,6 +321,6 @@ func (il *OperatorsList) UnmarshalJSON(data []byte) error {
 		i++
 	}
 
-	*il = instances
+	*ol = instances
 	return nil
 }

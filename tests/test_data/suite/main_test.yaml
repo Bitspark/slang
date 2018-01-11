@@ -1,0 +1,20 @@
+# Main test
+---
+operatorFile: main.yaml
+testCases:
+- name: TC1
+  data:
+    in:
+    - 1
+    - 1
+    - 2
+    out:
+    - 3
+    - 3
+    - 14
+- name: TC2
+  data:
+    in:
+    - 10
+    out:
+    - 1110

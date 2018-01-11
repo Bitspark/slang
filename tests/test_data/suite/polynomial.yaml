@@ -1,0 +1,37 @@
+# Polynomial operator
+---
+in:
+  type: map
+  map:
+    a:
+      type: number
+    b:
+      type: number
+    c:
+      type: number
+    x:
+      type: number
+out:
+  type: number
+operators:
+  pfunc:
+    operator: eval
+    properties:
+      expression: "a*x*x + b*x + c"
+    generics:
+      paramsMap:
+        type: map
+        map:
+          a:
+            type: number
+          b:
+            type: number
+          c:
+            type: number
+          x:
+            type: number
+connections:
+  ":in":
+  - pfunc:in
+  pfunc:out:
+  - ":out"

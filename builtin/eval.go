@@ -113,6 +113,10 @@ var evalOpCfg = &builtinConfig{
 
 		expr, ok := exprStr.(string)
 
+		if expr == "" {
+			return errors.New("no expression given")
+		}
+
 		if !ok {
 			return errors.New("expression must be string")
 		}

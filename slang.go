@@ -11,6 +11,7 @@ import (
 	"slang/core"
 	"strings"
 	"gopkg.in/yaml.v2"
+	"slang/utils"
 )
 
 func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
@@ -128,39 +129,20 @@ func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsR
 		}
 	}
 
-	opDefFilePath := ""
-	fileEndings := []string{".yaml", ".json"}
-
-	// See if file ending has been already specified
-	for _, fileEnding := range fileEndings {
-		if strings.HasSuffix(opDefFile, fileEnding) {
-			opDefFilePath = opDefFile
-			break
-		}
+	// Find correct file
+	fileEndings := []string{".yaml", ".json"} // Order of endings matters!
+	opDefFile, err := utils.FileWithFileEnding(opDefFile, fileEndings)
+	if err != nil {
+		return def, err
 	}
 
-	var b []byte
-	var err error
-	if opDefFilePath == "" {
-		// Try with different file endings
-		for _, fileEnding := range fileEndings {
-			b, err = ioutil.ReadFile(opDefFile + fileEnding)
-			if err == nil {
-				opDefFilePath = opDefFile + fileEnding
-				break
-			}
-		}
-	} else {
-		// File ending has been already specified
-		b, err = ioutil.ReadFile(opDefFilePath)
-	}
-
+	b, err := ioutil.ReadFile(opDefFile)
 	if err != nil {
 		return def, errors.New("could not read operator file " + opDefFile)
 	}
 
 	// Recursion detection: chick if absolute path is contained in pathsRead
-	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
+	if absPath, err := filepath.Abs(opDefFile); err == nil {
 		for _, p := range pathsRead {
 			if p == absPath {
 				return def, fmt.Errorf("recursion in %s", absPath)
@@ -173,9 +155,9 @@ func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsR
 	}
 
 	// Parse the file, just read it in
-	if strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml") {
+	if strings.HasSuffix(opDefFile, ".yaml") || strings.HasSuffix(opDefFile, ".yml") {
 		def, err = ParseYAMLOperatorDef(string(b))
-	} else if strings.HasSuffix(opDefFilePath, ".json") {
+	} else if strings.HasSuffix(opDefFile, ".json") {
 		def, err = ParseJSONOperatorDef(string(b))
 	} else {
 		err = errors.New("unsupported file ending")
@@ -202,7 +184,7 @@ func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsR
 		return def, err
 	}
 
-	currDir := path.Dir(opDefFilePath)
+	currDir := path.Dir(opDefFile)
 
 	// Descend to child operators
 	for _, childOpInsDef := range def.Operators {

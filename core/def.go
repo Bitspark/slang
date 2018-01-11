@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"encoding/json"
+	"slang/utils"
 )
 
 type OperatorsList []*InstanceDef
@@ -12,7 +13,7 @@ type OperatorsList []*InstanceDef
 type InstanceDef struct {
 	Operator   string              `json:"operator" yaml:"operator"`
 	Name       string              `json:"name" yaml:"name"`
-	Properties MapStr              `json:"properties" yaml:"properties"`
+	Properties utils.MapStr        `json:"properties" yaml:"properties"`
 	Generics   map[string]*PortDef `json:"generics" yaml:"generics"`
 
 	valid       bool

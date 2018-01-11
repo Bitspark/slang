@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"gopkg.in/yaml.v2"
-	"slang/core"
+	"slang/utils"
 )
 
 type TestCaseDef struct {
@@ -93,7 +93,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 			in := tc.Data.In[j]
 			expected := tc.Data.Out[j]
 
-			o.In().Push(core.CleanValue(in))
+			o.In().Push(utils.CleanValue(in))
 			actual := o.Out().Pull()
 
 			if !testEqual(expected, actual) {

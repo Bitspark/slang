@@ -91,7 +91,7 @@ var evalOpCfg = &builtinConfig{
 		for true {
 			i := in.Pull()
 
-			if isMarker(i) {
+			if core.IsMarker(i) {
 				out.Push(i)
 				continue
 			}

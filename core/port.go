@@ -361,42 +361,50 @@ func (p *Port) Name() string {
 
 	var name string
 
+	if p.parMap != nil {
+		for pn, pt := range p.parMap.subs {
+			if pt == p {
+				name = "[" + pn + "]"
+			}
+		}
+	}
+
 	switch p.itemType {
 	case TYPE_GENERIC:
-		name = "GENERIC"
+		name += "_GENERIC"
 	case TYPE_PRIMITIVE:
-		name = "PRIMITIVE"
+		name += "_PRIMITIVE"
 	case TYPE_NUMBER:
-		name = "NUMBER"
+		name += "_NUMBER"
 	case TYPE_STRING:
-		name = "STRING"
+		name += "_STRING"
 	case TYPE_BOOLEAN:
-		name = "BOOLEAN"
+		name += "_BOOLEAN"
 	case TYPE_MAP:
-		name = "MAP"
+		name += "_MAP"
 	case TYPE_STREAM:
-		name = "STREAM"
+		name += "_STREAM"
 	}
 
 	if p.parMap != nil {
-		return p.parMap.Name() + "_" + name
+		return p.parMap.Name() + name
 	}
 
 	if p.parStr != nil {
-		return p.parStr.Name() + "_" + name
+		return p.parStr.Name() + name
 	}
 
 	if p.direction == DIRECTION_IN {
 		if p.operator != nil {
-			return p.operator.name + ":IN_" + name
+			return p.operator.name + ":IN" + name
 		} else {
 			return "IN_" + name
 		}
 	} else {
 		if p.operator != nil {
-			return p.operator.name + ":OUT_" + name
+			return p.operator.name + ":OUT" + name
 		} else {
-			return "OUT_" + name
+			return "OUT" + name
 		}
 	}
 }

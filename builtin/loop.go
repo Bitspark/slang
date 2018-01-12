@@ -52,7 +52,7 @@ var loopOpCfg = &builtinConfig{
 			i := in.Map("init").Pull()
 
 			// Redirect all markers
-			if isMarker(i) {
+			if core.IsMarker(i) {
 				out.Map("end").Push(i)
 				continue
 			}

@@ -10,18 +10,28 @@ import (
 	"slang/builtin"
 	"slang/core"
 	"strings"
+	"gopkg.in/yaml.v2"
+	"slang/utils"
 )
 
-func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
+var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
+
+func BuildOperator(opFilePath string, compile bool) (*core.Operator, error) {
+	// Find correct file
+	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
+	if err != nil {
+		return nil, err
+	}
+
 	// Read operator definition and perform recursion detection
-	def, err := readOperatorDef(opFile, nil, nil)
+	def, err := readOperatorDef(opDefFilePath, nil, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and internally connect the operator
-	op, err := buildAndConnectOperator(opFile, def, nil)
+	op, err := buildAndConnectOperator(opFilePath, def, nil)
 
 	if err != nil {
 		return nil, err
@@ -41,10 +51,16 @@ func ParsePortDef(defStr string) core.PortDef {
 	return def
 }
 
-func ParseOperatorDef(defStr string) core.OperatorDef {
+func ParseJSONOperatorDef(defStr string) (core.OperatorDef, error) {
 	def := core.OperatorDef{}
-	json.Unmarshal([]byte(defStr), &def)
-	return def
+	err := json.Unmarshal([]byte(defStr), &def)
+	return def, err
+}
+
+func ParseYAMLOperatorDef(defStr string) (core.OperatorDef, error) {
+	def := core.OperatorDef{}
+	err := yaml.Unmarshal([]byte(defStr), &def)
+	return def, err
 }
 
 func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) {
@@ -121,6 +137,11 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 		}
 	}
 
+	b, err := ioutil.ReadFile(opDefFilePath)
+	if err != nil {
+		return def, errors.New("could not read operator file " + opDefFilePath)
+	}
+
 	// Recursion detection: chick if absolute path is contained in pathsRead
 	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
 		for _, p := range pathsRead {
@@ -134,14 +155,17 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 		return def, err
 	}
 
-	// Read the file
-	b, err := ioutil.ReadFile(opDefFilePath)
+	// Parse the file, just read it in
+	if strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml") {
+		def, err = ParseYAMLOperatorDef(string(b))
+	} else if strings.HasSuffix(opDefFilePath, ".json") {
+		def, err = ParseJSONOperatorDef(string(b))
+	} else {
+		err = errors.New("unsupported file ending")
+	}
 	if err != nil {
 		return def, err
 	}
-
-	// Parse the file, just read it in
-	def = ParseOperatorDef(string(b))
 
 	// Validate the file
 	if !def.Valid() {
@@ -193,12 +217,17 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 
 	var def core.OperatorDef
 
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1) + ".json"
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)
 
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {
 		defFilePath := path.Join(currDir, relFilePath)
-		def, err := readOperatorDef(defFilePath, insDef.Generics, pathsRead)
+		// Find correct file
+		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
+		if err != nil {
+			return def, err
+		}
+		def, err := readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
 
 		if err != nil {
 			return def, err
@@ -214,8 +243,12 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	var err error
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
-
-		def, err = readOperatorDef(defFilePath, insDef.Generics, pathsRead)
+		// Find correct file
+		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
+		if err != nil {
+			return def, err
+		}
+		def, err = readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
 
 		if err != nil {
 			continue

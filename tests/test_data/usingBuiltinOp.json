@@ -6,10 +6,9 @@
   "out": {
     "type": "number"
   },
-  "operators": [
-    {
+  "operators": {
+    "passer": {
       "operator": "eval",
-      "name": "passer",
       "properties": {
         "expression": "a"
       },
@@ -24,7 +23,7 @@
         }
       }
     }
-  ],
+  },
   "connections": {
     ":in": [
       "passer:in"

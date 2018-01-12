@@ -5,10 +5,9 @@
   "out": {
     "type": "number"
   },
-  "operators": [
-    {
+  "operators": {
+    "doubler": {
       "operator": "eval",
-      "name": "doubler",
       "properties": {
         "expression": "a+a"
       },
@@ -23,7 +22,7 @@
         }
       }
     }
-  ],
+  },
   "connections": {
     ":in": [
       "doubler:in.a"

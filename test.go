@@ -8,21 +8,24 @@ import (
 	"fmt"
 	"path"
 	"reflect"
+	"strings"
+	"gopkg.in/yaml.v2"
+	"slang/utils"
 )
 
 type TestCaseDef struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
 	Data struct {
-		In  []interface{} `json:"in"`
-		Out []interface{} `json:"out"`
+		In  []interface{} `json:"in" yaml:"in"`
+		Out []interface{} `json:"out" yaml:"out"`
 	}
 }
 
 type TestDef struct {
-	OperatorFile string        `json:"operatorFile"`
-	Description  string        `json:"description"`
-	TestCases    []TestCaseDef `json:"testCases"`
+	OperatorFile string        `json:"operatorFile" yaml:"operatorFile"`
+	Description  string        `json:"description" yaml:"description"`
+	TestCases    []TestCaseDef `json:"testCases" yaml:"testCases"`
 	valid        bool
 }
 
@@ -37,7 +40,16 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	}
 
 	test := TestDef{}
-	json.Unmarshal(b, &test)
+	if strings.HasSuffix(testDataFilePath, ".yaml") || strings.HasSuffix(testDataFilePath, ".yml") {
+		err = yaml.Unmarshal(b, &test)
+	} else if strings.HasSuffix(testDataFilePath, ".json") {
+		err = json.Unmarshal(b, &test)
+	} else {
+		err = errors.New("unsupported file ending")
+	}
+	if err != nil {
+		return 0, 0, err
+	}
 
 	if !test.Valid() {
 		err := test.Validate()
@@ -81,12 +93,12 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 			in := tc.Data.In[j]
 			expected := tc.Data.Out[j]
 
-			o.In().Push(in)
+			o.In().Push(utils.CleanValue(in))
 			actual := o.Out().Pull()
 
-			if !reflect.DeepEqual(expected, actual) {
-				fmt.Fprintf(writer, "  expected: %v\n", expected)
-				fmt.Fprintf(writer, "  actual:   %v\n", actual)
+			if !testEqual(expected, actual) {
+				fmt.Fprintf(writer, "  expected: %v (%T)\n", expected, expected)
+				fmt.Fprintf(writer, "  actual:   %v (%T)\n", actual, actual)
 
 				success = false
 
@@ -132,4 +144,14 @@ func (t TestDef) Validate() error {
 
 func (t TestDef) Valid() bool {
 	return t.valid
+}
+
+func testEqual(a, b interface{}) bool {
+	if ai, ok := a.(int); ok {
+		a = float64(ai)
+	}
+	if bi, ok := a.(int); ok {
+		b = float64(bi)
+	}
+	return reflect.DeepEqual(a, b)
 }

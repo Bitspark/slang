@@ -91,7 +91,7 @@ var evalOpCfg = &builtinConfig{
 		for true {
 			i := in.Pull()
 
-			if isMarker(i) {
+			if core.IsMarker(i) {
 				out.Push(i)
 				continue
 			}
@@ -112,6 +112,10 @@ var evalOpCfg = &builtinConfig{
 		}
 
 		expr, ok := exprStr.(string)
+
+		if expr == "" {
+			return errors.New("no expression given")
+		}
 
 		if !ok {
 			return errors.New("expression must be string")

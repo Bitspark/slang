@@ -34,12 +34,12 @@ func TestTestOperator__ComplexTest(t *testing.T) {
 func TestTestOperator__SuiteTests(t *testing.T) {
 	a := assertions.New(t)
 
-	succs, fails, err := slang.TestOperator("test_data/suite/polynomial_test.json", ioutil.Discard, false)
+	succs, fails, err := slang.TestOperator("test_data/suite/polynomial_test.yaml", ioutil.Discard, false)
 	a.Nil(err)
 	a.Equal(1, succs)
 	a.Equal(0, fails)
 
-	succs, fails, err = slang.TestOperator("test_data/suite/main_test.json", ioutil.Discard, false)
+	succs, fails, err = slang.TestOperator("test_data/suite/main_test.yaml", ioutil.Discard, false)
 	a.Nil(err)
 	a.Equal(2, succs)
 	a.Equal(0, fails)

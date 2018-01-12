@@ -1,37 +1,34 @@
 {
-    "name": "opr",
-    "in": {
-        "type": "number"
+  "name": "opr",
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": {
+    "left": {
+      "operator": ".customPasser"
     },
-    "out": {
-        "type": "number"
+    "middle": {
+      "operator": ".customPasser"
     },
-    "operators": [
-        {
-            "operator": ".customPasser",
-            "name": "left"
-        },
-        {
-            "operator": ".customPasser",
-            "name": "middle"
-        },
-        {
-            "operator": ".customPasser",
-            "name": "right"
-        }
-    ],
-    "connections": {
-        ":in": [
-            "left:in"
-        ],
-        "left:out": [
-            "middle:in"
-        ],
-        "middle:out": [
-            "right:in"
-        ],
-        "right:out": [
-            ":out"
-        ]
+    "right": {
+      "operator": ".customPasser"
     }
+  },
+  "connections": {
+    ":in": [
+      "left:in"
+    ],
+    "left:out": [
+      "middle:in"
+    ],
+    "middle:out": [
+      "right:in"
+    ],
+    "right:out": [
+      ":out"
+    ]
+  }
 }

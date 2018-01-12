@@ -1,25 +1,24 @@
 {
-    "in": {
-        "type": "number"
-    },
-    "out": {
-        "type": "number"
-    },
-    "operators": [
-        {
-            "operator": "DOESNOTEXIST",
-            "name": "passer",
-            "properties": {
-                "expression": "a"
-            }
-        }
-    ],
-    "connections": {
-        ":in": [
-            "passer:in.a"
-        ],
-        "passer:out": [
-            ":out"
-        ]
+  "in": {
+    "type": "number"
+  },
+  "out": {
+    "type": "number"
+  },
+  "operators": {
+    "passer": {
+      "operator": "DOESNOTEXIST",
+      "properties": {
+        "expression": "a"
+      }
     }
+  },
+  "connections": {
+    ":in": [
+      "passer:in.a"
+    ],
+    "passer:out": [
+      ":out"
+    ]
+  }
 }

@@ -16,9 +16,8 @@
       }
     }
   },
-  "operators": [
-    {
-      "name": "dupl1",
+  "operators": {
+    "dupl1": {
       "operator": ".duplicator",
       "generics": {
         "itemType": {
@@ -27,7 +26,7 @@
         }
       }
     }
-  ],
+  },
   "connections": {
     ":in": [
       "dupl1:in"

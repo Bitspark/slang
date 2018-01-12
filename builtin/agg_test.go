@@ -4,6 +4,7 @@ import (
 	"testing"
 	"slang/tests/assertions"
 	"slang/core"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOperatorCreator__Agg__IsRegistered(t *testing.T) {
@@ -11,6 +12,53 @@ func TestOperatorCreator__Agg__IsRegistered(t *testing.T) {
 
 	ocAgg := getBuiltinCfg("agg")
 	a.NotNil(ocAgg)
+}
+
+func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
+	a := assertions.New(t)
+	ao, err := MakeOperator(
+		core.InstanceDef{
+			Operator: "agg",
+			Generics: map[string]*core.PortDef{
+				"itemType": {
+					Type: "number",
+				},
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+	a.NotNil(ao)
+
+	do, err := core.NewOperator(
+		"wrapper",
+		nil,
+		core.PortDef{Type: "stream",
+			Stream: &core.PortDef{Type: "map",
+				Map: map[string]*core.PortDef{
+					"init":  {Type: "number"},
+					"items": {Type: "stream", Stream: &core.PortDef{Type: "number"}}}}},
+		core.PortDef{Type: "stream",
+			Stream: &core.PortDef{Type: "number"}})
+	require.NoError(t, err)
+	a.NotNil(do)
+
+	ao.SetParent(do)
+
+	ao.Out().Map("iteration").Stream().Map("state").Connect(ao.In().Map("state").Stream())
+
+	require.NoError(t, do.In().Stream().Map("init").Connect(ao.In().Map("init")))
+	require.NoError(t, do.In().Stream().Map("items").Connect(ao.In().Map("items")))
+	require.NoError(t, ao.Out().Map("end").Connect(do.Out().Stream()))
+
+	do.Out().Stream().Bufferize()
+
+	do.Start()
+
+	do.In().Push([]interface{}{map[string]interface{}{"init": 0.0, "items": []interface{}{}}})
+	a.PortPushes([]interface{}{[]interface{}{0.0}}, do.Out())
 }
 
 func TestBuiltinAgg__SimpleLoop(t *testing.T) {
@@ -28,11 +76,11 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 			},
 		},
 	)
-	a.NoError(err)
+	require.NoError(t, err)
 	a.NotNil(ao)
 
 	// Add function operator
-	fo, _ := core.NewOperator("add", func(in, out *core.Port, store interface{}) {
+	fo, err := core.NewOperator("add", func(in, out *core.Port, store interface{}) {
 		for true {
 			i := in.Pull()
 			m, ok := i.(map[string]interface{})
@@ -45,10 +93,11 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 	},
 		core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "i": {Type: "number"}}},
 		core.PortDef{Type: "number"})
+	require.NoError(t, err)
 
 	// Connect
-	a.NoError(ao.Out().Map("iteration").Stream().Connect(fo.In()))
-	a.NoError(fo.Out().Connect(ao.In().Map("state").Stream()))
+	require.NoError(t, ao.Out().Map("iteration").Stream().Connect(fo.In()))
+	require.NoError(t, fo.Out().Connect(ao.In().Map("state").Stream()))
 
 	ao.Out().Map("end").Bufferize()
 

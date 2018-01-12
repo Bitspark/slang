@@ -86,6 +86,7 @@ func init() {
 	Register("fork", forkOpCfg)
 	Register("loop", loopOpCfg)
 	Register("merge", mergeOpCfg)
+	Register("agg", aggOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

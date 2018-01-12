@@ -66,6 +66,8 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 
 	var err error
 	switch def.Type {
+	case "empty":
+		return nil, nil
 	case "map":
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)

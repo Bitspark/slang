@@ -60,8 +60,8 @@ var aggOpCfg = &builtinConfig{
 			state := in.Map("init").Pull()
 
 			// Redirect all markers
-			if isMarker(state) {
-				if !isMarker(in.Map("items").Stream().Pull()) {
+			if core.IsMarker(state) {
+				if !core.IsMarker(in.Map("items").Stream().Pull()) {
 					panic("should be marker")
 				}
 				out.Map("end").Push(state)
@@ -82,7 +82,7 @@ var aggOpCfg = &builtinConfig{
 			for true {
 				item := in.Map("items").Stream().Pull()
 
-				if isMarker(item) {
+				if core.IsMarker(item) {
 					if in.Map("items").OwnEOS(item) {
 						out.Map("iteration").PushEOS()
 						item = in.Map("state").Stream().Pull()

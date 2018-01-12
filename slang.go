@@ -14,16 +14,24 @@ import (
 	"slang/utils"
 )
 
-func BuildOperator(opFile string, compile bool) (*core.Operator, error) {
+var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
+
+func BuildOperator(opFilePath string, compile bool) (*core.Operator, error) {
+	// Find correct file
+	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
+	if err != nil {
+		return nil, err
+	}
+
 	// Read operator definition and perform recursion detection
-	def, err := readOperatorDef(opFile, nil, nil)
+	def, err := readOperatorDef(opDefFilePath, nil, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and internally connect the operator
-	op, err := buildAndConnectOperator(opFile, def, nil)
+	op, err := buildAndConnectOperator(opFilePath, def, nil)
 
 	if err != nil {
 		return nil, err
@@ -119,7 +127,7 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 
 // readOperatorDef reads the operator definition for the given file and replaces all generic types according to the
 // generics map given. The generics map must not contain any further generic types.
-func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
+func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
 
 	// Make sure generics is free of further generics
@@ -129,20 +137,13 @@ func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsR
 		}
 	}
 
-	// Find correct file
-	fileEndings := []string{".yaml", ".json"} // Order of endings matters!
-	opDefFile, err := utils.FileWithFileEnding(opDefFile, fileEndings)
+	b, err := ioutil.ReadFile(opDefFilePath)
 	if err != nil {
-		return def, err
-	}
-
-	b, err := ioutil.ReadFile(opDefFile)
-	if err != nil {
-		return def, errors.New("could not read operator file " + opDefFile)
+		return def, errors.New("could not read operator file " + opDefFilePath)
 	}
 
 	// Recursion detection: chick if absolute path is contained in pathsRead
-	if absPath, err := filepath.Abs(opDefFile); err == nil {
+	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
 		for _, p := range pathsRead {
 			if p == absPath {
 				return def, fmt.Errorf("recursion in %s", absPath)
@@ -155,9 +156,9 @@ func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsR
 	}
 
 	// Parse the file, just read it in
-	if strings.HasSuffix(opDefFile, ".yaml") || strings.HasSuffix(opDefFile, ".yml") {
+	if strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml") {
 		def, err = ParseYAMLOperatorDef(string(b))
-	} else if strings.HasSuffix(opDefFile, ".json") {
+	} else if strings.HasSuffix(opDefFilePath, ".json") {
 		def, err = ParseJSONOperatorDef(string(b))
 	} else {
 		err = errors.New("unsupported file ending")
@@ -184,7 +185,7 @@ func readOperatorDef(opDefFile string, generics map[string]*core.PortDef, pathsR
 		return def, err
 	}
 
-	currDir := path.Dir(opDefFile)
+	currDir := path.Dir(opDefFilePath)
 
 	// Descend to child operators
 	for _, childOpInsDef := range def.Operators {
@@ -221,7 +222,12 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {
 		defFilePath := path.Join(currDir, relFilePath)
-		def, err := readOperatorDef(defFilePath, insDef.Generics, pathsRead)
+		// Find correct file
+		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
+		if err != nil {
+			return def, err
+		}
+		def, err := readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
 
 		if err != nil {
 			return def, err
@@ -237,8 +243,12 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	var err error
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
-
-		def, err = readOperatorDef(defFilePath, insDef.Generics, pathsRead)
+		// Find correct file
+		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
+		if err != nil {
+			return def, err
+		}
+		def, err = readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
 
 		if err != nil {
 			continue

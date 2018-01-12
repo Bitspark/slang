@@ -1,19 +1,20 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
-	"encoding/json"
 	"slang/utils"
+	"strings"
 )
 
 type OperatorsList []*InstanceDef
+type Properties utils.MapStr
 
 type InstanceDef struct {
 	Operator   string              `json:"operator" yaml:"operator"`
 	Name       string              `json:"name" yaml:"name"`
-	Properties utils.MapStr        `json:"properties" yaml:"properties"`
+	Properties Properties          `json:"properties" yaml:"properties"`
 	Generics   map[string]*PortDef `json:"generics" yaml:"generics"`
 
 	valid       bool

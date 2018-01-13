@@ -101,13 +101,6 @@ func TestPortDef_Validate__Generic__Correct(t *testing.T) {
 	a.True(def.Valid(), "should be valid")
 }
 
-func TestPortDef_Validate__Empty(t *testing.T) {
-	a := assertions.New(t)
-	def := slang.ParsePortDef(`{"type":"empty"}`)
-	a.NoError(def.Validate())
-	a.True(def.Valid(), "should be valid")
-}
-
 // core.NewPort (10 tests)
 
 func TestNewPort__InvalidDefinition(t *testing.T) {
@@ -131,14 +124,6 @@ func TestNewPort__Number__WrongDirectionGiven(t *testing.T) {
 	def := slang.ParsePortDef(`{"type":"number"}`)
 	p, err := core.NewPort(nil, def, 3)
 	a.Error(err)
-	a.Nil(p)
-}
-
-func TestNewPort__Empty(t *testing.T) {
-	a := assertions.New(t)
-	def := slang.ParsePortDef(`{"type":"empty"}`)
-	p, err := core.NewPort(nil, def, core.DIRECTION_IN)
-	a.NoError(err)
 	a.Nil(p)
 }
 

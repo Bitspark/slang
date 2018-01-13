@@ -34,7 +34,7 @@ func TestBuiltinConst__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator:   "const",
 			Properties: core.Properties{"value": 1.0},
 		},
 	)
@@ -58,7 +58,7 @@ func TestBuiltinConst__Correct(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Nil(ao.In())
+	a.Equal(core.TYPE_PRIMITIVE, ao.In().Type())
 	a.Equal(core.TYPE_NUMBER, ao.Out().Type())
 }
 
@@ -78,11 +78,14 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Nil(ao.In())
 	a.Equal(core.TYPE_BOOLEAN, ao.Out().Type())
 
 	ao.Out().Bufferize()
 	ao.Start()
+
+	for i := 0; i < 20; i++ {
+		ao.In().Push(1)
+	}
 
 	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Out())
 	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Out())
@@ -108,11 +111,14 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Nil(ao.In())
 	a.Equal(core.TYPE_STREAM, ao.Out().Type())
 
 	ao.Out().Bufferize()
 	ao.Start()
+
+	for i := 0; i < 3; i++ {
+		ao.In().Push(1)
+	}
 
 	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Out())
 	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Out())
@@ -144,11 +150,14 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Nil(ao.In())
 	a.Equal(core.TYPE_MAP, ao.Out().Type())
 
 	ao.Out().Bufferize()
 	ao.Start()
+
+	for i := 0; i < 3; i++ {
+		ao.In().Push(1)
+	}
 
 	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Out())
 	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Out())

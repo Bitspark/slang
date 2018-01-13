@@ -58,12 +58,12 @@ func getFlattenedObj(obj interface{}) map[string]interface{} {
 	return flatMap
 }
 
-func NewFlatMapParameters(m map[string]interface{}) govaluate.MapParameters {
+func newFlatMapParameters(m map[string]interface{}) govaluate.MapParameters {
 	flatMap := getFlattenedObj(m)
 	return govaluate.MapParameters(flatMap)
 }
 
-func NewEvaluableExpression(expression string) (*EvaluableExpression, error) {
+func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 	goEvalExpr, err := govaluate.NewEvaluableExpression(strings.Replace(expression, ".", "__", -1))
 	if err == nil {
 		return &EvaluableExpression{*goEvalExpr}, nil
@@ -71,7 +71,7 @@ func NewEvaluableExpression(expression string) (*EvaluableExpression, error) {
 	return nil, err
 }
 
-type functionStore struct {
+type evalStore struct {
 	expr     string
 	evalExpr *EvaluableExpression
 }
@@ -87,7 +87,7 @@ var evalOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, store interface{}) {
-		expr := store.(functionStore).evalExpr
+		expr := store.(evalStore).evalExpr
 		for true {
 			i := in.Pull()
 
@@ -97,7 +97,7 @@ var evalOpCfg = &builtinConfig{
 			}
 
 			if m, ok := i.(map[string]interface{}); ok {
-				rlt, _ := expr.Eval(NewFlatMapParameters(m))
+				rlt, _ := expr.Eval(newFlatMapParameters(m))
 				out.Push(rlt)
 			} else {
 				panic("invalid item")
@@ -121,14 +121,14 @@ var evalOpCfg = &builtinConfig{
 			return errors.New("expression must be string")
 		}
 
-		evalExpr, err := NewEvaluableExpression(expr)
+		evalExpr, err := newEvaluableExpression(expr)
 
 		if err != nil {
 			return err
 		}
 
 		if o != nil {
-			o.SetStore(functionStore{expr, evalExpr})
+			o.SetStore(evalStore{expr, evalExpr})
 		}
 
 		return nil

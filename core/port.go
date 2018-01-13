@@ -122,6 +122,11 @@ func (p *Port) Map(name string) *Port {
 	return port
 }
 
+// Returns the operator this port is attached to
+func (p *Port) Operator() *Operator {
+	return p.operator
+}
+
 // Returns the substream port of this port. Port must be of type stream.
 func (p *Port) Stream() *Port {
 	return p.sub

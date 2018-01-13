@@ -82,10 +82,11 @@ func Register(name string, cfg *builtinConfig) {
 
 func init() {
 	cfgs = make(map[string]*builtinConfig)
+	Register("const", constOpCfg)
 	Register("eval", evalOpCfg)
 	Register("fork", forkOpCfg)
-	Register("loop", loopOpCfg)
 	Register("merge", mergeOpCfg)
+	Register("loop", loopOpCfg)
 	Register("agg", aggOpCfg)
 }
 

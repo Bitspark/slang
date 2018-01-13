@@ -11,7 +11,7 @@ import (
 func TestEvaluableExpression__Translates_Variables(t *testing.T) {
 	a := assertions.New(t)
 
-	evalExpr, _ := NewEvaluableExpression("a + 100")
+	evalExpr, _ := newEvaluableExpression("a + 100")
 
 	a.Equal([]string{"a"}, evalExpr.Vars())
 }
@@ -19,7 +19,7 @@ func TestEvaluableExpression__Translates_Variables(t *testing.T) {
 func TestEvaluableExpression__Translates_AccessingFields(t *testing.T) {
 	a := assertions.New(t)
 
-	evalExpr, _ := NewEvaluableExpression("vec.x + 100")
+	evalExpr, _ := newEvaluableExpression("vec.x + 100")
 
 	a.Equal([]string{"vec__x"}, evalExpr.Vars())
 }
@@ -27,7 +27,7 @@ func TestEvaluableExpression__Translates_AccessingFields(t *testing.T) {
 func TestEvaluableExpression__Translates_AccessingNestedFields(t *testing.T) {
 	a := assertions.New(t)
 
-	evalExpr, _ := NewEvaluableExpression(`person.address.zipcode == "ABCD"`)
+	evalExpr, _ := newEvaluableExpression(`person.address.zipcode == "ABCD"`)
 
 	a.Equal([]string{"person__address__zipcode"}, evalExpr.Vars())
 }
@@ -35,8 +35,8 @@ func TestEvaluableExpression__Translates_AccessingNestedFields(t *testing.T) {
 func TestEvaluableExpression__Evaluates_ArgumentsAcessingFields(t *testing.T) {
 	a := assertions.New(t)
 
-	evalExpr, _ := NewEvaluableExpression("(vec.0.x + vec.1.x) * (vec.0.y + vec.1.y)")
-	params := NewFlatMapParameters(map[string]interface{}{
+	evalExpr, _ := newEvaluableExpression("(vec.0.x + vec.1.x) * (vec.0.y + vec.1.y)")
+	params := newFlatMapParameters(map[string]interface{}{
 		"vec": []interface{}{
 			map[string]interface{}{
 				"x": 1,
@@ -55,7 +55,7 @@ func TestEvaluableExpression__Evaluates_ArgumentsAcessingFields(t *testing.T) {
 func TestEvaluableExpression__Translates_Combined(t *testing.T) {
 	a := assertions.New(t)
 
-	evalExpr, _ := NewEvaluableExpression(`a * vec.x + vec.y`)
+	evalExpr, _ := newEvaluableExpression(`a * vec.x + vec.y`)
 
 	a.Equal([]string{"a", "vec__x", "vec__y"}, evalExpr.Vars())
 }
@@ -63,7 +63,7 @@ func TestEvaluableExpression__Translates_Combined(t *testing.T) {
 func TestFlatMapParameters__NestingLevel0(t *testing.T) {
 	a := assertions.New(t)
 
-	params := NewFlatMapParameters(map[string]interface{}{
+	params := newFlatMapParameters(map[string]interface{}{
 		"foo": 100,
 		"bar": 200,
 	})
@@ -77,7 +77,7 @@ func TestFlatMapParameters__NestingLevel0(t *testing.T) {
 func TestFlatMapParameters__NestingLevel0_Arrays(t *testing.T) {
 	a := assertions.New(t)
 
-	params := NewFlatMapParameters(map[string]interface{}{
+	params := newFlatMapParameters(map[string]interface{}{
 		"foo": 100,
 		"bar": 200,
 		"l":   []interface{}{1, 2},
@@ -94,7 +94,7 @@ func TestFlatMapParameters__NestingLevel0_Arrays(t *testing.T) {
 func TestFlatMapParameters__NestingLevel1(t *testing.T) {
 	a := assertions.New(t)
 
-	params := NewFlatMapParameters(map[string]interface{}{
+	params := newFlatMapParameters(map[string]interface{}{
 		"foo": 100,
 		"bar": 200,
 		"vec": map[string]interface{}{
@@ -114,7 +114,7 @@ func TestFlatMapParameters__NestingLevel1(t *testing.T) {
 func TestFlatMapParameters__NestingLevel2(t *testing.T) {
 	a := assertions.New(t)
 
-	params := NewFlatMapParameters(map[string]interface{}{
+	params := newFlatMapParameters(map[string]interface{}{
 		"foo": 100,
 		"bar": 200,
 		"vec": map[string]interface{}{
@@ -146,7 +146,7 @@ func TestFlatMapParameters__NestingLevel2(t *testing.T) {
 func TestFlatMapParameters__NestingLevel3(t *testing.T) {
 	a := assertions.New(t)
 
-	params := NewFlatMapParameters(map[string]interface{}{
+	params := newFlatMapParameters(map[string]interface{}{
 		"foo": 100,
 		"bar": 200,
 		"vec": map[string]interface{}{
@@ -190,7 +190,7 @@ func TestFlatMapParameters__NestingLevel3(t *testing.T) {
 func TestFlatMapParameters__ComplexMixed(t *testing.T) {
 	a := assertions.New(t)
 
-	params := NewFlatMapParameters(map[string]interface{}{
+	params := newFlatMapParameters(map[string]interface{}{
 		"foo": 100,
 		"bar": 200,
 		"vec": []interface{}{

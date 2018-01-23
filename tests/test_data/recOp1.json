@@ -11,11 +11,11 @@
     }
   },
   "connections": {
-    ":in": [
-      "void:in"
+    "<-": [
+      "void<-"
     ],
     ":void.out": [
-      ":out"
+      "->"
     ]
   }
 }

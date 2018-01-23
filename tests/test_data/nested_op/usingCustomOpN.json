@@ -18,17 +18,17 @@
     }
   },
   "connections": {
-    ":in": [
-      "left:in"
+    "<-": [
+      "left<-"
     ],
-    "left:out": [
-      "middle:in"
+    "left->": [
+      "middle<-"
     ],
-    "middle:out": [
-      "right:in"
+    "middle->": [
+      "right<-"
     ],
-    "right:out": [
-      ":out"
+    "right->": [
+      "->"
     ]
   }
 }

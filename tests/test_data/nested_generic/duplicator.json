@@ -16,9 +16,9 @@
     }
   },
   "connections": {
-    ":in": [
-      ":out.left",
-      ":out.right"
+    "<-": [
+      "->left",
+      "->right"
     ]
   }
 }

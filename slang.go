@@ -72,14 +72,24 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 		return nil, errors.New("empty connection string")
 	}
 
-	opSplit := strings.Split(connStr, ":")
+	var in bool
+	sep := ""
+	if strings.Contains(connStr, "->") {
+		in = false
+		sep = "->"
+	} else if strings.Contains(connStr, "<-") {
+		in = true
+		sep = "<-"
+	}
+
+	opSplit := strings.Split(connStr, sep)
 
 	if len(opSplit) != 2 {
 		return nil, errors.New("connection string malformed")
 	}
 
 	var o *core.Operator
-	if len(opSplit[0]) == 0 {
+	if opSplit[0] == "" {
 		o = par
 	} else {
 		o = par.Child(opSplit[0])
@@ -90,20 +100,19 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 
 	pathSplit := strings.Split(opSplit[1], ".")
 
-	if len(pathSplit) == 0 {
-		return nil, errors.New("connection string malformed")
-	}
-
 	var p *core.Port
-	if pathSplit[0] == "in" {
+	if in {
 		p = o.In()
-	} else if pathSplit[0] == "out" {
-		p = o.Out()
 	} else {
-		return nil, fmt.Errorf("invalid direction: %s", pathSplit[0])
+		p = o.Out()
 	}
 
-	for i := 1; i < len(pathSplit); i++ {
+	start := 0
+	if pathSplit[0] == "" {
+		start = 1
+	}
+
+	for i := start; i < len(pathSplit); i++ {
 		if pathSplit[i] == "" {
 			p = p.Stream()
 			continue

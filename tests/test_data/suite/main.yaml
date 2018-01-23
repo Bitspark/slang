@@ -40,23 +40,23 @@ operators:
   p:
     operator: ".polynomial"
 connections:
-  ":in.first":
-  - dbl1:in
-  ":in.second":
-  - dbl2:in
-  ":in.third":
-  - dbl3:in
-  dbl1:out:
-  - tl:in
-  dbl2:out:
-  - tr:in
-  dbl3:out.left:
-  - p:in.a
-  dbl3:out.right:
-  - p:in.b
-  tl:out:
-  - p:in.c
-  tr:out:
-  - p:in.x
-  p:out:
-  - ":out"
+  <-first:
+  - dbl1<-
+  <-second:
+  - dbl2<-
+  <-third:
+  - dbl3<-
+  dbl1->:
+  - tl<-
+  dbl2->:
+  - tr<-
+  dbl3->left:
+  - p<-a
+  dbl3->right:
+  - p<-b
+  tl->:
+  - p<-c
+  tr->:
+  - p<-x
+  p->:
+  - ->

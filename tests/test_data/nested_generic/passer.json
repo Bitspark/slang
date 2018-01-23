@@ -28,14 +28,14 @@
     }
   },
   "connections": {
-    ":in": [
-      "dupl1:in"
+    "<-": [
+      "dupl1<-"
     ],
-    "dupl1:out.left": [
-      ":out.left"
+    "dupl1->left": [
+      "->left"
     ],
-    "dupl1:out.right": [
-      ":out.right"
+    "dupl1->right": [
+      "->right"
     ]
   }
 }

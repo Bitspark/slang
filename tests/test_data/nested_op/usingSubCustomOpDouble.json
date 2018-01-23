@@ -12,11 +12,11 @@
     }
   },
   "connections": {
-    ":in": [
-      "childOpr:in"
+    "<-": [
+      "childOpr<-"
     ],
-    "childOpr:out": [
-      ":out"
+    "childOpr->": [
+      "->"
     ]
   }
 }

@@ -14,11 +14,11 @@
     }
   },
   "connections": {
-    ":in": [
-      "passer:in.a"
+    "<-": [
+      "passer<-a"
     ],
-    "passer:out": [
-      ":out"
+    "passer->": [
+      "->"
     ]
   }
 }

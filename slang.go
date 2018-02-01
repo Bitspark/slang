@@ -76,14 +76,14 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 	sep := ""
 	opIdx := 0
 	portIdx := 0
-	if strings.Contains(connStr, "=/") {
+	if strings.Contains(connStr, "(") {
 		in = true
-		sep = "=/"
+		sep = "("
 		opIdx = 1
 		portIdx = 0
-	} else if strings.Contains(connStr, "/=") {
+	} else if strings.Contains(connStr, ")") {
 		in = false
-		sep = "/="
+		sep = ")"
 		opIdx = 0
 		portIdx = 1
 	} else {

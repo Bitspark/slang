@@ -24,14 +24,14 @@
     }
   },
   "connections": {
-    "=/": [
-      "=/pass1"
+    "(": [
+      "(pass1"
     ],
-    "pass1/=left": [
-      "/=left"
+    "pass1)left": [
+      ")left"
     ],
-    "pass1/=right": [
-      "/=right"
+    "pass1)right": [
+      ")right"
     ]
   }
 }

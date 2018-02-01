@@ -12,11 +12,11 @@
     }
   },
   "connections": {
-    "=/": [
-      "=/childOpr"
+    "(": [
+      "(childOpr"
     ],
-    "childOpr/=": [
-      "/="
+    "childOpr)": [
+      ")"
     ]
   }
 }

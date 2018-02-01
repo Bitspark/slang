@@ -11,6 +11,6 @@ out:
       type: generic
       generic: itemType
 connections:
-  =/:
-  - /=left
-  - /=right
+  (:
+  - )left
+  - )right

@@ -16,9 +16,9 @@
     }
   },
   "connections": {
-    "=/": [
-      "/=left",
-      "/=right"
+    "(": [
+      ")left",
+      ")right"
     ]
   }
 }

@@ -12,5 +12,5 @@ out:
   type: generic
   generic: itemType
 connections:
-  "<-right":
-  - "->"
+  "right->/":
+  - "/->"

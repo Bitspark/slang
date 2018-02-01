@@ -18,17 +18,17 @@
     }
   },
   "connections": {
-    "<-": [
-      "left<-"
+    "->/": [
+      "->/left"
     ],
-    "left->": [
-      "middle<-"
+    "left/->": [
+      "->/middle"
     ],
-    "middle->": [
-      "right<-"
+    "middle/->": [
+      "->/right"
     ],
-    "right->": [
-      "->"
+    "right/->": [
+      "/->"
     ]
   }
 }

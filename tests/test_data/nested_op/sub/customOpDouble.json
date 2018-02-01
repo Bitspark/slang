@@ -24,11 +24,11 @@
     }
   },
   "connections": {
-    "->/": [
-      "a->/doubler"
+    "=/": [
+      "a=/doubler"
     ],
-    "doubler/->": [
-      "/->"
+    "doubler/=": [
+      "/="
     ]
   }
 }

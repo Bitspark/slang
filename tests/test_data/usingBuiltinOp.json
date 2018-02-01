@@ -25,11 +25,11 @@
     }
   },
   "connections": {
-    "->/": [
-      "->/passer"
+    "=/": [
+      "=/passer"
     ],
-    "passer/->": [
-      "/->"
+    "passer/=": [
+      "/="
     ]
   }
 }

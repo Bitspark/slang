@@ -25,11 +25,11 @@
     }
   },
   "connections": {
-    ":in": [
-      "passer:in"
+    "(": [
+      "(passer"
     ],
-    "passer:out": [
-      ":out"
+    "passer)": [
+      ")"
     ]
   }
 }

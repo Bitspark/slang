@@ -82,8 +82,8 @@ func TestOperatorDef_Validate__Succeeds(t *testing.T) {
 			}
 		],
 		"connections": {
-			":in": ["add:in"],
-			"add:out": [":in"]
+			"(": ["(add"],
+			"add)": [")"]
 		}
 	}`)
 	a.NoError(err)

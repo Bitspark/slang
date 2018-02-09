@@ -54,6 +54,7 @@ var loopOpCfg = &builtinConfig{
 			// Redirect all markers
 			if core.IsMarker(i) {
 				out.Map("end").Push(i)
+				out.Map("state").Push(i)
 				continue
 			}
 
@@ -69,9 +70,15 @@ var loopOpCfg = &builtinConfig{
 			}
 
 			for true {
-				iter := in.Map("iteration").Stream().Pull().(map[string]interface{})
-				newState := iter["state"]
-				cont := iter["continue"].(bool)
+				iter := in.Map("iteration").Stream().Pull()
+
+				if core.IsMarker(iter) {
+					continue
+				}
+
+				iterMap := iter.(map[string]interface{})
+				newState := iterMap["state"]
+				cont := iterMap["continue"].(bool)
 
 				if cont {
 					out.Map("state").Push(newState)

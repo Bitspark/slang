@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"testing"
-	"slang/tests/assertions"
-	"slang/core"
 	"github.com/stretchr/testify/require"
+	"slang/core"
+	"slang/tests/assertions"
+	"testing"
 )
 
 func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
@@ -14,7 +14,7 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 	a.NotNil(ocLoop)
 }
 
-func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
+func TestBuiltin_Loop__Simple(t *testing.T) {
 	a := assertions.New(t)
 	lo, err := MakeOperator(
 		core.InstanceDef{
@@ -73,7 +73,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	a.PortPushes([]interface{}{16.0, 10.0}, lo.Out().Map("end"))
 }
 
-func TestBuiltin_Loop__FibLoop(t *testing.T) {
+func TestBuiltin_Loop__Fibo(t *testing.T) {
 	a := assertions.New(t)
 	stateType := core.PortDef{
 		Type: "map",
@@ -145,4 +145,67 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
 		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
 	}, lo.Out().Map("end"))
+}
+
+func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
+	a := assertions.New(t)
+	lo, err := MakeOperator(
+		core.InstanceDef{
+			Operator: "loop",
+			Generics: map[string]*core.PortDef{
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+	a.NoError(err)
+	a.NotNil(lo)
+
+	lo.Out().Map("end").Bufferize()
+	lo.Out().Map("state").Stream().Bufferize()
+
+	lo.Start()
+
+	bos := core.BOS{}
+	eos := core.EOS{}
+
+	lo.In().Map("init").Push(bos)
+
+	a.Equal(bos, lo.Out().Map("end").Pull())
+	a.Equal(bos, lo.Out().Map("state").Stream().Pull())
+
+	lo.In().Map("init").Push(eos)
+
+	a.Equal(eos, lo.Out().Map("end").Pull())
+	a.Equal(eos, lo.Out().Map("state").Stream().Pull())
+}
+
+func TestBuiltin_Loop__SkipMarkersOnIterationPort(t *testing.T) {
+	a := assertions.New(t)
+	lo, err := MakeOperator(
+		core.InstanceDef{
+			Operator: "loop",
+			Generics: map[string]*core.PortDef{
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+	a.NoError(err)
+	a.NotNil(lo)
+
+	lo.Out().Map("end").Bufferize()
+	lo.Out().Map("state").Stream().Bufferize()
+
+	lo.Start()
+
+	bos := core.BOS{}
+
+	lo.In().Map("init").Push(100)
+	lo.In().Map("iteration").Push(bos)
+
+	a.True(lo.Out().Map("state").OwnBOS(lo.Out().Map("state").Stream().Pull()))
+	a.Equal(100, lo.Out().Map("state").Stream().Pull())
 }

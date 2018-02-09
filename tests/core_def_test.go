@@ -82,8 +82,8 @@ func TestOperatorDef_Validate__Succeeds(t *testing.T) {
 			}
 		],
 		"connections": {
-			"<-": ["add<-"],
-			"add->": ["<-"]
+			"(": ["(add"],
+			"add)": [")"]
 		}
 	}`)
 	a.NoError(err)

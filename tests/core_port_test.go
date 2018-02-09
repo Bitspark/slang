@@ -220,6 +220,13 @@ func TestPort_Type__Simple__Primitive(t *testing.T) {
 	a.Equal(core.TYPE_PRIMITIVE, p.Type(), "wrong type")
 }
 
+func TestPort_Type__Simple__Trigger(t *testing.T) {
+	a := assertions.New(t)
+	def := slang.ParsePortDef(`{"type":"trigger"}`)
+	p, _ := core.NewPort(nil, def, core.DIRECTION_IN)
+	a.Equal(core.TYPE_TRIGGER, p.Type(), "wrong type")
+}
+
 func TestPort_Type__Simple__Number(t *testing.T) {
 	a := assertions.New(t)
 	def := slang.ParsePortDef(`{"type":"number"}`)

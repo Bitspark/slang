@@ -8,6 +8,7 @@ import (
 const (
 	TYPE_GENERIC   = iota
 	TYPE_PRIMITIVE = iota
+	TYPE_TRIGGER   = iota
 	TYPE_NUMBER    = iota
 	TYPE_STRING    = iota
 	TYPE_BOOLEAN   = iota
@@ -84,14 +85,16 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 			return nil, err
 		}
 		setParentStreams(p.sub, p)
+	case "primitive":
+		p.itemType = TYPE_PRIMITIVE
+	case "trigger":
+		p.itemType = TYPE_TRIGGER
 	case "number":
 		p.itemType = TYPE_NUMBER
 	case "string":
 		p.itemType = TYPE_STRING
 	case "boolean":
 		p.itemType = TYPE_BOOLEAN
-	case "primitive":
-		p.itemType = TYPE_PRIMITIVE
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
@@ -379,6 +382,8 @@ func (p *Port) Name() string {
 		name += "_GENERIC"
 	case TYPE_PRIMITIVE:
 		name += "_PRIMITIVE"
+	case TYPE_TRIGGER:
+		name += "_TRIGGER"
 	case TYPE_NUMBER:
 		name += "_NUMBER"
 	case TYPE_STRING:
@@ -502,5 +507,9 @@ func (p *Port) connect(q *Port) error {
 }
 
 func (p *Port) primitive() bool {
-	return p.itemType == TYPE_PRIMITIVE || p.itemType == TYPE_NUMBER || p.itemType == TYPE_STRING || p.itemType == TYPE_BOOLEAN
+	return p.itemType == TYPE_PRIMITIVE ||
+		p.itemType == TYPE_TRIGGER ||
+		p.itemType == TYPE_NUMBER ||
+		p.itemType == TYPE_STRING ||
+		p.itemType == TYPE_BOOLEAN
 }

@@ -183,7 +183,7 @@ func (d *PortDef) Validate() error {
 		return errors.New("type must not be empty")
 	}
 
-	validTypes := []string{"generic", "primitive", "number", "string", "boolean", "stream", "map"}
+	validTypes := []string{"generic", "primitive", "trigger", "number", "string", "boolean", "stream", "map"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {

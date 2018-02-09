@@ -72,38 +72,55 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 		return nil, errors.New("empty connection string")
 	}
 
-	opSplit := strings.Split(connStr, ":")
+	var in bool
+	sep := ""
+	opIdx := 0
+	portIdx := 0
+	if strings.Contains(connStr, "(") {
+		in = true
+		sep = "("
+		opIdx = 1
+		portIdx = 0
+	} else if strings.Contains(connStr, ")") {
+		in = false
+		sep = ")"
+		opIdx = 0
+		portIdx = 1
+	} else {
+		return nil, errors.New("cannot derive direction")
+	}
+
+	opSplit := strings.Split(connStr, sep)
 
 	if len(opSplit) != 2 {
 		return nil, errors.New("connection string malformed")
 	}
 
 	var o *core.Operator
-	if len(opSplit[0]) == 0 {
+	if opSplit[opIdx] == "" {
 		o = par
 	} else {
-		o = par.Child(opSplit[0])
+		o = par.Child(opSplit[opIdx])
 		if o == nil {
 			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
 		}
 	}
 
-	pathSplit := strings.Split(opSplit[1], ".")
-
-	if len(pathSplit) == 0 {
-		return nil, errors.New("connection string malformed")
-	}
+	pathSplit := strings.Split(opSplit[portIdx], ".")
 
 	var p *core.Port
-	if pathSplit[0] == "in" {
+	if in {
 		p = o.In()
-	} else if pathSplit[0] == "out" {
-		p = o.Out()
 	} else {
-		return nil, fmt.Errorf("invalid direction: %s", pathSplit[0])
+		p = o.Out()
 	}
 
-	for i := 1; i < len(pathSplit); i++ {
+	start := 0
+	if pathSplit[0] == "" {
+		start = 1
+	}
+
+	for i := start; i < len(pathSplit); i++ {
 		if pathSplit[i] == "" {
 			p = p.Stream()
 			continue

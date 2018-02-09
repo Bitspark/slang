@@ -31,7 +31,7 @@ operators:
           x:
             type: number
 connections:
-  ":in":
-  - pfunc:in
-  pfunc:out:
-  - ":out"
+  (:
+  - (pfunc
+  pfunc):
+  - )

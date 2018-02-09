@@ -24,11 +24,11 @@
     }
   },
   "connections": {
-    ":in": [
-      "doubler:in.a"
+    "(": [
+      "a(doubler"
     ],
-    "doubler:out": [
-      ":out"
+    "doubler)": [
+      ")"
     ]
   }
 }

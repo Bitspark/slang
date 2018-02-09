@@ -21,27 +21,21 @@ var constOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, store interface{}) {
-		val := store.(valueStore).value
+		v := store.(valueStore).value
 		for true {
-			i := in.Pull()
-
-			if core.IsMarker(i) {
+			if i := in.Pull(); !core.IsMarker(i) {
+				out.Push(v)
+			} else {
 				out.Push(i)
-				continue
 			}
-
-			out.Push(val)
 		}
 	},
 	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
-		value, ok := props["value"]
-
-		if !ok {
+		if v, ok := props["value"]; ok {
+			o.SetStore(valueStore{v})
+			return nil
+		} else {
 			return errors.New("no value given")
 		}
-
-		o.SetStore(valueStore{value})
-
-		return nil
 	},
 }

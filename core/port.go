@@ -116,6 +116,11 @@ func (p *Port) ParentStream() *Port {
 	return p.parStr
 }
 
+// Returns the operator this port is attached to
+func (p *Port) Operator() *Operator {
+	return p.operator
+}
+
 // Returns the subport with the according name of this port. Port must be of type map.
 func (p *Port) Map(name string) *Port {
 	port, _ := p.subs[name]

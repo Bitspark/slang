@@ -63,12 +63,12 @@ func ParseYAMLOperatorDef(defStr string) (core.OperatorDef, error) {
 	return def, err
 }
 
-func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) {
+func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
 
-	if len(connStr) == 0 {
+	if len(refStr) == 0 {
 		return nil, errors.New("empty connection string")
 	}
 
@@ -76,12 +76,12 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 	sep := ""
 	opIdx := 0
 	portIdx := 0
-	if strings.Contains(connStr, "(") {
+	if strings.Contains(refStr, "(") {
 		in = true
 		sep = "("
 		opIdx = 1
 		portIdx = 0
-	} else if strings.Contains(connStr, ")") {
+	} else if strings.Contains(refStr, ")") {
 		in = false
 		sep = ")"
 		opIdx = 0
@@ -90,10 +90,10 @@ func ParsePortReference(connStr string, par *core.Operator) (*core.Port, error) 
 		return nil, errors.New("cannot derive direction")
 	}
 
-	opSplit := strings.Split(connStr, sep)
+	opSplit := strings.Split(refStr, sep)
 
 	if len(opSplit) != 2 {
-		return nil, errors.New("connection string malformed")
+		return nil, fmt.Errorf(`connection string malformed: ""%s"`, refStr)
 	}
 
 	var o *core.Operator
@@ -310,14 +310,14 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 		}
 	}
 
-	// After having created all operators, connect all operators from bottom to top
+	// Parse all connections before starting to connect
+	parsedConns := make(map[*core.Port][]*core.Port)
 	for srcConnDef, dstConnDefs := range def.Connections {
 		if pSrc, err := ParsePortReference(srcConnDef, o); err == nil {
+			parsedConns[pSrc] = nil
 			for _, dstConnDef := range dstConnDefs {
 				if pDst, err := ParsePortReference(dstConnDef, o); err == nil {
-					if err := pSrc.Connect(pDst); err != nil {
-						return nil, err
-					}
+					parsedConns[pSrc] = append(parsedConns[pSrc], pDst)
 				} else {
 					return nil, err
 				}
@@ -327,7 +327,32 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 		}
 	}
 
+	if err := connectDestinations(o, parsedConns); err != nil {
+		return nil, err
+	}
+
 	return o, nil
+}
+
+// connectDestinations connects operators following from the in port to the out port
+func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) error {
+	for pSrc, pDsts := range conns {
+		if pSrc.Operator() == o {
+			var ops []*core.Operator
+			for _, pDst := range pDsts {
+				if err := pSrc.Connect(pDst); err != nil {
+					return err
+				}
+				ops = append(ops, pDst.Operator())
+			}
+			// Set the destinations nil so that we do not end in an infinite recursion
+			conns[pSrc] = nil
+			for _, op := range ops {
+				connectDestinations(op, conns)
+			}
+		}
+	}
+	return nil
 }
 
 // getOperator creates and returns an operator according to the instance definition. If there exists a suitable

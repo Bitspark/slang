@@ -57,7 +57,7 @@ var loopOpCfg = &builtinConfig{
 				iter := in.Map("iteration").Stream().Pull()
 
 				if i != iter {
-					panic("expected own BOS")
+					panic("should be same marker")
 				}
 
 				out.Map("end").Push(i)

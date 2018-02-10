@@ -57,7 +57,15 @@ var reduceOpCfg = &builtinConfig{
 			i := in.Map("items").Pull()
 
 			if core.IsMarker(i) {
+				out.Map("selection").Push(i)
+				sel := in.Map("pool").Pull()
+
+				if sel != i {
+					panic("expected different marker")
+				}
+
 				out.Map("result").Push(i)
+
 				continue
 			}
 

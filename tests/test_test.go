@@ -50,5 +50,12 @@ func TestOperator_Pack(t *testing.T) {
 	succs, fails, err := slang.TestOperator("test_data/sllib/pack_test.yaml", ioutil.Discard, false)
 	a.Nil(err)
 	a.Equal(1, succs)
-	a.Equal(0, fails)
+  a.Equal(0, fails)
+}
+
+func TestTestOperator__SumReduce(t *testing.T) {
+	a := assertions.New(t)
+	succs, fails, err := slang.TestOperator("test_data/sum/reduce_test.yaml", ioutil.Discard, true)
+	a.Nil(err)
+	a.Equal(4, succs)
 }

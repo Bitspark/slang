@@ -88,6 +88,7 @@ func init() {
 	Register("loop", loopOpCfg)
 	Register("merge", mergeOpCfg)
 	Register("agg", aggOpCfg)
+	Register("reduce", reduceOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

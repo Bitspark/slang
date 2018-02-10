@@ -1,0 +1,37 @@
+# Main
+---
+in:
+  type: stream
+  stream:
+    type: number
+out:
+  type: number
+operators:
+  adder:
+    operator: "eval"
+    generics:
+      paramsMap:
+        type: map
+        map:
+          a:
+            type: number
+          b:
+            type: number
+    properties:
+      expression: "a+b"
+  reducer:
+    operator: "reduce"
+    generics:
+      itemType:
+        type: number
+    properties:
+      emptyValue: 0.0
+connections:
+  (:
+    - items(reducer
+  reducer)result:
+    - )
+  reducer)selection.:
+    - (adder
+  adder):
+    - pool.(reducer

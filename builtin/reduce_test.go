@@ -88,6 +88,8 @@ func TestBuiltin_Reduce__PassMarkers(t *testing.T) {
 	eos := core.BOS{}
 	o.In().Map("items").Stream().Push(bos)
 	o.In().Map("items").Stream().Push(eos)
+	o.In().Map("pool").Stream().Push(bos)
+	o.In().Map("pool").Stream().Push(eos)
 
 	a.PortPushes([]interface{}{bos, eos}, o.Out().Map("result"))
 }

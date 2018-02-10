@@ -167,45 +167,28 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 
 	lo.Start()
 
-	bos := core.BOS{}
-	eos := core.EOS{}
-
-	lo.In().Map("init").Push(bos)
-
-	a.Equal(bos, lo.Out().Map("end").Pull())
-	a.Equal(bos, lo.Out().Map("state").Stream().Pull())
-
-	lo.In().Map("init").Push(eos)
-
-	a.Equal(eos, lo.Out().Map("end").Pull())
-	a.Equal(eos, lo.Out().Map("state").Stream().Pull())
-}
-
-func TestBuiltin_Loop__SkipMarkersOnIterationPort(t *testing.T) {
-	a := assertions.New(t)
-	lo, err := MakeOperator(
-		core.InstanceDef{
-			Operator: "loop",
-			Generics: map[string]*core.PortDef{
-				"stateType": {
-					Type: "number",
-				},
-			},
-		},
-	)
-	a.NoError(err)
-	a.NotNil(lo)
-
-	lo.Out().Map("end").Bufferize()
-	lo.Out().Map("state").Stream().Bufferize()
-
-	lo.Start()
+	pInit := lo.In().Map("init")
+	pIteration := lo.In().Map("iteration")
+	pState := lo.Out().Map("state").Stream()
+	pEnd := lo.Out().Map("end")
 
 	bos := core.BOS{}
+	pInit.Push(bos)
+	a.Nil(pEnd.Poll())
+	a.Equal(bos, pState.Pull())
 
-	lo.In().Map("init").Push(100)
-	lo.In().Map("iteration").Push(bos)
+	pIteration.Push(bos)
 
-	a.True(lo.Out().Map("state").OwnBOS(lo.Out().Map("state").Stream().Pull()))
-	a.Equal(100, lo.Out().Map("state").Stream().Pull())
+	a.Equal(bos, pEnd.Pull())
+	a.Nil(pState.Poll())
+
+	eos := core.BOS{}
+	pInit.Push(eos)
+	a.Nil(pEnd.Poll())
+	a.Equal(eos, pState.Pull())
+
+	pIteration.Push(eos)
+
+	a.Equal(eos, pEnd.Pull())
+	a.Nil(pState.Poll())
 }

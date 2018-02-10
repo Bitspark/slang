@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
 const (
@@ -328,6 +329,22 @@ func (p *Port) Pull() interface{} {
 	}
 
 	panic("unknown type")
+}
+
+// Similar to Port.Pull but will return nil when there is no item after timeout
+func (p *Port) Poll() (i interface{}) {
+	if p.buf == nil {
+		panic("no buffer")
+	}
+
+	if len(p.buf) == 0 {
+		time.Sleep(200 * time.Millisecond)
+		if len(p.buf) == 0 {
+			return nil
+		}
+	}
+
+	return <-p.buf
 }
 
 func (p *Port) NewBOS() BOS {

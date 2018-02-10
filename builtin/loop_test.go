@@ -61,7 +61,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
 	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
 
-	lo.Out().Map("end").Bufferize()
+	lo.Out().Bufferize()
 
 	lo.In().Map("init").Push(1.0)
 	lo.In().Map("init").Push(10.0)
@@ -132,7 +132,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
 	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
 
-	lo.Out().Map("end").Bufferize()
+	lo.Out().Bufferize()
 
 	lo.In().Map("init").Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
 	lo.In().Map("init").Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
@@ -162,8 +162,7 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a.NoError(err)
 	a.NotNil(lo)
 
-	lo.Out().Map("end").Bufferize()
-	lo.Out().Map("state").Stream().Bufferize()
+	lo.Out().Bufferize()
 
 	lo.Start()
 

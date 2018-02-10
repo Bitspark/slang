@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"testing"
-	"slang/tests/assertions"
-	"slang/core"
 	"github.com/stretchr/testify/require"
+	"slang/core"
+	"slang/tests/assertions"
+	"testing"
 )
 
 func TestOperatorCreator__Agg__IsRegistered(t *testing.T) {
@@ -53,7 +53,7 @@ func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
 	require.NoError(t, do.In().Stream().Map("items").Connect(ao.In().Map("items")))
 	require.NoError(t, ao.Out().Map("end").Connect(do.Out().Stream()))
 
-	do.Out().Stream().Bufferize()
+	do.Out().Bufferize()
 
 	do.Start()
 
@@ -99,7 +99,7 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 	require.NoError(t, ao.Out().Map("iteration").Stream().Connect(fo.In()))
 	require.NoError(t, fo.Out().Connect(ao.In().Map("state").Stream()))
 
-	ao.Out().Map("end").Bufferize()
+	ao.Out().Bufferize()
 
 	ao.In().Map("init").Push(0.0)
 	ao.In().Map("init").Push(8.0)

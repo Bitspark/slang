@@ -183,7 +183,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 
 	//
 
-	o1.Out().Stream().Bufferize()
+	o1.Out().Bufferize()
 
 	go o3.Start()
 	go o4.Start()
@@ -337,7 +337,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 
 	//
 
-	o1.Out().Stream().Stream().Bufferize()
+	o1.Out().Bufferize()
 
 	go o2.Start()
 	go o3.Start()
@@ -397,8 +397,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	oMap1.Out().Map("b").Connect(o.Out().Map("b"))
 	oMap2.Out().Connect(o.Out().Map("a"))
 
-	o.Out().Map("a").Bufferize()
-	o.Out().Map("b").Bufferize()
+	o.Out().Bufferize()
 
 	go oMap1.Start()
 	go oMap2.Start()
@@ -501,8 +500,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	filter1.Out().Connect(o.Out().Stream().Map("sum"))
 	filter2.Out().Connect(o.Out().Stream().Map("s"))
 
-	o.Out().Stream().Map("sum").Bufferize()
-	o.Out().Stream().Map("s").Bufferize()
+	o.Out().Bufferize()
 
 	go sum.Start()
 	go add.Start()

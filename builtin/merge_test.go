@@ -1,10 +1,10 @@
 package builtin
 
 import (
+	"github.com/stretchr/testify/require"
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
@@ -40,7 +40,7 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	o.Out().Stream().Bufferize()
+	o.Out().Bufferize()
 	o.Start()
 
 	trues := []interface{}{"Roses", "Violets", "are", 1, 2, 4}
@@ -62,7 +62,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	o.Out().Stream().Bufferize()
+	o.Out().Bufferize()
 	o.Start()
 
 	trues := []interface{}{

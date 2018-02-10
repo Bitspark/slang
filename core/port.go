@@ -224,7 +224,6 @@ func (p *Port) Merge() bool {
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
 		p.buf <- item
-		return
 	}
 
 	if p.primitive() {
@@ -436,11 +435,24 @@ func (p *Port) Name() string {
 	}
 }
 
-func (p *Port) Bufferize() chan interface{} {
-	if p.buf == nil {
-		p.buf = make(chan interface{}, 100)
+func (p *Port) Bufferize() {
+
+	if p.buf != nil {
+		return
 	}
-	return p.buf
+
+	if p.primitive() {
+		p.buf = make(chan interface{}, 100)
+
+	} else if p.itemType == TYPE_MAP {
+		for _, sub := range p.subs {
+			sub.Bufferize()
+		}
+
+	} else if p.itemType == TYPE_STREAM {
+		p.sub.Bufferize()
+	}
+
 }
 
 // PRIVATE METHODS

@@ -1,10 +1,10 @@
 package builtin
 
 import (
+	"github.com/stretchr/testify/require"
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
@@ -67,8 +67,7 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Map("true").Stream().Bufferize()
-	o.Out().Map("false").Stream().Bufferize()
+	o.Out().Bufferize()
 	o.Start()
 
 	o.In().Push([]interface{}{
@@ -112,8 +111,7 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	)
 	a.NoError(err)
 
-	o.Out().Map("true").Stream().Bufferize()
-	o.Out().Map("false").Stream().Bufferize()
+	o.Out().Bufferize()
 	o.Start()
 
 	o.In().Push([]interface{}{

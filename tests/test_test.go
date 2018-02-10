@@ -47,7 +47,7 @@ func TestTestOperator__SuiteTests(t *testing.T) {
 
 func TestOperator_Pack(t *testing.T) {
 	a := assertions.New(t)
-	succs, fails, err := slang.TestOperator("test_data/sllib/pack_test.yaml", ioutil.Discard, false)
+	succs, fails, err := slang.TestOperator("test_data/slib/pack_test.yaml", ioutil.Discard, false)
 	a.Nil(err)
 	a.Equal(1, succs)
 	a.Equal(0, fails)
@@ -58,5 +58,13 @@ func TestTestOperator__SumReduce(t *testing.T) {
 	succs, fails, err := slang.TestOperator("test_data/sum/reduce_test.yaml", ioutil.Discard, true)
 	a.Nil(err)
 	a.Equal(4, succs)
+	a.Equal(0, fails)
+}
+
+func TestTestOperator__MergeSort(t *testing.T) {
+	a := assertions.New(t)
+	succs, fails, err := slang.TestOperator("test_data/sort/merge_sort_test.yaml", ioutil.Discard, true)
+	a.Nil(err)
+	a.Equal(5, succs)
 	a.Equal(0, fails)
 }

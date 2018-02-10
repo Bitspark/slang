@@ -3,7 +3,7 @@ package utils
 import (
 	"strings"
 	"os"
-	"errors"
+	"fmt"
 )
 
 func FileWithFileEnding(filename string, fileEndings []string) (string, error) {
@@ -24,5 +24,5 @@ func FileWithFileEnding(filename string, fileEndings []string) (string, error) {
 		}
 	}
 
-	return "", errors.New("no appropriate file found")
+	return "", fmt.Errorf("%s: no appropriate file found", filename)
 }

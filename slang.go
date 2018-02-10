@@ -234,7 +234,15 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 
 	var def core.OperatorDef
 
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)
+	relFilePath := insDef.Operator
+	// TODO: Allow for ..., ...., and so on
+	// ...
+	// relFilePath = strings.Replace(relFilePath, ".....", "%%%%", -1)
+	// relFilePath = strings.Replace(relFilePath, "....", "%%%", -1)
+	// relFilePath = strings.Replace(relFilePath, "...", "%%", -1)
+	relFilePath = strings.Replace(relFilePath, "..", "%", -1)
+	relFilePath = strings.Replace(relFilePath, ".", "/", -1)
+	relFilePath = strings.Replace(relFilePath, "%", "../", -1)
 
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {
@@ -319,11 +327,11 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 				if pDst, err := ParsePortReference(dstConnDef, o); err == nil {
 					parsedConns[pSrc] = append(parsedConns[pSrc], pDst)
 				} else {
-					return nil, err
+					return nil, fmt.Errorf("%s: %s", err.Error(), dstConnDef)
 				}
 			}
 		} else {
-			return nil, err
+			return nil, fmt.Errorf("%s: %s", err.Error(), srcConnDef)
 		}
 	}
 

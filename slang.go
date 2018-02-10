@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path"
 	"path/filepath"
 	"slang/builtin"
 	"slang/core"
-	"strings"
-	"gopkg.in/yaml.v2"
 	"slang/utils"
+	"strings"
 )
 
 var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
@@ -348,7 +348,9 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) er
 			// Set the destinations nil so that we do not end in an infinite recursion
 			conns[pSrc] = nil
 			for _, op := range ops {
-				connectDestinations(op, conns)
+				if err := connectDestinations(op, conns); err != nil {
+					return err
+				}
 			}
 		}
 	}

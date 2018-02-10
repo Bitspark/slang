@@ -138,7 +138,7 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType {
+	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_TRIGGER && p.itemType != q.itemType {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 

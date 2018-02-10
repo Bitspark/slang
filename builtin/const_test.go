@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"testing"
-	"slang/tests/assertions"
-	"slang/core"
 	"github.com/stretchr/testify/require"
+	"slang/core"
+	"slang/tests/assertions"
+	"testing"
 )
 
 func TestOperatorConst__IsRegistered(t *testing.T) {
@@ -219,8 +219,7 @@ func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(co)
 
-	co.Out().Map("a").Stream().Bufferize()
-	co.Out().Map("b").Bufferize()
+	co.Out().Bufferize()
 	co.Start()
 
 	co.In().Push(true)

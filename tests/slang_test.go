@@ -1,11 +1,11 @@
 package tests
 
 import (
+	"github.com/stretchr/testify/require"
 	"slang"
 	"slang/core"
 	"slang/tests/assertions"
 	"testing"
-	"github.com/stretchr/testify/require"
 )
 
 func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
@@ -110,8 +110,7 @@ func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
 	o, err := slang.BuildOperator("test_data/nested_generic/main.json", false)
 	require.NoError(t, err)
 
-	o.Out().Map("left").Bufferize()
-	o.Out().Map("right").Bufferize()
+	o.Out().Bufferize()
 	o.In().Push("hallo")
 
 	a.PortPushes([]interface{}{"hallo"}, o.Out().Map("left"))

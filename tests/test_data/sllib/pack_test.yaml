@@ -1,0 +1,18 @@
+# Polynomial tests
+---
+operatorFile: pack.yaml
+testCases:
+- name: PackItems
+  data:
+    in:
+    - 1
+    - 2
+    - 7
+    - 10
+    - 42
+    out:
+    - [1]
+    - [2]
+    - [7]
+    - [10]
+    - [42]

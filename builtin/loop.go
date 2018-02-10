@@ -53,7 +53,15 @@ var loopOpCfg = &builtinConfig{
 
 			// Redirect all markers
 			if core.IsMarker(i) {
+				out.Map("state").Push(i)
+				iter := in.Map("iteration").Stream().Pull()
+
+				if i != iter {
+					panic("should be same marker")
+				}
+
 				out.Map("end").Push(i)
+
 				continue
 			}
 
@@ -87,6 +95,7 @@ var loopOpCfg = &builtinConfig{
 
 				oldState = newState
 			}
+
 		}
 	},
 }

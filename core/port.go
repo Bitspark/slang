@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
 const (
@@ -137,7 +138,7 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
-	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType {
+	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_TRIGGER && p.itemType != q.itemType {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
@@ -223,7 +224,6 @@ func (p *Port) Merge() bool {
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
 		p.buf <- item
-		return
 	}
 
 	if p.primitive() {
@@ -333,6 +333,22 @@ func (p *Port) Pull() interface{} {
 	panic("unknown type")
 }
 
+// Similar to Port.Pull but will return nil when there is no item after timeout
+func (p *Port) Poll() (i interface{}) {
+	if p.buf == nil {
+		panic("no buffer")
+	}
+
+	if len(p.buf) == 0 {
+		time.Sleep(200 * time.Millisecond)
+		if len(p.buf) == 0 {
+			return nil
+		}
+	}
+
+	return <-p.buf
+}
+
 func (p *Port) NewBOS() BOS {
 	return BOS{p}
 }
@@ -419,11 +435,24 @@ func (p *Port) Name() string {
 	}
 }
 
-func (p *Port) Bufferize() chan interface{} {
-	if p.buf == nil {
-		p.buf = make(chan interface{}, 100)
+func (p *Port) Bufferize() {
+
+	if p.buf != nil {
+		return
 	}
-	return p.buf
+
+	if p.primitive() {
+		p.buf = make(chan interface{}, 100)
+
+	} else if p.itemType == TYPE_MAP {
+		for _, sub := range p.subs {
+			sub.Bufferize()
+		}
+
+	} else if p.itemType == TYPE_STREAM {
+		p.sub.Bufferize()
+	}
+
 }
 
 // PRIVATE METHODS

@@ -1,0 +1,40 @@
+# Pack: Yields streams for each incoming element containing that element
+---
+in:
+  type: number
+
+out:
+  type: stream
+  stream:
+    type: number
+
+operators:
+  loop:
+    operator: loop
+    generics:
+      itemType:
+        type: number
+      stateType:
+        type: number
+  falsify:
+    operator: const
+    generics:
+      valueType:
+        type: boolean
+    properties:
+      value: false
+
+connections:
+  (:
+  - init(loop
+
+  loop)state.:
+  - (falsify
+  - iteration..state(loop
+
+  loop)state:
+  - )
+
+  falsify):
+  - iteration..continue(loop
+

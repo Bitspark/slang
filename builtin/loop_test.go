@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"testing"
-	"slang/tests/assertions"
-	"slang/core"
 	"github.com/stretchr/testify/require"
+	"slang/core"
+	"slang/tests/assertions"
+	"testing"
 )
 
 func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
@@ -14,7 +14,7 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 	a.NotNil(ocLoop)
 }
 
-func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
+func TestBuiltin_Loop__Simple(t *testing.T) {
 	a := assertions.New(t)
 	lo, err := MakeOperator(
 		core.InstanceDef{
@@ -61,7 +61,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
 	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
 
-	lo.Out().Map("end").Bufferize()
+	lo.Out().Bufferize()
 
 	lo.In().Map("init").Push(1.0)
 	lo.In().Map("init").Push(10.0)
@@ -73,7 +73,7 @@ func TestBuiltin_Loop__SimpleLoop(t *testing.T) {
 	a.PortPushes([]interface{}{16.0, 10.0}, lo.Out().Map("end"))
 }
 
-func TestBuiltin_Loop__FibLoop(t *testing.T) {
+func TestBuiltin_Loop__Fibo(t *testing.T) {
 	a := assertions.New(t)
 	stateType := core.PortDef{
 		Type: "map",
@@ -132,7 +132,7 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
 	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
 
-	lo.Out().Map("end").Bufferize()
+	lo.Out().Bufferize()
 
 	lo.In().Map("init").Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
 	lo.In().Map("init").Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
@@ -145,4 +145,49 @@ func TestBuiltin_Loop__FibLoop(t *testing.T) {
 		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
 		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
 	}, lo.Out().Map("end"))
+}
+
+func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
+	a := assertions.New(t)
+	lo, err := MakeOperator(
+		core.InstanceDef{
+			Operator: "loop",
+			Generics: map[string]*core.PortDef{
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+	a.NoError(err)
+	a.NotNil(lo)
+
+	lo.Out().Bufferize()
+
+	lo.Start()
+
+	pInit := lo.In().Map("init")
+	pIteration := lo.In().Map("iteration")
+	pState := lo.Out().Map("state").Stream()
+	pEnd := lo.Out().Map("end")
+
+	bos := core.BOS{}
+	pInit.Push(bos)
+	a.Nil(pEnd.Poll())
+	a.Equal(bos, pState.Pull())
+
+	pIteration.Push(bos)
+
+	a.Equal(bos, pEnd.Pull())
+	a.Nil(pState.Poll())
+
+	eos := core.BOS{}
+	pInit.Push(eos)
+	a.Nil(pEnd.Poll())
+	a.Equal(eos, pState.Pull())
+
+	pIteration.Push(eos)
+
+	a.Equal(eos, pEnd.Pull())
+	a.Nil(pState.Poll())
 }

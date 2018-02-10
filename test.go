@@ -1,22 +1,22 @@
 package slang
 
 import (
-	"io"
-	"io/ioutil"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
 	"path"
 	"reflect"
-	"strings"
-	"gopkg.in/yaml.v2"
 	"slang/utils"
+	"strings"
 )
 
 type TestCaseDef struct {
 	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
-	Data struct {
+	Data        struct {
 		In  []interface{} `json:"in" yaml:"in"`
 		Out []interface{} `json:"out" yaml:"out"`
 	}
@@ -147,6 +147,24 @@ func (t TestDef) Valid() bool {
 }
 
 func testEqual(a, b interface{}) bool {
+	as, aok := a.([]interface{})
+	bs, bok := b.([]interface{})
+
+	if aok && bok {
+		if len(as) != len(bs) {
+			return false
+		}
+
+		for i, ai := range as {
+			bi := bs[i]
+			if !testEqual(ai, bi) {
+				return false
+			}
+		}
+
+		return true
+	}
+
 	if ai, ok := a.(int); ok {
 		a = float64(ai)
 	}

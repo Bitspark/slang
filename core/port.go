@@ -344,7 +344,7 @@ func (p *Port) NewEOS() EOS {
 func (p *Port) OwnBOS(i interface{}) bool {
 	if bos, ok := i.(BOS); ok {
 		// (bos.src == p) is only the case if i has directly been pushed into p
-		if bos.src == p.src || bos.src == p {
+		if (p.src != nil && bos.src == p.src) || bos.src == p {
 			return true
 		}
 	}
@@ -354,7 +354,7 @@ func (p *Port) OwnBOS(i interface{}) bool {
 func (p *Port) OwnEOS(i interface{}) bool {
 	if eos, ok := i.(EOS); ok {
 		// (eos.src == p) is only the case if i has directly been pushed into p
-		if eos.src == p.src || eos.src == p {
+		if (p.src != nil && eos.src == p.src) || eos.src == p {
 			return true
 		}
 	}

@@ -87,6 +87,7 @@ func init() {
 	Register("fork", forkOpCfg)
 	Register("loop", loopOpCfg)
 	Register("merge", mergeOpCfg)
+	Register("take", takeOpCfg)
 	Register("agg", aggOpCfg)
 }
 

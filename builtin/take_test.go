@@ -88,9 +88,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(to)
 
-	to.Out().Map("compare").Stream().Map("true").Bufferize()
-	to.Out().Map("compare").Stream().Map("false").Bufferize()
-	to.Out().Map("result").Stream().Bufferize()
+	to.Out().Bufferize()
 	to.Start()
 
 	// Push data

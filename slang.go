@@ -234,15 +234,7 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 
 	var def core.OperatorDef
 
-	relFilePath := insDef.Operator
-	// TODO: Allow for ..., ...., and so on
-	// ...
-	// relFilePath = strings.Replace(relFilePath, ".....", "%%%%", -1)
-	// relFilePath = strings.Replace(relFilePath, "....", "%%%", -1)
-	// relFilePath = strings.Replace(relFilePath, "...", "%%", -1)
-	relFilePath = strings.Replace(relFilePath, "..", "%", -1)
-	relFilePath = strings.Replace(relFilePath, ".", "/", -1)
-	relFilePath = strings.Replace(relFilePath, "%", "../", -1)
+	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)
 
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {

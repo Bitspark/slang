@@ -63,7 +63,7 @@ func TestTestOperator__SumReduce(t *testing.T) {
 
 func TestTestOperator__MergeSort(t *testing.T) {
 	a := assertions.New(t)
-	succs, fails, err := slang.TestOperator("test_data/sort/merge_sort_test.yaml", ioutil.Discard, true)
+	succs, fails, err := slang.TestOperator("test_data/slib/merge_sort_test.yaml", ioutil.Discard, true)
 	a.Nil(err)
 	a.Equal(5, succs)
 	a.Equal(0, fails)

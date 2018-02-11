@@ -23,6 +23,8 @@ const (
 	DIRECTION_OUT = iota
 )
 
+const CHANNEL_SIZE = 100
+
 type BOS struct {
 	src *Port
 }
@@ -99,7 +101,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
-		p.buf = make(chan interface{}, 100)
+		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	}
 
 	return p, nil
@@ -442,7 +444,7 @@ func (p *Port) Bufferize() {
 	}
 
 	if p.primitive() {
-		p.buf = make(chan interface{}, 100)
+		p.buf = make(chan interface{}, CHANNEL_SIZE)
 
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {

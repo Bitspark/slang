@@ -144,7 +144,7 @@ func (p *Port) Connect(q *Port) error {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.primitive() {
+	if p.primitive() || q.Type() == TYPE_TRIGGER {
 		return p.connect(q)
 	}
 
@@ -228,10 +228,13 @@ func (p *Port) Push(item interface{}) {
 		p.buf <- item
 	}
 
-	if p.primitive() {
-		for dest := range p.dests {
+	for dest := range p.dests {
+		if dest.Type() == TYPE_TRIGGER || p.primitive() {
 			dest.Push(item)
 		}
+	}
+
+	if p.primitive() {
 		return
 	}
 
@@ -267,11 +270,11 @@ func (p *Port) Push(item interface{}) {
 }
 
 func (p *Port) PushBOS() {
-	p.Push(BOS{p})
+	p.sub.Push(BOS{p})
 }
 
 func (p *Port) PushEOS() {
-	p.Push(EOS{p})
+	p.sub.Push(EOS{p})
 }
 
 // Pull an item from this port.

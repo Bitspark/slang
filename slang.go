@@ -123,11 +123,14 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	for i := start; i < len(pathSplit); i++ {
 		if pathSplit[i] == "" {
 			p = p.Stream()
+			if p == nil {
+				return nil, errors.New("descending too deep (stream)")
+			}
 			continue
 		}
 
 		if p.Type() != core.TYPE_MAP {
-			return nil, errors.New("descending too deep")
+			return nil, errors.New("descending too deep (map)")
 		}
 
 		k := pathSplit[i]

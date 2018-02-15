@@ -23,6 +23,8 @@ const (
 	DIRECTION_OUT = iota
 )
 
+const CHANNEL_SIZE = 100
+
 type BOS struct {
 	src *Port
 }
@@ -99,7 +101,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 	}
 
 	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
-		p.buf = make(chan interface{}, 100)
+		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	}
 
 	return p, nil
@@ -142,7 +144,7 @@ func (p *Port) Connect(q *Port) error {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.primitive() {
+	if p.primitive() || q.Type() == TYPE_TRIGGER {
 		return p.connect(q)
 	}
 
@@ -226,10 +228,13 @@ func (p *Port) Push(item interface{}) {
 		p.buf <- item
 	}
 
-	if p.primitive() {
-		for dest := range p.dests {
+	for dest := range p.dests {
+		if dest.Type() == TYPE_TRIGGER || p.primitive() {
 			dest.Push(item)
 		}
+	}
+
+	if p.primitive() {
 		return
 	}
 
@@ -265,11 +270,11 @@ func (p *Port) Push(item interface{}) {
 }
 
 func (p *Port) PushBOS() {
-	p.Push(BOS{p})
+	p.sub.Push(BOS{p})
 }
 
 func (p *Port) PushEOS() {
-	p.Push(EOS{p})
+	p.sub.Push(EOS{p})
 }
 
 // Pull an item from this port.
@@ -442,7 +447,7 @@ func (p *Port) Bufferize() {
 	}
 
 	if p.primitive() {
-		p.buf = make(chan interface{}, 100)
+		p.buf = make(chan interface{}, CHANNEL_SIZE)
 
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {

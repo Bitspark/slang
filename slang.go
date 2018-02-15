@@ -123,11 +123,14 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	for i := start; i < len(pathSplit); i++ {
 		if pathSplit[i] == "" {
 			p = p.Stream()
+			if p == nil {
+				return nil, errors.New("descending too deep (stream)")
+			}
 			continue
 		}
 
 		if p.Type() != core.TYPE_MAP {
-			return nil, errors.New("descending too deep")
+			return nil, errors.New("descending too deep (map)")
 		}
 
 		k := pathSplit[i]
@@ -319,11 +322,11 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 				if pDst, err := ParsePortReference(dstConnDef, o); err == nil {
 					parsedConns[pSrc] = append(parsedConns[pSrc], pDst)
 				} else {
-					return nil, err
+					return nil, fmt.Errorf("%s: %s", err.Error(), dstConnDef)
 				}
 			}
 		} else {
-			return nil, err
+			return nil, fmt.Errorf("%s: %s", err.Error(), srcConnDef)
 		}
 	}
 

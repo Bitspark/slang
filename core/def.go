@@ -247,25 +247,24 @@ func (d PortDef) Copy() PortDef {
 func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	for identifier, pd := range generics {
 		if d.Generic == identifier {
-			// Replace with copy!
 			*d = pd.Copy()
 			return nil
 		}
 
 		if d.Type == "stream" {
 			strCpy := d.Stream.Copy()
-			// Replace with copy!
 			d.Stream = &strCpy
 			return strCpy.SpecifyGenericPorts(generics)
 		} else if d.Type == "map" {
+			mapCpy := make(map[string]*PortDef)
 			for k, e := range d.Map {
 				eCpy := e.Copy()
 				if err := eCpy.SpecifyGenericPorts(generics); err != nil {
 					return err
 				}
-				// Replace with copy!
-				d.Map[k] = &eCpy
+				mapCpy[k] = &eCpy
 			}
+			d.Map = mapCpy
 		}
 	}
 	return nil

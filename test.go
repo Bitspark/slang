@@ -165,10 +165,31 @@ func testEqual(a, b interface{}) bool {
 		return true
 	}
 
+	am, aok := a.(map[string]interface{})
+	bm, bok := b.(map[string]interface{})
+
+	if aok && bok {
+		if len(am) != len(bm) {
+			return false
+		}
+
+		for k, ai := range am {
+			if bi, ok := bm[k]; ok {
+				if !testEqual(ai, bi) {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+
+		return true
+	}
+
 	if ai, ok := a.(int); ok {
 		a = float64(ai)
 	}
-	if bi, ok := a.(int); ok {
+	if bi, ok := b.(int); ok {
 		b = float64(bi)
 	}
 	return reflect.DeepEqual(a, b)

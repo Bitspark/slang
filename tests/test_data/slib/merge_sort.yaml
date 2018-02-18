@@ -55,12 +55,12 @@ connections:
     - true(sorter
   reducer.selection)..b:
     - false(sorter
-  sorter)compare..true:
+  sorter.compare)..true:
     - a(comparator
-  sorter)compare..false:
+  sorter.compare)..false:
     - b(comparator
   comparator):
-    - select.(sorter
+    - .(sorter.compare
   sorter)result:
     - .(reducer.selection
   reducer)result:

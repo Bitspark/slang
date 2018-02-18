@@ -23,12 +23,6 @@ var takeOpCfg = &builtinConfig{
 						Generic: "itemType",
 					},
 				},
-				"select": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type: "boolean",
-					},
-				},
 			},
 		},
 		Out: core.PortDef{
@@ -41,7 +35,17 @@ var takeOpCfg = &builtinConfig{
 						Generic: "itemType",
 					},
 				},
-				"compare": {
+			},
+		},
+		Delegates: map[string]*core.DelegateDef{
+			"compare": {
+				In: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type: "boolean",
+					},
+				},
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
@@ -61,6 +65,8 @@ var takeOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+		cIn := dels["compare"].In()
+		cOut := dels["compare"].Out()
 		for true {
 			t := in.Map("true").Stream().Pull()
 			f := in.Map("false").Stream().Pull()
@@ -68,8 +74,8 @@ var takeOpCfg = &builtinConfig{
 			if !in.Map("true").OwnBOS(t) {
 				if core.IsMarker(t) {
 					if t == f {
-						out.Map("compare").Stream().Push(t)
-						sel := in.Map("select").Stream().Pull()
+						cOut.Stream().Push(t)
+						sel := cIn.Stream().Pull()
 
 						if sel != t {
 							panic("expected marker")
@@ -90,9 +96,9 @@ var takeOpCfg = &builtinConfig{
 
 			out.Map("result").PushBOS()
 
-			out.Map("compare").PushBOS()
-			sel := in.Map("select").Stream().Pull()
-			if !in.Map("select").OwnBOS(sel) {
+			cOut.PushBOS()
+			sel := cIn.Stream().Pull()
+			if !cIn.OwnBOS(sel) {
 				panic("expected BOS")
 			}
 
@@ -136,11 +142,11 @@ var takeOpCfg = &builtinConfig{
 					}
 				} else {
 					// Send to comparator
-					out.Map("compare").Stream().Map("true").Push(t)
-					out.Map("compare").Stream().Map("false").Push(f)
+					cOut.Stream().Map("true").Push(t)
+					cOut.Stream().Map("false").Push(f)
 
 					// Get result
-					s, ok := in.Map("select").Stream().Pull().(bool)
+					s, ok := cIn.Stream().Pull().(bool)
 
 					if !ok {
 						panic("expected boolean")
@@ -157,9 +163,9 @@ var takeOpCfg = &builtinConfig{
 			}
 
 		end:
-			out.Map("compare").PushEOS()
-			sel = in.Map("select").Stream().Pull()
-			if !in.Map("select").OwnEOS(sel) {
+			cOut.PushEOS()
+			sel = cIn.Stream().Pull()
+			if !cIn.OwnEOS(sel) {
 				panic("expected EOS")
 			}
 

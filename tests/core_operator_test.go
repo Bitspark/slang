@@ -9,10 +9,10 @@ import (
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 	defPort := slang.ParsePortDef(`{"type":"number"}`)
-	oParent, _ := core.NewOperator("parent", nil, defPort, defPort)
-	oChild1, _ := core.NewOperator("child1", nil, defPort, defPort)
+	oParent, _ := core.NewOperator("parent", nil, defPort, defPort, nil)
+	oChild1, _ := core.NewOperator("child1", nil, defPort, defPort, nil)
 	oChild1.SetParent(oParent)
-	oChild2, _ := core.NewOperator("child2", nil, defPort, defPort)
+	oChild2, _ := core.NewOperator("child2", nil, defPort, defPort, nil)
 	oChild2.SetParent(oParent)
 
 	if oParent != oChild1.Parent() || oParent != oChild2.Parent() {
@@ -25,10 +25,10 @@ func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 
 func TestOperator_Compile__Nested1Child(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	op2, _ := core.NewOperator("a", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op1, _ := core.NewOperator("", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
+	op2, _ := core.NewOperator("a", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", func(_, _ *core.Port, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op3, _ := core.NewOperator("b", func(_, _ *core.Port, _ map[string]*core.Delegate, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op3.SetParent(op2)
 
 	// op1
@@ -59,16 +59,16 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 
 func TestOperator_Compile__NestedChildren(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
-	op2, _ := core.NewOperator("a", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op1, _ := core.NewOperator("", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
+	op2, _ := core.NewOperator("a", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op3, _ := core.NewOperator("b", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op3.SetParent(op1)
-	op4, _ := core.NewOperator("c", func(_, _ *core.Port, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op4, _ := core.NewOperator("c", func(_, _ *core.Port, _ map[string]*core.Delegate, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op4.SetParent(op2)
-	op5, _ := core.NewOperator("d", func(_, _ *core.Port, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op5, _ := core.NewOperator("d", func(_, _ *core.Port, _ map[string]*core.Delegate, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op5.SetParent(op2)
-	op6, _ := core.NewOperator("e", func(_, _ *core.Port, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	op6, _ := core.NewOperator("e", func(_, _ *core.Port, _ map[string]*core.Delegate, _ interface{}) {}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	op6.SetParent(op3)
 
 	// op1

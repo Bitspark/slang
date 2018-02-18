@@ -20,13 +20,6 @@ var aggOpCfg = &builtinConfig{
 						Generic: "itemType",
 					},
 				},
-				"state": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "stateType",
-					},
-				},
 			},
 		},
 		Out: core.PortDef{
@@ -36,7 +29,18 @@ var aggOpCfg = &builtinConfig{
 					Type:    "generic",
 					Generic: "stateType",
 				},
-				"iteration": {
+			},
+		},
+		Delegates: map[string]core.DelegateDef{
+			"iteration": {
+				In: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type:    "generic",
+						Generic: "stateType",
+					},
+				},
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
@@ -55,7 +59,9 @@ var aggOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+		iIn := dels["iteration"].In()
+		iOut := dels["iteration"].Out()
 		for true {
 			state := in.Map("init").Pull()
 
@@ -73,9 +79,9 @@ var aggOpCfg = &builtinConfig{
 				panic("expected BOS")
 			}
 
-			out.Map("iteration").PushBOS()
+			iOut.PushBOS()
 
-			if !in.Map("state").OwnBOS(in.Map("state").Stream().Pull()) {
+			if !iIn.OwnBOS(iIn.Stream().Pull()) {
 				panic("expected own BOS")
 			}
 
@@ -84,9 +90,9 @@ var aggOpCfg = &builtinConfig{
 
 				if core.IsMarker(item) {
 					if in.Map("items").OwnEOS(item) {
-						out.Map("iteration").PushEOS()
-						item = in.Map("state").Stream().Pull()
-						if !in.Map("state").OwnEOS(item) {
+						iOut.PushEOS()
+						item = iIn.Stream().Pull()
+						if !iIn.OwnEOS(item) {
 							panic("expected own BOS")
 						}
 						out.Map("end").Push(state)
@@ -96,10 +102,10 @@ var aggOpCfg = &builtinConfig{
 					}
 				}
 
-				out.Map("iteration").Stream().Map("i").Push(item)
-				out.Map("iteration").Stream().Map("state").Push(state)
+				iOut.Stream().Map("i").Push(item)
+				iOut.Stream().Map("state").Push(state)
 
-				state = in.Map("state").Stream().Pull()
+				state = iIn.Stream().Pull()
 			}
 		}
 	},

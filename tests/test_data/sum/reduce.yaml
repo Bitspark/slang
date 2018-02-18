@@ -31,7 +31,7 @@ connections:
     - items(reducer
   reducer)result:
     - )
-  reducer)selection.:
+  reducer.selection).:
     - (adder
   adder):
-    - pool.(reducer
+    - .(reducer.selection

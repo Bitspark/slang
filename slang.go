@@ -295,6 +295,13 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 		}
 	}
 
+	// Check if all properties are defined
+	for _, prop := range def.Properties {
+		if _, ok := props[prop]; !ok {
+			return nil, fmt.Errorf("property \"%s\" has not been specified", prop)
+		}
+	}
+
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, def.In, def.Out)
 	if err != nil {

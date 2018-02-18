@@ -59,10 +59,10 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 		nil)
 
 	// Connect
-	a.NoError(lo.Delegate("iteration").In().Stream().Connect(fo.In()))
-	a.NoError(lo.Delegate("iteration").In().Stream().Connect(co.In()))
-	a.NoError(fo.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("state")))
-	a.NoError(co.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("continue")))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.In()))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.In()))
+	a.NoError(fo.Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
+	a.NoError(co.Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
 
 	lo.Out().Bufferize()
 
@@ -132,10 +132,10 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 		nil)
 
 	// Connect
-	a.NoError(lo.Delegate("iteration").In().Stream().Connect(fo.In()))
-	a.NoError(lo.Delegate("iteration").In().Stream().Connect(co.In()))
-	a.NoError(fo.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("state")))
-	a.NoError(co.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("continue")))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.In()))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.In()))
+	a.NoError(fo.Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
+	a.NoError(co.Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
 
 	lo.Out().Bufferize()
 
@@ -168,13 +168,13 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a.NotNil(lo)
 
 	lo.Out().Bufferize()
-	lo.Delegate("iteration").In().Bufferize()
+	lo.Delegate("iteration").Out().Bufferize()
 
 	lo.Start()
 
 	pInit := lo.In().Map("init")
-	pIteration := lo.Delegate("iteration").Out()
-	pState := lo.Delegate("iteration").In().Stream()
+	pIteration := lo.Delegate("iteration").In()
+	pState := lo.Delegate("iteration").Out().Stream()
 	pEnd := lo.Out().Map("end")
 
 	bos := core.BOS{}

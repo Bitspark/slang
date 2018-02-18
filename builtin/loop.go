@@ -29,13 +29,6 @@ var loopOpCfg = &builtinConfig{
 				In: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "stateType",
-					},
-				},
-				Out: core.PortDef{
-					Type: "stream",
-					Stream: &core.PortDef{
 						Type: "map",
 						Map: map[string]*core.PortDef{
 							"continue": {
@@ -46,6 +39,13 @@ var loopOpCfg = &builtinConfig{
 								Generic: "stateType",
 							},
 						},
+					},
+				},
+				Out: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type:    "generic",
+						Generic: "stateType",
 					},
 				},
 			},
@@ -59,8 +59,8 @@ var loopOpCfg = &builtinConfig{
 
 			// Redirect all markers
 			if core.IsMarker(i) {
-				iIn.Push(i)
-				iter := iOut.Stream().Pull()
+				iOut.Push(i)
+				iter := iIn.Stream().Pull()
 
 				if i != iter {
 					panic("should be same marker")
@@ -71,28 +71,28 @@ var loopOpCfg = &builtinConfig{
 				continue
 			}
 
-			iIn.PushBOS()
-			iIn.Stream().Push(i)
+			iOut.PushBOS()
+			iOut.Stream().Push(i)
 
 			oldState := i
 
-			i = iOut.Stream().Pull()
+			i = iIn.Stream().Pull()
 
-			if !iOut.OwnBOS(i) {
+			if !iIn.OwnBOS(i) {
 				panic("expected own BOS")
 			}
 
 			for true {
-				iter := iOut.Stream().Pull().(map[string]interface{})
+				iter := iIn.Stream().Pull().(map[string]interface{})
 				newState := iter["state"]
 				cont := iter["continue"].(bool)
 
 				if cont {
-					iIn.Push(newState)
+					iOut.Push(newState)
 				} else {
-					iIn.PushEOS()
-					i = iOut.Stream().Pull()
-					if !iOut.OwnEOS(i) {
+					iOut.PushEOS()
+					i = iIn.Stream().Pull()
+					if !iIn.OwnEOS(i) {
 						panic("expected own BOS")
 					}
 					out.Map("end").Push(oldState)

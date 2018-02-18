@@ -157,10 +157,10 @@ func NewDelegate(name string, op *Operator, def DelegateDef) (*Delegate, error) 
 	del := &Delegate{name: name, op: op}
 
 	var err error
-	if del.inPort, err = NewPort(op, del, def.In, DIRECTION_OUT); err != nil {
+	if del.inPort, err = NewPort(op, del, def.In, DIRECTION_IN); err != nil {
 		return nil, err
 	}
-	if del.outPort, err = NewPort(op, del, def.Out, DIRECTION_IN); err != nil {
+	if del.outPort, err = NewPort(op, del, def.Out, DIRECTION_OUT); err != nil {
 		return nil, err
 	}
 

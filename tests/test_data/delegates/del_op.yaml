@@ -1,0 +1,33 @@
+in:
+  type: generic
+  generic: gen
+out:
+  type: boolean
+delegates:
+  val:
+    in:
+      type: generic
+      generic: gen
+    out:
+      type: trigger
+  cmp:
+    in:
+      type: boolean
+    out:
+      type: map
+      map:
+        a:
+          type: generic
+          generic: gen
+        b:
+          type: generic
+          generic: gen
+
+connections:
+  (:
+  - .val)
+  - .cmp)a
+  (.val:
+  - .cmp)b
+  (.cmp:
+  - )

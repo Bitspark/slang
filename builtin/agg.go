@@ -31,7 +31,7 @@ var aggOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]core.DelegateDef{
+		Delegates: map[string]*core.DelegateDef{
 			"iteration": {
 				In: core.PortDef{
 					Type: "stream",

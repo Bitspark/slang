@@ -331,7 +331,7 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, def.In, def.Out, nil)
+	o, err := core.NewOperator(insName, nil, def.In, def.Out, def.Delegates)
 	if err != nil {
 		return nil, err
 	}
@@ -421,6 +421,7 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 		builtinOp.SetParent(par)
 		return builtinOp, nil
 	} else if builtin.IsRegistered(insDef.Operator) {
+		// Builtin operator with that name exists, but still could not create it, so an error must have occurred
 		return nil, err
 	}
 	// Instance definition must have an appropriate operator definition

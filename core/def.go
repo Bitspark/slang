@@ -22,12 +22,12 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
-	In          PortDef                `json:"in" yaml:"in"`
-	Out         PortDef                `json:"out" yaml:"out"`
-	Delegates   map[string]DelegateDef `json:"delegates" yaml:"delegates"`
-	Operators   OperatorsList          `json:"operators" yaml:"operators"`
-	Connections map[string][]string    `json:"connections" yaml:"connections"`
-	Properties  []string               `json:"properties" yaml:"properties"`
+	In          PortDef                 `json:"in" yaml:"in"`
+	Out         PortDef                 `json:"out" yaml:"out"`
+	Delegates   map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
+	Operators   OperatorsList           `json:"operators" yaml:"operators"`
+	Connections map[string][]string     `json:"connections" yaml:"connections"`
+	Properties  []string                `json:"properties" yaml:"properties"`
 
 	valid bool
 }
@@ -132,6 +132,14 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
 		return err
 	}
+	for _, del := range d.Delegates {
+		if err := del.In.SpecifyGenericPorts(generics); err != nil {
+			return err
+		}
+		if err := del.Out.SpecifyGenericPorts(generics); err != nil {
+			return err
+		}
+	}
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {
 			if err := gp.SpecifyGenericPorts(generics); err != nil {
@@ -148,6 +156,14 @@ func (d OperatorDef) GenericsSpecified() error {
 	}
 	if err := d.Out.GenericsSpecified(); err != nil {
 		return err
+	}
+	for _, del := range d.Delegates {
+		if err := del.In.GenericsSpecified(); err != nil {
+			return err
+		}
+		if err := del.Out.GenericsSpecified(); err != nil {
+			return err
+		}
 	}
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {

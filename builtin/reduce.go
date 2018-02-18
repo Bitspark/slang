@@ -27,7 +27,7 @@ var reduceOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]core.DelegateDef{
+		Delegates: map[string]*core.DelegateDef{
 			"selection": {
 				In: core.PortDef{
 					Type: "stream",

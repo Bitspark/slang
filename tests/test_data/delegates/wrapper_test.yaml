@@ -1,0 +1,43 @@
+# Main test
+---
+operatorFile: wrapper_op.yaml
+testCases:
+- name: Test1
+  properties:
+    val: 5  # b
+    expr: a <= b
+  data:
+    in:  # a
+    - 1
+    - 10
+    - 5
+    out:
+    - true
+    - false
+    - true
+- name: Test2
+  properties:
+    val: 1  # b
+    expr: a % 2 == b
+  data:
+    in:  # a
+    - 3
+    - 7
+    - 4
+    out:
+    - true
+    - true
+    - false
+- name: Test3
+  properties:
+    val: 12  # b
+    expr: a == b
+  data:
+    in:  # a
+    - 1
+    - 12
+    - 5
+    out:
+    - false
+    - true
+    - false

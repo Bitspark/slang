@@ -7,25 +7,15 @@ import (
 var reduceOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"items": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
+			Type: "stream",
+			Stream: &core.PortDef{
+				Type:    "generic",
+				Generic: "itemType",
 			},
 		},
 		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"result": {
-					Type:    "generic",
-					Generic: "itemType",
-				},
-			},
+			Type:    "generic",
+			Generic: "itemType",
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"selection": {
@@ -60,7 +50,7 @@ var reduceOpCfg = &builtinConfig{
 		sOut := dels["selection"].Out()
 		nullValue := store.(valueStore).value
 		for true {
-			i := in.Map("items").Pull()
+			i := in.Pull()
 
 			if core.IsMarker(i) {
 				sOut.Push(i)
@@ -70,7 +60,7 @@ var reduceOpCfg = &builtinConfig{
 					panic("expected different marker")
 				}
 
-				out.Map("result").Push(i)
+				out.Push(i)
 
 				continue
 			}
@@ -81,12 +71,12 @@ var reduceOpCfg = &builtinConfig{
 			}
 
 			if len(items) == 0 {
-				out.Map("result").Push(nullValue)
+				out.Push(nullValue)
 				continue
 			}
 
 			if len(items) == 1 {
-				out.Map("result").Push(items[0])
+				out.Push(items[0])
 				continue
 			}
 
@@ -123,7 +113,7 @@ var reduceOpCfg = &builtinConfig{
 				}
 
 				if len(items) == 1 {
-					out.Map("result").Push(items[0])
+					out.Push(items[0])
 					break
 				}
 

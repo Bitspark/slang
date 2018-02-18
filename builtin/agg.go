@@ -23,13 +23,8 @@ var aggOpCfg = &builtinConfig{
 			},
 		},
 		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"end": {
-					Type:    "generic",
-					Generic: "stateType",
-				},
-			},
+			Type:    "generic",
+			Generic: "stateType",
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"iteration": {
@@ -45,7 +40,7 @@ var aggOpCfg = &builtinConfig{
 					Stream: &core.PortDef{
 						Type: "map",
 						Map: map[string]*core.PortDef{
-							"i": {
+							"item": {
 								Type:    "generic",
 								Generic: "itemType",
 							},
@@ -70,7 +65,7 @@ var aggOpCfg = &builtinConfig{
 				if !core.IsMarker(in.Map("items").Stream().Pull()) {
 					panic("should be marker")
 				}
-				out.Map("end").Push(state)
+				out.Push(state)
 				continue
 			}
 
@@ -95,14 +90,14 @@ var aggOpCfg = &builtinConfig{
 						if !iIn.OwnEOS(item) {
 							panic("expected own BOS")
 						}
-						out.Map("end").Push(state)
+						out.Push(state)
 						break
 					} else {
 						panic("unexpected unknown marker")
 					}
 				}
 
-				iOut.Stream().Map("i").Push(item)
+				iOut.Stream().Map("item").Push(item)
 				iOut.Stream().Map("state").Push(state)
 
 				state = iIn.Stream().Pull()

@@ -66,14 +66,14 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 
 	lo.Out().Bufferize()
 
-	lo.In().Map("init").Push(1.0)
-	lo.In().Map("init").Push(10.0)
+	lo.In().Push(1.0)
+	lo.In().Push(10.0)
 
 	lo.Start()
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{16.0, 10.0}, lo.Out().Map("end"))
+	a.PortPushes([]interface{}{16.0, 10.0}, lo.Out())
 }
 
 func TestBuiltin_Loop__Fibo(t *testing.T) {
@@ -96,8 +96,8 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	)
 	require.NoError(t, err)
 	a.NotNil(lo)
-	require.Equal(t, core.TYPE_MAP, lo.In().Map("init").Type())
-	require.Equal(t, core.TYPE_NUMBER, lo.In().Map("init").Map("i").Type())
+	require.Equal(t, core.TYPE_MAP, lo.In().Type())
+	require.Equal(t, core.TYPE_NUMBER, lo.In().Map("i").Type())
 
 	// Condition operator
 	co, _ := core.NewOperator("cond", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
@@ -139,8 +139,8 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 
 	lo.Out().Bufferize()
 
-	lo.In().Map("init").Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
-	lo.In().Map("init").Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
+	lo.In().Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
+	lo.In().Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
 
 	lo.Start()
 	fo.Start()
@@ -149,7 +149,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	a.PortPushes([]interface{}{
 		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
 		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
-	}, lo.Out().Map("end"))
+	}, lo.Out())
 }
 
 func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
@@ -172,10 +172,10 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 
 	lo.Start()
 
-	pInit := lo.In().Map("init")
+	pInit := lo.In()
 	pIteration := lo.Delegate("iteration").In()
 	pState := lo.Delegate("iteration").Out().Stream()
-	pEnd := lo.Out().Map("end")
+	pEnd := lo.Out()
 
 	bos := core.BOS{}
 	pInit.Push(bos)

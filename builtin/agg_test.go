@@ -52,7 +52,7 @@ func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
 
 	require.NoError(t, do.In().Stream().Map("init").Connect(ao.In().Map("init")))
 	require.NoError(t, do.In().Stream().Map("items").Connect(ao.In().Map("items")))
-	require.NoError(t, ao.Out().Map("end").Connect(do.Out().Stream()))
+	require.NoError(t, ao.Out().Connect(do.Out().Stream()))
 
 	do.Out().Bufferize()
 
@@ -88,11 +88,11 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 			if !ok {
 				out.Push(i)
 			} else {
-				out.Push(m["state"].(float64) + m["i"].(float64))
+				out.Push(m["state"].(float64) + m["item"].(float64))
 			}
 		}
 	},
-		core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "i": {Type: "number"}}},
+		core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "item": {Type: "number"}}},
 		core.PortDef{Type: "number"},
 		nil)
 	require.NoError(t, err)
@@ -115,5 +115,5 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 	ao.Start()
 	fo.Start()
 
-	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Out().Map("end"))
+	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Out())
 }

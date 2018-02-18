@@ -50,7 +50,7 @@ connections:
   .(:
     - (packer
   packer):
-    - items.(reducer
+    - .(reducer
   reducer.selection)..a:
     - true(sorter
   reducer.selection)..b:
@@ -61,7 +61,7 @@ connections:
     - b(comparator
   comparator):
     - .(sorter.compare
-  sorter)result:
+  sorter):
     - .(reducer.selection
-  reducer)result:
+  reducer):
     - )

@@ -64,9 +64,8 @@ func TestOperator_Take__OutPorts(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(to)
 
-	a.Equal(core.TYPE_MAP, to.Out().Type())
-	a.Equal(core.TYPE_STREAM, to.Out().Map("result").Type())
-	a.Equal(core.TYPE_NUMBER, to.Out().Map("result").Stream().Type())
+	a.Equal(core.TYPE_STREAM, to.Out().Type())
+	a.Equal(core.TYPE_NUMBER, to.Out().Stream().Type())
 	a.Equal(core.TYPE_STREAM, to.Delegate("compare").Out().Type())
 	a.Equal(core.TYPE_MAP, to.Delegate("compare").Out().Stream().Type())
 	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Stream().Map("true").Type())
@@ -101,8 +100,8 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	// Eat BOS
 
-	i := to.Out().Map("result").Stream().Pull()
-	a.True(to.Out().Map("result").OwnBOS(i))
+	i := to.Out().Stream().Pull()
+	a.True(to.Out().OwnBOS(i))
 
 	i = to.Delegate("compare").Out().Stream().Pull()
 	a.True(to.Delegate("compare").Out().OwnBOS(i))
@@ -114,7 +113,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(true)
 
-	i = to.Out().Map("result").Stream().Pull()
+	i = to.Out().Stream().Pull()
 	a.Equal(1, i)
 
 
@@ -123,7 +122,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(false)
 
-	i = to.Out().Map("result").Stream().Pull()
+	i = to.Out().Stream().Pull()
 	a.Equal(4, i)
 
 
@@ -132,7 +131,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(true)
 
-	i = to.Out().Map("result").Stream().Pull()
+	i = to.Out().Stream().Pull()
 	a.Equal(2, i)
 
 
@@ -141,10 +140,10 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(true)
 
-	i = to.Out().Map("result").Stream().Pull()
+	i = to.Out().Stream().Pull()
 	a.Equal(3, i)
 
-	i = to.Out().Map("result").Stream().Pull()
+	i = to.Out().Stream().Pull()
 	a.Equal(5, i)
 
 	// Eat EOS
@@ -156,6 +155,6 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().PushEOS()
 
-	i = to.Out().Map("result").Stream().Pull()
-	a.True(to.Out().Map("result").OwnEOS(i))
+	i = to.Out().Stream().Pull()
+	a.True(to.Out().OwnEOS(i))
 }

@@ -7,22 +7,12 @@ import (
 var loopOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"init": {
-					Type:    "generic",
-					Generic: "stateType",
-				},
-			},
+			Type:    "generic",
+			Generic: "stateType",
 		},
 		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"end": {
-					Type:    "generic",
-					Generic: "stateType",
-				},
-			},
+			Type:    "generic",
+			Generic: "stateType",
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"iteration": {
@@ -55,7 +45,7 @@ var loopOpCfg = &builtinConfig{
 		iIn := dels["iteration"].In()
 		iOut := dels["iteration"].Out()
 		for true {
-			i := in.Map("init").Pull()
+			i := in.Pull()
 
 			// Redirect all markers
 			if core.IsMarker(i) {
@@ -66,7 +56,7 @@ var loopOpCfg = &builtinConfig{
 					panic("should be same marker")
 				}
 
-				out.Map("end").Push(i)
+				out.Push(i)
 
 				continue
 			}
@@ -95,7 +85,7 @@ var loopOpCfg = &builtinConfig{
 					if !iIn.OwnEOS(i) {
 						panic("expected own BOS")
 					}
-					out.Map("end").Push(oldState)
+					out.Push(oldState)
 					break
 				}
 

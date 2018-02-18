@@ -26,15 +26,10 @@ var takeOpCfg = &builtinConfig{
 			},
 		},
 		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"result": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
+			Type: "stream",
+			Stream: &core.PortDef{
+				Type:    "generic",
+				Generic: "itemType",
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{
@@ -81,7 +76,7 @@ var takeOpCfg = &builtinConfig{
 							panic("expected marker")
 						}
 
-						out.Map("result").Stream().Push(t)
+						out.Stream().Push(t)
 
 						continue
 					}
@@ -94,7 +89,7 @@ var takeOpCfg = &builtinConfig{
 				panic("expected BOS")
 			}
 
-			out.Map("result").PushBOS()
+			out.PushBOS()
 
 			cOut.PushBOS()
 			sel := cIn.Stream().Pull()
@@ -123,7 +118,7 @@ var takeOpCfg = &builtinConfig{
 							}
 							goto end
 						}
-						out.Map("result").Stream().Push(f)
+						out.Stream().Push(f)
 						f = in.Map("false").Stream().Pull()
 					}
 				} else if core.IsMarker(f) {
@@ -137,7 +132,7 @@ var takeOpCfg = &builtinConfig{
 							}
 							goto end
 						}
-						out.Map("result").Stream().Push(t)
+						out.Stream().Push(t)
 						t = in.Map("true").Stream().Pull()
 					}
 				} else {
@@ -153,10 +148,10 @@ var takeOpCfg = &builtinConfig{
 					}
 
 					if s {
-						out.Map("result").Stream().Push(t)
+						out.Stream().Push(t)
 						t = nil
 					} else {
-						out.Map("result").Stream().Push(f)
+						out.Stream().Push(f)
 						f = nil
 					}
 				}
@@ -169,7 +164,7 @@ var takeOpCfg = &builtinConfig{
 				panic("expected EOS")
 			}
 
-			out.Map("result").PushEOS()
+			out.PushEOS()
 		}
 	},
 }

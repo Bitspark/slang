@@ -132,14 +132,18 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
 		return err
 	}
-	for _, del := range d.Delegates {
+	dels := make(map[string]*DelegateDef)
+	for delName := range d.Delegates {
+		del := d.Delegates[delName].Copy()
 		if err := del.In.SpecifyGenericPorts(generics); err != nil {
 			return err
 		}
 		if err := del.Out.SpecifyGenericPorts(generics); err != nil {
 			return err
 		}
+		dels[delName] = &del
 	}
+	d.Delegates = dels
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {
 			if err := gp.SpecifyGenericPorts(generics); err != nil {

@@ -1,0 +1,34 @@
+# Main test
+---
+operatorFile: prop_op.yaml
+testCases:
+- name: Value 1
+  properties:
+    val: 1
+  data:
+    in:
+    - true
+    - false
+    out:
+    - 1
+    - 1
+- name: Value 2
+  properties:
+    val: 2
+  data:
+    in:
+    - "test"
+    - 3
+    out:
+    - 2
+    - 2
+- name: Value 3
+  properties:
+    val: 3
+  data:
+    in:
+    - {"a":5,"b":"test"}
+    - []
+    out:
+    - 3
+    - 3

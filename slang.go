@@ -16,7 +16,7 @@ import (
 
 var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
 
-func BuildOperator(opFilePath string, compile bool) (*core.Operator, error) {
+func BuildOperator(opFilePath string, props map[string]interface{}, compile bool) (*core.Operator, error) {
 	// Find correct file
 	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
 	if err != nil {
@@ -31,7 +31,7 @@ func BuildOperator(opFilePath string, compile bool) (*core.Operator, error) {
 	}
 
 	// Create and internally connect the operator
-	op, err := buildAndConnectOperator(opFilePath, def, nil)
+	op, err := buildAndConnectOperator(opFilePath, props, def, nil)
 
 	if err != nil {
 		return nil, err
@@ -287,11 +287,18 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 // buildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
 // It recursively creates child operators which might as well be builtin operators. It also connects the operators
 // according to the given operator definition.
-func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+func buildAndConnectOperator(insName string, props map[string]interface{}, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	// Check if all properties are defined
+	for _, prop := range def.Properties {
+		if _, ok := props[prop]; !ok {
+			return nil, fmt.Errorf("property \"%s\" has not been specified", prop)
 		}
 	}
 
@@ -306,6 +313,24 @@ func buildAndConnectOperator(insName string, def core.OperatorDef, par *core.Ope
 
 	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.Operators {
+		// Propagate property values to child operators
+		for prop, propVal := range childOpInsDef.Properties {
+			propKey, ok := propVal.(string)
+			if !ok {
+				continue
+			}
+			// Parameterized properties must start with a '$'
+			if !strings.HasPrefix(propKey, "$") {
+				continue
+			}
+			propKey = propKey[1:]
+			if val, ok := props[propKey]; ok {
+				childOpInsDef.Properties[prop] = val
+			} else {
+				return nil, fmt.Errorf("unknown property \"%s\"", prop)
+			}
+		}
+
 		_, err := getOperator(*childOpInsDef, o)
 
 		if err != nil {
@@ -375,5 +400,5 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 		return nil, errors.New("instance has no operator definition")
 	}
 	// No builtin operator, so create new one according to the operator definition saved in the instance definition
-	return buildAndConnectOperator(insDef.Name, insDef.OperatorDef(), par)
+	return buildAndConnectOperator(insDef.Name, insDef.Properties, insDef.OperatorDef(), par)
 }

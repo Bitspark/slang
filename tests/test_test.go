@@ -68,3 +68,19 @@ func TestTestOperator__MergeSort(t *testing.T) {
 	a.Equal(5, succs)
 	a.Equal(0, fails)
 }
+
+func TestTestOperator_Properties(t *testing.T) {
+	a := assertions.New(t)
+	succs, fails, err := slang.TestOperator("test_data/properties/prop_op_test.yaml", ioutil.Discard, true)
+	a.Nil(err)
+	a.Equal(3, succs)
+	a.Equal(0, fails)
+}
+
+func TestTestOperator_NestedProperties(t *testing.T) {
+	a := assertions.New(t)
+	succs, fails, err := slang.TestOperator("test_data/properties/prop2_op_test.yaml", ioutil.Discard, true)
+	a.Nil(err)
+	a.Equal(3, succs)
+	a.Equal(0, fails)
+}

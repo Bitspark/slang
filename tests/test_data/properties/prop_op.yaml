@@ -1,0 +1,21 @@
+in:
+  type: trigger
+out:
+  type: number
+properties:
+  - val
+
+operators:
+  const:
+    operator: const
+    generics:
+      valueType:
+        type: number
+    properties:
+      value: $val
+
+connections:
+  (:
+    - (const
+  const):
+    - )

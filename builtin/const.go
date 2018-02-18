@@ -1,7 +1,6 @@
 package builtin
 
 import (
-	// "errors"
 	"slang/core"
 	"errors"
 )

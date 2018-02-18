@@ -1,0 +1,30 @@
+in:
+  type: trigger
+out:
+  type: map
+  map:
+    a:
+      type: number
+    b:
+      type: number
+properties:
+  - v
+
+operators:
+  p1:
+    operator: .prop_op
+    properties:
+      val: $v
+  p2:
+    operator: .prop_op
+    properties:
+      val: 3
+
+connections:
+  (:
+    - (p1
+    - (p2
+  p1):
+    - )a
+  p2):
+    - )b

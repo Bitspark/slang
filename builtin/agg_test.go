@@ -48,7 +48,7 @@ func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
 
 	ao.SetParent(do)
 
-	ao.Out().Map("iteration").Stream().Map("state").Connect(ao.In().Map("state").Stream())
+	ao.Delegate("iteration").Out().Stream().Map("state").Connect(ao.Delegate("iteration").In().Stream())
 
 	require.NoError(t, do.In().Stream().Map("init").Connect(ao.In().Map("init")))
 	require.NoError(t, do.In().Stream().Map("items").Connect(ao.In().Map("items")))
@@ -98,8 +98,8 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 	require.NoError(t, err)
 
 	// Connect
-	require.NoError(t, ao.Out().Map("iteration").Stream().Connect(fo.In()))
-	require.NoError(t, fo.Out().Connect(ao.In().Map("state").Stream()))
+	require.NoError(t, ao.Delegate("iteration").Out().Stream().Connect(fo.In()))
+	require.NoError(t, fo.Out().Connect(ao.Delegate("iteration").In().Stream()))
 
 	ao.Out().Bufferize()
 

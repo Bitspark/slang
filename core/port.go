@@ -35,6 +35,7 @@ type EOS struct {
 
 type Port struct {
 	operator  *Operator
+	delegate  *Delegate
 	dests     map[*Port]bool
 	src       *Port
 	direction int
@@ -51,7 +52,7 @@ type Port struct {
 }
 
 // Makes a new port.
-func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
+func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -66,6 +67,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 	p := &Port{}
 	p.direction = dir
 	p.operator = o
+	p.delegate = d
 	p.dests = make(map[*Port]bool)
 
 	var err error
@@ -74,7 +76,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = NewPort(o, *e, dir)
+			p.subs[k], err = NewPort(o, d, *e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -83,7 +85,7 @@ func NewPort(o *Operator, def PortDef, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = NewPort(o, *def.Stream, dir)
+		p.sub, err = NewPort(o, d, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -427,13 +429,21 @@ func (p *Port) Name() string {
 
 	if p.direction == DIRECTION_IN {
 		if p.operator != nil {
-			return p.operator.name + ":IN" + name
+			if p.delegate != nil {
+				return p.operator.name + "." + p.delegate.name + ":OUT" + name
+			} else {
+				return p.operator.name + ":IN" + name
+			}
 		} else {
 			return "IN_" + name
 		}
 	} else {
 		if p.operator != nil {
-			return p.operator.name + ":OUT" + name
+			if p.delegate != nil {
+				return p.operator.name + "." + p.delegate.name + ":IN" + name
+			} else {
+				return p.operator.name + ":OUT" + name
+			}
 		} else {
 			return "OUT" + name
 		}

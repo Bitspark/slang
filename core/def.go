@@ -22,11 +22,19 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
-	In          PortDef             `json:"in" yaml:"in"`
-	Out         PortDef             `json:"out" yaml:"out"`
-	Operators   OperatorsList       `json:"operators" yaml:"operators"`
-	Connections map[string][]string `json:"connections" yaml:"connections"`
-	Properties  []string            `json:"properties" yaml:"properties"`
+	In          PortDef                `json:"in" yaml:"in"`
+	Out         PortDef                `json:"out" yaml:"out"`
+	Delegates   map[string]DelegateDef `json:"delegates" yaml:"delegates"`
+	Operators   OperatorsList          `json:"operators" yaml:"operators"`
+	Connections map[string][]string    `json:"connections" yaml:"connections"`
+	Properties  []string               `json:"properties" yaml:"properties"`
+
+	valid bool
+}
+
+type DelegateDef struct {
+	In  PortDef `json:"in" yaml:"in"`
+	Out PortDef `json:"out" yaml:"out"`
 
 	valid bool
 }
@@ -92,6 +100,12 @@ func (d *OperatorDef) Validate() error {
 		return err
 	}
 
+	for _, del := range d.Delegates {
+		if err := del.Validate(); err != nil {
+			return err
+		}
+	}
+
 	alreadyUsedInsNames := make(map[string]bool)
 	for _, insDef := range d.Operators {
 		if err := insDef.Validate(); err != nil {
@@ -143,6 +157,34 @@ func (d OperatorDef) GenericsSpecified() error {
 		}
 	}
 	return nil
+}
+
+// DELEGATE DEFINITION
+
+func (d *DelegateDef) Valid() bool {
+	return d.valid
+}
+
+func (d *DelegateDef) Validate() error {
+	if err := d.In.Validate(); err != nil {
+		return err
+	}
+
+	if err := d.Out.Validate(); err != nil {
+		return err
+	}
+
+	d.valid = true
+	return nil
+}
+
+func (d DelegateDef) Copy() DelegateDef {
+	cpy := DelegateDef{}
+
+	cpy.In = d.In.Copy()
+	cpy.Out = d.Out.Copy()
+
+	return cpy
 }
 
 // PORT DEFINITION

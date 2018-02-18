@@ -51,7 +51,7 @@ var reduceOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		nullValue := store.(valueStore).value
 		for true {
 			i := in.Map("items").Pull()

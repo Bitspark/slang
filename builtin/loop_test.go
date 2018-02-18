@@ -18,6 +18,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	a := assertions.New(t)
 	lo, err := MakeOperator(
 		core.InstanceDef{
+			Name: "loop",
 			Operator: "loop",
 			Generics: map[string]*core.PortDef{
 				"stateType": {
@@ -30,7 +31,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	a.NotNil(lo)
 
 	// Condition operator
-	co, _ := core.NewOperator("cond", func(in, out *core.Port, store interface{}) {
+	co, _ := core.NewOperator("cond", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			i := in.Pull()
 			f, ok := i.(float64)
@@ -40,10 +41,11 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 				out.Push(f < 10.0)
 			}
 		}
-	}, core.PortDef{Type: "number"}, core.PortDef{Type: "boolean"})
+	}, core.PortDef{Type: "number"}, core.PortDef{Type: "boolean"},
+		nil)
 
 	// Double function operator
-	fo, _ := core.NewOperator("double", func(in, out *core.Port, store interface{}) {
+	fo, _ := core.NewOperator("double", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			i := in.Pull()
 			f, ok := i.(float64)
@@ -53,13 +55,14 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 				out.Push(f * 2.0)
 			}
 		}
-	}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"})
+	}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"},
+		nil)
 
 	// Connect
-	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))
-	a.NoError(lo.Out().Map("state").Stream().Connect(co.In()))
-	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
-	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
+	a.NoError(lo.Delegate("iteration").In().Stream().Connect(fo.In()))
+	a.NoError(lo.Delegate("iteration").In().Stream().Connect(co.In()))
+	a.NoError(fo.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("state")))
+	a.NoError(co.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("continue")))
 
 	lo.Out().Bufferize()
 
@@ -97,7 +100,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	require.Equal(t, core.TYPE_NUMBER, lo.In().Map("init").Map("i").Type())
 
 	// Condition operator
-	co, _ := core.NewOperator("cond", func(in, out *core.Port, store interface{}) {
+	co, _ := core.NewOperator("cond", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			i := in.Pull()
 			fm, ok := i.(map[string]interface{})
@@ -108,10 +111,11 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 				out.Push(i > 0.0)
 			}
 		}
-	}, stateType, core.PortDef{Type: "boolean"})
+	}, stateType, core.PortDef{Type: "boolean"},
+		nil)
 
 	// Fibonacci function operator
-	fo, _ := core.NewOperator("fib", func(in, out *core.Port, store interface{}) {
+	fo, _ := core.NewOperator("fib", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			i := in.Pull()
 			fm, ok := i.(map[string]interface{})
@@ -124,13 +128,14 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 				out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
 			}
 		}
-	}, stateType, stateType)
+	}, stateType, stateType,
+		nil)
 
 	// Connect
-	a.NoError(lo.Out().Map("state").Stream().Connect(fo.In()))
-	a.NoError(lo.Out().Map("state").Stream().Connect(co.In()))
-	a.NoError(fo.Out().Connect(lo.In().Map("iteration").Stream().Map("state")))
-	a.NoError(co.Out().Connect(lo.In().Map("iteration").Stream().Map("continue")))
+	a.NoError(lo.Delegate("iteration").In().Stream().Connect(fo.In()))
+	a.NoError(lo.Delegate("iteration").In().Stream().Connect(co.In()))
+	a.NoError(fo.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("state")))
+	a.NoError(co.Out().Connect(lo.Delegate("iteration").Out().Stream().Map("continue")))
 
 	lo.Out().Bufferize()
 
@@ -163,12 +168,13 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a.NotNil(lo)
 
 	lo.Out().Bufferize()
+	lo.Delegate("iteration").In().Bufferize()
 
 	lo.Start()
 
 	pInit := lo.In().Map("init")
-	pIteration := lo.In().Map("iteration")
-	pState := lo.Out().Map("state").Stream()
+	pIteration := lo.Delegate("iteration").Out()
+	pState := lo.Delegate("iteration").In().Stream()
 	pEnd := lo.Out().Map("end")
 
 	bos := core.BOS{}

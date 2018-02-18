@@ -303,7 +303,7 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, def.In, def.Out)
+	o, err := core.NewOperator(insName, nil, def.In, def.Out, nil)
 	if err != nil {
 		return nil, err
 	}

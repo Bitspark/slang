@@ -139,10 +139,7 @@ func TestParsePortReference__SelfIn(t *testing.T) {
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	p, err := slang.ParsePortReference("(", o1)
 	a.NoError(err)
-
-	if p != o1.In() {
-		t.Error("wrong port")
-	}
+	a.Equal(o1.In(), p, "wrong port")
 }
 
 func TestParsePortReference__SelfOut(t *testing.T) {
@@ -150,10 +147,7 @@ func TestParsePortReference__SelfOut(t *testing.T) {
 	o1, _ := core.NewOperator("o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	p, err := slang.ParsePortReference(")", o1)
 	a.NoError(err)
-
-	if p != o1.Out() {
-		t.Error("wrong port")
-	}
+	a.Equal(o1.Out(), p, "wrong port")
 }
 
 func TestParsePortReference__SingleIn(t *testing.T) {
@@ -163,10 +157,7 @@ func TestParsePortReference__SingleIn(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("(o2", o1)
 	a.NoError(err)
-
-	if p != o2.In() {
-		t.Error("wrong port")
-	}
+	a.Equal(o2.In(), p, "wrong port")
 }
 
 func TestParsePortReference__SingleOut(t *testing.T) {
@@ -176,10 +167,7 @@ func TestParsePortReference__SingleOut(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("o2)", o1)
 	a.NoError(err)
-
-	if p != o2.Out() {
-		t.Error("wrong port")
-	}
+	a.Equal(o2.Out(), p, "wrong port")
 }
 
 func TestParsePortReference__Map(t *testing.T) {
@@ -189,10 +177,7 @@ func TestParsePortReference__Map(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("a(o2", o1)
 	a.NoError(err)
-
-	if p != o2.In().Map("a") {
-		t.Error("wrong port")
-	}
+	a.Equal(o2.In().Map("a"), p, "wrong port")
 }
 
 func TestParsePortReference__Map__UnknownKey(t *testing.T) {
@@ -222,10 +207,7 @@ func TestParsePortReference__NestedMap(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("a.b(o2", o1)
 	a.NoError(err)
-
-	if p != o2.In().Map("a").Map("b") {
-		t.Error("wrong port")
-	}
+	a.Equal(o2.In().Map("a").Map("b"), p, "wrong port")
 }
 
 func TestParsePortReference__Stream(t *testing.T) {
@@ -235,10 +217,7 @@ func TestParsePortReference__Stream(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference(".(o2", o1)
 	a.NoError(err)
-
-	if p != o2.In().Stream() {
-		t.Error("wrong port")
-	}
+	a.Equal(o2.In().Stream(), p, "wrong port")
 }
 
 func TestParsePortReference__StreamMap(t *testing.T) {
@@ -272,5 +251,106 @@ func TestParsePortReference__StreamMap(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := slang.ParsePortReference("..a..a.(o2", o1)
 	a.NoError(err)
-	a.Equal(p, o2.In().Stream().Map("a").Stream().Map("a").Stream(), "wrong port")
+	a.Equal(o2.In().Stream().Map("a").Stream().Map("a").Stream(), p, "wrong port")
+}
+
+func TestParsePortReference__Delegates_In(t *testing.T) {
+	a := assertions.New(t)
+	o, _ := core.NewOperator(
+		"o1",
+		nil,
+		core.PortDef{Type: "number"},
+		core.PortDef{Type: "number"},
+		map[string]*core.DelegateDef{
+			"test": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"}},
+		})
+	p, err := slang.ParsePortReference("(.test", o)
+	a.NoError(err)
+	a.Equal(o.Delegate("test").In(), p, "wrong port")
+}
+
+func TestParsePortReference__Delegates_Out(t *testing.T) {
+	a := assertions.New(t)
+	o, _ := core.NewOperator(
+		"o1",
+		nil,
+		core.PortDef{Type: "number"},
+		core.PortDef{Type: "number"},
+		map[string]*core.DelegateDef{
+			"test": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"}},
+		})
+	p, err := slang.ParsePortReference(".test)", o)
+	a.NoError(err)
+	a.Equal(o.Delegate("test").Out(), p, "wrong port")
+}
+
+func TestParsePortReference__Delegates_SingleIn(t *testing.T) {
+	a := assertions.New(t)
+	o1, _ := core.NewOperator(
+		"o1",
+		nil,
+		core.PortDef{Type: "number"},
+		core.PortDef{Type: "number"},
+		nil)
+	o2, _ := core.NewOperator(
+		"o2",
+		nil,
+		core.PortDef{Type: "number"},
+		core.PortDef{Type: "number"},
+		map[string]*core.DelegateDef{
+			"test": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"}},
+		})
+	o2.SetParent(o1)
+	p, err := slang.ParsePortReference("(o2.test", o1)
+	a.NoError(err)
+	a.Equal(o2.Delegate("test").In(), p, "wrong port")
+}
+
+func TestParsePortReference__Delegates_SingleOut(t *testing.T) {
+	a := assertions.New(t)
+	o1, _ := core.NewOperator(
+		"o1",
+		nil,
+		core.PortDef{Type: "number"},
+		core.PortDef{Type: "number"},
+		nil)
+	o2, _ := core.NewOperator(
+		"o2",
+		nil,
+		core.PortDef{Type: "number"},
+		core.PortDef{Type: "number"},
+		map[string]*core.DelegateDef{
+			"test": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"}},
+		})
+	o2.SetParent(o1)
+	p, err := slang.ParsePortReference("o2.test)", o1)
+	a.NoError(err)
+	a.Equal(o2.Delegate("test").Out(), p, "wrong port")
+}
+
+func TestParsePortReference__Delegates_Map(t *testing.T) {
+	a := assertions.New(t)
+	o1, _ := core.NewOperator(
+		"o1", nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
+	o2, _ := core.NewOperator(
+		"o2",
+		nil,
+		core.PortDef{Type: "number"}, core.PortDef{Type: "number"},
+		map[string]*core.DelegateDef{
+			"test": {
+				In:  core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}},
+				Out: core.PortDef{Type: "number"}},
+		})
+	o2.SetParent(o1)
+	p, err := slang.ParsePortReference("a(o2.test", o1)
+	a.NoError(err)
+	a.Equal(o2.Delegate("test").In().Map("a"), p, "wrong port")
 }

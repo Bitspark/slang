@@ -28,13 +28,13 @@ connections:
   (:
   - init(loop
 
-  loop)state.:
+  .(loop.iteration:
   - (falsify
-  - iteration..state(loop
+  - loop.iteration)..state
 
-  loop)state:
+  (loop.iteration:
   - )
 
   falsify):
-  - iteration..continue(loop
+  - loop.iteration)..continue
 

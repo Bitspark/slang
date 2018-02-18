@@ -16,13 +16,6 @@ var reduceOpCfg = &builtinConfig{
 						Generic: "itemType",
 					},
 				},
-				"pool": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
 			},
 		},
 		Out: core.PortDef{
@@ -32,7 +25,18 @@ var reduceOpCfg = &builtinConfig{
 					Type:    "generic",
 					Generic: "itemType",
 				},
-				"selection": {
+			},
+		},
+		Delegates: map[string]core.DelegateDef{
+			"selection": {
+				In: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type:    "generic",
+						Generic: "itemType",
+					},
+				},
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
@@ -52,13 +56,15 @@ var reduceOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+		sIn := dels["selection"].In()
+		sOut := dels["selection"].Out()
 		nullValue := store.(valueStore).value
 		for true {
 			i := in.Map("items").Pull()
 
 			if core.IsMarker(i) {
-				out.Map("selection").Push(i)
-				sel := in.Map("pool").Pull()
+				sOut.Push(i)
+				sel := sIn.Pull()
 
 				if sel != i {
 					panic("expected different marker")
@@ -84,14 +90,14 @@ var reduceOpCfg = &builtinConfig{
 				continue
 			}
 
-			out.Map("selection").PushBOS()
+			sOut.PushBOS()
 			j := 0
 			for j+1 < len(items) {
-				out.Map("selection").Stream().Map("a").Push(items[j])
-				out.Map("selection").Stream().Map("b").Push(items[j+1])
+				sOut.Stream().Map("a").Push(items[j])
+				sOut.Stream().Map("b").Push(items[j+1])
 				j += 2
 			}
-			out.Map("selection").PushEOS()
+			sOut.PushEOS()
 
 			var leftover interface{}
 			if j != len(items) {
@@ -101,7 +107,7 @@ var reduceOpCfg = &builtinConfig{
 			// POOL
 
 			for true {
-				p := in.Map("pool").Pull()
+				p := sIn.Pull()
 
 				items, ok := p.([]interface{})
 				if !ok {
@@ -121,14 +127,14 @@ var reduceOpCfg = &builtinConfig{
 					break
 				}
 
-				out.Map("selection").PushBOS()
+				sOut.PushBOS()
 				j := 0
 				for j+1 < len(items) {
-					out.Map("selection").Stream().Map("a").Push(items[j])
-					out.Map("selection").Stream().Map("b").Push(items[j+1])
+					sOut.Stream().Map("a").Push(items[j])
+					sOut.Stream().Map("b").Push(items[j+1])
 					j += 2
 				}
-				out.Map("selection").PushEOS()
+				sOut.PushEOS()
 
 				if j != len(items) {
 					leftover = items[len(items)-1]

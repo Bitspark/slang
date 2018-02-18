@@ -51,9 +51,9 @@ connections:
     - (packer
   packer):
     - items.(reducer
-  reducer)selection..a:
+  reducer.selection)..a:
     - true(sorter
-  reducer)selection..b:
+  reducer.selection)..b:
     - false(sorter
   sorter)compare..true:
     - a(comparator
@@ -62,6 +62,6 @@ connections:
   comparator):
     - select.(sorter
   sorter)result:
-    - pool.(reducer
+    - .(reducer.selection
   reducer)result:
     - )

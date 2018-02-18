@@ -26,6 +26,7 @@ type OperatorDef struct {
 	Out         PortDef             `json:"out" yaml:"out"`
 	Operators   OperatorsList       `json:"operators" yaml:"operators"`
 	Connections map[string][]string `json:"connections" yaml:"connections"`
+	Properties  []string            `json:"properties" yaml:"properties"`
 
 	valid bool
 }

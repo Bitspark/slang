@@ -14,9 +14,10 @@ import (
 )
 
 type TestCaseDef struct {
-	Name        string `json:"name" yaml:"name"`
-	Description string `json:"description" yaml:"description"`
-	Data        struct {
+	Name        string                 `json:"name" yaml:"name"`
+	Description string                 `json:"description" yaml:"description"`
+	Properties  map[string]interface{} `json:"properties" yaml:"properties"`
+	Data struct {
 		In  []interface{} `json:"in" yaml:"in"`
 		Out []interface{} `json:"out" yaml:"out"`
 	}
@@ -58,26 +59,6 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		}
 	}
 
-	o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), false)
-
-	if err != nil {
-		return 0, 0, err
-	}
-
-	fmt.Fprintf(writer, "%s parsed successfully\n", test.OperatorFile)
-
-	compiled := o.Compile()
-	fmt.Fprintln(writer, "Operator compiled")
-	fmt.Fprintf(writer, "Operators simplified:  %3d\n", compiled)
-	fmt.Fprintf(writer, "Total basic operators: %3d\n", len(o.Children()))
-
-	o.Out().Bufferize()
-
-	o.Start()
-	defer o.Stop()
-	fmt.Fprintln(writer, "Operator started")
-	fmt.Fprintln(writer)
-
 	succs := 0
 	fails := 0
 
@@ -85,13 +66,22 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fmt.Fprintln(writer)
 
 	for i, tc := range test.TestCases {
+		o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Properties, false)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		o.Compile()
+		o.Out().Bufferize()
+		o.Start()
+
 		fmt.Fprintf(writer, "Test case %3d/%3d: %s (size: %d)\n", i+1, len(test.TestCases), tc.Name, len(tc.Data.In))
 
 		success := true
 
 		for j := range tc.Data.In {
 			in := tc.Data.In[j]
-			expected := tc.Data.Out[j]
+			expected := utils.CleanValue(tc.Data.Out[j])
 
 			o.In().Push(utils.CleanValue(in))
 			actual := o.Out().Pull()
@@ -103,6 +93,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 				success = false
 
 				if failFast {
+					o.Stop()
 					return succs, fails + 1, nil
 				}
 			}
@@ -114,6 +105,8 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		} else {
 			fails++
 		}
+
+		o.Stop()
 	}
 
 	fmt.Fprintln(writer)

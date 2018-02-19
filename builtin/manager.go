@@ -113,6 +113,8 @@ func init() {
 	Register("take", takeOpCfg)
 	Register("agg", aggOpCfg)
 	Register("reduce", reduceOpCfg)
+	Register("syncFork", syncForkOpCfg)
+	Register("syncMerge", syncMergeOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -9,7 +9,7 @@ var syncForkOpCfg = &builtinConfig{
 		In: core.PortDef{
 			Type: "map",
 			Map: map[string]*core.PortDef{
-				"i": {
+				"item": {
 					Type:    "generic",
 					Generic: "itemType",
 				},
@@ -41,11 +41,11 @@ var syncForkOpCfg = &builtinConfig{
 			}
 
 			if item["select"].(bool) {
-				out.Map("true").Push(item["i"])
+				out.Map("true").Push(item["item"])
 				out.Map("false").Push(nil)
 			} else {
 				out.Map("true").Push(nil)
-				out.Map("false").Push(item["i"])
+				out.Map("false").Push(item["item"])
 			}
 		}
 	},

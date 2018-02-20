@@ -3,6 +3,7 @@ package builtin
 import (
 	"errors"
 	"slang/core"
+	"fmt"
 )
 
 type CreatorFunc func(core.InstanceDef) (*core.Operator, error)
@@ -23,14 +24,28 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
+	dels := make(map[string]*core.DelegateDef)
+
 	in := cfg.oDef.In.Copy()
 	out := cfg.oDef.Out.Copy()
+	for delName, del := range cfg.oDef.Delegates {
+		delCpy := del.Copy()
+		dels[delName] = &delCpy
+	}
 
 	if err := in.SpecifyGenericPorts(def.Generics); err != nil {
 		return nil, err
 	}
 	if err := out.SpecifyGenericPorts(def.Generics); err != nil {
 		return nil, err
+	}
+	for _, del := range dels {
+		if err := del.Out.SpecifyGenericPorts(def.Generics); err != nil {
+			return nil, err
+		}
+		if err := del.In.SpecifyGenericPorts(def.Generics); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := in.GenericsSpecified(); err != nil {
@@ -39,8 +54,16 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	if err := out.GenericsSpecified(); err != nil {
 		return nil, err
 	}
+	for delName, del := range dels {
+		if err := del.Out.GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("%s: %s", delName, err.Error())
+		}
+		if err := del.In.GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("%s: %s", delName, err.Error())
+		}
+	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, in, out)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, in, out, dels)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +113,8 @@ func init() {
 	Register("take", takeOpCfg)
 	Register("agg", aggOpCfg)
 	Register("reduce", reduceOpCfg)
+	Register("syncFork", syncForkOpCfg)
+	Register("syncMerge", syncMergeOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -19,7 +19,7 @@ var constOpCfg = &builtinConfig{
 			Generic: "valueType",
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		v := store.(valueStore).value
 		for true {
 			if i := in.Pull(); !core.IsMarker(i) {

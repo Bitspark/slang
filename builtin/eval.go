@@ -111,7 +111,7 @@ var evalOpCfg = &builtinConfig{
 			Type: "primitive",
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		expr := store.(functionStore).evalExpr
 		for true {
 			i := in.Pull()

@@ -1,0 +1,38 @@
+in:
+  type: number
+out:
+  type: boolean
+properties:
+  - val
+  - expr
+
+operators:
+  del2:
+    operator: .del2_op
+    generics:
+      gen:
+        type: number
+    properties:
+      val: $val
+  cmp:
+    operator: eval
+    generics:
+      paramsMap:
+        type: map
+        map:
+          a:
+            type: number
+          b:
+            type: number
+    properties:
+      expression: $expr
+
+connections:
+  (:
+  - (del2
+  del2.cmp):
+  - (cmp
+  cmp):
+  - (del2.cmp
+  del2):
+  - )

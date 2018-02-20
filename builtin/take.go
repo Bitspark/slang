@@ -23,25 +23,24 @@ var takeOpCfg = &builtinConfig{
 						Generic: "itemType",
 					},
 				},
-				"select": {
+			},
+		},
+		Out: core.PortDef{
+			Type: "stream",
+			Stream: &core.PortDef{
+				Type:    "generic",
+				Generic: "itemType",
+			},
+		},
+		Delegates: map[string]*core.DelegateDef{
+			"compare": {
+				In: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "boolean",
 					},
 				},
-			},
-		},
-		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"result": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
-				"compare": {
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
@@ -60,7 +59,9 @@ var takeOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+		cIn := dels["compare"].In()
+		cOut := dels["compare"].Out()
 		for true {
 			t := in.Map("true").Stream().Pull()
 			f := in.Map("false").Stream().Pull()
@@ -68,14 +69,14 @@ var takeOpCfg = &builtinConfig{
 			if !in.Map("true").OwnBOS(t) {
 				if core.IsMarker(t) {
 					if t == f {
-						out.Map("compare").Stream().Push(t)
-						sel := in.Map("select").Stream().Pull()
+						cOut.Stream().Push(t)
+						sel := cIn.Stream().Pull()
 
 						if sel != t {
 							panic("expected marker")
 						}
 
-						out.Map("result").Stream().Push(t)
+						out.Stream().Push(t)
 
 						continue
 					}
@@ -88,11 +89,11 @@ var takeOpCfg = &builtinConfig{
 				panic("expected BOS")
 			}
 
-			out.Map("result").PushBOS()
+			out.PushBOS()
 
-			out.Map("compare").PushBOS()
-			sel := in.Map("select").Stream().Pull()
-			if !in.Map("select").OwnBOS(sel) {
+			cOut.PushBOS()
+			sel := cIn.Stream().Pull()
+			if !cIn.OwnBOS(sel) {
 				panic("expected BOS")
 			}
 
@@ -117,7 +118,7 @@ var takeOpCfg = &builtinConfig{
 							}
 							goto end
 						}
-						out.Map("result").Stream().Push(f)
+						out.Stream().Push(f)
 						f = in.Map("false").Stream().Pull()
 					}
 				} else if core.IsMarker(f) {
@@ -131,39 +132,39 @@ var takeOpCfg = &builtinConfig{
 							}
 							goto end
 						}
-						out.Map("result").Stream().Push(t)
+						out.Stream().Push(t)
 						t = in.Map("true").Stream().Pull()
 					}
 				} else {
 					// Send to comparator
-					out.Map("compare").Stream().Map("true").Push(t)
-					out.Map("compare").Stream().Map("false").Push(f)
+					cOut.Stream().Map("true").Push(t)
+					cOut.Stream().Map("false").Push(f)
 
 					// Get result
-					s, ok := in.Map("select").Stream().Pull().(bool)
+					s, ok := cIn.Stream().Pull().(bool)
 
 					if !ok {
 						panic("expected boolean")
 					}
 
 					if s {
-						out.Map("result").Stream().Push(t)
+						out.Stream().Push(t)
 						t = nil
 					} else {
-						out.Map("result").Stream().Push(f)
+						out.Stream().Push(f)
 						f = nil
 					}
 				}
 			}
 
 		end:
-			out.Map("compare").PushEOS()
-			sel = in.Map("select").Stream().Pull()
-			if !in.Map("select").OwnEOS(sel) {
+			cOut.PushEOS()
+			sel = cIn.Stream().Pull()
+			if !cIn.OwnEOS(sel) {
 				panic("expected EOS")
 			}
 
-			out.Map("result").PushEOS()
+			out.PushEOS()
 		}
 	},
 }

@@ -84,3 +84,11 @@ func TestTestOperator_NestedProperties(t *testing.T) {
 	a.Equal(3, succs)
 	a.Equal(0, fails)
 }
+
+func TestTestOperator_NestedDelegates(t *testing.T) {
+	a := assertions.New(t)
+	succs, fails, err := slang.TestOperator("test_data/delegates/wrapper_test.yaml", ioutil.Discard, true)
+	a.Nil(err)
+	a.Equal(3, succs)
+	a.Equal(0, fails)
+}

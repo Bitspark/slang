@@ -41,17 +41,18 @@ func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
 					"init":  {Type: "number"},
 					"items": {Type: "stream", Stream: &core.PortDef{Type: "number"}}}}},
 		core.PortDef{Type: "stream",
-			Stream: &core.PortDef{Type: "number"}})
+			Stream: &core.PortDef{Type: "number"}},
+		nil)
 	require.NoError(t, err)
 	a.NotNil(do)
 
 	ao.SetParent(do)
 
-	ao.Out().Map("iteration").Stream().Map("state").Connect(ao.In().Map("state").Stream())
+	ao.Delegate("iteration").Out().Stream().Map("state").Connect(ao.Delegate("iteration").In().Stream())
 
 	require.NoError(t, do.In().Stream().Map("init").Connect(ao.In().Map("init")))
 	require.NoError(t, do.In().Stream().Map("items").Connect(ao.In().Map("items")))
-	require.NoError(t, ao.Out().Map("end").Connect(do.Out().Stream()))
+	require.NoError(t, ao.Out().Connect(do.Out().Stream()))
 
 	do.Out().Bufferize()
 
@@ -80,24 +81,25 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 	a.NotNil(ao)
 
 	// Add function operator
-	fo, err := core.NewOperator("add", func(in, out *core.Port, store interface{}) {
+	fo, err := core.NewOperator("add", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			i := in.Pull()
 			m, ok := i.(map[string]interface{})
 			if !ok {
 				out.Push(i)
 			} else {
-				out.Push(m["state"].(float64) + m["i"].(float64))
+				out.Push(m["state"].(float64) + m["item"].(float64))
 			}
 		}
 	},
-		core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "i": {Type: "number"}}},
-		core.PortDef{Type: "number"})
+		core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "item": {Type: "number"}}},
+		core.PortDef{Type: "number"},
+		nil)
 	require.NoError(t, err)
 
 	// Connect
-	require.NoError(t, ao.Out().Map("iteration").Stream().Connect(fo.In()))
-	require.NoError(t, fo.Out().Connect(ao.In().Map("state").Stream()))
+	require.NoError(t, ao.Delegate("iteration").Out().Stream().Connect(fo.In()))
+	require.NoError(t, fo.Out().Connect(ao.Delegate("iteration").In().Stream()))
 
 	ao.Out().Bufferize()
 
@@ -113,5 +115,5 @@ func TestBuiltinAgg__SimpleLoop(t *testing.T) {
 	ao.Start()
 	fo.Start()
 
-	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Out().Map("end"))
+	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Out())
 }

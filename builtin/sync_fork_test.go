@@ -7,19 +7,19 @@ import (
 	"testing"
 )
 
-func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
+func TestBuiltin_SyncFork__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("fork")
+	ocFork := getBuiltinCfg("syncFork")
 	a.NotNil(ocFork)
 }
 
-func TestBuiltin_Fork__InPorts(t *testing.T) {
+func TestBuiltin_SyncFork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "syncFork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
@@ -29,18 +29,18 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.In().Stream().Map("item"))
-	a.NotNil(o.In().Stream().Map("select"))
-	a.Equal(core.TYPE_PRIMITIVE, o.In().Stream().Map("item").Type())
-	a.Equal(core.TYPE_BOOLEAN, o.In().Stream().Map("select").Type())
+	a.NotNil(o.In().Map("item"))
+	a.NotNil(o.In().Map("select"))
+	a.Equal(core.TYPE_PRIMITIVE, o.In().Map("item").Type())
+	a.Equal(core.TYPE_BOOLEAN, o.In().Map("select").Type())
 }
 
-func TestBuiltin_Fork__OutPorts(t *testing.T) {
+func TestBuiltin_SyncFork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "syncFork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
@@ -50,18 +50,18 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.Out().Map("true").Stream())
-	a.NotNil(o.Out().Map("false").Stream())
-	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("true").Stream().Type())
-	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("false").Stream().Type())
+	a.NotNil(o.Out().Map("true"))
+	a.NotNil(o.Out().Map("false"))
+	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("true").Type())
+	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("false").Type())
 }
 
-func TestBuiltin_Fork__Correct(t *testing.T) {
+func TestBuiltin_SyncFork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "syncFork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
@@ -74,34 +74,36 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 	o.Out().Bufferize()
 	o.Start()
 
-	o.In().Push([]interface{}{
+	o.In().Push(
 		map[string]interface{}{
 			"item":   "hallo",
 			"select": true,
-		},
+		})
+	o.In().Push(
 		map[string]interface{}{
 			"item":   "welt",
 			"select": false,
-		},
+		})
+	o.In().Push(
 		map[string]interface{}{
 			"item":   100,
 			"select": true,
-		},
+		})
+	o.In().Push(
 		map[string]interface{}{
 			"item":   101,
 			"select": false,
-		},
-	})
+		})
 
-	a.PortPushes([]interface{}{[]interface{}{"hallo", 100}}, o.Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.Out().Map("false"))
+	a.PortPushes([]interface{}{"hallo", nil, 100, nil}, o.Out().Map("true"))
+	a.PortPushes([]interface{}{nil, "welt", nil, 101}, o.Out().Map("false"))
 }
 
-func TestBuiltin_Fork__ComplexItems(t *testing.T) {
+func TestBuiltin_SyncFork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "syncFork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "map",
@@ -118,17 +120,17 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	o.Out().Bufferize()
 	o.Start()
 
-	o.In().Push([]interface{}{
+	o.In().Push(
 		map[string]interface{}{
 			"item":   map[string]interface{}{"a": "1", "b": "hallo"},
 			"select": true,
-		},
+		})
+	o.In().Push(
 		map[string]interface{}{
 			"item":   map[string]interface{}{"a": "2", "b": "slang"},
 			"select": false,
-		},
-	})
+		})
 
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Out().Map("false"))
+	a.PortPushes([]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}, map[string]interface{}{"a": nil, "b": nil}}, o.Out().Map("true"))
+	a.PortPushes([]interface{}{map[string]interface{}{"a": nil, "b": nil}, map[string]interface{}{"a": "2", "b": "slang"}}, o.Out().Map("false"))
 }

@@ -22,11 +22,19 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
-	In          PortDef             `json:"in" yaml:"in"`
-	Out         PortDef             `json:"out" yaml:"out"`
-	Operators   OperatorsList       `json:"operators" yaml:"operators"`
-	Connections map[string][]string `json:"connections" yaml:"connections"`
-	Properties  []string            `json:"properties" yaml:"properties"`
+	In          PortDef                 `json:"in" yaml:"in"`
+	Out         PortDef                 `json:"out" yaml:"out"`
+	Delegates   map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
+	Operators   OperatorsList           `json:"operators" yaml:"operators"`
+	Connections map[string][]string     `json:"connections" yaml:"connections"`
+	Properties  []string                `json:"properties" yaml:"properties"`
+
+	valid bool
+}
+
+type DelegateDef struct {
+	In  PortDef `json:"in" yaml:"in"`
+	Out PortDef `json:"out" yaml:"out"`
 
 	valid bool
 }
@@ -92,6 +100,12 @@ func (d *OperatorDef) Validate() error {
 		return err
 	}
 
+	for _, del := range d.Delegates {
+		if err := del.Validate(); err != nil {
+			return err
+		}
+	}
+
 	alreadyUsedInsNames := make(map[string]bool)
 	for _, insDef := range d.Operators {
 		if err := insDef.Validate(); err != nil {
@@ -118,6 +132,18 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
 		return err
 	}
+	dels := make(map[string]*DelegateDef)
+	for delName := range d.Delegates {
+		del := d.Delegates[delName].Copy()
+		if err := del.In.SpecifyGenericPorts(generics); err != nil {
+			return err
+		}
+		if err := del.Out.SpecifyGenericPorts(generics); err != nil {
+			return err
+		}
+		dels[delName] = &del
+	}
+	d.Delegates = dels
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {
 			if err := gp.SpecifyGenericPorts(generics); err != nil {
@@ -135,6 +161,14 @@ func (d OperatorDef) GenericsSpecified() error {
 	if err := d.Out.GenericsSpecified(); err != nil {
 		return err
 	}
+	for _, del := range d.Delegates {
+		if err := del.In.GenericsSpecified(); err != nil {
+			return err
+		}
+		if err := del.Out.GenericsSpecified(); err != nil {
+			return err
+		}
+	}
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {
 			if err := gp.GenericsSpecified(); err != nil {
@@ -143,6 +177,34 @@ func (d OperatorDef) GenericsSpecified() error {
 		}
 	}
 	return nil
+}
+
+// DELEGATE DEFINITION
+
+func (d *DelegateDef) Valid() bool {
+	return d.valid
+}
+
+func (d *DelegateDef) Validate() error {
+	if err := d.In.Validate(); err != nil {
+		return err
+	}
+
+	if err := d.Out.Validate(); err != nil {
+		return err
+	}
+
+	d.valid = true
+	return nil
+}
+
+func (d DelegateDef) Copy() DelegateDef {
+	cpy := DelegateDef{}
+
+	cpy.In = d.In.Copy()
+	cpy.Out = d.Out.Copy()
+
+	return cpy
 }
 
 // PORT DEFINITION

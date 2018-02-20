@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Knetic/govaluate"
+	"math"
 )
 
 type EvaluableExpression struct {
@@ -58,13 +59,37 @@ func getFlattenedObj(obj interface{}) map[string]interface{} {
 	return flatMap
 }
 
-func NewFlatMapParameters(m map[string]interface{}) govaluate.MapParameters {
+func newFlatMapParameters(m map[string]interface{}) govaluate.MapParameters {
 	flatMap := getFlattenedObj(m)
 	return govaluate.MapParameters(flatMap)
 }
 
-func NewEvaluableExpression(expression string) (*EvaluableExpression, error) {
-	goEvalExpr, err := govaluate.NewEvaluableExpression(strings.Replace(expression, ".", "__", -1))
+func evalFunctions() map[string]govaluate.ExpressionFunction {
+	functions := map[string]govaluate.ExpressionFunction {
+		"floor": func(args ...interface{}) (interface{}, error) {
+			if fval, ok := args[0].(float64); ok {
+				return math.Floor(fval), nil
+			}
+			if ival, ok := args[0].(int); ok {
+				return ival, nil
+			}
+			return nil, errors.New("wrong type")
+		},
+		"ceil": func(args ...interface{}) (interface{}, error) {
+			if fval, ok := args[0].(float64); ok {
+				return math.Ceil(fval), nil
+			}
+			if ival, ok := args[0].(int); ok {
+				return ival, nil
+			}
+			return nil, errors.New("wrong type")
+		},
+	}
+	return functions
+}
+
+func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
+	goEvalExpr, err := govaluate.NewEvaluableExpressionWithFunctions(strings.Replace(expression, ".", "__", -1), evalFunctions())
 	if err == nil {
 		return &EvaluableExpression{*goEvalExpr}, nil
 	}
@@ -97,7 +122,7 @@ var evalOpCfg = &builtinConfig{
 			}
 
 			if m, ok := i.(map[string]interface{}); ok {
-				rlt, _ := expr.Eval(NewFlatMapParameters(m))
+				rlt, _ := expr.Eval(newFlatMapParameters(m))
 				out.Push(rlt)
 			} else {
 				panic("invalid item")
@@ -121,7 +146,7 @@ var evalOpCfg = &builtinConfig{
 			return errors.New("expression must be string")
 		}
 
-		evalExpr, err := NewEvaluableExpression(expr)
+		evalExpr, err := newEvaluableExpression(expr)
 
 		if err != nil {
 			return err

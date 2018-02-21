@@ -40,7 +40,7 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 	op3.Out().Connect(op2.Out())
 
 	// Compile
-	a.True(op1.Compile() == 1)
+	a.Equal(1, op1.Compile())
 
 	a.True(len(op1.Children()) == 1)
 
@@ -86,7 +86,7 @@ func TestOperator_Compile__NestedChildren(t *testing.T) {
 	op6.Out().Connect(op3.Out())
 
 	// Compile
-	a.True(op1.Compile() == 2)
+	a.Equal(2, op1.Compile())
 
 	a.True(len(op1.Children()) == 3)
 

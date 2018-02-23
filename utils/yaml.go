@@ -44,6 +44,8 @@ func CleanValue(v interface{}) interface{} {
 		return v
 	case bool:
 		return v
+	case nil:
+		return nil
 	default:
 		panic("unknown type")
 	}

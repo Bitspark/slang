@@ -142,6 +142,10 @@ func (p *Port) Stream() *Port {
 
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
+	if q.src != nil {
+		return fmt.Errorf("%s -> %s: already connected", p.Name(), q.Name())
+	}
+
 	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_TRIGGER && p.itemType != q.itemType {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
@@ -221,7 +225,48 @@ func (p *Port) Merge() bool {
 		merged = p.sub.Merge() || merged
 	}
 
+	for _, sub := range p.subs {
+		merged = sub.Merge() || merged
+	}
+
 	return merged
+}
+
+// Checks if this in port is connected completely
+func (p *Port) DirectlyConnected() error {
+	if p.direction != DIRECTION_IN {
+		return errors.New("can only check in ports")
+	}
+
+	if p.primitive() {
+		if p.src == nil {
+			return errors.New(p.Name() + " not connected")
+		}
+		if p.src.src != nil {
+			return errors.New(p.Name() + " has connected source " + p.src.Name() + ": " + p.src.src.Name())
+		}
+		for dest := range p.src.dests {
+			if dest == p {
+				return nil
+			}
+		}
+		return errors.New(p.Name() + " not connected back from " + p.src.Name())
+	}
+
+	if p.sub != nil {
+		if err := p.sub.DirectlyConnected(); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	for _, sub := range p.subs {
+		if err := sub.DirectlyConnected(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Push an item to this port.
@@ -430,7 +475,7 @@ func (p *Port) Name() string {
 	if p.direction == DIRECTION_IN {
 		if p.operator != nil {
 			if p.delegate != nil {
-				return p.operator.name + "." + p.delegate.name + ":OUT" + name
+				return p.operator.name + "." + p.delegate.name + ":IN" + name
 			} else {
 				return p.operator.name + ":IN" + name
 			}
@@ -440,7 +485,7 @@ func (p *Port) Name() string {
 	} else {
 		if p.operator != nil {
 			if p.delegate != nil {
-				return p.operator.name + "." + p.delegate.name + ":IN" + name
+				return p.operator.name + "." + p.delegate.name + ":OUT" + name
 			} else {
 				return p.operator.name + ":OUT" + name
 			}

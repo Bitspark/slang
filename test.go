@@ -73,11 +73,14 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 			return 0, 0, err
 		}
 
-		o.Compile()
+		cmp := o.Compile()
+		fmt.Fprintf(writer, "Test case %3d/%3d: %s (compiled: %d, size: %d)\n", i+1, len(test.TestCases), tc.Name, cmp, len(tc.Data.In))
+
+		if err := o.CorrectlyCompiled(); err != nil {
+			return 0, 0, err
+		}
 		o.Out().Bufferize()
 		o.Start()
-
-		fmt.Fprintf(writer, "Test case %3d/%3d: %s (size: %d)\n", i+1, len(test.TestCases), tc.Name, len(tc.Data.In))
 
 		success := true
 

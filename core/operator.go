@@ -1,5 +1,7 @@
 package core
 
+import "errors"
+
 type OFunc func(in, out *Port, dels map[string]*Delegate, store interface{})
 
 type Operator struct {
@@ -131,6 +133,11 @@ func (o *Operator) Compile() int {
 	o.In().Merge()
 	o.Out().Merge()
 
+	for _, dlg := range o.delegates {
+		dlg.In().Merge()
+		dlg.Out().Merge()
+	}
+
 	// Move children to parent and rename instances
 	for _, c := range o.children {
 		c.name = o.name + "." + c.name
@@ -142,6 +149,23 @@ func (o *Operator) Compile() int {
 	delete(o.parent.children, o.name)
 
 	return compiled + 1
+}
+
+func (o *Operator) CorrectlyCompiled() error {
+	for _, chld := range o.Children() {
+		if len(chld.children) != 0 {
+			return errors.New(chld.Name() + " not flat")
+		}
+		if err := chld.In().DirectlyConnected(); err != nil {
+			return err
+		}
+		for _, del := range chld.delegates {
+			if err := del.In().DirectlyConnected(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // DELEGATE

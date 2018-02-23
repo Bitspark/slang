@@ -16,7 +16,7 @@ import (
 
 var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
 
-func BuildOperator(opFilePath string, props map[string]interface{}, compile bool) (*core.Operator, error) {
+func BuildOperator(opFilePath string, generics map[string]*core.PortDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
 	// Find correct file
 	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
 	if err != nil {
@@ -24,7 +24,7 @@ func BuildOperator(opFilePath string, props map[string]interface{}, compile bool
 	}
 
 	// Read operator definition and perform recursion detection
-	def, err := readOperatorDef(opDefFilePath, nil, nil)
+	def, err := readOperatorDef(opDefFilePath, generics, nil)
 
 	if err != nil {
 		return nil, err

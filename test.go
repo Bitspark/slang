@@ -11,12 +11,14 @@ import (
 	"reflect"
 	"slang/utils"
 	"strings"
+	"slang/core"
 )
 
 type TestCaseDef struct {
-	Name        string                 `json:"name" yaml:"name"`
-	Description string                 `json:"description" yaml:"description"`
-	Properties  map[string]interface{} `json:"properties" yaml:"properties"`
+	Name        string                   `json:"name" yaml:"name"`
+	Description string                   `json:"description" yaml:"description"`
+	Generics    map[string]*core.PortDef `json:"generics" yaml:"generics"`
+	Properties  map[string]interface{}   `json:"properties" yaml:"properties"`
 	Data struct {
 		In  []interface{} `json:"in" yaml:"in"`
 		Out []interface{} `json:"out" yaml:"out"`
@@ -66,7 +68,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fmt.Fprintln(writer)
 
 	for i, tc := range test.TestCases {
-		o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Properties, false)
+		o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties, false)
 		if err != nil {
 			return 0, 0, err
 		}

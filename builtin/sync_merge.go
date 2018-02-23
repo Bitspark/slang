@@ -27,7 +27,7 @@ var syncMergeOpCfg = &builtinConfig{
 			Generic: "itemType",
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			item, ok := in.Pull().(map[string]interface{})
 			if !ok {

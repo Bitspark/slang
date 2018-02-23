@@ -28,10 +28,10 @@ operators:
       emptyValue: 0.0
 connections:
   (:
-    - items(reducer
-  reducer)result:
+    - (reducer
+  reducer):
     - )
-  reducer)selection.:
+  reducer.selection).:
     - (adder
   adder):
-    - pool.(reducer
+    - .(reducer.selection

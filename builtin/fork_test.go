@@ -29,8 +29,10 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.In().Stream().Map("i"))
+	a.NotNil(o.In().Stream().Map("item"))
 	a.NotNil(o.In().Stream().Map("select"))
+	a.Equal(core.TYPE_PRIMITIVE, o.In().Stream().Map("item").Type())
+	a.Equal(core.TYPE_BOOLEAN, o.In().Stream().Map("select").Type())
 }
 
 func TestBuiltin_Fork__OutPorts(t *testing.T) {
@@ -50,6 +52,8 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 
 	a.NotNil(o.Out().Map("true").Stream())
 	a.NotNil(o.Out().Map("false").Stream())
+	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("true").Stream().Type())
+	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("false").Stream().Type())
 }
 
 func TestBuiltin_Fork__Correct(t *testing.T) {
@@ -72,19 +76,19 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 
 	o.In().Push([]interface{}{
 		map[string]interface{}{
-			"i":      "hallo",
+			"item":   "hallo",
 			"select": true,
 		},
 		map[string]interface{}{
-			"i":      "welt",
+			"item":   "welt",
 			"select": false,
 		},
 		map[string]interface{}{
-			"i":      100,
+			"item":   100,
 			"select": true,
 		},
 		map[string]interface{}{
-			"i":      101,
+			"item":   101,
 			"select": false,
 		},
 	})
@@ -116,11 +120,11 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 
 	o.In().Push([]interface{}{
 		map[string]interface{}{
-			"i":      map[string]interface{}{"a": "1", "b": "hallo"},
+			"item":   map[string]interface{}{"a": "1", "b": "hallo"},
 			"select": true,
 		},
 		map[string]interface{}{
-			"i":      map[string]interface{}{"a": "2", "b": "slang"},
+			"item":   map[string]interface{}{"a": "2", "b": "slang"},
 			"select": false,
 		},
 	})

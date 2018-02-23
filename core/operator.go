@@ -1,19 +1,27 @@
 package core
 
-type OFunc func(in, out *Port, store interface{})
+type OFunc func(in, out *Port, dels map[string]*Delegate, store interface{})
 
 type Operator struct {
-	name     string
-	basePort *Port
-	inPort   *Port
-	outPort  *Port
-	parent   *Operator
-	children map[string]*Operator
-	function OFunc
-	store    interface{}
+	name      string
+	basePort  *Port
+	inPort    *Port
+	outPort   *Port
+	delegates map[string]*Delegate
+	parent    *Operator
+	children  map[string]*Operator
+	function  OFunc
+	store     interface{}
 }
 
-func NewOperator(name string, f OFunc, defIn, defOut PortDef) (*Operator, error) {
+type Delegate struct {
+	op      *Operator
+	name    string
+	inPort  *Port
+	outPort *Port
+}
+
+func NewOperator(name string, f OFunc, defIn, defOut PortDef, delegates map[string]*DelegateDef) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.name = name
@@ -21,14 +29,22 @@ func NewOperator(name string, f OFunc, defIn, defOut PortDef) (*Operator, error)
 
 	var err error
 
-	o.inPort, err = NewPort(o, defIn, DIRECTION_IN)
+	o.inPort, err = NewPort(o, nil, defIn, DIRECTION_IN)
 	if err != nil {
 		return nil, err
 	}
 
-	o.outPort, err = NewPort(o, defOut, DIRECTION_OUT)
+	o.outPort, err = NewPort(o, nil, defOut, DIRECTION_OUT)
 	if err != nil {
 		return nil, err
+	}
+
+	o.delegates = make(map[string]*Delegate)
+	for delName, del := range delegates {
+		o.delegates[delName], err = NewDelegate(delName, o, *del)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return o, nil
@@ -40,6 +56,10 @@ func (o *Operator) In() *Port {
 
 func (o *Operator) Out() *Port {
 	return o.outPort
+}
+
+func (o *Operator) Delegate(del string) *Delegate {
+	return o.delegates[del]
 }
 
 func (o *Operator) Name() string {
@@ -72,7 +92,7 @@ func (o *Operator) Child(name string) *Operator {
 
 func (o *Operator) Start() {
 	if o.function != nil {
-		go o.function(o.inPort, o.outPort, o.store)
+		go o.function(o.inPort, o.outPort, o.delegates, o.store)
 	} else {
 		for _, c := range o.children {
 			c.Start()
@@ -122,4 +142,43 @@ func (o *Operator) Compile() int {
 	delete(o.parent.children, o.name)
 
 	return compiled + 1
+}
+
+// DELEGATE
+
+func NewDelegate(name string, op *Operator, def DelegateDef) (*Delegate, error) {
+	if !def.valid {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	del := &Delegate{name: name, op: op}
+
+	var err error
+	if del.inPort, err = NewPort(op, del, def.In, DIRECTION_IN); err != nil {
+		return nil, err
+	}
+	if del.outPort, err = NewPort(op, del, def.Out, DIRECTION_OUT); err != nil {
+		return nil, err
+	}
+
+	return del, nil
+}
+
+func (d *Delegate) Name() string {
+	return d.name
+}
+
+func (d *Delegate) Operator() *Operator {
+	return d.op
+}
+
+func (d *Delegate) In() *Port {
+	return d.inPort
+}
+
+func (d *Delegate) Out() *Port {
+	return d.outPort
 }

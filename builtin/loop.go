@@ -7,13 +7,16 @@ import (
 var loopOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"init": {
-					Type:    "generic",
-					Generic: "stateType",
-				},
-				"iteration": {
+			Type:    "generic",
+			Generic: "stateType",
+		},
+		Out: core.PortDef{
+			Type:    "generic",
+			Generic: "stateType",
+		},
+		Delegates: map[string]*core.DelegateDef{
+			"iteration": {
+				In: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type: "map",
@@ -28,16 +31,7 @@ var loopOpCfg = &builtinConfig{
 						},
 					},
 				},
-			},
-		},
-		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"end": {
-					Type:    "generic",
-					Generic: "stateType",
-				},
-				"state": {
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type:    "generic",
@@ -47,49 +41,51 @@ var loopOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+		iIn := dels["iteration"].In()
+		iOut := dels["iteration"].Out()
 		for true {
-			i := in.Map("init").Pull()
+			i := in.Pull()
 
 			// Redirect all markers
 			if core.IsMarker(i) {
-				out.Map("state").Push(i)
-				iter := in.Map("iteration").Stream().Pull()
+				iOut.Push(i)
+				iter := iIn.Stream().Pull()
 
 				if i != iter {
 					panic("should be same marker")
 				}
 
-				out.Map("end").Push(i)
+				out.Push(i)
 
 				continue
 			}
 
-			out.Map("state").PushBOS()
-			out.Map("state").Stream().Push(i)
+			iOut.PushBOS()
+			iOut.Stream().Push(i)
 
 			oldState := i
 
-			i = in.Map("iteration").Stream().Pull()
+			i = iIn.Stream().Pull()
 
-			if !in.Map("iteration").OwnBOS(i) {
+			if !iIn.OwnBOS(i) {
 				panic("expected own BOS")
 			}
 
 			for true {
-				iter := in.Map("iteration").Stream().Pull().(map[string]interface{})
+				iter := iIn.Stream().Pull().(map[string]interface{})
 				newState := iter["state"]
 				cont := iter["continue"].(bool)
 
 				if cont {
-					out.Map("state").Push(newState)
+					iOut.Push(newState)
 				} else {
-					out.Map("state").PushEOS()
-					i = in.Map("iteration").Stream().Pull()
-					if !in.Map("iteration").OwnEOS(i) {
+					iOut.PushEOS()
+					i = iIn.Stream().Pull()
+					if !iIn.OwnEOS(i) {
 						panic("expected own BOS")
 					}
-					out.Map("end").Push(oldState)
+					out.Push(oldState)
 					break
 				}
 

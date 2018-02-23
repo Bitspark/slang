@@ -90,29 +90,57 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 		return nil, errors.New("cannot derive direction")
 	}
 
-	opSplit := strings.Split(refStr, sep)
+	refSplit := strings.Split(refStr, sep)
 
-	if len(opSplit) != 2 {
-		return nil, fmt.Errorf(`connection string malformed: ""%s"`, refStr)
+	if len(refSplit) != 2 {
+		return nil, fmt.Errorf(`connection string malformed (1): "%s"`, refStr)
 	}
 
 	var o *core.Operator
-	if opSplit[opIdx] == "" {
+	var d *core.Delegate
+	if refSplit[opIdx] == "" {
 		o = par
 	} else {
-		o = par.Child(opSplit[opIdx])
-		if o == nil {
-			return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
+		if !strings.Contains(refSplit[opIdx], ".") {
+			o = par.Child(refSplit[opIdx])
+			if o == nil {
+				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
+			}
+		} else {
+			opSplit := strings.Split(refSplit[opIdx], ".")
+			if len(opSplit) != 2 {
+				return nil, fmt.Errorf(`connection string malformed (2): "%s"`, refStr)
+			}
+			if opSplit[0] == "" {
+				o = par
+			} else {
+				o = par.Child(opSplit[0])
+				if o == nil {
+					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
+				}
+			}
+			d = o.Delegate(opSplit[1])
+			if d == nil {
+				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), opSplit[1])
+			}
 		}
 	}
 
-	pathSplit := strings.Split(opSplit[portIdx], ".")
+	pathSplit := strings.Split(refSplit[portIdx], ".")
 
 	var p *core.Port
 	if in {
-		p = o.In()
+		if d == nil {
+			p = o.In()
+		} else {
+			p = d.In()
+		}
 	} else {
-		p = o.Out()
+		if d == nil {
+			p = o.Out()
+		} else {
+			p = d.Out()
+		}
 	}
 
 	start := 0
@@ -303,7 +331,7 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, def.In, def.Out)
+	o, err := core.NewOperator(insName, nil, def.In, def.Out, def.Delegates)
 	if err != nil {
 		return nil, err
 	}
@@ -393,6 +421,7 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 		builtinOp.SetParent(par)
 		return builtinOp, nil
 	} else if builtin.IsRegistered(insDef.Operator) {
+		// Builtin operator with that name exists, but still could not create it, so an error must have occurred
 		return nil, err
 	}
 	// Instance definition must have an appropriate operator definition

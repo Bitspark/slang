@@ -11,7 +11,7 @@ var forkOpCfg = &builtinConfig{
 			Stream: &core.PortDef{
 				Type: "map",
 				Map: map[string]*core.PortDef{
-					"i": {
+					"item": {
 						Type:    "generic",
 						Generic: "itemType",
 					},
@@ -41,7 +41,7 @@ var forkOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, store interface{}) {
+	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
 			i := in.Stream().Pull()
 
@@ -62,7 +62,7 @@ var forkOpCfg = &builtinConfig{
 				}
 
 				if m, ok := i.(map[string]interface{}); ok {
-					pI := m["i"]
+					pI := m["item"]
 
 					pSelect := m["select"].(bool)
 

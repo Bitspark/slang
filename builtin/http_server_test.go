@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"bytes"
+	"time"
 )
 
 func TestBuiltin_HTTP__CreatorFuncIsRegistered(t *testing.T) {
@@ -126,6 +127,7 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 	handler.In().PushBOS()
 	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": "hallo slang!"})
 
+	time.Sleep(500 * time.Millisecond)
 	resp, _ := http.Get("http://127.0.0.1:9439/test789")
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
@@ -154,6 +156,7 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 	handler.In().PushBOS()
 	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": "bye slang!"})
 
+	time.Sleep(500 * time.Millisecond)
 	resp, _ := http.Get("http://127.0.0.1:9440/test789")
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)

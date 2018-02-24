@@ -296,7 +296,8 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	for _, p := range paths {
 		defFilePath := path.Join(p, relFilePath)
 		// Find correct file
-		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
+		var opDefFilePath string
+		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, fileEndings)
 		if err != nil {
 			continue
 		}

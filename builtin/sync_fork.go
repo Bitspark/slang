@@ -34,18 +34,19 @@ var syncForkOpCfg = &builtinConfig{
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
-			item, ok := in.Pull().(map[string]interface{})
+			item := in.Pull()
+			m, ok := item.(map[string]interface{})
 			if !ok {
 				out.Push(item)
 				continue
 			}
 
-			if item["select"].(bool) {
-				out.Map("true").Push(item["item"])
+			if m["select"].(bool) {
+				out.Map("true").Push(m["item"])
 				out.Map("false").Push(nil)
 			} else {
 				out.Map("true").Push(nil)
-				out.Map("false").Push(item["item"])
+				out.Map("false").Push(m["item"])
 			}
 		}
 	},

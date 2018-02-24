@@ -346,6 +346,33 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 	a.PortPushes([]interface{}{1.0, 2.0, 3.0}, fo.Out())
 }
 
+func TestBuiltin_Eval__IsNull(t *testing.T) {
+	a := assertions.New(t)
+	fo, err := MakeOperator(core.InstanceDef{
+		Operator:   "slang.eval",
+		Properties: map[string]interface{}{"expression": "isNull(a)"},
+		Generics: map[string]*core.PortDef{
+			"paramsMap": {
+				Type: "map",
+				Map: map[string]*core.PortDef{
+					"a": {Type: "primitive"},
+				},
+			},
+		},
+	})
+	a.NoError(err)
+	a.NotNil(fo)
+	fo.Out().Bufferize()
+
+	go fo.Start()
+
+	fo.In().Push(map[string]interface{}{"a": 1.0})
+	fo.In().Push(map[string]interface{}{"a": nil})
+	fo.In().Push(map[string]interface{}{"a": "testtest"})
+
+	a.PortPushes([]interface{}{false, true, false}, fo.Out())
+}
+
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{

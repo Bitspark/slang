@@ -29,16 +29,17 @@ var syncMergeOpCfg = &builtinConfig{
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
-			item, ok := in.Pull().(map[string]interface{})
+			item := in.Pull()
+			m, ok := item.(map[string]interface{})
 			if !ok {
 				out.Push(item)
 				continue
 			}
 
-			if item["select"].(bool) {
-				out.Push(item["true"])
+			if m["select"].(bool) {
+				out.Push(m["true"])
 			} else {
-				out.Push(item["false"])
+				out.Push(m["false"])
 			}
 		}
 	},

@@ -7,7 +7,7 @@
   },
   "operators": {
     "doubler": {
-      "operator": "eval",
+      "operator": "slang.eval",
       "properties": {
         "expression": "a+a"
       },

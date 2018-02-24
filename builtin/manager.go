@@ -105,16 +105,16 @@ func Register(name string, cfg *builtinConfig) {
 
 func init() {
 	cfgs = make(map[string]*builtinConfig)
-	Register("const", constOpCfg)
-	Register("eval", evalOpCfg)
-	Register("fork", forkOpCfg)
-	Register("loop", loopOpCfg)
-	Register("merge", mergeOpCfg)
-	Register("take", takeOpCfg)
-	Register("agg", aggOpCfg)
-	Register("reduce", reduceOpCfg)
-	Register("syncFork", syncForkOpCfg)
-	Register("syncMerge", syncMergeOpCfg)
+	Register("slang.const", constOpCfg)
+	Register("slang.eval", evalOpCfg)
+	Register("slang.fork", forkOpCfg)
+	Register("slang.loop", loopOpCfg)
+	Register("slang.merge", mergeOpCfg)
+	Register("slang.take", takeOpCfg)
+	Register("slang.aggregate", aggregateOpCfg)
+	Register("slang.reduce", reduceOpCfg)
+	Register("slang.syncFork", syncForkOpCfg)
+	Register("slang.syncMerge", syncMergeOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -18,13 +18,13 @@ operators:
         type: number
   # Sorter
   sorter:
-    operator: take
+    operator: slang.take
     generics:
       itemType:
         type: number
   # Reducer
   reducer:
-    operator: reduce
+    operator: slang.reduce
     generics:
       itemType:
         type: stream
@@ -34,7 +34,7 @@ operators:
       emptyValue: []
   # Comparator
   comparator:
-    operator: eval
+    operator: slang.eval
     generics:
       paramsMap:
         type: map

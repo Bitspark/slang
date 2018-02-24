@@ -243,31 +243,31 @@ func TestFlatMapParameters__ComplexMixed(t *testing.T) {
 
 func TestBuiltin_Eval__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
-	a.True(IsRegistered("eval"))
+	a.True(IsRegistered("slang.eval"))
 }
 
 func TestBuiltin_Eval__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "eval"})
+	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval"})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": ""}})
+	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "eval", Properties: map[string]interface{}{"expression": "+"}})
+	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__Add(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "eval",
+		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "a+b"},
 		Generics: map[string]*core.PortDef{
 			"paramsMap": {
@@ -295,7 +295,7 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 func TestBuiltin_Eval__Floor(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "eval",
+		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "floor(a)"},
 		Generics: map[string]*core.PortDef{
 			"paramsMap": {
@@ -322,7 +322,7 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 func TestBuiltin_Eval__Ceil(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "eval",
+		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "ceil(a)"},
 		Generics: map[string]*core.PortDef{
 			"paramsMap": {
@@ -349,7 +349,7 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "eval",
+		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "a && (b != c)"},
 		Generics: map[string]*core.PortDef{
 			"paramsMap": {
@@ -380,7 +380,7 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "eval",
+		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "vec0.x*vec1.x+vec0.y*vec1.y"},
 		Generics: map[string]*core.PortDef{
 			"paramsMap": {

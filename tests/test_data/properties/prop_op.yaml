@@ -7,7 +7,7 @@ properties:
 
 operators:
   const:
-    operator: const
+    operator: slang.const
     generics:
       valueType:
         type: number

@@ -69,16 +69,10 @@ var aggregateOpCfg = &builtinConfig{
 				continue
 			}
 
-			e := in.Map("items").Stream().Pull()
-			if !in.Map("items").OwnBOS(e) {
-				panic("expected BOS")
-			}
+			in.Map("items").PullBOS()
 
 			iOut.PushBOS()
-
-			if !iIn.OwnBOS(iIn.Stream().Pull()) {
-				panic("expected own BOS")
-			}
+			iIn.PullBOS()
 
 			for true {
 				item := in.Map("items").Stream().Pull()
@@ -86,10 +80,7 @@ var aggregateOpCfg = &builtinConfig{
 				if core.IsMarker(item) {
 					if in.Map("items").OwnEOS(item) {
 						iOut.PushEOS()
-						item = iIn.Stream().Pull()
-						if !iIn.OwnEOS(item) {
-							panic("expected own BOS")
-						}
+						iIn.PullEOS()
 						out.Push(state)
 						break
 					} else {

@@ -66,11 +66,7 @@ var loopOpCfg = &builtinConfig{
 
 			oldState := i
 
-			i = iIn.Stream().Pull()
-
-			if !iIn.OwnBOS(i) {
-				panic("expected own BOS")
-			}
+			iIn.PullBOS()
 
 			for true {
 				iter := iIn.Stream().Pull().(map[string]interface{})
@@ -81,10 +77,7 @@ var loopOpCfg = &builtinConfig{
 					iOut.Push(newState)
 				} else {
 					iOut.PushEOS()
-					i = iIn.Stream().Pull()
-					if !iIn.OwnEOS(i) {
-						panic("expected own BOS")
-					}
+					iIn.PullEOS()
 					out.Push(oldState)
 					break
 				}

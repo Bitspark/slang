@@ -47,6 +47,7 @@ var forkOpCfg = &builtinConfig{
 
 			if !in.OwnBOS(i) {
 				out.Push(i)
+				continue
 			}
 
 			out.Map("true").PushBOS()

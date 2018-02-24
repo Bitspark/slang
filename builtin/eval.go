@@ -34,7 +34,6 @@ func getFlattenedObj(obj interface{}) map[string]interface{} {
 				flatMap[key+"__"+sKey] = sVal
 			}
 		}
-
 	} else if m, ok := obj.(map[string]interface{}); ok {
 		for key, val := range m {
 			var sub interface{}
@@ -84,12 +83,21 @@ func evalFunctions() map[string]govaluate.ExpressionFunction {
 			}
 			return nil, errors.New("wrong type")
 		},
+		"isNull": func(args ...interface{}) (interface{}, error) {
+			if len(args) == 0 {
+				return true, nil
+			}
+			return args[0] == nil, nil
+		},
 	}
 	return functions
 }
 
 func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
-	goEvalExpr, err := govaluate.NewEvaluableExpressionWithFunctions(strings.Replace(expression, ".", "__", -1), evalFunctions())
+	expression = strings.Replace(expression, "\\.", "%DOT%", -1)
+	expression = strings.Replace(expression, ".", "__", -1)
+	expression = strings.Replace(expression, "%DOT%", ".", -1)
+	goEvalExpr, err := govaluate.NewEvaluableExpressionWithFunctions(expression, evalFunctions())
 	if err == nil {
 		return &EvaluableExpression{*goEvalExpr}, nil
 	}

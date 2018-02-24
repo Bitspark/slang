@@ -107,14 +107,18 @@ func init() {
 	cfgs = make(map[string]*builtinConfig)
 	Register("slang.const", constOpCfg)
 	Register("slang.eval", evalOpCfg)
+
 	Register("slang.fork", forkOpCfg)
-	Register("slang.loop", loopOpCfg)
+	Register("slang.syncFork", syncForkOpCfg)
 	Register("slang.merge", mergeOpCfg)
+	Register("slang.syncMerge", syncMergeOpCfg)
 	Register("slang.take", takeOpCfg)
+
+	Register("slang.loop", loopOpCfg)
 	Register("slang.aggregate", aggregateOpCfg)
 	Register("slang.reduce", reduceOpCfg)
-	Register("slang.syncFork", syncForkOpCfg)
-	Register("slang.syncMerge", syncMergeOpCfg)
+
+	Register("slang.net.http.server", httpServerOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

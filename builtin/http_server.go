@@ -36,7 +36,6 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 	// Gather all response information
 	statusCode, _ := hIn.Map("status").PullInt()
-	resp.WriteHeader(statusCode)
 
 	headers := hIn.Map("headers").Pull().([]interface{})
 	for _, entry := range headers {
@@ -44,6 +43,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 		resp.Header().Set(header["key"].(string), header["value"].(string))
 	}
 
+	resp.WriteHeader(statusCode)
 	body, _ := hIn.Map("body").PullString()
 	resp.Write([]byte(body))
 }

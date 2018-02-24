@@ -418,16 +418,18 @@ func (p *Port) PullString() string {
 	panic("invalid type")
 }
 
-func (p *Port) PullBOS() {
-	if !p.OwnBOS(p.Pull()) {
+func (p *Port) PullBOS() bool {
+	if !p.OwnBOS(p.sub.Pull()) {
 		panic("expected own BOS")
 	}
+	return true
 }
 
-func (p *Port) PullEOS() {
-	if !p.OwnEOS(p.Pull()) {
+func (p *Port) PullEOS() bool {
+	if !p.OwnEOS(p.sub.Pull()) {
 		panic("expected own EOS")
 	}
+	return true
 }
 
 // Similar to Port.Pull but will return nil when there is no item after timeout

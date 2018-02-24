@@ -12,9 +12,12 @@ import (
 	"slang/core"
 	"slang/utils"
 	"strings"
+	"os"
+	"runtime"
 )
 
 var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
+var paths = []string{}                       // Paths where we search for operators
 
 func BuildOperator(opFilePath string, generics map[string]*core.PortDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
 	// Find correct file
@@ -284,8 +287,9 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 		return def, nil
 	}
 
-	// These are the paths where we search for operators
-	paths := []string{"."}
+	// Read paths from environment to search for the operator there
+	// Paths are stored in the global paths variable
+	readLibPathsFromEnvironment()
 
 	// Iterate through the paths and take the first operator we find
 	var err error
@@ -294,12 +298,12 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 		// Find correct file
 		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
 		if err != nil {
-			return def, err
-		}
-		def, err = readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
-
-		if err != nil {
 			continue
+		}
+
+		def, err = readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
+		if err != nil {
+			return def, err
 		}
 
 		// We found an operator, return
@@ -430,4 +434,33 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 	}
 	// No builtin operator, so create new one according to the operator definition saved in the instance definition
 	return buildAndConnectOperator(insDef.Name, insDef.Properties, insDef.OperatorDef(), par)
+}
+
+// Stores all library paths in the global paths variable
+func readLibPathsFromEnvironment() {
+	if len(paths) > 0 {
+		return
+	}
+
+	// We always look in the local directory first
+	paths = append(paths, "./")
+
+	sep := ":"
+	if runtime.GOOS == "windows" {
+		sep = ";"
+	}
+
+	// Read from environment
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		if pair[0] == "SLANG_LIB" {
+			libPaths := strings.Split(pair[1], sep)
+			for _, libPath := range libPaths {
+				if !strings.HasSuffix(libPath, "/") {
+					libPath += "/"
+				}
+				paths = append(paths, libPath)
+			}
+		}
+	}
 }

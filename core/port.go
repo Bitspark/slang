@@ -324,7 +324,7 @@ func (p *Port) PushEOS() {
 	p.sub.Push(EOS{p})
 }
 
-// Pull an item from this port.
+// Pull an item from this port
 func (p *Port) Pull() interface{} {
 	if p.itemType == TYPE_GENERIC {
 		panic("cannot pull from generic")
@@ -383,6 +383,53 @@ func (p *Port) Pull() interface{} {
 	}
 
 	panic("unknown type")
+}
+
+// Pull a float and panic if not possible
+func (p *Port) PullFloat64() float64 {
+	item := p.Pull()
+	if f, ok := item.(float64); ok {
+		return f
+	}
+	if i, ok := item.(int); ok {
+		return float64(i)
+	}
+	panic("invalid type")
+}
+
+// Pull an int and panic if not possible
+func (p *Port) PullInt() int {
+	item := p.Pull()
+	if i, ok := item.(int); ok {
+		return i
+	}
+	if f, ok := item.(float64); ok {
+		return int(f)
+	}
+	panic("invalid type")
+}
+
+// Pull a string and panic if not possible
+func (p *Port) PullString() string {
+	item := p.Pull()
+	if s, ok := item.(string); ok {
+		return s
+	}
+	panic("invalid type")
+}
+
+func (p *Port) PullBOS() bool {
+	if !p.OwnBOS(p.sub.Pull()) {
+		panic("expected own BOS")
+	}
+	return true
+}
+
+func (p *Port) PullEOS() bool {
+	if !p.OwnEOS(p.sub.Pull()) {
+		panic("expected own EOS")
+	}
+	return true
 }
 
 // Similar to Port.Pull but will return nil when there is no item after timeout

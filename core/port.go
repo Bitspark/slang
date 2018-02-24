@@ -386,36 +386,36 @@ func (p *Port) Pull() interface{} {
 }
 
 // Pull a float and panic if not possible
-func (p *Port) PullFloat64() float64 {
+func (p *Port) PullFloat64() (float64, interface{}) {
 	item := p.Pull()
 	if f, ok := item.(float64); ok {
-		return f
+		return f, nil
 	}
 	if i, ok := item.(int); ok {
-		return float64(i)
+		return float64(i), nil
 	}
-	panic("invalid type")
+	return 0, item
 }
 
 // Pull an int and panic if not possible
-func (p *Port) PullInt() int {
+func (p *Port) PullInt() (int, interface{}) {
 	item := p.Pull()
 	if i, ok := item.(int); ok {
-		return i
+		return i, nil
 	}
 	if f, ok := item.(float64); ok {
-		return int(f)
+		return int(f), nil
 	}
-	panic("invalid type")
+	return 0, item
 }
 
 // Pull a string and panic if not possible
-func (p *Port) PullString() string {
+func (p *Port) PullString() (string, interface{}) {
 	item := p.Pull()
 	if s, ok := item.(string); ok {
-		return s
+		return s, nil
 	}
-	panic("invalid type")
+	return "", item
 }
 
 func (p *Port) PullBOS() bool {

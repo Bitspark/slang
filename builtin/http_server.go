@@ -35,7 +35,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 	hOut.Map("body").Push(buf.String())
 
 	// Gather all response information
-	statusCode := hIn.Map("status").PullInt()
+	statusCode, _ := hIn.Map("status").PullInt()
 	resp.WriteHeader(statusCode)
 
 	headers := hIn.Map("headers").Pull().([]interface{})
@@ -44,7 +44,8 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 		resp.Header().Set(header["key"].(string), header["value"].(string))
 	}
 
-	resp.Write([]byte(hIn.Map("body").PullString()))
+	body, _ := hIn.Map("body").PullString()
+	resp.Write([]byte(body))
 }
 
 var httpServerOpCfg = &builtinConfig{
@@ -128,7 +129,11 @@ var httpServerOpCfg = &builtinConfig{
 		hIn := slangHandler.In().Stream()
 
 		for true {
-			port := in.PullInt()
+			port, marker := in.PullInt()
+			if marker != nil {
+				out.Push(marker)
+				continue
+			}
 
 			// Once we receive the port, we signal start of request processing by pushing a BOS
 			slangHandler.Out().PushBOS()

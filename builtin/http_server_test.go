@@ -13,7 +13,7 @@ import (
 func TestBuiltin_HTTP__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.net.http.server")
+	ocFork := getBuiltinCfg("slang.net.httpServer")
 	a.NotNil(ocFork)
 }
 
@@ -22,7 +22,7 @@ func TestBuiltin_HTTP__InPorts(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "slang.net.http.server",
+			Operator: "slang.net.httpServer",
 		},
 	)
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestBuiltin_HTTP__OutPorts(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "slang.net.http.server",
+			Operator: "slang.net.httpServer",
 		},
 	)
 	require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestBuiltin_HTTP__Delegates(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "slang.net.http.server",
+			Operator: "slang.net.httpServer",
 		},
 	)
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestBuiltin_HTTP__Request(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "slang.net.http.server",
+			Operator: "slang.net.httpServer",
 		},
 	)
 	require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "slang.net.http.server",
+			Operator: "slang.net.httpServer",
 		},
 	)
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "slang.net.http.server",
+			Operator: "slang.net.httpServer",
 		},
 	)
 	require.NoError(t, err)

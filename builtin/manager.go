@@ -118,7 +118,7 @@ func init() {
 	Register("slang.aggregate", aggregateOpCfg)
 	Register("slang.reduce", reduceOpCfg)
 
-	Register("slang.net.http.server", httpServerOpCfg)
+	Register("slang.net.httpServer", httpServerOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

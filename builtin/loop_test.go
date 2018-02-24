@@ -10,7 +10,7 @@ import (
 func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocLoop := getBuiltinCfg("loop")
+	ocLoop := getBuiltinCfg("slang.loop")
 	a.NotNil(ocLoop)
 }
 
@@ -19,7 +19,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Name: "loop",
-			Operator: "loop",
+			Operator: "slang.loop",
 			Generics: map[string]*core.PortDef{
 				"stateType": {
 					Type: "number",
@@ -88,7 +88,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	}
 	lo, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "loop",
+			Operator: "slang.loop",
 			Generics: map[string]*core.PortDef{
 				"stateType": &stateType,
 			},
@@ -156,7 +156,7 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a := assertions.New(t)
 	lo, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "loop",
+			Operator: "slang.loop",
 			Generics: map[string]*core.PortDef{
 				"stateType": {
 					Type: "number",

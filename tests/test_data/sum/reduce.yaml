@@ -8,7 +8,7 @@ out:
   type: number
 operators:
   adder:
-    operator: "eval"
+    operator: slang.eval
     generics:
       paramsMap:
         type: map
@@ -20,7 +20,7 @@ operators:
     properties:
       expression: "a+b"
   reducer:
-    operator: "reduce"
+    operator: slang.reduce
     generics:
       itemType:
         type: number

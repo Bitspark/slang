@@ -15,7 +15,7 @@ out:
   type: number
 operators:
   pfunc:
-    operator: eval
+    operator: slang.eval
     properties:
       expression: "a*x*x + b*x + c"
     generics:

@@ -10,7 +10,7 @@ import (
 func TestOperatorConst__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocConst := getBuiltinCfg("const")
+	ocConst := getBuiltinCfg("slang.const")
 	a.NotNil(ocConst)
 }
 
@@ -46,7 +46,7 @@ func TestBuiltinConst__Correct(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "number",
@@ -66,7 +66,7 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "boolean",
@@ -96,7 +96,7 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "stream",
@@ -130,7 +130,7 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "map",
@@ -169,7 +169,7 @@ func TestOperatorConst__SimpleNumber(t *testing.T) {
 	a := assertions.New(t)
 	co, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "number",
@@ -194,7 +194,7 @@ func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 	a := assertions.New(t)
 	co, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "map",
@@ -231,7 +231,7 @@ func TestOperatorConst__PassMarkers(t *testing.T) {
 	a := assertions.New(t)
 	co, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: "slang.const",
 			Generics: map[string]*core.PortDef{
 				"valueType": {
 					Type: "number",

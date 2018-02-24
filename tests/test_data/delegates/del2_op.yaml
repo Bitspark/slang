@@ -27,7 +27,7 @@ operators:
         type: generic
         generic: gen
   const:
-    operator: const
+    operator: slang.const
     generics:
       valueType:
         type: generic

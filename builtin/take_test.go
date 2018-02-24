@@ -10,7 +10,7 @@ import (
 func TestOperator_Take__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocTake := getBuiltinCfg("take")
+	ocTake := getBuiltinCfg("slang.take")
 	a.NotNil(ocTake)
 }
 
@@ -18,7 +18,7 @@ func TestOperator_Take__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	co, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "take",
+			Operator: "slang.take",
 		},
 	)
 	a.Error(err)
@@ -29,7 +29,7 @@ func TestOperator_Take__InPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "take",
+			Operator: "slang.take",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "number",
@@ -53,7 +53,7 @@ func TestOperator_Take__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "take",
+			Operator: "slang.take",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "number",
@@ -76,7 +76,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 	a := assertions.New(t)
 	to, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "take",
+			Operator: "slang.take",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "number",

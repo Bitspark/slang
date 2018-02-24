@@ -10,7 +10,7 @@ import (
 func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("fork")
+	ocFork := getBuiltinCfg("slang.fork")
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +19,7 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "slang.fork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
@@ -40,7 +40,7 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "slang.fork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
@@ -61,7 +61,7 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "slang.fork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "primitive",
@@ -101,7 +101,7 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 	o, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "fork",
+			Operator: "slang.fork",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "map",

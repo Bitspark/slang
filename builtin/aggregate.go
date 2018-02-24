@@ -4,7 +4,7 @@ import (
 	"slang/core"
 )
 
-var aggOpCfg = &builtinConfig{
+var aggregateOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
 			Type: "map",

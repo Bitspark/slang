@@ -10,14 +10,14 @@ out:
 
 operators:
   loop:
-    operator: loop
+    operator: slang.loop
     generics:
       itemType:
         type: number
       stateType:
         type: number
   falsify:
-    operator: const
+    operator: slang.const
     generics:
       valueType:
         type: boolean

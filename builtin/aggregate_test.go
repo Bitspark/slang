@@ -7,18 +7,18 @@ import (
 	"testing"
 )
 
-func TestOperatorCreator__Agg__IsRegistered(t *testing.T) {
+func TestOperatorCreator__Aggregate__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocAgg := getBuiltinCfg("agg")
+	ocAgg := getBuiltinCfg("slang.aggregate")
 	a.NotNil(ocAgg)
 }
 
-func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
+func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "agg",
+			Operator: "slang.aggregate",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "number",
@@ -62,11 +62,11 @@ func TestBuiltinAgg__PassOtherMarkers(t *testing.T) {
 	a.PortPushes([]interface{}{[]interface{}{0.0}}, do.Out())
 }
 
-func TestBuiltinAgg__SimpleLoop(t *testing.T) {
+func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "agg",
+			Operator: "slang.aggregate",
 			Generics: map[string]*core.PortDef{
 				"itemType": {
 					Type: "number",

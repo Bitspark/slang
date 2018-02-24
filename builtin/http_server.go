@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-type requestHander struct {
+type requestHandler struct {
 	hOut *core.Port
 	hIn *core.Port
 }
 
-func (r *requestHander) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	hIn := r.hIn
 	hOut := r.hOut
 
@@ -136,7 +136,7 @@ var httpServerOpCfg = &builtinConfig{
 
 			s := &http.Server{
 				Addr:           ":" + strconv.Itoa(port),
-				Handler:        &requestHander{hIn: hIn, hOut: hOut},
+				Handler:        &requestHandler{hIn: hIn, hOut: hOut},
 				ReadTimeout:    10 * time.Second,
 				WriteTimeout:   10 * time.Second,
 				MaxHeaderBytes: 1 << 20,

@@ -119,6 +119,8 @@ func init() {
 	Register("slang.reduce", reduceOpCfg)
 
 	Register("slang.net.httpServer", httpServerOpCfg)
+
+	Register("slang.files.read", fileReadOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

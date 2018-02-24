@@ -3,6 +3,7 @@ package builtin
 import (
 	"slang/core"
 	"errors"
+	"slang/utils"
 )
 
 type valueStore struct {
@@ -31,7 +32,7 @@ var constOpCfg = &builtinConfig{
 	},
 	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
 		if v, ok := props["value"]; ok {
-			o.SetStore(valueStore{v})
+			o.SetStore(valueStore{utils.CleanValue(v)})
 			return nil
 		} else {
 			return errors.New("no value given")

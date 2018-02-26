@@ -44,6 +44,7 @@ func (s *Synchronizer) Pull(token int64, pull pullFunc) {
 	s.tasks[token] <- pull
 	<-s.done[token]
 	delete(s.tasks, token)
+	delete(s.done, token)
 }
 
 func (s *Synchronizer) Worker() {

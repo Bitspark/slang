@@ -64,7 +64,7 @@ func TestBuiltin_HTTP__Delegates(t *testing.T) {
 	a.Equal(core.TYPE_MAP, dlg.In().Stream().Type())
 	a.Equal(core.TYPE_MAP, dlg.Out().Stream().Type())
 
-	a.Equal(core.TYPE_STRING, dlg.In().Stream().Map("body").Type())
+	a.Equal(core.TYPE_BINARY, dlg.In().Stream().Map("body").Type())
 	a.Equal(core.TYPE_NUMBER, dlg.In().Stream().Map("status").Type())
 	a.Equal(core.TYPE_STREAM, dlg.In().Stream().Map("headers").Type())
 	a.Equal(core.TYPE_MAP, dlg.In().Stream().Map("headers").Stream().Type())
@@ -125,14 +125,14 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 	o.In().Push(9439)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
-	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": "hallo slang!"})
+	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": []byte("hallo slang!")})
 
 	time.Sleep(500 * time.Millisecond)
 	resp, _ := http.Get("http://127.0.0.1:9439/test789")
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
 
-	a.Equal("hallo slang!", buf.String())
+	a.Equal([]byte("hallo slang!"), buf.Bytes())
 	a.Equal("200 OK", resp.Status)
 }
 
@@ -154,13 +154,13 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 	o.In().Push(9440)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
-	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": "bye slang!"})
+	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": []byte("bye slang!")})
 
 	time.Sleep(500 * time.Millisecond)
 	resp, _ := http.Get("http://127.0.0.1:9440/test789")
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
 
-	a.Equal("bye slang!", buf.String())
+	a.Equal([]byte("bye slang!"), buf.Bytes())
 	a.Equal("404 Not Found", resp.Status)
 }

@@ -32,7 +32,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
-	hOut.Map("body").Push(buf.String())
+	hOut.Map("body").Push(buf.Bytes())
 
 	// Gather all response information
 	statusCode, _ := hIn.Map("status").PullInt()
@@ -44,7 +44,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 	}
 
 	resp.WriteHeader(statusCode)
-	body, _ := hIn.Map("body").PullString()
+	body, _ := hIn.Map("body").PullBinary()
 	resp.Write([]byte(body))
 }
 
@@ -81,7 +81,7 @@ var httpServerOpCfg = &builtinConfig{
 								},
 							},
 							"body": {
-								Type: "string",
+								Type: "binary",
 							},
 						},
 					},
@@ -115,7 +115,7 @@ var httpServerOpCfg = &builtinConfig{
 								},
 							},
 							"body": {
-								Type: "string",
+								Type: "binary",
 							},
 						},
 					},

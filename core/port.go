@@ -12,6 +12,7 @@ const (
 	TYPE_TRIGGER   = iota
 	TYPE_NUMBER    = iota
 	TYPE_STRING    = iota
+	TYPE_BINARY    = iota
 	TYPE_BOOLEAN   = iota
 	TYPE_STREAM    = iota
 	TYPE_MAP       = iota
@@ -98,6 +99,8 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_NUMBER
 	case "string":
 		p.itemType = TYPE_STRING
+	case "binary":
+		p.itemType = TYPE_BINARY
 	case "boolean":
 		p.itemType = TYPE_BOOLEAN
 	}
@@ -418,6 +421,15 @@ func (p *Port) PullString() (string, interface{}) {
 	return "", item
 }
 
+// Pull a binary object and panic if not possible
+func (p *Port) PullBinary() ([]byte, interface{}) {
+	item := p.Pull()
+	if b, ok := item.([]byte); ok {
+		return b, nil
+	}
+	return nil, item
+}
+
 func (p *Port) PullBOS() bool {
 	if !p.OwnBOS(p.sub.Pull()) {
 		panic("expected own BOS")
@@ -503,6 +515,8 @@ func (p *Port) Name() string {
 		name += "_NUMBER"
 	case TYPE_STRING:
 		name += "_STRING"
+	case TYPE_BINARY:
+		name += "_BINARY"
 	case TYPE_BOOLEAN:
 		name += "_BOOLEAN"
 	case TYPE_MAP:
@@ -647,5 +661,6 @@ func (p *Port) primitive() bool {
 		p.itemType == TYPE_TRIGGER ||
 		p.itemType == TYPE_NUMBER ||
 		p.itemType == TYPE_STRING ||
+		p.itemType == TYPE_BINARY ||
 		p.itemType == TYPE_BOOLEAN
 }

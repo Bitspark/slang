@@ -1,17 +1,17 @@
 package core
 
 import (
-	"math/rand"
 	"sync"
 )
 
 type Synchronizer struct {
-	out   *Port
-	in    *Port
-	queue chan int64
-	tasks map[int64]chan pullFunc
-	done  map[int64]chan bool
-	mutex *sync.Mutex
+	out     *Port
+	in      *Port
+	queue   chan int64
+	tasks   map[int64]chan pullFunc
+	done    map[int64]chan bool
+	mutex   *sync.Mutex
+	counter int64
 }
 
 type pushFunc func(port *Port)
@@ -27,10 +27,9 @@ func (s *Synchronizer) Init(in, out *Port) {
 }
 
 func (s *Synchronizer) Push(push pushFunc) int64 {
-	var token int64
-	token = rand.Int63()
-
 	s.mutex.Lock()
+	s.counter++
+	token := s.counter
 	push(s.out)
 	s.tasks[token] = make(chan pullFunc)
 	s.done[token] = make(chan bool)

@@ -99,12 +99,21 @@ func TestBuiltin_HTTP__Request(t *testing.T) {
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
 
+	done := false
+
 	go func() {
-		http.Get("http://127.0.0.1:9438/test123")
+		for i := 0; i < 5; i++ {
+			http.Get("http://127.0.0.1:9438/test123")
+			if done {
+				return
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
 	}()
 
 	a.Equal("GET", handler.Out().Stream().Map("method").Pull())
 	a.Equal("/test123", handler.Out().Stream().Map("path").Pull())
+	done = true
 }
 
 func TestBuiltin_HTTP__Response200(t *testing.T) {
@@ -127,10 +136,10 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 	handler.In().PushBOS()
 	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": []byte("hallo slang!")})
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9439/test789")
 		if resp.StatusCode != 200 {
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(20 * time.Millisecond)
 			continue
 		}
 		buf := new(bytes.Buffer)
@@ -162,10 +171,10 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 	handler.In().PushBOS()
 	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": []byte("bye slang!")})
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9440/test789")
 		if resp.StatusCode != 404 {
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(20 * time.Millisecond)
 			continue
 		}
 		buf := new(bytes.Buffer)

@@ -14,7 +14,7 @@ var fileReadOpCfg = &builtinConfig{
 			Type: "map",
 			Map: map[string]*core.PortDef{
 				"content": {
-					Type: "string",
+					Type: "binary",
 				},
 				"error": {
 					Type: "string",
@@ -37,7 +37,7 @@ var fileReadOpCfg = &builtinConfig{
 				continue
 			}
 
-			out.Map("content").Push(string(content))
+			out.Map("content").Push(content)
 			out.Map("error").Push(nil)
 		}
 	},

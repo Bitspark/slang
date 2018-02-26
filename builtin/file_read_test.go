@@ -40,7 +40,7 @@ func TestBuiltin_FileRead__OutPorts(t *testing.T) {
 
 	a.NotNil(o.Out())
 	a.Equal(core.TYPE_MAP, o.Out().Type())
-	a.Equal(core.TYPE_STRING, o.Out().Map("content").Type())
+	a.Equal(core.TYPE_BINARY, o.Out().Map("content").Type())
 	a.Equal(core.TYPE_STRING, o.Out().Map("error").Type())
 }
 
@@ -58,7 +58,7 @@ func TestBuiltin_FileRead__Simple(t *testing.T) {
 	o.Start()
 
 	o.In().Push("../tests/test_data/hello.txt")
-	a.Equal("hello slang", o.Out().Map("content").Pull())
+	a.Equal([]byte("hello slang"), o.Out().Map("content").Pull())
 	a.Nil(o.Out().Map("error").Pull())
 }
 

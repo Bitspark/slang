@@ -1,9 +1,9 @@
 package builtin
 
 import (
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 	"testing"
-	"slang/tests/assertions"
+	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
 )
 

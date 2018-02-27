@@ -1,7 +1,7 @@
 package builtin
 
 import (
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 )
 
 var reduceOpCfg = &builtinConfig{

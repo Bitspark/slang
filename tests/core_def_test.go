@@ -3,8 +3,8 @@ package tests
 import (
 	"testing"
 	"slang"
-	"slang/tests/assertions"
-	"slang/core"
+	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/Bitspark/slang/core"
 	"github.com/stretchr/testify/require"
 )
 

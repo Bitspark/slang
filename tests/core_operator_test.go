@@ -2,8 +2,8 @@ package tests
 
 import (
 	"slang"
-	"slang/core"
-	"slang/tests/assertions"
+	"github.com/Bitspark/slang/core"
+	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
 )
 

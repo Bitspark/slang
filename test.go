@@ -64,9 +64,6 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	succs := 0
 	fails := 0
 
-	fmt.Fprintln(writer, "BEGIN TESTING")
-	fmt.Fprintln(writer)
-
 	for i, tc := range test.TestCases {
 		o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties, false)
 		if err != nil {
@@ -113,14 +110,6 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 
 		o.Stop()
 	}
-
-	fmt.Fprintln(writer)
-
-	fmt.Fprintln(writer, "SUMMARY")
-	fmt.Fprintln(writer)
-	fmt.Fprintf(writer, "Tests run: %3d\n", len(test.TestCases))
-	fmt.Fprintf(writer, "Succeeded: %3d\n", succs)
-	fmt.Fprintf(writer, "Failed:    %3d\n", fails)
 
 	return succs, fails, nil
 }

@@ -102,7 +102,6 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		}
 
 		if success {
-
 			fmt.Fprintln(writer, "  success")
 			succs++
 		} else {

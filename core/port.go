@@ -54,7 +54,7 @@ type Port struct {
 }
 
 // Makes a new port.
-func NewPort(o *Operator, d *Delegate, def PortDef, dir int, strSrc *Port) (*Port, error) {
+func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -67,11 +67,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int, strSrc *Port) (*Por
 	}
 
 	p := &Port{}
-	if strSrc != nil {
-		p.strSrc = strSrc
-	} else {
-		p.strSrc = p
-	}
+	p.strSrc = p
 	p.direction = dir
 	p.operator = o
 	p.delegate = d
@@ -83,7 +79,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int, strSrc *Port) (*Por
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = NewPort(o, d, *e, dir, nil)
+			p.subs[k], err = NewPort(o, d, *e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -92,7 +88,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int, strSrc *Port) (*Por
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = NewPort(o, d, *def.Stream, dir, nil)
+		p.sub, err = NewPort(o, d, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +213,7 @@ func (p *Port) Connected(q *Port) bool {
 	return false
 }
 
-func (p *Port) StrSrc() *Port {
+func (p *Port) StreamSource() *Port {
 	return p.strSrc
 }
 
@@ -446,7 +442,8 @@ func (p *Port) PullBinary() ([]byte, interface{}) {
 }
 
 func (p *Port) PullBOS() bool {
-	if !p.OwnBOS(p.sub.Pull()) {
+	i := p.sub.Pull()
+	if !p.OwnBOS(i) {
 		panic("expected own BOS")
 	}
 	return true
@@ -601,6 +598,15 @@ func setParentStreams(p *Port, parent *Port) {
 	}
 }
 
+func (p *Port) wire(q *Port) {
+	p.dests[q] = true
+	q.src = p
+	q.strSrc = p.strSrc
+	if q.operator != nil && q.operator.connectFunc != nil {
+		q.operator.connectFunc(q, p)
+	}
+}
+
 func (p *Port) connect(q *Port) error {
 	if p.direction == DIRECTION_IN {
 		if q.direction == DIRECTION_IN {
@@ -608,9 +614,7 @@ func (p *Port) connect(q *Port) error {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.dests[q] = true
-			q.src = p
-			q.strSrc = p.strSrc
+			p.wire(q)
 
 			if q.parStr == nil {
 				q.operator.basePort = p.parStr
@@ -622,9 +626,7 @@ func (p *Port) connect(q *Port) error {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.dests[q] = true
-			q.src = p
-			q.strSrc = p.strSrc
+			p.wire(q)
 
 			if p.parStr != nil && q.parStr != nil {
 				p.parStr.connect(q.parStr)
@@ -636,9 +638,7 @@ func (p *Port) connect(q *Port) error {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.dests[q] = true
-			q.src = p
-			q.strSrc = p.strSrc
+			p.wire(q)
 
 			if q.parStr == nil {
 				if p.parStr != nil {
@@ -658,9 +658,7 @@ func (p *Port) connect(q *Port) error {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.dests[q] = true
-			q.src = p
-			q.strSrc = p.strSrc
+			p.wire(q)
 
 			if p.parStr != nil {
 				p.parStr.connect(q.parStr)

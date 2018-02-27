@@ -336,7 +336,7 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, def.In, def.Out, def.Delegates)
+	o, err := core.NewOperator(insName, nil, nil, def.In, def.Out, def.Delegates)
 	if err != nil {
 		return nil, err
 	}
@@ -397,9 +397,9 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 
 // connectDestinations connects operators following from the in port to the out port
 func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) error {
+	var ops []*core.Operator
 	for pSrc, pDsts := range conns {
 		if pSrc.Operator() == o {
-			var ops []*core.Operator
 			for _, pDst := range pDsts {
 				if err := pSrc.Connect(pDst); err != nil {
 					return err
@@ -408,11 +408,11 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) er
 			}
 			// Set the destinations nil so that we do not end in an infinite recursion
 			conns[pSrc] = nil
-			for _, op := range ops {
-				if err := connectDestinations(op, conns); err != nil {
-					return err
-				}
-			}
+		}
+	}
+	for _, op := range ops {
+		if err := connectDestinations(op, conns); err != nil {
+			return err
 		}
 	}
 	return nil

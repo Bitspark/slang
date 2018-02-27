@@ -6,14 +6,13 @@ import (
 	"fmt"
 )
 
-type CreateFunc func(*core.Operator) error
 type PropertyFunc func(*core.Operator, map[string]interface{}) error
 
 type builtinConfig struct {
-	oPropFunc   PropertyFunc
-	oCreateFunc CreateFunc
-	oFunc       core.OFunc
-	oDef        core.OperatorDef
+	oPropFunc PropertyFunc
+	oConnFunc core.CFunc
+	oFunc     core.OFunc
+	oDef      core.OperatorDef
 }
 
 var cfgs map[string]*builtinConfig
@@ -64,20 +63,13 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		}
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, in, out, dels)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, in, out, dels)
 	if err != nil {
 		return nil, err
 	}
 
 	if cfg.oPropFunc != nil {
 		err = cfg.oPropFunc(o, def.Properties)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if cfg.oCreateFunc != nil {
-		err = cfg.oCreateFunc(o)
 		if err != nil {
 			return nil, err
 		}

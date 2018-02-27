@@ -18,7 +18,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	a := assertions.New(t)
 	lo, err := MakeOperator(
 		core.InstanceDef{
-			Name: "loop",
+			Name:     "loop",
 			Operator: "slang.loop",
 			Generics: map[string]*core.PortDef{
 				"stateType": {
@@ -31,31 +31,39 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	a.NotNil(lo)
 
 	// Condition operator
-	co, _ := core.NewOperator("cond", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
-			i := in.Pull()
-			f, ok := i.(float64)
-			if !ok {
-				out.Push(i)
-			} else {
-				out.Push(f < 10.0)
+	co, _ := core.NewOperator(
+		"cond",
+		func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+			for true {
+				i := in.Pull()
+				f, ok := i.(float64)
+				if !ok {
+					out.Push(i)
+				} else {
+					out.Push(f < 10.0)
+				}
 			}
-		}
-	}, core.PortDef{Type: "number"}, core.PortDef{Type: "boolean"},
+		},
+		nil,
+		core.PortDef{Type: "number"}, core.PortDef{Type: "boolean"},
 		nil)
 
 	// Double function operator
-	fo, _ := core.NewOperator("double", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
-			i := in.Pull()
-			f, ok := i.(float64)
-			if !ok {
-				out.Push(i)
-			} else {
-				out.Push(f * 2.0)
+	fo, _ := core.NewOperator(
+		"double",
+		func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+			for true {
+				i := in.Pull()
+				f, ok := i.(float64)
+				if !ok {
+					out.Push(i)
+				} else {
+					out.Push(f * 2.0)
+				}
 			}
-		}
-	}, core.PortDef{Type: "number"}, core.PortDef{Type: "number"},
+		},
+		nil,
+		core.PortDef{Type: "number"}, core.PortDef{Type: "number"},
 		nil)
 
 	// Connect
@@ -100,35 +108,43 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	require.Equal(t, core.TYPE_NUMBER, lo.In().Map("i").Type())
 
 	// Condition operator
-	co, _ := core.NewOperator("cond", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
-			i := in.Pull()
-			fm, ok := i.(map[string]interface{})
-			if !ok {
-				out.Push(i)
-			} else {
-				i := fm["i"].(float64)
-				out.Push(i > 0.0)
+	co, _ := core.NewOperator(
+		"cond",
+		func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+			for true {
+				i := in.Pull()
+				fm, ok := i.(map[string]interface{})
+				if !ok {
+					out.Push(i)
+				} else {
+					i := fm["i"].(float64)
+					out.Push(i > 0.0)
+				}
 			}
-		}
-	}, stateType, core.PortDef{Type: "boolean"},
+		},
+		nil,
+		stateType, core.PortDef{Type: "boolean"},
 		nil)
 
 	// Fibonacci function operator
-	fo, _ := core.NewOperator("fib", func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
-			i := in.Pull()
-			fm, ok := i.(map[string]interface{})
-			if !ok {
-				out.Push(i)
-			} else {
-				i := fm["i"].(float64) - 1
-				oldFib := fm["fib"].(float64)
-				fib := fm["oldFib"].(float64) + oldFib
-				out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
+	fo, _ := core.NewOperator(
+		"fib",
+		func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+			for true {
+				i := in.Pull()
+				fm, ok := i.(map[string]interface{})
+				if !ok {
+					out.Push(i)
+				} else {
+					i := fm["i"].(float64) - 1
+					oldFib := fm["fib"].(float64)
+					fib := fm["oldFib"].(float64) + oldFib
+					out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
+				}
 			}
-		}
-	}, stateType, stateType,
+		},
+		nil,
+		stateType, stateType,
 		nil)
 
 	// Connect

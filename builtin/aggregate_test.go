@@ -117,3 +117,31 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 
 	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Out())
 }
+
+func TestBuiltinAggregate__PassMarkers(t *testing.T) {
+	a := assertions.New(t)
+	ao, err := MakeOperator(
+		core.InstanceDef{
+			Name: "testOp",
+			Operator: "slang.aggregate",
+			Generics: map[string]*core.PortDef{
+				"itemType": {
+					Type: "number",
+				},
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+	a.NotNil(ao)
+
+	ao.Out().Bufferize()
+	ao.Delegate("iteration").Out().Bufferize()
+	ao.Start()
+
+	ao.In().Push(map[string]interface{}{"init": 0, "items": []interface{}{1, 2, 3}})
+	i := ao.Delegate("iteration").Out().Stream().Map("item").Pull()
+	a.True(ao.In().Map("items").OwnBOS(i))
+}

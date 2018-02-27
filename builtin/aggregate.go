@@ -95,4 +95,9 @@ var aggregateOpCfg = &builtinConfig{
 			}
 		}
 	},
+	oCreateFunc: func(o *core.Operator) error {
+		iOut := o.Delegate("iteration").Out()
+		iOut.SetStreamSource(o.In().Map("items").StrSrc())
+		return nil
+	},
 }

@@ -39,6 +39,7 @@ type Port struct {
 	delegate  *Delegate
 	dests     map[*Port]bool
 	src       *Port
+	strSrc    *Port
 	direction int
 
 	itemType int
@@ -53,7 +54,7 @@ type Port struct {
 }
 
 // Makes a new port.
-func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
+func NewPort(o *Operator, d *Delegate, def PortDef, dir int, strSrc *Port) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -66,6 +67,11 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 	}
 
 	p := &Port{}
+	if strSrc != nil {
+		p.strSrc = strSrc
+	} else {
+		p.strSrc = p
+	}
 	p.direction = dir
 	p.operator = o
 	p.delegate = d
@@ -77,7 +83,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = NewPort(o, d, *e, dir)
+			p.subs[k], err = NewPort(o, d, *e, dir, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -86,7 +92,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = NewPort(o, d, *def.Stream, dir)
+		p.sub, err = NewPort(o, d, *def.Stream, dir, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -211,6 +217,14 @@ func (p *Port) Connected(q *Port) bool {
 	return false
 }
 
+func (p *Port) StrSrc() *Port {
+	return p.strSrc
+}
+
+func (p *Port) SetStreamSource(srcStr *Port) {
+	p.strSrc = srcStr
+}
+
 // Removes this port and redirects connections.
 func (p *Port) Merge() bool {
 	merged := false
@@ -219,6 +233,7 @@ func (p *Port) Merge() bool {
 		for dest := range p.dests {
 			p.src.dests[dest] = true
 			dest.src = p.src
+			dest.strSrc = p.strSrc
 			merged = true
 		}
 		p.src.Disconnect(p)
@@ -320,11 +335,11 @@ func (p *Port) Push(item interface{}) {
 }
 
 func (p *Port) PushBOS() {
-	p.sub.Push(BOS{p})
+	p.sub.Push(BOS{p.strSrc})
 }
 
 func (p *Port) PushEOS() {
-	p.sub.Push(EOS{p})
+	p.sub.Push(EOS{p.strSrc})
 }
 
 // Pull an item from this port
@@ -461,17 +476,17 @@ func (p *Port) Poll() (i interface{}) {
 }
 
 func (p *Port) NewBOS() BOS {
-	return BOS{p}
+	return BOS{p.strSrc}
 }
 
 func (p *Port) NewEOS() EOS {
-	return EOS{p}
+	return EOS{p.strSrc}
 }
 
 func (p *Port) OwnBOS(i interface{}) bool {
 	if bos, ok := i.(BOS); ok {
 		// (bos.src == p) is only the case if i has directly been pushed into p
-		if (p.src != nil && bos.src == p.src) || bos.src == p {
+		if (p.strSrc != nil && bos.src == p.strSrc) || bos.src == p {
 			return true
 		}
 	}
@@ -481,7 +496,7 @@ func (p *Port) OwnBOS(i interface{}) bool {
 func (p *Port) OwnEOS(i interface{}) bool {
 	if eos, ok := i.(EOS); ok {
 		// (eos.src == p) is only the case if i has directly been pushed into p
-		if (p.src != nil && eos.src == p.src) || eos.src == p {
+		if (p.strSrc != nil && eos.src == p.strSrc) || eos.src == p {
 			return true
 		}
 	}
@@ -557,7 +572,6 @@ func (p *Port) Name() string {
 }
 
 func (p *Port) Bufferize() {
-
 	if p.buf != nil {
 		return
 	}
@@ -573,7 +587,6 @@ func (p *Port) Bufferize() {
 	} else if p.itemType == TYPE_STREAM {
 		p.sub.Bufferize()
 	}
-
 }
 
 // PRIVATE METHODS
@@ -597,6 +610,7 @@ func (p *Port) connect(q *Port) error {
 
 			p.dests[q] = true
 			q.src = p
+			q.strSrc = p.strSrc
 
 			if q.parStr == nil {
 				q.operator.basePort = p.parStr
@@ -610,6 +624,7 @@ func (p *Port) connect(q *Port) error {
 
 			p.dests[q] = true
 			q.src = p
+			q.strSrc = p.strSrc
 
 			if p.parStr != nil && q.parStr != nil {
 				p.parStr.connect(q.parStr)
@@ -623,6 +638,7 @@ func (p *Port) connect(q *Port) error {
 
 			p.dests[q] = true
 			q.src = p
+			q.strSrc = p.strSrc
 
 			if q.parStr == nil {
 				if p.parStr != nil {
@@ -644,6 +660,7 @@ func (p *Port) connect(q *Port) error {
 
 			p.dests[q] = true
 			q.src = p
+			q.strSrc = p.strSrc
 
 			if p.parStr != nil {
 				p.parStr.connect(q.parStr)

@@ -31,12 +31,12 @@ func NewOperator(name string, f OFunc, defIn, defOut PortDef, delegates map[stri
 
 	var err error
 
-	o.inPort, err = NewPort(o, nil, defIn, DIRECTION_IN)
+	o.inPort, err = NewPort(o, nil, defIn, DIRECTION_IN, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	o.outPort, err = NewPort(o, nil, defOut, DIRECTION_OUT)
+	o.outPort, err = NewPort(o, nil, defOut, DIRECTION_OUT, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +181,10 @@ func NewDelegate(name string, op *Operator, def DelegateDef) (*Delegate, error) 
 	del := &Delegate{name: name, op: op}
 
 	var err error
-	if del.inPort, err = NewPort(op, del, def.In, DIRECTION_IN); err != nil {
+	if del.inPort, err = NewPort(op, del, def.In, DIRECTION_IN, nil); err != nil {
 		return nil, err
 	}
-	if del.outPort, err = NewPort(op, del, def.Out, DIRECTION_OUT); err != nil {
+	if del.outPort, err = NewPort(op, del, def.Out, DIRECTION_OUT, nil); err != nil {
 		return nil, err
 	}
 

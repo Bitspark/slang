@@ -138,7 +138,7 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9439/test789")
-		if resp.StatusCode != 200 {
+		if resp == nil || resp.StatusCode != 200 {
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}
@@ -173,7 +173,7 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9440/test789")
-		if resp.StatusCode != 404 {
+		if resp == nil || resp.StatusCode != 404 {
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}

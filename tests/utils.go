@@ -2,7 +2,7 @@ package tests
 
 import (
 	"encoding/json"
-	"slang"
+	"github.com/Bitspark/slang"
 	"github.com/Bitspark/slang/core"
 )
 

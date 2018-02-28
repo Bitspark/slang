@@ -1,14 +1,14 @@
 package tests
 
 import (
-	"github.com/Bitspark/slang"
-	"github.com/Bitspark/slang/core"
+	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
+	"github.com/Bitspark/slang/pkg/slapi"
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
-	defPort := slang.ParsePortDef(`{"type":"number"}`)
+	defPort := slapi.ParsePortDef(`{"type":"number"}`)
 	oParent, _ := core.NewOperator("parent", nil, defPort, defPort, nil)
 	oChild1, _ := core.NewOperator("child1", nil, defPort, defPort, nil)
 	oChild1.SetParent(oParent)

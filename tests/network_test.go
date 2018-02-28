@@ -1,16 +1,16 @@
 package tests
 
 import (
-	"github.com/Bitspark/slang"
-	"github.com/Bitspark/slang/core"
+	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
+	"github.com/Bitspark/slang/pkg/slapi"
 )
 
 func TestNetwork_EmptyOperator(t *testing.T) {
 	a := assertions.New(t)
-	defIn := slang.ParsePortDef(`{"type":"number"}`)
-	defOut := slang.ParsePortDef(`{"type":"number"}`)
+	defIn := slapi.ParsePortDef(`{"type":"number"}`)
+	defOut := slapi.ParsePortDef(`{"type":"number"}`)
 	o1, _ := core.NewOperator("o1", nil, defIn, defOut, nil)
 
 	o1.In().Connect(o1.Out())
@@ -23,8 +23,8 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 
 func TestNetwork_EmptyOperators(t *testing.T) {
 	a := assertions.New(t)
-	defIn := slang.ParsePortDef(`{"type":"number"}`)
-	defOut := slang.ParsePortDef(`{"type":"number"}`)
+	defIn := slapi.ParsePortDef(`{"type":"number"}`)
+	defOut := slapi.ParsePortDef(`{"type":"number"}`)
 	o1, _ := core.NewOperator("o1", nil, defIn, defOut, nil)
 	o2, _ := core.NewOperator("o2", nil, defIn, defOut, nil)
 	o2.SetParent(o1)
@@ -69,9 +69,9 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 
 func TestNetwork_DoubleSum(t *testing.T) {
 	a := assertions.New(t)
-	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := slang.ParsePortDef(`{"type":"number"}`)
+	defStrStr := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := slapi.ParsePortDef(`{"type":"number"}`)
 
 	double := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
@@ -196,10 +196,10 @@ func TestNetwork_DoubleSum(t *testing.T) {
 
 func TestNetwork_NumgenSum(t *testing.T) {
 	a := assertions.New(t)
-	defStrStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
-	defStrStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
-	defStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	def := slang.ParsePortDef(`{"type":"number"}`)
+	defStrStrStr := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}}`)
+	defStrStr := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"number"}}}`)
+	defStr := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := slapi.ParsePortDef(`{"type":"number"}`)
 
 	numgen := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {
@@ -351,11 +351,11 @@ func TestNetwork_NumgenSum(t *testing.T) {
 
 func TestNetwork_Maps_Simple(t *testing.T) {
 	a := assertions.New(t)
-	defIn := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defIn := slapi.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 	defOut := defIn
 
-	defMap1In := slang.ParsePortDef(`{"type":"number"}`)
-	defMap1Out := slang.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	defMap1In := slapi.ParsePortDef(`{"type":"number"}`)
+	defMap1Out := slapi.ParsePortDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
@@ -420,24 +420,24 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 
 func TestNetwork_Maps_Complex(t *testing.T) {
 	a := assertions.New(t)
-	defStrMapStr := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMapStr := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"N":{"type":"stream","stream":{"type":"number"}},
 		"n":{"type":"number"},
 		"s":{"type":"string"},
 		"b":{"type":"boolean"}}}}`)
-	defStrMap := slang.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
+	defStrMap := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"map","map":{
 		"sum":{"type":"number"},
 		"s":{"type":"string"}}}}`)
-	defFilterIn := slang.ParsePortDef(`{"type":"map","map":{
+	defFilterIn := slapi.ParsePortDef(`{"type":"map","map":{
 		"o":{"type":"primitive"},
 		"b":{"type":"boolean"}}}`)
-	defFilterOut := slang.ParsePortDef(`{"type":"primitive"}`)
-	defAddIn := slang.ParsePortDef(`{"type":"map","map":{
+	defFilterOut := slapi.ParsePortDef(`{"type":"primitive"}`)
+	defAddIn := slapi.ParsePortDef(`{"type":"map","map":{
 		"a":{"type":"number"},
 		"b":{"type":"number"}}}`)
-	defAddOut := slang.ParsePortDef(`{"type":"number"}`)
-	defSumIn := slang.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
-	defSumOut := slang.ParsePortDef(`{"type":"number"}`)
+	defAddOut := slapi.ParsePortDef(`{"type":"number"}`)
+	defSumIn := slapi.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
+	defSumOut := slapi.ParsePortDef(`{"type":"number"}`)
 
 	sumEval := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		for true {

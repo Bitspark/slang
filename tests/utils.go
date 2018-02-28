@@ -2,8 +2,8 @@ package tests
 
 import (
 	"encoding/json"
-	"slang"
-	"slang/core"
+	"github.com/Bitspark/slang"
+	"github.com/Bitspark/slang/core"
 )
 
 func parseJSON(str string) interface{} {

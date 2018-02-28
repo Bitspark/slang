@@ -1,7 +1,7 @@
 package assertions
 
 import (
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 
 	"github.com/stretchr/testify/assert"
 )

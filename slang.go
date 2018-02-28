@@ -146,13 +146,12 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 		}
 	}
 
-	start := 0
-	if pathSplit[0] == "" {
-		start = 1
+	if len(pathSplit) == 1 && pathSplit[0] == "" {
+		return p, nil
 	}
 
-	for i := start; i < len(pathSplit); i++ {
-		if pathSplit[i] == "" {
+	for i := 0; i < len(pathSplit); i++ {
+		if pathSplit[i] == "~" {
 			p = p.Stream()
 			if p == nil {
 				return nil, errors.New("descending too deep (stream)")

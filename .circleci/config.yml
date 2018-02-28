@@ -3,6 +3,8 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.8
+
+    working_directory: /go/src/
     steps:
       - run: go get -v -t -d .
       - run: go test -v .

@@ -6,6 +6,6 @@ jobs:
 
     working_directory: /go/src/github.com/Bitspark/slang/
     steps:
-      - run: go get github.com/Bitspark/slang
+      - checkout
       - run: go get -v -t -d .
       - run: go test -v .

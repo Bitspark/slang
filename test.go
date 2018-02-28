@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"path"
 	"reflect"
-	"slang/utils"
+	"github.com/Bitspark/slang/utils"
 	"strings"
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 )
 
 type TestCaseDef struct {

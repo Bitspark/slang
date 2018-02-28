@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"errors"
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 	"strconv"
 	"strings"
 

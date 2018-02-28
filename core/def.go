@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slang/utils"
+	"github.com/Bitspark/slang/utils"
 	"strings"
 )
 

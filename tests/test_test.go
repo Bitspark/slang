@@ -2,8 +2,8 @@ package tests
 
 import (
 	"io/ioutil"
-	"slang"
-	"slang/tests/assertions"
+	"github.com/Bitspark/slang"
+	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
 )
 

@@ -1,9 +1,9 @@
 package builtin
 
 import (
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 	"errors"
-	"slang/utils"
+	"github.com/Bitspark/slang/utils"
 )
 
 type valueStore struct {

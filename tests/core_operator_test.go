@@ -4,11 +4,11 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
-	"github.com/Bitspark/slang/pkg/slapi"
+	"github.com/Bitspark/slang/pkg/api"
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
-	defPort := slapi.ParsePortDef(`{"type":"number"}`)
+	defPort := api.ParsePortDef(`{"type":"number"}`)
 	oParent, _ := core.NewOperator("parent", nil, defPort, defPort, nil)
 	oChild1, _ := core.NewOperator("child1", nil, defPort, defPort, nil)
 	oChild1.SetParent(oParent)

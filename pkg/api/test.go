@@ -1,4 +1,4 @@
-package slapi
+package api
 
 import (
 	"encoding/json"

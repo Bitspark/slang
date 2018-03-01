@@ -1,4 +1,4 @@
-package server
+package daemon
 
 import (
 	"net/http"
@@ -8,7 +8,11 @@ import (
 	"github.com/Bitspark/slang/pkg/builtin"
 )
 
-type SlangEndpoint struct {
+type DaemonService struct {
+	Routes map[string]*DaemonEndpoint
+}
+
+type DaemonEndpoint struct {
 	Handle func(w http.ResponseWriter, r *http.Request)
 }
 
@@ -25,7 +29,11 @@ func writeJSON(w io.Writer, dat *map[string]interface{}) {
 	json.NewEncoder(w).Encode(dat)
 }
 
-var ListBuiltinNames = &SlangEndpoint{func(w http.ResponseWriter, r *http.Request) {
+var listBuiltinNames = &DaemonEndpoint{func(w http.ResponseWriter, r *http.Request) {
 	datOut := &map[string]interface{}{"objects": builtin.GetBuiltinNames()}
 	writeJSON(w, datOut)
+}}
+
+var BuiltinService = &DaemonService{map[string]*DaemonEndpoint{
+	"/": listBuiltinNames,
 }}

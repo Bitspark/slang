@@ -92,10 +92,7 @@ var takeOpCfg = &builtinConfig{
 			out.PushBOS()
 
 			cOut.PushBOS()
-			sel := cIn.Stream().Pull()
-			if !cIn.OwnBOS(sel) {
-				panic("expected BOS")
-			}
+			cIn.PullBOS()
 
 			t = nil
 			f = nil
@@ -159,10 +156,7 @@ var takeOpCfg = &builtinConfig{
 
 		end:
 			cOut.PushEOS()
-			sel = cIn.Stream().Pull()
-			if !cIn.OwnEOS(sel) {
-				panic("expected EOS")
-			}
+			cIn.PullEOS()
 
 			out.PushEOS()
 		}

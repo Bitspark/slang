@@ -13,7 +13,7 @@ func New(port int) *SlangServer {
 	return &SlangServer{port}
 }
 
-func (s *SlangServer) AddEndpoint(path string, e SlangEndpoint) {
+func (s *SlangServer) AddEndpoint(path string, e *SlangEndpoint) {
 	http.HandleFunc(path, e.Handle)
 }
 

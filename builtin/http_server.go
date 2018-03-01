@@ -1,7 +1,7 @@
 package builtin
 
 import (
-	"slang/core"
+	"github.com/Bitspark/slang/core"
 	"strconv"
 	"net/http"
 	"bytes"
@@ -10,42 +10,44 @@ import (
 
 type requestHandler struct {
 	hOut *core.Port
-	hIn *core.Port
+	hIn  *core.Port
+	sync *core.Synchronizer
 }
 
 func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	hIn := r.hIn
-	hOut := r.hOut
+	token := r.sync.Push(func(out *core.Port) {
+		// Push out all request information
+		out.Map("method").Push(req.Method)
+		out.Map("path").Push(req.URL.String())
+		out.Map("protocol").Push(req.Proto)
 
-	// Push out all request information
-	hOut.Map("method").Push(req.Method)
-	hOut.Map("path").Push(req.URL.String())
-	hOut.Map("protocol").Push(req.Proto)
+		out.Map("headers").PushBOS()
+		headersOut := out.Map("headers").Stream()
+		for key, val := range req.Header {
+			headersOut.Map("key").Push(key)
+			headersOut.Map("value").Push(val)
+		}
+		out.Map("headers").PushEOS()
 
-	hOut.Map("headers").PushBOS()
-	headersOut := hOut.Map("headers").Stream()
-	for key, val := range req.Header {
-		headersOut.Map("key").Push(key)
-		headersOut.Map("value").Push(val)
-	}
-	hOut.Map("headers").PushEOS()
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(req.Body)
+		out.Map("body").Push(buf.Bytes())
+	})
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	hOut.Map("body").Push(buf.Bytes())
+	r.sync.Pull(token, func(in *core.Port) {
+		// Gather all response information
+		statusCode, _ := in.Map("status").PullInt()
 
-	// Gather all response information
-	statusCode, _ := hIn.Map("status").PullInt()
+		headers := in.Map("headers").Pull().([]interface{})
+		for _, entry := range headers {
+			header := entry.(map[string]interface{})
+			resp.Header().Set(header["key"].(string), header["value"].(string))
+		}
 
-	headers := hIn.Map("headers").Pull().([]interface{})
-	for _, entry := range headers {
-		header := entry.(map[string]interface{})
-		resp.Header().Set(header["key"].(string), header["value"].(string))
-	}
-
-	resp.WriteHeader(statusCode)
-	body, _ := hIn.Map("body").PullBinary()
-	resp.Write([]byte(body))
+		resp.WriteHeader(statusCode)
+		body, _ := in.Map("body").PullBinary()
+		resp.Write([]byte(body))
+	})
 }
 
 var httpServerOpCfg = &builtinConfig{
@@ -125,8 +127,11 @@ var httpServerOpCfg = &builtinConfig{
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		slangHandler := dels["handler"]
-		hOut := slangHandler.Out().Stream()
-		hIn := slangHandler.In().Stream()
+		sync := &core.Synchronizer{}
+		sync.Init(
+			slangHandler.In().Stream(),
+			slangHandler.Out().Stream())
+		go sync.Worker()
 
 		for true {
 			port, marker := in.PullInt()
@@ -141,7 +146,7 @@ var httpServerOpCfg = &builtinConfig{
 
 			s := &http.Server{
 				Addr:           ":" + strconv.Itoa(port),
-				Handler:        &requestHandler{hIn: hIn, hOut: hOut},
+				Handler:        &requestHandler{sync: sync},
 				ReadTimeout:    10 * time.Second,
 				WriteTimeout:   10 * time.Second,
 				MaxHeaderBytes: 1 << 20,

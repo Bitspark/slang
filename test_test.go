@@ -2,7 +2,7 @@ package slang
 
 import (
 	"testing"
-	"slang/tests/assertions"
+	"github.com/Bitspark/slang/tests/assertions"
 )
 
 func TestTestEqual__Bools(t *testing.T) {

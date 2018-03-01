@@ -4,9 +4,8 @@ jobs:
     docker:
       - image: circleci/golang:1.8
 
-    working_directory: /go/src/slang
+    working_directory: /go/src/github.com/Bitspark/slang/
     steps:
       - checkout
-
       - run: go get -v -t -d ./...
       - run: go test -v ./...

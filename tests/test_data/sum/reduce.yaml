@@ -31,7 +31,7 @@ connections:
     - (reducer
   reducer):
     - )
-  reducer.selection).:
+  reducer.selection)~:
     - (adder
   adder):
-    - .(reducer.selection
+    - ~(reducer.selection

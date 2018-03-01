@@ -2,9 +2,9 @@ package tests
 
 import (
 	"github.com/stretchr/testify/require"
-	"slang"
-	"slang/core"
-	"slang/tests/assertions"
+	"github.com/Bitspark/slang"
+	"github.com/Bitspark/slang/core"
+	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
 )
 
@@ -215,7 +215,7 @@ func TestParsePortReference__Stream(t *testing.T) {
 	o1, _ := core.NewOperator("o1", nil, nil, core.PortDef{Type: "number"}, core.PortDef{Type: "number"}, nil)
 	o2, _ := core.NewOperator("o2", nil, nil, core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "number"}}, core.PortDef{Type: "number"}, nil)
 	o2.SetParent(o1)
-	p, err := slang.ParsePortReference(".(o2", o1)
+	p, err := slang.ParsePortReference("~(o2", o1)
 	a.NoError(err)
 	a.Equal(o2.In().Stream(), p, "wrong port")
 }
@@ -249,7 +249,7 @@ func TestParsePortReference__StreamMap(t *testing.T) {
 		core.PortDef{Type: "number"},
 		nil)
 	o2.SetParent(o1)
-	p, err := slang.ParsePortReference("..a..a.(o2", o1)
+	p, err := slang.ParsePortReference("~.a.~.a.~(o2", o1)
 	a.NoError(err)
 	a.Equal(o2.In().Stream().Map("a").Stream().Map("a").Stream(), p, "wrong port")
 }

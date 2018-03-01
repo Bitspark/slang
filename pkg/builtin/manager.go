@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Bitspark/slang/pkg/core"
 	"fmt"
+	"github.com/Bitspark/go-funk"
 )
 
 type CreatorFunc func(core.InstanceDef) (*core.Operator, error)
@@ -101,6 +102,10 @@ func IsRegistered(name string) bool {
 
 func Register(name string, cfg *builtinConfig) {
 	cfgs[name] = cfg
+}
+
+func GetBuiltinNames() []string {
+	return funk.Keys(cfgs).([]string)
 }
 
 func init() {

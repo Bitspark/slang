@@ -65,7 +65,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fails := 0
 
 	for i, tc := range test.TestCases {
-		o, err := BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties, false)
+		o, err := NewEnviron("./").BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties, false)
 		if err != nil {
 			return 0, 0, err
 		}

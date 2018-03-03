@@ -8,9 +8,11 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 )
 
+var e = api.NewEnviron("./")
+
 func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/voidOp.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/voidOp.json", nil, nil, false)
 	a.NoError(err)
 	a.True(o.In().Connected(o.Out()))
 
@@ -22,13 +24,13 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 
 func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
 	a := assertions.New(t)
-	_, err := api.BuildOperator(`test_data/unknownOp.json`, nil, nil, false)
+	_, err := e.BuildOperator(`test_data/unknownOp.json`, nil, nil, false)
 	a.Error(err)
 }
 
 func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/usingBuiltinOp.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/usingBuiltinOp.json", nil, nil, false)
 	a.NoError(err)
 
 	oPasser := o.Child("passer")
@@ -46,7 +48,7 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/nested_op/usingCustomOp1.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/nested_op/usingCustomOp1.json", nil, nil, false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
@@ -59,7 +61,7 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/nested_op/usingCustomOpN.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/nested_op/usingCustomOpN.json", nil, nil, false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
@@ -72,7 +74,7 @@ func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/nested_op/usingSubCustomOpDouble.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/nested_op/usingSubCustomOpDouble.json", nil, nil, false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
@@ -86,7 +88,7 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/cwdOp.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/cwdOp.json", nil, nil, false)
 	a.NoError(err)
 
 	o.Out().Bufferize()
@@ -100,14 +102,14 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 
 func TestOperator_ReadOperator__Recursion(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/recOp1.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/recOp1.json", nil, nil, false)
 	a.Error(err)
 	a.Nil(o)
 }
 
 func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
 	a := assertions.New(t)
-	o, err := api.BuildOperator("test_data/nested_generic/main.json", nil, nil, false)
+	o, err := e.BuildOperator("test_data/nested_generic/main.json", nil, nil, false)
 	require.NoError(t, err)
 
 	o.Out().Bufferize()

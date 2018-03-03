@@ -17,9 +17,47 @@ import (
 )
 
 var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
-var paths = []string{}                       // Paths where we search for operators
 
-func BuildOperator(opFilePath string, generics map[string]*core.PortDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
+type Environ struct {
+	paths []string
+}
+
+func NewEnviron(workingDir string) *Environ {
+	// Stores all library paths in the global paths variable
+	// We always look in the local directory first
+	paths := []string{workingDir}
+
+	sep := ":"
+	if runtime.GOOS == "windows" {
+		sep = ";"
+	}
+
+	// Read from environment
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		if pair[0] == "SLANG_LIB" {
+			libPaths := strings.Split(pair[1], sep)
+			for _, libPath := range libPaths {
+				if !strings.HasSuffix(libPath, "/") {
+					libPath += "/"
+				}
+				paths = append(paths, libPath)
+			}
+		}
+	}
+
+	return &Environ{paths}
+}
+
+func (e *Environ) WorkingDir() string {
+	return e.paths[0]
+}
+
+func (e *Environ) BuildOperator(opFilePath string, generics map[string]*core.PortDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
+	if !path.IsAbs(opFilePath) {
+		opFilePath = path.Join(e.WorkingDir(), opFilePath)
+	}
+
 	// Find correct file
 	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
 	if err != nil {
@@ -27,7 +65,7 @@ func BuildOperator(opFilePath string, generics map[string]*core.PortDef, props m
 	}
 
 	// Read operator definition and perform recursion detection
-	def, err := readOperatorDef(opDefFilePath, generics, nil)
+	def, err := e.readOperatorDef(opDefFilePath, generics, nil)
 
 	if err != nil {
 		return nil, err
@@ -173,11 +211,37 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	return p, nil
 }
 
+func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string) (string, error) {
+
+	var err error
+
+	relevantPaths := e.paths
+	if enforcedPath != "" {
+		relevantPaths = []string{enforcedPath}
+	}
+
+	for _, p := range relevantPaths {
+		defFilePath := path.Join(p, relFilePath)
+		// Find correct file
+		var opDefFilePath string
+
+		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, fileEndings)
+
+		if err != nil {
+			continue
+		}
+
+		return opDefFilePath, nil
+	}
+
+	return "", err
+}
+
 // READ OPERATOR DEFINITION
 
 // readOperatorDef reads the operator definition for the given file and replaces all generic types according to the
 // generics map given. The generics map must not contain any further generic types.
-func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
+func (e *Environ) readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
 
 	// Make sure generics is free of further generics
@@ -239,7 +303,7 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 
 	// Descend to child operators
 	for _, childOpInsDef := range def.Operators {
-		childDef, err := getOperatorDef(childOpInsDef, currDir, pathsRead)
+		childDef, err := e.getOperatorDef(childOpInsDef, currDir, pathsRead)
 
 		if err != nil {
 			return def, err
@@ -257,7 +321,7 @@ func readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pa
 }
 
 // getOperatorDef tries to get the operator definition from the builtin package or the file system.
-func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
+func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
 		// Case 1: We found it in the builtin package, return
 		return builtin.GetOperatorDef(insDef)
@@ -266,48 +330,21 @@ func getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string
 	// Case 2: We have to read it from the file system
 
 	var def core.OperatorDef
+	var err error
+	var opDefFilePath string
 
 	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)
-
+	enforcedPath := "" // when != "" --> only search for operatordef in path *enforcedPath*
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {
-		defFilePath := path.Join(currDir, relFilePath)
-		// Find correct file
-		opDefFilePath, err := utils.FileWithFileEnding(defFilePath, fileEndings)
-		if err != nil {
-			return def, err
-		}
-		def, err := readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
-
-		if err != nil {
-			return def, err
-		}
-
-		return def, nil
+		enforcedPath = currDir
 	}
 
-	// Read paths from environment to search for the operator there
-	// Paths are stored in the global paths variable
-	readLibPathsFromEnvironment()
-
 	// Iterate through the paths and take the first operator we find
-	var err error
-	for _, p := range paths {
-		defFilePath := path.Join(p, relFilePath)
-		// Find correct file
-		var opDefFilePath string
-		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, fileEndings)
-		if err != nil {
-			continue
+	if opDefFilePath, err = e.getOperatorDefFilePath(relFilePath, enforcedPath); err == nil {
+		if def, err = e.readOperatorDef(opDefFilePath, insDef.Generics, pathsRead); err == nil {
+			return def, nil
 		}
-
-		def, err = readOperatorDef(opDefFilePath, insDef.Generics, pathsRead)
-		if err != nil {
-			return def, err
-		}
-
-		// We found an operator, return
-		return def, nil
 	}
 
 	// We haven't found an operator, return error
@@ -434,33 +471,4 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 	}
 	// No builtin operator, so create new one according to the operator definition saved in the instance definition
 	return buildAndConnectOperator(insDef.Name, insDef.Properties, insDef.OperatorDef(), par)
-}
-
-// Stores all library paths in the global paths variable
-func readLibPathsFromEnvironment() {
-	if len(paths) > 0 {
-		return
-	}
-
-	// We always look in the local directory first
-	paths = append(paths, "./")
-
-	sep := ":"
-	if runtime.GOOS == "windows" {
-		sep = ";"
-	}
-
-	// Read from environment
-	for _, e := range os.Environ() {
-		pair := strings.Split(e, "=")
-		if pair[0] == "SLANG_LIB" {
-			libPaths := strings.Split(pair[1], sep)
-			for _, libPath := range libPaths {
-				if !strings.HasSuffix(libPath, "/") {
-					libPath += "/"
-				}
-				paths = append(paths, libPath)
-			}
-		}
-	}
 }

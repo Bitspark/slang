@@ -11,6 +11,6 @@ func main() {
 	log.Println("Starting slangd...")
 	srv := daemon.New("localhost", PORT)
 	srv.AddService("/builtin", daemon.BuiltinService)
-	log.Printf("Listening on http://%v:%v/\n", srv.Host, srv.Port)
+	log.Printf("Listening on http://%s:%d/\n", srv.Host, srv.Port)
 	log.Fatal(srv.Run())
 }

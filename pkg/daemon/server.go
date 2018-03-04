@@ -27,5 +27,5 @@ func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 }
 
 func (s *DaemonServer) Run() error {
-	return http.ListenAndServe(fmt.Sprintf(":%v", s.Port), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
 }

@@ -387,18 +387,25 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 		}
 	}
 
-	if err := connectDestinations(o, parsedConns); err != nil {
+	if err := connectAllDestinations(o, parsedConns); err != nil {
 		return nil, err
 	}
 
 	return o, nil
 }
 
+func connectAllDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) error {
+	if err := connectDestinations(o, conns, false); err != nil {
+		return err
+	}
+	return connectDestinations(o, conns, true)
+}
+
 // connectDestinations connects operators following from the in port to the out port
-func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) error {
+func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, followDelegates bool) error {
 	var ops []*core.Operator
 	for pSrc, pDsts := range conns {
-		if pSrc.Operator() == o {
+		if pSrc.Operator() == o && (followDelegates || pSrc.Delegate() == nil) {
 			for _, pDst := range pDsts {
 				if err := pSrc.Connect(pDst); err != nil {
 					return err
@@ -410,7 +417,7 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) er
 		}
 	}
 	for _, op := range ops {
-		if err := connectDestinations(op, conns); err != nil {
+		if err := connectAllDestinations(op, conns); err != nil {
 			return err
 		}
 	}

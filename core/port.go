@@ -134,6 +134,11 @@ func (p *Port) Operator() *Operator {
 	return p.operator
 }
 
+// Returns the operator this port is attached to
+func (p *Port) Delegate() *Delegate {
+	return p.delegate
+}
+
 // Returns the subport with the according name of this port. Port must be of type map.
 func (p *Port) Map(name string) *Port {
 	port, _ := p.subs[name]
@@ -442,8 +447,7 @@ func (p *Port) PullBinary() ([]byte, interface{}) {
 }
 
 func (p *Port) PullBOS() bool {
-	i := p.sub.Pull()
-	if !p.OwnBOS(i) {
+	if !p.OwnBOS(p.sub.Pull()) {
 		panic("expected own BOS")
 	}
 	return true

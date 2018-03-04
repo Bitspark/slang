@@ -3,17 +3,19 @@ package core
 import "errors"
 
 type OFunc func(in, out *Port, dels map[string]*Delegate, store interface{})
+type CFunc func(dest, src *Port) error
 
 type Operator struct {
-	name      string
-	basePort  *Port
-	inPort    *Port
-	outPort   *Port
-	delegates map[string]*Delegate
-	parent    *Operator
-	children  map[string]*Operator
-	function  OFunc
-	store     interface{}
+	name        string
+	basePort    *Port
+	inPort      *Port
+	outPort     *Port
+	delegates   map[string]*Delegate
+	parent      *Operator
+	children    map[string]*Operator
+	function    OFunc
+	store       interface{}
+	connectFunc CFunc
 }
 
 type Delegate struct {
@@ -23,9 +25,10 @@ type Delegate struct {
 	outPort *Port
 }
 
-func NewOperator(name string, f OFunc, defIn, defOut PortDef, delegates map[string]*DelegateDef) (*Operator, error) {
+func NewOperator(name string, f OFunc, c CFunc, defIn, defOut PortDef, delegates map[string]*DelegateDef) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
+	o.connectFunc = c
 	o.name = name
 	o.children = make(map[string]*Operator)
 

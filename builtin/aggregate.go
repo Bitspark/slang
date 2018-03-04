@@ -95,4 +95,12 @@ var aggregateOpCfg = &builtinConfig{
 			}
 		}
 	},
+	oConnFunc: func(dest, src *core.Port) error {
+		o := dest.Operator()
+		if dest == o.In().Map("items") {
+			iOut := o.Delegate("iteration").Out()
+			iOut.SetStreamSource(src.StreamSource())
+		}
+		return nil
+	},
 }

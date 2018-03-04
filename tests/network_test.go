@@ -11,7 +11,7 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	a := assertions.New(t)
 	defIn := api.ParsePortDef(`{"type":"number"}`)
 	defOut := api.ParsePortDef(`{"type":"number"}`)
-	o1, _ := core.NewOperator("o1", nil, defIn, defOut, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, defIn, defOut, nil)
 
 	o1.In().Connect(o1.Out())
 
@@ -25,12 +25,12 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	a := assertions.New(t)
 	defIn := api.ParsePortDef(`{"type":"number"}`)
 	defOut := api.ParsePortDef(`{"type":"number"}`)
-	o1, _ := core.NewOperator("o1", nil, defIn, defOut, nil)
-	o2, _ := core.NewOperator("o2", nil, defIn, defOut, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, defIn, defOut, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, defIn, defOut, nil)
 	o2.SetParent(o1)
-	o3, _ := core.NewOperator("o3", nil, defIn, defOut, nil)
+	o3, _ := core.NewOperator("o3", nil, nil, defIn, defOut, nil)
 	o3.SetParent(o2)
-	o4, _ := core.NewOperator("o4", nil, defIn, defOut, nil)
+	o4, _ := core.NewOperator("o4", nil, nil, defIn, defOut, nil)
 	o4.SetParent(o2)
 
 	o3.In().Connect(o3.Out())
@@ -99,12 +99,12 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := core.NewOperator("O1", nil, defStrStr, defStr, nil)
-	o2, _ := core.NewOperator("O2", nil, defStr, def, nil)
+	o1, _ := core.NewOperator("O1", nil, nil, defStrStr, defStr, nil)
+	o2, _ := core.NewOperator("O2", nil, nil, defStr, def, nil)
 	o2.SetParent(o1)
-	o3, _ := core.NewOperator("O3", double, def, def, nil)
+	o3, _ := core.NewOperator("O3", double, nil, def, def, nil)
 	o3.SetParent(o2)
-	o4, _ := core.NewOperator("O4", sum, defStr, def, nil)
+	o4, _ := core.NewOperator("O4", sum, nil, defStr, def, nil)
 	o4.SetParent(o2)
 
 	err := o2.In().Stream().Connect(o3.In())
@@ -231,14 +231,14 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := core.NewOperator("O1", nil, defStr, defStrStr, nil)
-	o2, _ := core.NewOperator("O2", numgen, def, defStr, nil)
+	o1, _ := core.NewOperator("O1", nil, nil, defStr, defStrStr, nil)
+	o2, _ := core.NewOperator("O2", numgen, nil, def, defStr, nil)
 	o2.SetParent(o1)
-	o3, _ := core.NewOperator("O3", numgen, def, defStr, nil)
+	o3, _ := core.NewOperator("O3", numgen, nil, def, defStr, nil)
 	o3.SetParent(o1)
-	o4, _ := core.NewOperator("O4", nil, defStrStrStr, defStrStr, nil)
+	o4, _ := core.NewOperator("O4", nil, nil, defStrStrStr, defStrStr, nil)
 	o4.SetParent(o1)
-	o5, _ := core.NewOperator("O5", sum, defStr, def, nil)
+	o5, _ := core.NewOperator("O5", sum, nil, defStr, def, nil)
 	o5.SetParent(o4)
 
 	o4.In().Stream().Stream().Stream().Connect(o5.In().Stream())
@@ -385,10 +385,10 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	o, _ := core.NewOperator("", nil, defIn, defOut, nil)
-	oMap1, _ := core.NewOperator("Map1", evalMap1, defMap1In, defMap1Out, nil)
+	o, _ := core.NewOperator("", nil, nil, defIn, defOut, nil)
+	oMap1, _ := core.NewOperator("Map1", evalMap1, nil, defMap1In, defMap1Out, nil)
 	oMap1.SetParent(o)
-	oMap2, _ := core.NewOperator("Map2", evalMap2, defMap2In, defMap2Out, nil)
+	oMap2, _ := core.NewOperator("Map2", evalMap2, nil, defMap2In, defMap2Out, nil)
 	oMap2.SetParent(o)
 
 	o.In().Map("a").Connect(oMap2.In().Map("a"))
@@ -480,14 +480,14 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	o, _ := core.NewOperator("Global", nil, defStrMapStr, defStrMap, nil)
-	sum, _ := core.NewOperator("Sum", sumEval, defSumIn, defSumOut, nil)
+	o, _ := core.NewOperator("Global", nil, nil, defStrMapStr, defStrMap, nil)
+	sum, _ := core.NewOperator("Sum", sumEval, nil, defSumIn, defSumOut, nil)
 	sum.SetParent(o)
-	add, _ := core.NewOperator("Add", addEval, defAddIn, defAddOut, nil)
+	add, _ := core.NewOperator("Add", addEval, nil, defAddIn, defAddOut, nil)
 	add.SetParent(o)
-	filter1, _ := core.NewOperator("Filter1", filterEval, defFilterIn, defFilterOut, nil)
+	filter1, _ := core.NewOperator("Filter1", filterEval, nil, defFilterIn, defFilterOut, nil)
 	filter1.SetParent(o)
-	filter2, _ := core.NewOperator("Filter2", filterEval, defFilterIn, defFilterOut, nil)
+	filter2, _ := core.NewOperator("Filter2", filterEval, nil, defFilterIn, defFilterOut, nil)
 	filter2.SetParent(o)
 
 	o.In().Stream().Map("N").Connect(sum.In())

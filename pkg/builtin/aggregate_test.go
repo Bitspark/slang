@@ -16,6 +16,8 @@ func TestOperatorCreator__Aggregate__IsRegistered(t *testing.T) {
 
 func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	a := assertions.New(t)
+	r := require.New(t)
+
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.aggregate",
@@ -35,6 +37,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	do, err := core.NewOperator(
 		"wrapper",
 		nil,
+		nil,
 		core.PortDef{Type: "stream",
 			Stream: &core.PortDef{Type: "map",
 				Map: map[string]*core.PortDef{
@@ -48,11 +51,10 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 
 	ao.SetParent(do)
 
-	ao.Delegate("iteration").Out().Stream().Map("state").Connect(ao.Delegate("iteration").In().Stream())
-
-	require.NoError(t, do.In().Stream().Map("init").Connect(ao.In().Map("init")))
-	require.NoError(t, do.In().Stream().Map("items").Connect(ao.In().Map("items")))
-	require.NoError(t, ao.Out().Connect(do.Out().Stream()))
+	r.NoError(do.In().Stream().Map("init").Connect(ao.In().Map("init")))
+	r.NoError(do.In().Stream().Map("items").Connect(ao.In().Map("items")))
+	r.NoError(ao.Delegate("iteration").Out().Stream().Map("state").Connect(ao.Delegate("iteration").In().Stream()))
+	r.NoError(ao.Out().Connect(do.Out().Stream()))
 
 	do.Out().Bufferize()
 
@@ -92,6 +94,7 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 			}
 		}
 	},
+		nil,
 		core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "item": {Type: "number"}}},
 		core.PortDef{Type: "number"},
 		nil)
@@ -116,4 +119,58 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	fo.Start()
 
 	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Out())
+}
+
+func TestBuiltinAggregate__PassMarkers(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+
+	o, err := core.NewOperator(
+		"test",
+		func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {},
+		nil,
+		core.PortDef{Type: "trigger"},
+		core.PortDef{Type: "map",
+			Map: map[string]*core.PortDef{
+				"init":  {Type: "number"},
+				"items": {Type: "stream", Stream: &core.PortDef{Type: "number"}},
+			},
+		},
+		nil,
+	)
+	r.NoError(err)
+	a.NotNil(o)
+
+	ao, err := MakeOperator(
+		core.InstanceDef{
+			Name:     "testOp",
+			Operator: "slang.aggregate",
+			Generics: map[string]*core.PortDef{
+				"itemType": {
+					Type: "number",
+				},
+				"stateType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+	r.NoError(err)
+	a.NotNil(ao)
+
+	err = o.Out().Connect(ao.In())
+	r.NoError(err)
+
+	ao.Out().Bufferize()
+	ao.Delegate("iteration").Out().Bufferize()
+
+	ao.Start()
+
+	a.Equal(o.Out().Map("items"), ao.Delegate("iteration").Out().StreamSource())
+
+	o.Out().Push(map[string]interface{}{"init": 0, "items": []interface{}{1, 2, 3}})
+
+	i := ao.Delegate("iteration").Out().Stream().Map("item").Pull()
+	a.True(ao.Delegate("iteration").Out().OwnBOS(i))
+	a.True(o.Out().Map("items").OwnBOS(i))
 }

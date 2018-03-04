@@ -93,4 +93,11 @@ var mergeOpCfg = &builtinConfig{
 
 		}
 	},
+	oConnFunc: func(dest, src *core.Port) error {
+		o := dest.Operator()
+		if dest == o.In().Map("select") {
+			o.Out().SetStreamSource(src.StreamSource())
+		}
+		return nil
+	},
 }

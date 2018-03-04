@@ -7,11 +7,11 @@ import (
 	"github.com/Bitspark/go-funk"
 )
 
-type CreatorFunc func(core.InstanceDef) (*core.Operator, error)
 type PropertyFunc func(*core.Operator, map[string]interface{}) error
 
 type builtinConfig struct {
 	oPropFunc PropertyFunc
+	oConnFunc core.CFunc
 	oFunc     core.OFunc
 	oDef      core.OperatorDef
 }
@@ -64,7 +64,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		}
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, in, out, dels)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, in, out, dels)
 	if err != nil {
 		return nil, err
 	}

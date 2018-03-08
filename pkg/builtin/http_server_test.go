@@ -78,6 +78,10 @@ func TestBuiltin_HTTP__Delegates(t *testing.T) {
 	a.Equal(core.TYPE_MAP, dlg.Out().Stream().Map("headers").Stream().Type())
 	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("headers").Stream().Map("key").Type())
 	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("headers").Stream().Map("value").Type())
+	a.Equal(core.TYPE_MAP, dlg.Out().Stream().Map("params").Stream().Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("params").Stream().Map("key").Type())
+	a.Equal(core.TYPE_STREAM, dlg.Out().Stream().Map("params").Stream().Map("values").Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("params").Stream().Map("values").Stream().Type())
 }
 
 func TestBuiltin_HTTP__Request(t *testing.T) {
@@ -103,7 +107,7 @@ func TestBuiltin_HTTP__Request(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 5; i++ {
-			http.Get("http://127.0.0.1:9438/test123")
+			http.Get("http://127.0.0.1:9438/test123?a=1")
 			if done {
 				return
 			}
@@ -113,6 +117,7 @@ func TestBuiltin_HTTP__Request(t *testing.T) {
 
 	a.Equal("GET", handler.Out().Stream().Map("method").Pull())
 	a.Equal("/test123", handler.Out().Stream().Map("path").Pull())
+	a.Equal([]interface{}{map[string]interface{}{"key": "a", "values": []interface{}{"1"}}}, handler.Out().Stream().Map("params").Pull())
 	done = true
 }
 

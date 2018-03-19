@@ -44,7 +44,7 @@ var loopOpCfg = &builtinConfig{
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		iIn := dels["iteration"].In()
 		iOut := dels["iteration"].Out()
-		for true {
+		for {
 			i := in.Pull()
 
 			// Redirect all markers
@@ -68,7 +68,7 @@ var loopOpCfg = &builtinConfig{
 
 			iIn.PullBOS()
 
-			for true {
+			for {
 				iter := iIn.Stream().Pull().(map[string]interface{})
 				newState := iter["state"]
 				cont := iter["continue"].(bool)

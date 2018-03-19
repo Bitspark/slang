@@ -289,7 +289,7 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 	fo.In().Push(map[string]interface{}{"a": -5.0, "b": 2.5})
 	fo.In().Push(map[string]interface{}{"a": 0.0, "b": 333.0})
 
-	a.PortPushes([]interface{}{3.0, -2.5, 333.0}, fo.Out())
+	a.PortPushesAll([]interface{}{3.0, -2.5, 333.0}, fo.Out())
 }
 
 func TestBuiltin_Eval__Floor(t *testing.T) {
@@ -316,7 +316,7 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 	fo.In().Push(map[string]interface{}{"a": 1.1})
 	fo.In().Push(map[string]interface{}{"a": 2.9})
 
-	a.PortPushes([]interface{}{1.0, 1.0, 2.0}, fo.Out())
+	a.PortPushesAll([]interface{}{1.0, 1.0, 2.0}, fo.Out())
 }
 
 func TestBuiltin_Eval__Ceil(t *testing.T) {
@@ -343,7 +343,7 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 	fo.In().Push(map[string]interface{}{"a": 1.1})
 	fo.In().Push(map[string]interface{}{"a": 2.9})
 
-	a.PortPushes([]interface{}{1.0, 2.0, 3.0}, fo.Out())
+	a.PortPushesAll([]interface{}{1.0, 2.0, 3.0}, fo.Out())
 }
 
 func TestBuiltin_Eval__IsNull(t *testing.T) {
@@ -370,7 +370,7 @@ func TestBuiltin_Eval__IsNull(t *testing.T) {
 	fo.In().Push(map[string]interface{}{"a": nil})
 	fo.In().Push(map[string]interface{}{"a": "testtest"})
 
-	a.PortPushes([]interface{}{false, true, false}, fo.Out())
+	a.PortPushesAll([]interface{}{false, true, false}, fo.Out())
 }
 
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
@@ -401,7 +401,7 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	fo.In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 0.0})
 	fo.In().Push(map[string]interface{}{"a": true, "b": 8.0, "c": 8.0})
 
-	a.PortPushes([]interface{}{true, false, false, true, false}, fo.Out())
+	a.PortPushesAll([]interface{}{true, false, false, true, false}, fo.Out())
 }
 
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
@@ -456,5 +456,5 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{26., 0., 2.}, fo.Out())
+	a.PortPushesAll([]interface{}{26., 0., 2.}, fo.Out())
 }

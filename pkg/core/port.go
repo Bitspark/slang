@@ -145,6 +145,11 @@ func (p *Port) Map(name string) *Port {
 	return port
 }
 
+// Returns the length of the map ports
+func (p *Port) MapSize() interface{} {
+	return len(p.subs)
+}
+
 // Returns the substream port of this port. Port must be of type stream.
 func (p *Port) Stream() *Port {
 	return p.sub
@@ -390,7 +395,7 @@ func (p *Port) Pull() interface{} {
 
 		items := []interface{}{}
 
-		for true {
+		for {
 			i := p.sub.Pull()
 
 			if p.OwnEOS(i) {

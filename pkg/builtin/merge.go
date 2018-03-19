@@ -40,7 +40,7 @@ var mergeOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Map("select").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
 			pFalse := in.Map("false").Stream().Pull()
@@ -60,7 +60,7 @@ var mergeOpCfg = &builtinConfig{
 				panic("port select received BOS too early")
 			}
 
-			for true {
+			for {
 				i := in.Map("select").Stream().Pull()
 
 				if in.Map("select").OwnEOS(i) {

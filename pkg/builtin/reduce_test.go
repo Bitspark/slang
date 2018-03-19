@@ -89,7 +89,7 @@ func TestBuiltin_Reduce__PassMarkers(t *testing.T) {
 	o.Delegate("selection").In().Stream().Push(bos)
 	o.Delegate("selection").In().Stream().Push(eos)
 
-	a.PortPushes([]interface{}{bos, eos}, o.Out())
+	a.PortPushesAll([]interface{}{bos, eos}, o.Out())
 }
 
 func TestBuiltin_Reduce__SelectionFromItemsEmpty(t *testing.T) {
@@ -256,5 +256,5 @@ func TestBuiltin_Reduce__MixedSelection3(t *testing.T) {
 	o.In().Push([]interface{}{1.0, 2.0})
 	o.Delegate("selection").In().Push([]interface{}{3.0})
 
-	a.PortPushes([]interface{}{3.0}, o.Out())
+	a.PortPushesAll([]interface{}{3.0}, o.Out())
 }

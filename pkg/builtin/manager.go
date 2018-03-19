@@ -123,9 +123,13 @@ func init() {
 	Register("slang.aggregate", aggregateOpCfg)
 	Register("slang.reduce", reduceOpCfg)
 
+	Register("slang.window.count", windowCountOpCfg)
+
 	Register("slang.net.httpServer", httpServerOpCfg)
 
 	Register("slang.files.read", fileReadOpCfg)
+
+	Register("slang.encoding.csv.read", csvReadOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

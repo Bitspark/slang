@@ -42,7 +42,7 @@ var forkOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Stream().Pull()
 
 			if !in.OwnBOS(i) {
@@ -53,7 +53,7 @@ var forkOpCfg = &builtinConfig{
 			out.Map("true").PushBOS()
 			out.Map("false").PushBOS()
 
-			for true {
+			for {
 				i := in.Stream().Pull()
 
 				if in.OwnEOS(i) {

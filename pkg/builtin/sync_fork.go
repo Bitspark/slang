@@ -33,7 +33,7 @@ var syncForkOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			item := in.Pull()
 			m, ok := item.(map[string]interface{})
 			if !ok {

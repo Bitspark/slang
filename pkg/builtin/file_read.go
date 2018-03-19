@@ -23,7 +23,7 @@ var fileReadOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			file, marker := in.PullString()
 			if marker != nil {
 				out.Push(marker)

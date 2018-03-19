@@ -47,7 +47,7 @@ func (s *Synchronizer) Pull(token int64, pull pullFunc) {
 }
 
 func (s *Synchronizer) Worker() {
-	for true {
+	for {
 		token := <-s.queue
 		pull := <-s.tasks[token]
 		pull(s.in)

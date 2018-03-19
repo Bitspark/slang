@@ -18,7 +18,7 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Out())
+	a.PortPushesAll(parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
@@ -64,7 +64,7 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o1.Out().Bufferize()
 	o1.In().Push(1.0)
 
-	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Out())
+	a.PortPushesAll(parseJSON(`[1]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
@@ -74,7 +74,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	def := api.ParsePortDef(`{"type":"number"}`)
 
 	double := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
 				out.Push(2 * n)
@@ -85,7 +85,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	}
 
 	sum := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
 				sum := 0.0
@@ -191,7 +191,7 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[[1,2,3],[4,5]]`))
 	o1.In().Push(parseJSON(`[[],[2]]`))
 	o1.In().Push(parseJSON(`[]`))
-	a.PortPushes(parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
+	a.PortPushesAll(parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
@@ -202,7 +202,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	def := api.ParsePortDef(`{"type":"number"}`)
 
 	numgen := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
 				ns := []interface{}{}
@@ -217,7 +217,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	}
 
 	sum := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
 				sum := 0.0
@@ -346,7 +346,7 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o1.In().Push(parseJSON(`[1,2,3]`))
 	o1.In().Push(parseJSON(`[]`))
 	o1.In().Push(parseJSON(`[4]`))
-	a.PortPushes(parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
+	a.PortPushesAll(parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
@@ -361,7 +361,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2Out := defMap1In
 
 	evalMap1 := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
 				out.Map("a").Push(2 * i)
@@ -373,7 +373,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	}
 
 	evalMap2 := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
 				a := m["a"].(float64)
@@ -414,7 +414,7 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	a.PortPushes(parseJSON(results).([]interface{}), o.Out())
+	a.PortPushesAll(parseJSON(results).([]interface{}), o.Out())
 
 }
 
@@ -440,7 +440,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumOut := api.ParsePortDef(`{"type":"number"}`)
 
 	sumEval := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
 				sum := 0.0
@@ -455,7 +455,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	}
 
 	filterEval := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
 				if m["b"].(bool) {
@@ -468,7 +468,7 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	}
 
 	addEval := func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
-		for true {
+		for {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
 				a := m["a"].(float64)
@@ -519,5 +519,5 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		o.In().Push(parseJSON(d))
 	}
 
-	a.PortPushes(parseJSON(results).([]interface{}), o.Out())
+	a.PortPushesAll(parseJSON(results).([]interface{}), o.Out())
 }

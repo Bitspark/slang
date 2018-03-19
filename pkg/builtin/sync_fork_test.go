@@ -95,8 +95,8 @@ func TestBuiltin_SyncFork__Correct(t *testing.T) {
 			"select": false,
 		})
 
-	a.PortPushes([]interface{}{"hallo", nil, 100, nil}, o.Out().Map("true"))
-	a.PortPushes([]interface{}{nil, "welt", nil, 101}, o.Out().Map("false"))
+	a.PortPushesAll([]interface{}{"hallo", nil, 100, nil}, o.Out().Map("true"))
+	a.PortPushesAll([]interface{}{nil, "welt", nil, 101}, o.Out().Map("false"))
 }
 
 func TestBuiltin_SyncFork__ComplexItems(t *testing.T) {
@@ -131,6 +131,6 @@ func TestBuiltin_SyncFork__ComplexItems(t *testing.T) {
 			"select": false,
 		})
 
-	a.PortPushes([]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}, map[string]interface{}{"a": nil, "b": nil}}, o.Out().Map("true"))
-	a.PortPushes([]interface{}{map[string]interface{}{"a": nil, "b": nil}, map[string]interface{}{"a": "2", "b": "slang"}}, o.Out().Map("false"))
+	a.PortPushesAll([]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}, map[string]interface{}{"a": nil, "b": nil}}, o.Out().Map("true"))
+	a.PortPushesAll([]interface{}{map[string]interface{}{"a": nil, "b": nil}, map[string]interface{}{"a": "2", "b": "slang"}}, o.Out().Map("false"))
 }

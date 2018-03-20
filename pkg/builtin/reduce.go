@@ -6,16 +6,20 @@ import (
 
 var reduceOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type:    "generic",
-				Generic: "itemType",
+		Services: map[string]*core.ServiceDef{
+			core.DEFAULT_SERVICE: {
+				In: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type:    "generic",
+						Generic: "itemType",
+					},
+				},
+				Out: core.PortDef{
+					Type:    "generic",
+					Generic: "itemType",
+				},
 			},
-		},
-		Out: core.PortDef{
-			Type:    "generic",
-			Generic: "itemType",
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"selection": {
@@ -45,7 +49,9 @@ var reduceOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.DEFAULT_SERVICE].In()
+		out := srvs[core.DEFAULT_SERVICE].Out()
 		sIn := dels["selection"].In()
 		sOut := dels["selection"].Out()
 		nullValue := store.(valueStore).value

@@ -1,16 +1,18 @@
 # Main
 ---
-in:
-  type: map
-  map:
-    first:
+services:
+  main:
+    in:
+      type: map
+      map:
+        first:
+          type: number
+        second:
+          type: number
+        third:
+          type: number
+    out:
       type: number
-    second:
-      type: number
-    third:
-      type: number
-out:
-  type: number
 operators:
   dbl1:
     operator: ".duplicator"

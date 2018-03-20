@@ -29,10 +29,10 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.In().Stream().Map("item"))
-	a.NotNil(o.In().Stream().Map("select"))
-	a.Equal(core.TYPE_PRIMITIVE, o.In().Stream().Map("item").Type())
-	a.Equal(core.TYPE_BOOLEAN, o.In().Stream().Map("select").Type())
+	a.NotNil(o.DefaultService().In().Stream().Map("item"))
+	a.NotNil(o.DefaultService().In().Stream().Map("select"))
+	a.Equal(core.TYPE_PRIMITIVE, o.DefaultService().In().Stream().Map("item").Type())
+	a.Equal(core.TYPE_BOOLEAN, o.DefaultService().In().Stream().Map("select").Type())
 }
 
 func TestBuiltin_Fork__OutPorts(t *testing.T) {
@@ -50,10 +50,10 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.Out().Map("true").Stream())
-	a.NotNil(o.Out().Map("false").Stream())
-	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("true").Stream().Type())
-	a.Equal(core.TYPE_PRIMITIVE, o.Out().Map("false").Stream().Type())
+	a.NotNil(o.DefaultService().Out().Map("true").Stream())
+	a.NotNil(o.DefaultService().Out().Map("false").Stream())
+	a.Equal(core.TYPE_PRIMITIVE, o.DefaultService().Out().Map("true").Stream().Type())
+	a.Equal(core.TYPE_PRIMITIVE, o.DefaultService().Out().Map("false").Stream().Type())
 }
 
 func TestBuiltin_Fork__Correct(t *testing.T) {
@@ -71,10 +71,10 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.DefaultService().Out().Bufferize()
 	o.Start()
 
-	o.In().Push([]interface{}{
+	o.DefaultService().In().Push([]interface{}{
 		map[string]interface{}{
 			"item":   "hallo",
 			"select": true,
@@ -93,8 +93,8 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{[]interface{}{"hallo", 100}}, o.Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.Out().Map("false"))
+	a.PortPushes([]interface{}{[]interface{}{"hallo", 100}}, o.DefaultService().Out().Map("true"))
+	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.DefaultService().Out().Map("false"))
 }
 
 func TestBuiltin_Fork__ComplexItems(t *testing.T) {
@@ -115,10 +115,10 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	)
 	a.NoError(err)
 
-	o.Out().Bufferize()
+	o.DefaultService().Out().Bufferize()
 	o.Start()
 
-	o.In().Push([]interface{}{
+	o.DefaultService().In().Push([]interface{}{
 		map[string]interface{}{
 			"item":   map[string]interface{}{"a": "1", "b": "hallo"},
 			"select": true,
@@ -129,6 +129,6 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Out().Map("false"))
+	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.DefaultService().Out().Map("true"))
+	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.DefaultService().Out().Map("false"))
 }

@@ -1,13 +1,15 @@
 # Merge sort
 ---
-in:
-  type: stream
-  stream:
-    type: number
-out:
-  type: stream
-  stream:
-    type: number
+services:
+  main:
+    in:
+      type: stream
+      stream:
+        type: number
+    out:
+      type: stream
+      stream:
+        type: number
 
 operators:
   # Packer

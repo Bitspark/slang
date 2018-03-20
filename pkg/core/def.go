@@ -22,8 +22,7 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
-	In          PortDef                 `json:"in" yaml:"in"`
-	Out         PortDef                 `json:"out" yaml:"out"`
+	Services    map[string]*ServiceDef  `json:"services" yaml:"services"`
 	Delegates   map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
 	Operators   OperatorsList           `json:"operators" yaml:"operators"`
 	Connections map[string][]string     `json:"connections" yaml:"connections"`
@@ -33,6 +32,13 @@ type OperatorDef struct {
 }
 
 type DelegateDef struct {
+	In  PortDef `json:"in" yaml:"in"`
+	Out PortDef `json:"out" yaml:"out"`
+
+	valid bool
+}
+
+type ServiceDef struct {
 	In  PortDef `json:"in" yaml:"in"`
 	Out PortDef `json:"out" yaml:"out"`
 
@@ -92,12 +98,10 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	if err := d.In.Validate(); err != nil {
-		return err
-	}
-
-	if err := d.Out.Validate(); err != nil {
-		return err
+	for _, srv := range d.Services {
+		if err := srv.Validate(); err != nil {
+			return err
+		}
 	}
 
 	for _, del := range d.Delegates {
@@ -126,12 +130,19 @@ func (d *OperatorDef) Validate() error {
 // The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
 // replaces them with a reference on a copy.
 func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
-	if err := d.In.SpecifyGenericPorts(generics); err != nil {
-		return err
+	srvs := make(map[string]*ServiceDef)
+	for srvName := range d.Services {
+		srv := d.Services[srvName].Copy()
+		if err := srv.In.SpecifyGenericPorts(generics); err != nil {
+			return err
+		}
+		if err := srv.Out.SpecifyGenericPorts(generics); err != nil {
+			return err
+		}
+		srvs[srvName] = &srv
 	}
-	if err := d.Out.SpecifyGenericPorts(generics); err != nil {
-		return err
-	}
+	d.Services = srvs
+
 	dels := make(map[string]*DelegateDef)
 	for delName := range d.Delegates {
 		del := d.Delegates[delName].Copy()
@@ -155,11 +166,13 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 }
 
 func (d OperatorDef) GenericsSpecified() error {
-	if err := d.In.GenericsSpecified(); err != nil {
-		return err
-	}
-	if err := d.Out.GenericsSpecified(); err != nil {
-		return err
+	for _, srv := range d.Services {
+		if err := srv.In.GenericsSpecified(); err != nil {
+			return err
+		}
+		if err := srv.Out.GenericsSpecified(); err != nil {
+			return err
+		}
 	}
 	for _, del := range d.Delegates {
 		if err := del.In.GenericsSpecified(); err != nil {
@@ -177,6 +190,34 @@ func (d OperatorDef) GenericsSpecified() error {
 		}
 	}
 	return nil
+}
+
+// SERVICE DEFINITION
+
+func (d *ServiceDef) Valid() bool {
+	return d.valid
+}
+
+func (d *ServiceDef) Validate() error {
+	if err := d.In.Validate(); err != nil {
+		return err
+	}
+
+	if err := d.Out.Validate(); err != nil {
+		return err
+	}
+
+	d.valid = true
+	return nil
+}
+
+func (d ServiceDef) Copy() ServiceDef {
+	cpy := ServiceDef{}
+
+	cpy.In = d.In.Copy()
+	cpy.Out = d.Out.Copy()
+
+	return cpy
 }
 
 // DELEGATE DEFINITION

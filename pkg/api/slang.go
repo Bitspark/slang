@@ -138,14 +138,24 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	}
 
 	var o *core.Operator
-	var d *core.Delegate
+	var p *core.Port
 	if refSplit[opIdx] == "" {
 		o = par
+		if in {
+			p = o.DefaultService().In()
+		} else {
+			p = o.DefaultService().Out()
+		}
 	} else {
 		if !strings.Contains(refSplit[opIdx], ".") {
 			o = par.Child(refSplit[opIdx])
 			if o == nil {
 				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
+			}
+			if in {
+				p = o.DefaultService().In()
+			} else {
+				p = o.DefaultService().Out()
 			}
 		} else {
 			opSplit := strings.Split(refSplit[opIdx], ".")
@@ -160,30 +170,30 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
 				}
 			}
-			d = o.Delegate(opSplit[1])
-			if d == nil {
-				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), opSplit[1])
+			srv := o.Service(opSplit[1])
+			if srv != nil {
+				if in {
+					p = srv.In()
+				} else {
+					p = srv.Out()
+				}
+			}
+			dlg := o.Delegate(opSplit[1])
+			if dlg != nil {
+				if in {
+					p = dlg.In()
+				} else {
+					p = dlg.Out()
+				}
+			}
+
+			if p == nil {
+				return nil, fmt.Errorf(`operator "%s" has no service/delegate "%s"`, o.Name(), opSplit[1])
 			}
 		}
 	}
 
 	pathSplit := strings.Split(refSplit[portIdx], ".")
-
-	var p *core.Port
-	if in {
-		if d == nil {
-			p = o.In()
-		} else {
-			p = d.In()
-		}
-	} else {
-		if d == nil {
-			p = o.Out()
-		} else {
-			p = d.Out()
-		}
-	}
-
 	if len(pathSplit) == 1 && pathSplit[0] == "" {
 		return p, nil
 	}
@@ -372,7 +382,7 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, def.In, def.Out, def.Delegates)
+	o, err := core.NewOperator(insName, nil, nil, def.Services, def.Delegates)
 	if err != nil {
 		return nil, err
 	}

@@ -1,9 +1,13 @@
 {
-  "in": {
-    "type": "number"
-  },
-  "out": {
-    "type": "number"
+  "services": {
+    "main": {
+      "in": {
+        "type": "number"
+      },
+      "out": {
+        "type": "number"
+      }
+    }
   },
   "connections": {
     "(": [

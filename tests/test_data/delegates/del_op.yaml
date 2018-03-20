@@ -1,8 +1,11 @@
-in:
-  type: generic
-  generic: gen
-out:
-  type: boolean
+services:
+  main:
+    in:
+      type: generic
+      generic: gen
+    out:
+      type: boolean
+
 delegates:
   val:
     in:

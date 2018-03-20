@@ -6,30 +6,34 @@ import (
 
 var takeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"true": {
+		Services: map[string]*core.ServiceDef{
+			core.DEFAULT_SERVICE: {
+				In: core.PortDef{
+					Type: "map",
+					Map: map[string]*core.PortDef{
+						"true": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
+						"false": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
+					},
+				},
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
-				"false": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
-			},
-		},
-		Out: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type:    "generic",
-				Generic: "itemType",
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{
@@ -59,7 +63,9 @@ var takeOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.DEFAULT_SERVICE].In()
+		out := srvs[core.DEFAULT_SERVICE].Out()
 		cIn := dels["compare"].In()
 		cOut := dels["compare"].Out()
 		for true {

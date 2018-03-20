@@ -1,17 +1,21 @@
 {
-  "in": {
-    "type": "primitive"
-  },
-  "out": {
-    "type": "map",
-    "map": {
-      "left": {
-        "type": "generic",
-        "generic": "itemType"
+  "services": {
+    "main": {
+      "in": {
+        "type": "primitive"
       },
-      "right": {
-        "type": "generic",
-        "generic": "itemType"
+      "out": {
+        "type": "map",
+        "map": {
+          "left": {
+            "type": "generic",
+            "generic": "itemType"
+          },
+          "right": {
+            "type": "generic",
+            "generic": "itemType"
+          }
+        }
       }
     }
   },

@@ -1,12 +1,14 @@
 # Pack: Yields streams for each incoming element containing that element
 ---
-in:
-  type: number
+services:
+  main:
+    in:
+      type: number
 
-out:
-  type: stream
-  stream:
-    type: number
+    out:
+      type: stream
+      stream:
+        type: number
 
 operators:
   loop:

@@ -27,8 +27,8 @@ func TestBuiltin_HTTP__InPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.In())
-	a.Equal(core.TYPE_NUMBER, o.In().Type())
+	a.NotNil(o.DefaultService().In())
+	a.Equal(core.TYPE_NUMBER, o.DefaultService().In().Type())
 }
 
 func TestBuiltin_HTTP__OutPorts(t *testing.T) {
@@ -41,8 +41,8 @@ func TestBuiltin_HTTP__OutPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.Out())
-	a.Equal(core.TYPE_STRING, o.Out().Type())
+	a.NotNil(o.DefaultService().Out())
+	a.Equal(core.TYPE_STRING, o.DefaultService().Out().Type())
 }
 
 func TestBuiltin_HTTP__Delegates(t *testing.T) {
@@ -90,12 +90,12 @@ func TestBuiltin_HTTP__Request(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.DefaultService().Out().Bufferize()
 	handler := o.Delegate("handler")
 	handler.Out().Bufferize()
 
 	o.Start()
-	o.In().Push(9438)
+	o.DefaultService().In().Push(9438)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
 
@@ -126,12 +126,12 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.DefaultService().Out().Bufferize()
 	handler := o.Delegate("handler")
 	handler.Out().Bufferize()
 
 	o.Start()
-	o.In().Push(9439)
+	o.DefaultService().In().Push(9439)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
 	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": []byte("hallo slang!")})
@@ -161,12 +161,12 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.DefaultService().Out().Bufferize()
 	handler := o.Delegate("handler")
 	handler.Out().Bufferize()
 
 	o.Start()
-	o.In().Push(9440)
+	o.DefaultService().In().Push(9440)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
 	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": []byte("bye slang!")})

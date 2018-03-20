@@ -2,15 +2,16 @@ package core
 
 import "errors"
 
-type OFunc func(in, out *Port, dels map[string]*Delegate, store interface{})
+type OFunc func(services map[string]*Service, dels map[string]*Delegate, store interface{})
 type CFunc func(dest, src *Port) error
+
+var DEFAULT_SERVICE = "main"
 
 type Operator struct {
 	name        string
-	basePort    *Port
-	inPort      *Port
-	outPort     *Port
+	services    map[string]*Service
 	delegates   map[string]*Delegate
+	basePort    *Port
 	parent      *Operator
 	children    map[string]*Operator
 	function    OFunc
@@ -25,7 +26,14 @@ type Delegate struct {
 	outPort *Port
 }
 
-func NewOperator(name string, f OFunc, c CFunc, defIn, defOut PortDef, delegates map[string]*DelegateDef) (*Operator, error) {
+type Service struct {
+	op      *Operator
+	name    string
+	inPort  *Port
+	outPort *Port
+}
+
+func NewOperator(name string, f OFunc, c CFunc, services map[string]*ServiceDef, delegates map[string]*DelegateDef) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.connectFunc = c
@@ -34,18 +42,19 @@ func NewOperator(name string, f OFunc, c CFunc, defIn, defOut PortDef, delegates
 
 	var err error
 
-	o.inPort, err = NewPort(o, nil, defIn, DIRECTION_IN)
-	if err != nil {
-		return nil, err
-	}
-
-	o.outPort, err = NewPort(o, nil, defOut, DIRECTION_OUT)
-	if err != nil {
-		return nil, err
+	o.services = make(map[string]*Service)
+	for serName, ser := range services {
+		o.services[serName], err = NewService(serName, o, *ser)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	o.delegates = make(map[string]*Delegate)
 	for delName, del := range delegates {
+		if delName == DEFAULT_SERVICE {
+			return nil, errors.New("delegate must not be named " + DEFAULT_SERVICE + " (reserved for default service)")
+		}
 		o.delegates[delName], err = NewDelegate(delName, o, *del)
 		if err != nil {
 			return nil, err
@@ -55,16 +64,22 @@ func NewOperator(name string, f OFunc, c CFunc, defIn, defOut PortDef, delegates
 	return o, nil
 }
 
-func (o *Operator) In() *Port {
-	return o.inPort
+func (o *Operator) Service(srv string) *Service {
+	if s, ok := o.services[srv]; ok {
+		return s
+	}
+	return nil
 }
 
-func (o *Operator) Out() *Port {
-	return o.outPort
+func (o *Operator) DefaultService() *Service {
+	return o.services[DEFAULT_SERVICE]
 }
 
 func (o *Operator) Delegate(del string) *Delegate {
-	return o.delegates[del]
+	if d, ok := o.delegates[del]; ok {
+		return d
+	}
+	return nil
 }
 
 func (o *Operator) Name() string {
@@ -97,7 +112,7 @@ func (o *Operator) Child(name string) *Operator {
 
 func (o *Operator) Start() {
 	if o.function != nil {
-		go o.function(o.inPort, o.outPort, o.delegates, o.store)
+		go o.function(o.services, o.delegates, o.store)
 	} else {
 		for _, c := range o.children {
 			c.Start()
@@ -133,8 +148,10 @@ func (o *Operator) Compile() int {
 	}
 
 	// Remove in and out port
-	o.In().Merge()
-	o.Out().Merge()
+	for _, srv := range o.services {
+		srv.In().Merge()
+		srv.Out().Merge()
+	}
 
 	for _, dlg := range o.delegates {
 		dlg.In().Merge()
@@ -159,8 +176,10 @@ func (o *Operator) CorrectlyCompiled() error {
 		if len(chld.children) != 0 {
 			return errors.New(chld.Name() + " not flat")
 		}
-		if err := chld.In().DirectlyConnected(); err != nil {
-			return err
+		for _, srv := range chld.services {
+			if err := srv.In().DirectlyConnected(); err != nil {
+				return err
+			}
 		}
 		for _, del := range chld.delegates {
 			if err := del.In().DirectlyConnected(); err != nil {
@@ -169,6 +188,45 @@ func (o *Operator) CorrectlyCompiled() error {
 		}
 	}
 	return nil
+}
+
+// SERVICE
+
+func NewService(name string, op *Operator, def ServiceDef) (*Service, error) {
+	if !def.valid {
+		err := def.Validate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	srv := &Service{name: name, op: op}
+
+	var err error
+	if srv.inPort, err = NewPort(srv, nil, def.In, DIRECTION_IN); err != nil {
+		return nil, err
+	}
+	if srv.outPort, err = NewPort(srv, nil, def.Out, DIRECTION_OUT); err != nil {
+		return nil, err
+	}
+
+	return srv, nil
+}
+
+func (s *Service) Name() string {
+	return s.name
+}
+
+func (s *Service) Operator() *Operator {
+	return s.op
+}
+
+func (s *Service) In() *Port {
+	return s.inPort
+}
+
+func (s *Service) Out() *Port {
+	return s.outPort
 }
 
 // DELEGATE
@@ -184,10 +242,10 @@ func NewDelegate(name string, op *Operator, def DelegateDef) (*Delegate, error) 
 	del := &Delegate{name: name, op: op}
 
 	var err error
-	if del.inPort, err = NewPort(op, del, def.In, DIRECTION_IN); err != nil {
+	if del.inPort, err = NewPort(nil, del, def.In, DIRECTION_IN); err != nil {
 		return nil, err
 	}
-	if del.outPort, err = NewPort(op, del, def.Out, DIRECTION_OUT); err != nil {
+	if del.outPort, err = NewPort(nil, del, def.Out, DIRECTION_OUT); err != nil {
 		return nil, err
 	}
 

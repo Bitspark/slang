@@ -6,25 +6,29 @@ import (
 
 var aggregateOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"init": {
+		Services: map[string]*core.ServiceDef{
+			core.DEFAULT_SERVICE: {
+				In: core.PortDef{
+					Type: "map",
+					Map: map[string]*core.PortDef{
+						"init": {
+							Type:    "generic",
+							Generic: "stateType",
+						},
+						"items": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
+					},
+				},
+				Out: core.PortDef{
 					Type:    "generic",
 					Generic: "stateType",
 				},
-				"items": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
 			},
-		},
-		Out: core.PortDef{
-			Type:    "generic",
-			Generic: "stateType",
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"iteration": {
@@ -54,9 +58,11 @@ var aggregateOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		iIn := dels["iteration"].In()
 		iOut := dels["iteration"].Out()
+		in := srvs[core.DEFAULT_SERVICE].In()
+		out := srvs[core.DEFAULT_SERVICE].Out()
 		for true {
 			state := in.Map("init").Pull()
 
@@ -97,7 +103,7 @@ var aggregateOpCfg = &builtinConfig{
 	},
 	oConnFunc: func(dest, src *core.Port) error {
 		o := dest.Operator()
-		if dest == o.In().Map("items") {
+		if dest == o.Service(core.DEFAULT_SERVICE).In().Map("items") {
 			iOut := o.Delegate("iteration").Out()
 			iOut.SetStreamSource(src.StreamSource())
 		}

@@ -124,6 +124,7 @@ func init() {
 	Register("slang.reduce", reduceOpCfg)
 
 	Register("slang.window.count", windowCountOpCfg)
+	Register("slang.window.triggered", windowTriggeredOpCfg)
 
 	Register("slang.net.httpServer", httpServerOpCfg)
 

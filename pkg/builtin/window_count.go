@@ -14,8 +14,11 @@ type windowCountStore struct {
 var windowCountOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		In: core.PortDef{
-			Type:    "generic",
-			Generic: "inStreams",
+			Type: "stream",
+			Stream: &core.PortDef{
+				Type:    "generic",
+				Generic: "itemType",
+			},
 		},
 		Out: core.PortDef{
 			Type: "stream",
@@ -23,7 +26,7 @@ var windowCountOpCfg = &builtinConfig{
 				Type: "stream",
 				Stream: &core.PortDef{
 					Type:    "generic",
-					Generic: "outStreams",
+					Generic: "itemType",
 				},
 			},
 		},

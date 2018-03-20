@@ -20,13 +20,7 @@ func makeTestMonoWindow(t *testing.T, size, slide, start, end int) *core.Operato
 		core.InstanceDef{
 			Operator: "slang.window.count",
 			Generics: map[string]*core.PortDef{
-				"inStreams": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type: "string",
-					},
-				},
-				"outStreams": {
+				"itemType": {
 					Type: "string",
 				},
 			},
@@ -45,78 +39,7 @@ func makeTestMonoWindow(t *testing.T, size, slide, start, end int) *core.Operato
 	return o
 }
 
-/*func TestOperatorWindow__Stereo_Tumbling(t *testing.T) {
-	a := assertions.New(t)
-	o, err := MakeOperator(
-		core.InstanceDef{
-			Operator: "slang.window.count",
-			Generics: map[string]*core.PortDef{
-				"inStreams": {
-					Type: "map",
-					Map: map[string]*core.PortDef{
-						"a": {
-							Type: "stream",
-							Stream: &core.PortDef{
-								Type: "string",
-							},
-						},
-						"b": {
-							Type: "stream",
-							Stream: &core.PortDef{
-								Type: "number",
-							},
-						},
-					},
-				},
-				"outStreams": {
-					Type: "map",
-					Map: map[string]*core.PortDef{
-						"a": {
-							Type: "string",
-						},
-						"b": {
-							Type: "number",
-						},
-					},
-				},
-			},
-			Properties: map[string]interface{}{
-				"size":  float64(3), // maximum and normal size of ordinary windows
-				"slide": float64(3), // distance between two first elements of two consecutive windows
-				"start": float64(3), // minimum size of the first window
-				"end":   float64(3), // minimum size of the last window
-			},
-		},
-	)
-	require.NoError(t, err)
-	o.Out().Bufferize()
-
-	o.Start()
-
-	o.In().Push([]interface{}{
-		map[string]interface{}{"a": "a", "b": 1},
-		map[string]interface{}{"a": "b", "b": 2},
-		map[string]interface{}{"a": "c", "b": 3},
-		map[string]interface{}{"a": "d", "b": 4},
-		map[string]interface{}{"a": "e", "b": 5},
-		map[string]interface{}{"a": "f", "b": 6},
-	})
-
-	o.Out().PullBOS()
-	a.PortPushes([]interface{}{
-		map[string]interface{}{"a": "a", "b": 1},
-		map[string]interface{}{"a": "b", "b": 2},
-		map[string]interface{}{"a": "c", "b": 3},
-	}, o.Out().Stream())
-	a.PortPushes([]interface{}{
-		map[string]interface{}{"a": "d", "b": 4},
-		map[string]interface{}{"a": "e", "b": 5},
-		map[string]interface{}{"a": "f", "b": 6},
-	}, o.Out().Stream())
-	o.Out().PullEOS()
-}*/
-
-func TestOperatorWindow__Mono_3_3_3_3(t *testing.T) {
+func TestOperatorWindowCount_3_3_3_3(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 3, 3, 3)
 
@@ -129,7 +52,7 @@ func TestOperatorWindow__Mono_3_3_3_3(t *testing.T) {
 	o.Out().PullEOS()
 }
 
-func TestOperatorWindow__Mono_3_3_1_3(t *testing.T) {
+func TestOperatorWindowCount_3_3_1_3(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 3, 1, 3)
 
@@ -142,7 +65,7 @@ func TestOperatorWindow__Mono_3_3_1_3(t *testing.T) {
 	o.Out().PullEOS()
 }
 
-func TestOperatorWindow__Mono_3_3_1_2(t *testing.T) {
+func TestOperatorWindowCount_3_3_1_2(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 3, 1, 2)
 
@@ -156,7 +79,7 @@ func TestOperatorWindow__Mono_3_3_1_2(t *testing.T) {
 	o.Out().PullEOS()
 }
 
-func TestOperatorWindow__Mono_3_3_2_1(t *testing.T) {
+func TestOperatorWindowCount_3_3_2_1(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 3, 2, 1)
 
@@ -170,7 +93,7 @@ func TestOperatorWindow__Mono_3_3_2_1(t *testing.T) {
 	o.Out().PullEOS()
 }
 
-func TestOperatorWindow__Mono_3_2_2_2(t *testing.T) {
+func TestOperatorWindowCount_3_2_2_2(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 2, 2, 2)
 
@@ -185,7 +108,7 @@ func TestOperatorWindow__Mono_3_2_2_2(t *testing.T) {
 	o.Out().PullEOS()
 }
 
-func TestOperatorWindow__Mono_3_2_2_3(t *testing.T) {
+func TestOperatorWindowCount_3_2_2_3(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 2, 2, 3)
 
@@ -199,7 +122,7 @@ func TestOperatorWindow__Mono_3_2_2_3(t *testing.T) {
 	o.Out().PullEOS()
 }
 
-func TestOperatorWindow__Mono_3_1_2_2(t *testing.T) {
+func TestOperatorWindowCount_3_1_2_2(t *testing.T) {
 	a := assertions.New(t)
 	o := makeTestMonoWindow(t, 3, 1, 2, 2)
 

@@ -77,13 +77,13 @@ func TestOperatorWindowTriggered(t *testing.T) {
 	p()
 
 	o.Out().PullBOS()
-	a.Equal([]interface{}{1, 2}, o.Out().Stream().Pull())
-	a.Equal([]interface{}{3, 4, 5}, o.Out().Stream().Pull())
-	a.Equal([]interface{}{6, 7, 8}, o.Out().Stream().Pull())
+	a.PortPushes([]interface{}{1, 2}, o.Out().Stream())
+	a.PortPushes([]interface{}{3, 4, 5}, o.Out().Stream())
+	a.PortPushes([]interface{}{6, 7, 8}, o.Out().Stream())
 	o.Out().PullEOS()
 	o.Out().PullBOS()
 	o.Out().PullEOS()
 	o.Out().PullBOS()
-	a.Equal([]interface{}{12, 13, 14}, o.Out().Stream().Pull())
+	a.PortPushes([]interface{}{12, 13, 14}, o.Out().Stream())
 	o.Out().PullEOS()
 }

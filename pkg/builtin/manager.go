@@ -131,6 +131,8 @@ func init() {
 	Register("slang.files.read", fileReadOpCfg)
 
 	Register("slang.encoding.csv.read", csvReadOpCfg)
+
+	Register("slang.time.delay", delayOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

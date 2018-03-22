@@ -108,7 +108,6 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
-
 	if len(refStr) == 0 {
 		return nil, errors.New("empty connection string")
 	}
@@ -132,14 +131,15 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	}
 
 	refSplit := strings.Split(refStr, sep)
-
 	if len(refSplit) != 2 {
 		return nil, fmt.Errorf(`connection string malformed (1): "%s"`, refStr)
 	}
+	opPart := refSplit[opIdx]
+	portPart := refSplit[portIdx]
 
 	var o *core.Operator
 	var p *core.Port
-	if refSplit[opIdx] == "" {
+	if opPart == "" {
 		o = par
 		if in {
 			p = o.Main().In()
@@ -147,8 +147,11 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			p = o.Main().Out()
 		}
 	} else {
-		if strings.Contains(refSplit[opIdx], ".") {
-			opSplit := strings.Split(refSplit[opIdx], ".")
+		if strings.Contains(opPart, ".") && strings.Contains(opPart, "@") {
+			return nil, fmt.Errorf(`cannot reference both service and delegate: "%s"`, refStr)
+		}
+		if strings.Contains(opPart, ".") {
+			opSplit := strings.Split(opPart, ".")
 			if len(opSplit) != 2 {
 				return nil, fmt.Errorf(`connection string malformed (2): "%s"`, refStr)
 			}
@@ -171,8 +174,8 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			} else {
 				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), dlgName)
 			}
-		} else if strings.Contains(refSplit[opIdx], "@") {
-			opSplit := strings.Split(refSplit[opIdx], "@")
+		} else if strings.Contains(opPart, "@") {
+			opSplit := strings.Split(opPart, "@")
 			if len(opSplit) != 2 {
 				return nil, fmt.Errorf(`connection string malformed (3): "%s"`, refStr)
 			}
@@ -196,7 +199,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 				return nil, fmt.Errorf(`operator "%s" has no service "%s"`, o.Name(), srvName)
 			}
 		} else {
-			o = par.Child(refSplit[opIdx])
+			o = par.Child(opPart)
 			if o == nil {
 				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
 			}
@@ -208,7 +211,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 		}
 	}
 
-	pathSplit := strings.Split(refSplit[portIdx], ".")
+	pathSplit := strings.Split(portPart, ".")
 	if len(pathSplit) == 1 && pathSplit[0] == "" {
 		return p, nil
 	}

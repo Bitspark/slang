@@ -40,12 +40,12 @@ func TestOperator_Take__InPorts(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(to)
 
-	a.Equal(core.TYPE_MAP, to.DefaultService().In().Type())
-	a.Equal(core.TYPE_STREAM, to.DefaultService().In().Map("true").Type())
-	a.Equal(core.TYPE_STREAM, to.DefaultService().In().Map("false").Type())
+	a.Equal(core.TYPE_MAP, to.Main().In().Type())
+	a.Equal(core.TYPE_STREAM, to.Main().In().Map("true").Type())
+	a.Equal(core.TYPE_STREAM, to.Main().In().Map("false").Type())
 	a.Equal(core.TYPE_STREAM, to.Delegate("compare").In().Type())
-	a.Equal(core.TYPE_NUMBER, to.DefaultService().In().Map("true").Stream().Type())
-	a.Equal(core.TYPE_NUMBER, to.DefaultService().In().Map("false").Stream().Type())
+	a.Equal(core.TYPE_NUMBER, to.Main().In().Map("true").Stream().Type())
+	a.Equal(core.TYPE_NUMBER, to.Main().In().Map("false").Stream().Type())
 	a.Equal(core.TYPE_BOOLEAN, to.Delegate("compare").In().Stream().Type())
 }
 
@@ -64,8 +64,8 @@ func TestOperator_Take__OutPorts(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(to)
 
-	a.Equal(core.TYPE_STREAM, to.DefaultService().Out().Type())
-	a.Equal(core.TYPE_NUMBER, to.DefaultService().Out().Stream().Type())
+	a.Equal(core.TYPE_STREAM, to.Main().Out().Type())
+	a.Equal(core.TYPE_NUMBER, to.Main().Out().Stream().Type())
 	a.Equal(core.TYPE_STREAM, to.Delegate("compare").Out().Type())
 	a.Equal(core.TYPE_MAP, to.Delegate("compare").Out().Stream().Type())
 	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Stream().Map("true").Type())
@@ -87,21 +87,21 @@ func TestOperator_Take__Simple1(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(to)
 
-	to.DefaultService().Out().Bufferize()
+	to.Main().Out().Bufferize()
 	to.Delegate("compare").Out().Bufferize()
 	to.Start()
 
 	// Push data
-	to.DefaultService().In().Map("true").Push([]interface{}{1, 2, 3})
-	to.DefaultService().In().Map("false").Push([]interface{}{4, 5})
+	to.Main().In().Map("true").Push([]interface{}{1, 2, 3})
+	to.Main().In().Map("false").Push([]interface{}{4, 5})
 
 	// Push BOS to select stream
 	to.Delegate("compare").In().PushBOS()
 
 	// Eat BOS
 
-	i := to.DefaultService().Out().Stream().Pull()
-	a.True(to.DefaultService().Out().OwnBOS(i))
+	i := to.Main().Out().Stream().Pull()
+	a.True(to.Main().Out().OwnBOS(i))
 
 	i = to.Delegate("compare").Out().Stream().Pull()
 	a.True(to.Delegate("compare").Out().OwnBOS(i))
@@ -113,7 +113,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(true)
 
-	i = to.DefaultService().Out().Stream().Pull()
+	i = to.Main().Out().Stream().Pull()
 	a.Equal(1, i)
 
 
@@ -122,7 +122,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(false)
 
-	i = to.DefaultService().Out().Stream().Pull()
+	i = to.Main().Out().Stream().Pull()
 	a.Equal(4, i)
 
 
@@ -131,7 +131,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(true)
 
-	i = to.DefaultService().Out().Stream().Pull()
+	i = to.Main().Out().Stream().Pull()
 	a.Equal(2, i)
 
 
@@ -140,10 +140,10 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().Stream().Push(true)
 
-	i = to.DefaultService().Out().Stream().Pull()
+	i = to.Main().Out().Stream().Pull()
 	a.Equal(3, i)
 
-	i = to.DefaultService().Out().Stream().Pull()
+	i = to.Main().Out().Stream().Pull()
 	a.Equal(5, i)
 
 	// Eat EOS
@@ -155,6 +155,6 @@ func TestOperator_Take__Simple1(t *testing.T) {
 
 	to.Delegate("compare").In().PushEOS()
 
-	i = to.DefaultService().Out().Stream().Pull()
-	a.True(to.DefaultService().Out().OwnEOS(i))
+	i = to.Main().Out().Stream().Pull()
+	a.True(to.Main().Out().OwnEOS(i))
 }

@@ -142,9 +142,9 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	if refSplit[opIdx] == "" {
 		o = par
 		if in {
-			p = o.DefaultService().In()
+			p = o.Main().In()
 		} else {
-			p = o.DefaultService().Out()
+			p = o.Main().Out()
 		}
 	} else {
 		if !strings.Contains(refSplit[opIdx], ".") {
@@ -153,9 +153,9 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
 			}
 			if in {
-				p = o.DefaultService().In()
+				p = o.Main().In()
 			} else {
-				p = o.DefaultService().Out()
+				p = o.Main().Out()
 			}
 		} else {
 			opSplit := strings.Split(refSplit[opIdx], ".")

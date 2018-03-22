@@ -13,12 +13,12 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	defOut := api.ParsePortDef(`{"type":"number"}`)
 	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{"main": {In: defIn, Out: defOut}}, nil)
 
-	o1.DefaultService().In().Connect(o1.DefaultService().Out())
+	o1.Main().In().Connect(o1.Main().Out())
 
-	o1.DefaultService().Out().Bufferize()
-	o1.DefaultService().In().Push(1.0)
+	o1.Main().Out().Bufferize()
+	o1.Main().In().Push(1.0)
 
-	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.DefaultService().Out())
+	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Main().Out())
 }
 
 func TestNetwork_EmptyOperators(t *testing.T) {
@@ -33,19 +33,19 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o4, _ := core.NewOperator("o4", nil, nil, map[string]*core.ServiceDef{"main": {In: defIn, Out: defOut}}, nil)
 	o4.SetParent(o2)
 
-	o3.DefaultService().In().Connect(o3.DefaultService().Out())
-	o4.DefaultService().In().Connect(o4.DefaultService().Out())
-	o2.DefaultService().In().Connect(o3.DefaultService().In())
-	o3.DefaultService().Out().Connect(o4.DefaultService().In())
-	o4.DefaultService().Out().Connect(o2.DefaultService().Out())
-	o1.DefaultService().In().Connect(o2.DefaultService().In())
-	o2.DefaultService().Out().Connect(o1.DefaultService().Out())
+	o3.Main().In().Connect(o3.Main().Out())
+	o4.Main().In().Connect(o4.Main().Out())
+	o2.Main().In().Connect(o3.Main().In())
+	o3.Main().Out().Connect(o4.Main().In())
+	o4.Main().Out().Connect(o2.Main().Out())
+	o1.Main().In().Connect(o2.Main().In())
+	o2.Main().Out().Connect(o1.Main().Out())
 
-	if o1.DefaultService().In().Connected(o1.DefaultService().Out()) {
+	if o1.Main().In().Connected(o1.Main().Out()) {
 		t.Error("should not be connected")
 	}
 
-	if !o1.DefaultService().In().Connected(o2.DefaultService().In()) {
+	if !o1.Main().In().Connected(o2.Main().In()) {
 		t.Error("should be connected")
 	}
 
@@ -53,18 +53,18 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	o4.Compile()
 	o2.Compile()
 
-	if !o1.DefaultService().In().Connected(o1.DefaultService().Out()) {
+	if !o1.Main().In().Connected(o1.Main().Out()) {
 		t.Error("should be connected")
 	}
 
-	if o1.DefaultService().In().Connected(o2.DefaultService().In()) {
+	if o1.Main().In().Connected(o2.Main().In()) {
 		t.Error("should not be connected")
 	}
 
-	o1.DefaultService().Out().Bufferize()
-	o1.DefaultService().In().Push(1.0)
+	o1.Main().Out().Bufferize()
+	o1.Main().In().Push(1.0)
 
-	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.DefaultService().Out())
+	a.PortPushes(parseJSON(`[1]`).([]interface{}), o1.Main().Out())
 }
 
 func TestNetwork_DoubleSum(t *testing.T) {
@@ -74,8 +74,8 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	def := api.ParsePortDef(`{"type":"number"}`)
 
 	double := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -87,8 +87,8 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	}
 
 	sum := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -111,57 +111,57 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	o4, _ := core.NewOperator("O4", sum, nil, map[string]*core.ServiceDef{"main": {In: defStr, Out: def}}, nil)
 	o4.SetParent(o2)
 
-	err := o2.DefaultService().In().Stream().Connect(o3.DefaultService().In())
+	err := o2.Main().In().Stream().Connect(o3.Main().In())
 	a.NoError(err)
-	err = o3.DefaultService().Out().Connect(o4.DefaultService().In().Stream())
+	err = o3.Main().Out().Connect(o4.Main().In().Stream())
 	a.NoError(err)
-	err = o4.DefaultService().Out().Connect(o2.DefaultService().Out())
+	err = o4.Main().Out().Connect(o2.Main().Out())
 	a.NoError(err)
 
-	if !o2.DefaultService().In().Stream().Connected(o3.DefaultService().In()) {
+	if !o2.Main().In().Stream().Connected(o3.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.DefaultService().Out().Connected(o4.DefaultService().In().Stream()) {
+	if !o3.Main().Out().Connected(o4.Main().In().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.DefaultService().Out().Connected(o2.DefaultService().Out()) {
+	if !o4.Main().Out().Connected(o2.Main().Out()) {
 		t.Error("should be connected")
 	}
 
-	if o3.BasePort() != o2.DefaultService().In() {
+	if o3.BasePort() != o2.Main().In() {
 		t.Error("wrong base port")
 	}
 
-	if !o2.DefaultService().In().Connected(o4.DefaultService().In()) {
+	if !o2.Main().In().Connected(o4.Main().In()) {
 		t.Error("should be connected via base port")
 	}
 
 	//
 
-	err = o1.DefaultService().In().Stream().Stream().Connect(o2.DefaultService().In().Stream())
+	err = o1.Main().In().Stream().Stream().Connect(o2.Main().In().Stream())
 	a.NoError(err)
-	err = o2.DefaultService().Out().Connect(o1.DefaultService().Out().Stream())
+	err = o2.Main().Out().Connect(o1.Main().Out().Stream())
 	a.NoError(err)
 
-	if !o1.DefaultService().In().Stream().Stream().Connected(o2.DefaultService().In().Stream()) {
+	if !o1.Main().In().Stream().Stream().Connected(o2.Main().In().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o1.DefaultService().In().Stream().Connected(o2.DefaultService().In()) {
+	if !o1.Main().In().Stream().Connected(o2.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o2.DefaultService().Out().Connected(o1.DefaultService().Out().Stream()) {
+	if !o2.Main().Out().Connected(o1.Main().Out().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if o2.BasePort() != o1.DefaultService().In() {
+	if o2.BasePort() != o1.Main().In() {
 		t.Error("wrong base port")
 	}
 
-	if !o1.DefaultService().In().Connected(o1.DefaultService().Out()) {
+	if !o1.Main().In().Connected(o1.Main().Out()) {
 		t.Error("should be connected via base port")
 	}
 
@@ -169,33 +169,33 @@ func TestNetwork_DoubleSum(t *testing.T) {
 
 	o2.Compile()
 
-	if !o1.DefaultService().In().Connected(o1.DefaultService().Out()) {
+	if !o1.Main().In().Connected(o1.Main().Out()) {
 		t.Error("should be connected")
 	}
 
-	if !o1.DefaultService().In().Stream().Connected(o4.DefaultService().In()) {
+	if !o1.Main().In().Stream().Connected(o4.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o1.DefaultService().In().Stream().Stream().Connected(o3.DefaultService().In()) {
+	if !o1.Main().In().Stream().Stream().Connected(o3.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.DefaultService().Out().Connected(o4.DefaultService().In().Stream()) {
+	if !o3.Main().Out().Connected(o4.Main().In().Stream()) {
 		t.Error("should be connected")
 	}
 
 	//
 
-	o1.DefaultService().Out().Bufferize()
+	o1.Main().Out().Bufferize()
 
 	go o3.Start()
 	go o4.Start()
 
-	o1.DefaultService().In().Push(parseJSON(`[[1,2,3],[4,5]]`))
-	o1.DefaultService().In().Push(parseJSON(`[[],[2]]`))
-	o1.DefaultService().In().Push(parseJSON(`[]`))
-	a.PortPushes(parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.DefaultService().Out())
+	o1.Main().In().Push(parseJSON(`[[1,2,3],[4,5]]`))
+	o1.Main().In().Push(parseJSON(`[[],[2]]`))
+	o1.Main().In().Push(parseJSON(`[]`))
+	a.PortPushes(parseJSON(`[[12,18],[0,4],[]]`).([]interface{}), o1.Main().Out())
 }
 
 func TestNetwork_NumgenSum(t *testing.T) {
@@ -206,8 +206,8 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	def := api.ParsePortDef(`{"type":"number"}`)
 
 	numgen := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -223,8 +223,8 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	}
 
 	sum := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -249,77 +249,77 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	o5, _ := core.NewOperator("O5", sum, nil, map[string]*core.ServiceDef{"main": {In: defStr, Out: def}}, nil)
 	o5.SetParent(o4)
 
-	o4.DefaultService().In().Stream().Stream().Stream().Connect(o5.DefaultService().In().Stream())
-	o5.DefaultService().Out().Connect(o4.DefaultService().Out().Stream().Stream())
+	o4.Main().In().Stream().Stream().Stream().Connect(o5.Main().In().Stream())
+	o5.Main().Out().Connect(o4.Main().Out().Stream().Stream())
 
-	if !o4.DefaultService().In().Stream().Stream().Stream().Connected(o5.DefaultService().In().Stream()) {
+	if !o4.Main().In().Stream().Stream().Stream().Connected(o5.Main().In().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.DefaultService().In().Stream().Stream().Connected(o5.DefaultService().In()) {
+	if !o4.Main().In().Stream().Stream().Connected(o5.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o5.DefaultService().Out().Connected(o4.DefaultService().Out().Stream().Stream()) {
+	if !o5.Main().Out().Connected(o4.Main().Out().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.DefaultService().In().Stream().Connected(o4.DefaultService().Out().Stream()) {
+	if !o4.Main().In().Stream().Connected(o4.Main().Out().Stream()) {
 		t.Error("should be connected via base port")
 	}
 
-	if !o4.DefaultService().In().Connected(o4.DefaultService().Out()) {
+	if !o4.Main().In().Connected(o4.Main().Out()) {
 		t.Error("should be connected via base port")
 	}
 
 	//
 
-	o1.DefaultService().In().Stream().Connect(o2.DefaultService().In())
-	o2.DefaultService().Out().Stream().Connect(o3.DefaultService().In())
-	o3.DefaultService().Out().Stream().Connect(o4.DefaultService().In().Stream().Stream().Stream())
-	o4.DefaultService().Out().Stream().Stream().Connect(o1.DefaultService().Out().Stream().Stream())
+	o1.Main().In().Stream().Connect(o2.Main().In())
+	o2.Main().Out().Stream().Connect(o3.Main().In())
+	o3.Main().Out().Stream().Connect(o4.Main().In().Stream().Stream().Stream())
+	o4.Main().Out().Stream().Stream().Connect(o1.Main().Out().Stream().Stream())
 
-	if !o1.DefaultService().In().Stream().Connected(o2.DefaultService().In()) {
+	if !o1.Main().In().Stream().Connected(o2.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o2.DefaultService().Out().Stream().Connected(o3.DefaultService().In()) {
+	if !o2.Main().Out().Stream().Connected(o3.Main().In()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.DefaultService().Out().Stream().Connected(o4.DefaultService().In().Stream().Stream().Stream()) {
+	if !o3.Main().Out().Stream().Connected(o4.Main().In().Stream().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o3.DefaultService().Out().Connected(o4.DefaultService().In().Stream().Stream()) {
+	if !o3.Main().Out().Connected(o4.Main().In().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.DefaultService().Out().Stream().Stream().Connected(o1.DefaultService().Out().Stream().Stream()) {
+	if !o4.Main().Out().Stream().Stream().Connected(o1.Main().Out().Stream().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.DefaultService().Out().Stream().Connected(o1.DefaultService().Out().Stream()) {
+	if !o4.Main().Out().Stream().Connected(o1.Main().Out().Stream()) {
 		t.Error("should be connected")
 	}
 
-	if !o4.DefaultService().Out().Connected(o1.DefaultService().Out()) {
+	if !o4.Main().Out().Connected(o1.Main().Out()) {
 		t.Error("should be connected")
 	}
 
-	if o2.BasePort() != o1.DefaultService().In() {
+	if o2.BasePort() != o1.Main().In() {
 		t.Error("wrong base port")
 	}
 
-	if o3.BasePort() != o2.DefaultService().Out() {
+	if o3.BasePort() != o2.Main().Out() {
 		t.Error("wrong base port")
 	}
 
-	if !o1.DefaultService().In().Connected(o4.DefaultService().In()) {
+	if !o1.Main().In().Connected(o4.Main().In()) {
 		t.Error("should be connected via base port")
 	}
 
-	if !o2.DefaultService().Out().Connected(o4.DefaultService().In().Stream()) {
+	if !o2.Main().Out().Connected(o4.Main().In().Stream()) {
 		t.Error("should be connected via base port")
 	}
 
@@ -327,34 +327,34 @@ func TestNetwork_NumgenSum(t *testing.T) {
 
 	o4.Compile()
 
-	if !o1.DefaultService().In().Connected(o1.DefaultService().Out()) {
+	if !o1.Main().In().Connected(o1.Main().Out()) {
 		t.Error("should be connected after merge")
 	}
 
-	if !o2.DefaultService().Out().Connected(o1.DefaultService().Out().Stream()) {
+	if !o2.Main().Out().Connected(o1.Main().Out().Stream()) {
 		t.Error("should be connected after merge")
 	}
 
-	if !o3.DefaultService().Out().Stream().Connected(o5.DefaultService().In().Stream()) {
+	if !o3.Main().Out().Stream().Connected(o5.Main().In().Stream()) {
 		t.Error("should be connected after merge")
 	}
 
-	if !o3.DefaultService().Out().Connected(o5.DefaultService().In()) {
+	if !o3.Main().Out().Connected(o5.Main().In()) {
 		t.Error("should be connected after merge")
 	}
 
 	//
 
-	o1.DefaultService().Out().Bufferize()
+	o1.Main().Out().Bufferize()
 
 	go o2.Start()
 	go o3.Start()
 	go o5.Start()
 
-	o1.DefaultService().In().Push(parseJSON(`[1,2,3]`))
-	o1.DefaultService().In().Push(parseJSON(`[]`))
-	o1.DefaultService().In().Push(parseJSON(`[4]`))
-	a.PortPushes(parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.DefaultService().Out())
+	o1.Main().In().Push(parseJSON(`[1,2,3]`))
+	o1.Main().In().Push(parseJSON(`[]`))
+	o1.Main().In().Push(parseJSON(`[4]`))
+	a.PortPushes(parseJSON(`[[[1],[1,3],[1,3,6]],[],[[1,3,6,10]]]`).([]interface{}), o1.Main().Out())
 }
 
 func TestNetwork_Maps_Simple(t *testing.T) {
@@ -369,8 +369,8 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2Out := defMap1In
 
 	evalMap1 := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -383,8 +383,8 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	}
 
 	evalMap2 := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -403,13 +403,13 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	oMap2, _ := core.NewOperator("Map2", evalMap2, nil, map[string]*core.ServiceDef{"main": {In: defMap2In, Out: defMap2Out}}, nil)
 	oMap2.SetParent(o)
 
-	o.DefaultService().In().Map("a").Connect(oMap2.DefaultService().In().Map("a"))
-	o.DefaultService().In().Map("b").Connect(oMap1.DefaultService().In())
-	oMap1.DefaultService().Out().Map("a").Connect(oMap2.DefaultService().In().Map("b"))
-	oMap1.DefaultService().Out().Map("b").Connect(o.DefaultService().Out().Map("b"))
-	oMap2.DefaultService().Out().Connect(o.DefaultService().Out().Map("a"))
+	o.Main().In().Map("a").Connect(oMap2.Main().In().Map("a"))
+	o.Main().In().Map("b").Connect(oMap1.Main().In())
+	oMap1.Main().Out().Map("a").Connect(oMap2.Main().In().Map("b"))
+	oMap1.Main().Out().Map("b").Connect(o.Main().Out().Map("b"))
+	oMap2.Main().Out().Connect(o.Main().Out().Map("a"))
 
-	o.DefaultService().Out().Bufferize()
+	o.Main().Out().Bufferize()
 
 	go oMap1.Start()
 	go oMap2.Start()
@@ -423,10 +423,10 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	results := `[{"a":2,"b":3},{"a":0,"b":0},{"a":0,"b":3},{"a":12,"b":9}]`
 
 	for _, d := range dataIn {
-		o.DefaultService().In().Push(parseJSON(d))
+		o.Main().In().Push(parseJSON(d))
 	}
 
-	a.PortPushes(parseJSON(results).([]interface{}), o.DefaultService().Out())
+	a.PortPushes(parseJSON(results).([]interface{}), o.Main().Out())
 
 }
 
@@ -452,8 +452,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumOut := api.ParsePortDef(`{"type":"number"}`)
 
 	sumEval := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -469,8 +469,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	}
 
 	filterEval := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -484,8 +484,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	}
 
 	addEval := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -508,17 +508,17 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	filter2, _ := core.NewOperator("Filter2", filterEval, nil, map[string]*core.ServiceDef{"main": {In: defFilterIn, Out: defFilterOut}}, nil)
 	filter2.SetParent(o)
 
-	o.DefaultService().In().Stream().Map("N").Connect(sum.DefaultService().In())
-	o.DefaultService().In().Stream().Map("n").Connect(add.DefaultService().In().Map("b"))
-	o.DefaultService().In().Stream().Map("b").Connect(filter1.DefaultService().In().Map("b"))
-	o.DefaultService().In().Stream().Map("b").Connect(filter2.DefaultService().In().Map("b"))
-	o.DefaultService().In().Stream().Map("s").Connect(filter2.DefaultService().In().Map("o"))
-	sum.DefaultService().Out().Connect(add.DefaultService().In().Map("a"))
-	add.DefaultService().Out().Connect(filter1.DefaultService().In().Map("o"))
-	filter1.DefaultService().Out().Connect(o.DefaultService().Out().Stream().Map("sum"))
-	filter2.DefaultService().Out().Connect(o.DefaultService().Out().Stream().Map("s"))
+	o.Main().In().Stream().Map("N").Connect(sum.Main().In())
+	o.Main().In().Stream().Map("n").Connect(add.Main().In().Map("b"))
+	o.Main().In().Stream().Map("b").Connect(filter1.Main().In().Map("b"))
+	o.Main().In().Stream().Map("b").Connect(filter2.Main().In().Map("b"))
+	o.Main().In().Stream().Map("s").Connect(filter2.Main().In().Map("o"))
+	sum.Main().Out().Connect(add.Main().In().Map("a"))
+	add.Main().Out().Connect(filter1.Main().In().Map("o"))
+	filter1.Main().Out().Connect(o.Main().Out().Stream().Map("sum"))
+	filter2.Main().Out().Connect(o.Main().Out().Stream().Map("s"))
 
-	o.DefaultService().Out().Bufferize()
+	o.Main().Out().Bufferize()
 
 	go sum.Start()
 	go add.Start()
@@ -534,8 +534,8 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	results := `[[{"sum":9,"s":"must pass"},{"sum":3,"s":""}],[],[],[{"sum":1,"s":"must also pass"}]]`
 
 	for _, d := range dataIn {
-		o.DefaultService().In().Push(parseJSON(d))
+		o.Main().In().Push(parseJSON(d))
 	}
 
-	a.PortPushes(parseJSON(results).([]interface{}), o.DefaultService().Out())
+	a.PortPushes(parseJSON(results).([]interface{}), o.Main().Out())
 }

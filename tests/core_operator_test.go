@@ -9,10 +9,10 @@ import (
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 	defPort := api.ParsePortDef(`{"type":"number"}`)
-	oParent, _ := core.NewOperator("parent", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: defPort, Out: defPort}}, nil)
-	oChild1, _ := core.NewOperator("child1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: defPort, Out: defPort}}, nil)
+	oParent, _ := core.NewOperator("parent", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}, nil)
+	oChild1, _ := core.NewOperator("child1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}, nil)
 	oChild1.SetParent(oParent)
-	oChild2, _ := core.NewOperator("child2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: defPort, Out: defPort}}, nil)
+	oChild2, _ := core.NewOperator("child2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}, nil)
 	oChild2.SetParent(oParent)
 
 	if oParent != oChild1.Parent() || oParent != oChild2.Parent() {
@@ -25,19 +25,19 @@ func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 
 func TestOperator_Compile__Nested1Child(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, nil,  map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	op2, _ := core.NewOperator("a", nil, nil,  map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op1, _ := core.NewOperator("", nil, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op2, _ := core.NewOperator("a", nil, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil,  map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op3, _ := core.NewOperator("b", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op3.SetParent(op2)
 
 	// op1
-	op1.DefaultService().In().Connect(op2.DefaultService().In())
-	op2.DefaultService().Out().Connect(op1.DefaultService().Out())
+	op1.Main().In().Connect(op2.Main().In())
+	op2.Main().Out().Connect(op1.Main().Out())
 
 	// op2
-	op2.DefaultService().In().Connect(op3.DefaultService().In())
-	op3.DefaultService().Out().Connect(op2.DefaultService().Out())
+	op2.Main().In().Connect(op3.Main().In())
+	op3.Main().Out().Connect(op2.Main().Out())
 
 	// Compile
 	a.Equal(1, op1.Compile())
@@ -50,40 +50,40 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 
 	a.True(op3.Parent() == op1)
 
-	a.True(op1.DefaultService().In().Connected(op3.DefaultService().In()))
-	a.True(op3.DefaultService().Out().Connected(op1.DefaultService().Out()))
+	a.True(op1.Main().In().Connected(op3.Main().In()))
+	a.True(op3.Main().Out().Connected(op1.Main().Out()))
 
-	a.False(op1.DefaultService().In().Connected(op2.DefaultService().In()))
-	a.False(op2.DefaultService().Out().Connected(op1.DefaultService().Out()))
+	a.False(op1.Main().In().Connected(op2.Main().In()))
+	a.False(op2.Main().Out().Connected(op1.Main().Out()))
 }
 
 func TestOperator_Compile__NestedChildren(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	op2, _ := core.NewOperator("a", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op1, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op2, _ := core.NewOperator("a", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op3, _ := core.NewOperator("b", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op3.SetParent(op1)
-	op4, _ := core.NewOperator("c", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op4, _ := core.NewOperator("c", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op4.SetParent(op2)
-	op5, _ := core.NewOperator("d", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op5, _ := core.NewOperator("d", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op5.SetParent(op2)
-	op6, _ := core.NewOperator("e", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op6, _ := core.NewOperator("e", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	op6.SetParent(op3)
 
 	// op1
-	op1.DefaultService().In().Connect(op2.DefaultService().In())
-	op2.DefaultService().Out().Connect(op3.DefaultService().In())
-	op3.DefaultService().Out().Connect(op1.DefaultService().Out())
+	op1.Main().In().Connect(op2.Main().In())
+	op2.Main().Out().Connect(op3.Main().In())
+	op3.Main().Out().Connect(op1.Main().Out())
 
 	// op2
-	op2.DefaultService().In().Connect(op4.DefaultService().In())
-	op4.DefaultService().Out().Connect(op5.DefaultService().In())
-	op5.DefaultService().Out().Connect(op2.DefaultService().Out())
+	op2.Main().In().Connect(op4.Main().In())
+	op4.Main().Out().Connect(op5.Main().In())
+	op5.Main().Out().Connect(op2.Main().Out())
 
 	// op3
-	op3.DefaultService().In().Connect(op6.DefaultService().In())
-	op6.DefaultService().Out().Connect(op3.DefaultService().Out())
+	op3.Main().In().Connect(op6.Main().In())
+	op6.Main().Out().Connect(op3.Main().Out())
 
 	// Compile
 	a.Equal(2, op1.Compile())
@@ -106,15 +106,15 @@ func TestOperator_Compile__NestedChildren(t *testing.T) {
 	a.True(op5.Parent() == op1)
 	a.True(op6.Parent() == op1)
 
-	a.True(op1.DefaultService().In().Connected(op4.DefaultService().In()))
-	a.True(op4.DefaultService().Out().Connected(op5.DefaultService().In()))
-	a.True(op5.DefaultService().Out().Connected(op6.DefaultService().In()))
-	a.True(op6.DefaultService().Out().Connected(op1.DefaultService().Out()))
+	a.True(op1.Main().In().Connected(op4.Main().In()))
+	a.True(op4.Main().Out().Connected(op5.Main().In()))
+	a.True(op5.Main().Out().Connected(op6.Main().In()))
+	a.True(op6.Main().Out().Connected(op1.Main().Out()))
 
-	a.False(op1.DefaultService().In().Connected(op2.DefaultService().In()))
-	a.False(op3.DefaultService().Out().Connected(op1.DefaultService().Out()))
-	a.False(op2.DefaultService().In().Connected(op4.DefaultService().In()))
-	a.False(op5.DefaultService().Out().Connected(op2.DefaultService().Out()))
-	a.False(op3.DefaultService().In().Connected(op6.DefaultService().In()))
-	a.False(op6.DefaultService().Out().Connected(op3.DefaultService().Out()))
+	a.False(op1.Main().In().Connected(op2.Main().In()))
+	a.False(op3.Main().Out().Connected(op1.Main().Out()))
+	a.False(op2.Main().In().Connected(op4.Main().In()))
+	a.False(op5.Main().Out().Connected(op2.Main().Out()))
+	a.False(op3.Main().In().Connected(op6.Main().In()))
+	a.False(op6.Main().Out().Connected(op3.Main().Out()))
 }

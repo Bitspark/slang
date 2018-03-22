@@ -20,12 +20,12 @@ func TestBuiltin_SyncMerge__InPorts(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	a.NotNil(o.DefaultService().In().Map("true"))
-	a.NotNil(o.DefaultService().In().Map("false"))
-	a.NotNil(o.DefaultService().In().Map("select"))
-	a.Equal(core.TYPE_PRIMITIVE, o.DefaultService().In().Map("true").Type())
-	a.Equal(core.TYPE_PRIMITIVE, o.DefaultService().In().Map("false").Type())
-	a.Equal(core.TYPE_BOOLEAN, o.DefaultService().In().Map("select").Type())
+	a.NotNil(o.Main().In().Map("true"))
+	a.NotNil(o.Main().In().Map("false"))
+	a.NotNil(o.Main().In().Map("select"))
+	a.Equal(core.TYPE_PRIMITIVE, o.Main().In().Map("true").Type())
+	a.Equal(core.TYPE_PRIMITIVE, o.Main().In().Map("false").Type())
+	a.Equal(core.TYPE_BOOLEAN, o.Main().In().Map("select").Type())
 }
 
 func TestBuiltin_SyncMerge__OutPorts(t *testing.T) {
@@ -34,8 +34,8 @@ func TestBuiltin_SyncMerge__OutPorts(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	a.NotNil(o.DefaultService().Out())
-	a.Equal(core.TYPE_PRIMITIVE, o.DefaultService().Out().Type())
+	a.NotNil(o.Main().Out())
+	a.Equal(core.TYPE_PRIMITIVE, o.Main().Out().Type())
 }
 
 func TestBuiltin_SyncMerge__Works(t *testing.T) {
@@ -44,7 +44,7 @@ func TestBuiltin_SyncMerge__Works(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	o.DefaultService().Out().Bufferize()
+	o.Main().Out().Bufferize()
 	o.Start()
 
 	trues := []interface{}{"Roses", 6, false, "Violets", "are", nil, 1, 2, nil, 4}
@@ -52,16 +52,16 @@ func TestBuiltin_SyncMerge__Works(t *testing.T) {
 	selects := []interface{}{true, false, false, true, true, false, true, true, false, true}
 
 	for _, v := range trues {
-		o.DefaultService().In().Map("true").Push(v)
+		o.Main().In().Map("true").Push(v)
 	}
 	for _, v := range falses {
-		o.DefaultService().In().Map("false").Push(v)
+		o.Main().In().Map("false").Push(v)
 	}
 	for _, v := range selects {
-		o.DefaultService().In().Map("select").Push(v)
+		o.Main().In().Map("select").Push(v)
 	}
 
-	a.PortPushes([]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}, o.Main().Out())
 }
 
 func TestBuiltin_SyncMerge__ComplexItems(t *testing.T) {
@@ -72,7 +72,7 @@ func TestBuiltin_SyncMerge__ComplexItems(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	o.DefaultService().Out().Bufferize()
+	o.Main().Out().Bufferize()
 	o.Start()
 
 	trues := []interface{}{
@@ -97,18 +97,18 @@ func TestBuiltin_SyncMerge__ComplexItems(t *testing.T) {
 	selects := []interface{}{false, true, true}
 
 	for _, v := range trues {
-		o.DefaultService().In().Map("true").Push(v)
+		o.Main().In().Map("true").Push(v)
 	}
 	for _, v := range falses {
-		o.DefaultService().In().Map("false").Push(v)
+		o.Main().In().Map("false").Push(v)
 	}
 	for _, v := range selects {
-		o.DefaultService().In().Map("select").Push(v)
+		o.Main().In().Map("select").Push(v)
 	}
 
 	a.PortPushes([]interface{}{
 		map[string]interface{}{"red": "Red Bull", "blue": "Blues"},
 		map[string]interface{}{"red": "Roses", "blue": "Violets"},
 		map[string]interface{}{"red": "Apples", "blue": "Blueberries"},
-	}, o.DefaultService().Out())
+	}, o.Main().Out())
 }

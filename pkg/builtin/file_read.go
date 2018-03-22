@@ -8,7 +8,7 @@ import (
 var fileReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "string",
 				},
@@ -27,8 +27,8 @@ var fileReadOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			file, marker := in.PullString()
 			if marker != nil {

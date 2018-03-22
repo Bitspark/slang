@@ -7,7 +7,7 @@ import (
 var reduceOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
@@ -50,8 +50,8 @@ var reduceOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		sIn := dels["selection"].In()
 		sOut := dels["selection"].Out()
 		nullValue := store.(valueStore).value

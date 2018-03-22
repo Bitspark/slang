@@ -14,12 +14,12 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	a := assertions.New(t)
 	o, err := e.BuildOperator("test_data/voidOp.json", nil, nil, false)
 	a.NoError(err)
-	a.True(o.DefaultService().In().Connected(o.DefaultService().Out()))
+	a.True(o.Main().In().Connected(o.Main().Out()))
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push("hallo")
+	o.Main().Out().Bufferize()
+	o.Main().In().Push("hallo")
 
-	a.PortPushes([]interface{}{"hallo"}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"hallo"}, o.Main().Out())
 }
 
 func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
@@ -35,15 +35,15 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 	oPasser := o.Child("passer")
 	a.NotNil(oPasser)
-	a.True(o.DefaultService().In().Connected(oPasser.DefaultService().In()))
-	a.True(oPasser.DefaultService().Out().Connected(o.DefaultService().Out()))
+	a.True(o.Main().In().Connected(oPasser.Main().In()))
+	a.True(oPasser.Main().Out().Connected(o.Main().Out()))
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push(map[string]interface{}{"a": "hallo"})
+	o.Main().Out().Bufferize()
+	o.Main().In().Push(map[string]interface{}{"a": "hallo"})
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallo"}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"hallo"}, o.Main().Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
@@ -51,12 +51,12 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 	o, err := e.BuildOperator("test_data/nested_op/usingCustomOp1.json", nil, nil, false)
 	a.NoError(err)
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push("hallo")
+	o.Main().Out().Bufferize()
+	o.Main().In().Push("hallo")
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallo"}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"hallo"}, o.Main().Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
@@ -64,12 +64,12 @@ func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 	o, err := e.BuildOperator("test_data/nested_op/usingCustomOpN.json", nil, nil, false)
 	a.NoError(err)
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push("hallo")
+	o.Main().Out().Bufferize()
+	o.Main().In().Push("hallo")
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallo"}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"hallo"}, o.Main().Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
@@ -77,13 +77,13 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 	o, err := e.BuildOperator("test_data/nested_op/usingSubCustomOpDouble.json", nil, nil, false)
 	a.NoError(err)
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push("hallo")
-	o.DefaultService().In().Push(2.0)
+	o.Main().Out().Bufferize()
+	o.Main().In().Push("hallo")
+	o.Main().In().Push(2.0)
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallohallo", 4.0}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"hallohallo", 4.0}, o.Main().Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
@@ -91,13 +91,13 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 	o, err := e.BuildOperator("test_data/cwdOp.json", nil, nil, false)
 	a.NoError(err)
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push("hey")
-	o.DefaultService().In().Push(false)
+	o.Main().Out().Bufferize()
+	o.Main().In().Push("hey")
+	o.Main().In().Push(false)
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hey", false}, o.DefaultService().Out())
+	a.PortPushes([]interface{}{"hey", false}, o.Main().Out())
 }
 
 func TestOperator_ReadOperator__Recursion(t *testing.T) {
@@ -112,11 +112,11 @@ func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
 	o, err := e.BuildOperator("test_data/nested_generic/main.json", nil, nil, false)
 	require.NoError(t, err)
 
-	o.DefaultService().Out().Bufferize()
-	o.DefaultService().In().Push("hallo")
+	o.Main().Out().Bufferize()
+	o.Main().In().Push("hallo")
 
-	a.PortPushes([]interface{}{"hallo"}, o.DefaultService().Out().Map("left"))
-	a.PortPushes([]interface{}{"hallo"}, o.DefaultService().Out().Map("right"))
+	a.PortPushes([]interface{}{"hallo"}, o.Main().Out().Map("left"))
+	a.PortPushes([]interface{}{"hallo"}, o.Main().Out().Map("right"))
 }
 
 func TestParsePortReference__NilOperator(t *testing.T) {
@@ -128,8 +128,8 @@ func TestParsePortReference__NilOperator(t *testing.T) {
 
 func TestParsePortReference__NilConnection(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("", o1)
 	a.Error(err)
@@ -138,54 +138,54 @@ func TestParsePortReference__NilConnection(t *testing.T) {
 
 func TestParsePortReference__SelfIn(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	p, err := api.ParsePortReference("(", o1)
 	a.NoError(err)
-	a.Equal(o1.DefaultService().In(), p, "wrong port")
+	a.Equal(o1.Main().In(), p, "wrong port")
 }
 
 func TestParsePortReference__SelfOut(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	p, err := api.ParsePortReference(")", o1)
 	a.NoError(err)
-	a.Equal(o1.DefaultService().Out(), p, "wrong port")
+	a.Equal(o1.Main().Out(), p, "wrong port")
 }
 
 func TestParsePortReference__SingleIn(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("(o2", o1)
 	a.NoError(err)
-	a.Equal(o2.DefaultService().In(), p, "wrong port")
+	a.Equal(o2.Main().In(), p, "wrong port")
 }
 
 func TestParsePortReference__SingleOut(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("o2)", o1)
 	a.NoError(err)
-	a.Equal(o2.DefaultService().Out(), p, "wrong port")
+	a.Equal(o2.Main().Out(), p, "wrong port")
 }
 
 func TestParsePortReference__Map(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("a(o2", o1)
 	a.NoError(err)
-	a.Equal(o2.DefaultService().In().Map("a"), p, "wrong port")
+	a.Equal(o2.Main().In().Map("a"), p, "wrong port")
 }
 
 func TestParsePortReference__Map__UnknownKey(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("b(o2", o1)
 	a.Error(err)
@@ -194,8 +194,8 @@ func TestParsePortReference__Map__UnknownKey(t *testing.T) {
 
 func TestParsePortReference__Map__DescendingTooDeep(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "number"}}}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("b.c(o2", o1)
 	a.Error(err)
@@ -204,32 +204,32 @@ func TestParsePortReference__Map__DescendingTooDeep(t *testing.T) {
 
 func TestParsePortReference__NestedMap(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "map", Map: map[string]*core.PortDef{"b": {Type: "number"}}}}}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "map", Map: map[string]*core.PortDef{"a": {Type: "map", Map: map[string]*core.PortDef{"b": {Type: "number"}}}}}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("a.b(o2", o1)
 	a.NoError(err)
-	a.Equal(o2.DefaultService().In().Map("a").Map("b"), p, "wrong port")
+	a.Equal(o2.Main().In().Map("a").Map("b"), p, "wrong port")
 }
 
 func TestParsePortReference__Stream(t *testing.T) {
 	a := assertions.New(t)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "number"}}, Out: core.PortDef{Type: "number"}}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "stream", Stream: &core.PortDef{Type: "number"}}, Out: core.PortDef{Type: "number"}}}, nil)
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("~(o2", o1)
 	a.NoError(err)
-	a.Equal(o2.DefaultService().In().Stream(), p, "wrong port")
+	a.Equal(o2.Main().In().Stream(), p, "wrong port")
 }
 
 func TestParsePortReference__StreamMap(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator("o1", nil, nil,
-		map[string]*core.ServiceDef{core.DEFAULT_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}},
+		map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}},
 		nil)
 	o2, _ := core.NewOperator("o2", nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
@@ -259,7 +259,7 @@ func TestParsePortReference__StreamMap(t *testing.T) {
 	o2.SetParent(o1)
 	p, err := api.ParsePortReference("~.a.~.a.~(o2", o1)
 	a.NoError(err)
-	a.Equal(o2.DefaultService().In().Stream().Map("a").Stream().Map("a").Stream(), p, "wrong port")
+	a.Equal(o2.Main().In().Stream().Map("a").Stream().Map("a").Stream(), p, "wrong port")
 }
 
 func TestParsePortReference__Delegates_In(t *testing.T) {
@@ -268,7 +268,7 @@ func TestParsePortReference__Delegates_In(t *testing.T) {
 		"o1",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -290,7 +290,7 @@ func TestParsePortReference__Delegates_Out(t *testing.T) {
 		"o1",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -312,7 +312,7 @@ func TestParsePortReference__Delegates_SingleIn(t *testing.T) {
 		"o1",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -322,7 +322,7 @@ func TestParsePortReference__Delegates_SingleIn(t *testing.T) {
 		"o2",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -344,7 +344,7 @@ func TestParsePortReference__Delegates_SingleOut(t *testing.T) {
 		"o1",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -354,7 +354,7 @@ func TestParsePortReference__Delegates_SingleOut(t *testing.T) {
 		"o2",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -375,7 +375,7 @@ func TestParsePortReference__Delegates_Map(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator(
 		"o1", nil, nil, map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},
@@ -385,7 +385,7 @@ func TestParsePortReference__Delegates_Map(t *testing.T) {
 		"o2",
 		nil, nil,
 		map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In:  core.PortDef{Type: "number"},
 				Out: core.PortDef{Type: "number"},
 			},

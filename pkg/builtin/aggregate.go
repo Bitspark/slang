@@ -7,7 +7,7 @@ import (
 var aggregateOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "map",
 					Map: map[string]*core.PortDef{
@@ -61,8 +61,8 @@ var aggregateOpCfg = &builtinConfig{
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		iIn := dels["iteration"].In()
 		iOut := dels["iteration"].Out()
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			state := in.Map("init").Pull()
 
@@ -103,7 +103,7 @@ var aggregateOpCfg = &builtinConfig{
 	},
 	oConnFunc: func(dest, src *core.Port) error {
 		o := dest.Operator()
-		if dest == o.Service(core.DEFAULT_SERVICE).In().Map("items") {
+		if dest == o.Service(core.MAIN_SERVICE).In().Map("items") {
 			iOut := o.Delegate("iteration").Out()
 			iOut.SetStreamSource(src.StreamSource())
 		}

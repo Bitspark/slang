@@ -5,7 +5,7 @@ import "errors"
 type OFunc func(services map[string]*Service, dels map[string]*Delegate, store interface{})
 type CFunc func(dest, src *Port) error
 
-var DEFAULT_SERVICE = "main"
+var MAIN_SERVICE = "main"
 
 type Operator struct {
 	name        string
@@ -52,8 +52,8 @@ func NewOperator(name string, f OFunc, c CFunc, services map[string]*ServiceDef,
 
 	o.delegates = make(map[string]*Delegate)
 	for delName, del := range delegates {
-		if delName == DEFAULT_SERVICE {
-			return nil, errors.New("delegate must not be named " + DEFAULT_SERVICE + " (reserved for default service)")
+		if delName == MAIN_SERVICE {
+			return nil, errors.New("delegate must not be named " + MAIN_SERVICE + " (reserved for default service)")
 		}
 		o.delegates[delName], err = NewDelegate(delName, o, *del)
 		if err != nil {
@@ -71,8 +71,8 @@ func (o *Operator) Service(srv string) *Service {
 	return nil
 }
 
-func (o *Operator) DefaultService() *Service {
-	return o.services[DEFAULT_SERVICE]
+func (o *Operator) Main() *Service {
+	return o.services[MAIN_SERVICE]
 }
 
 func (o *Operator) Delegate(del string) *Delegate {

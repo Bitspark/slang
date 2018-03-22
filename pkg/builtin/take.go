@@ -7,7 +7,7 @@ import (
 var takeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "map",
 					Map: map[string]*core.PortDef{
@@ -64,8 +64,8 @@ var takeOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		cIn := dels["compare"].In()
 		cOut := dels["compare"].Out()
 		for true {

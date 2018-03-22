@@ -13,7 +13,7 @@ type valueStore struct {
 var constOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "trigger",
 				},
@@ -26,8 +26,8 @@ var constOpCfg = &builtinConfig{
 	},
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		v := store.(valueStore).value
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			if i := in.Pull(); !core.IsMarker(i) {
 				out.Push(v)

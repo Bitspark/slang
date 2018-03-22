@@ -34,8 +34,8 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	co, _ := core.NewOperator(
 		"cond",
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.DEFAULT_SERVICE].In()
-			out := srvs[core.DEFAULT_SERVICE].Out()
+			in := srvs[core.MAIN_SERVICE].In()
+			out := srvs[core.MAIN_SERVICE].Out()
 			for true {
 				i := in.Pull()
 				f, ok := i.(float64)
@@ -54,8 +54,8 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	fo, _ := core.NewOperator(
 		"double",
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.DEFAULT_SERVICE].In()
-			out := srvs[core.DEFAULT_SERVICE].Out()
+			in := srvs[core.MAIN_SERVICE].In()
+			out := srvs[core.MAIN_SERVICE].Out()
 			for true {
 				i := in.Pull()
 				f, ok := i.(float64)
@@ -71,21 +71,21 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 		nil)
 
 	// Connect
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.DefaultService().In()))
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.DefaultService().In()))
-	a.NoError(fo.DefaultService().Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
-	a.NoError(co.DefaultService().Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.Main().In()))
+	a.NoError(fo.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
+	a.NoError(co.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
 
-	lo.DefaultService().Out().Bufferize()
+	lo.Main().Out().Bufferize()
 
-	lo.DefaultService().In().Push(1.0)
-	lo.DefaultService().In().Push(10.0)
+	lo.Main().In().Push(1.0)
+	lo.Main().In().Push(10.0)
 
 	lo.Start()
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{16.0, 10.0}, lo.DefaultService().Out())
+	a.PortPushes([]interface{}{16.0, 10.0}, lo.Main().Out())
 }
 
 func TestBuiltin_Loop__Fibo(t *testing.T) {
@@ -108,15 +108,15 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	)
 	require.NoError(t, err)
 	a.NotNil(lo)
-	require.Equal(t, core.TYPE_MAP, lo.DefaultService().In().Type())
-	require.Equal(t, core.TYPE_NUMBER, lo.DefaultService().In().Map("i").Type())
+	require.Equal(t, core.TYPE_MAP, lo.Main().In().Type())
+	require.Equal(t, core.TYPE_NUMBER, lo.Main().In().Map("i").Type())
 
 	// Condition operator
 	co, _ := core.NewOperator(
 		"cond",
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.DEFAULT_SERVICE].In()
-			out := srvs[core.DEFAULT_SERVICE].Out()
+			in := srvs[core.MAIN_SERVICE].In()
+			out := srvs[core.MAIN_SERVICE].Out()
 			for true {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
@@ -136,8 +136,8 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	fo, _ := core.NewOperator(
 		"fib",
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.DEFAULT_SERVICE].In()
-			out := srvs[core.DEFAULT_SERVICE].Out()
+			in := srvs[core.MAIN_SERVICE].In()
+			out := srvs[core.MAIN_SERVICE].Out()
 			for true {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
@@ -156,15 +156,15 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 		nil)
 
 	// Connect
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.DefaultService().In()))
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.DefaultService().In()))
-	a.NoError(fo.DefaultService().Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
-	a.NoError(co.DefaultService().Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
+	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.Main().In()))
+	a.NoError(fo.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
+	a.NoError(co.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
 
-	lo.DefaultService().Out().Bufferize()
+	lo.Main().Out().Bufferize()
 
-	lo.DefaultService().In().Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
-	lo.DefaultService().In().Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
+	lo.Main().In().Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
+	lo.Main().In().Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
 
 	lo.Start()
 	fo.Start()
@@ -173,7 +173,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	a.PortPushes([]interface{}{
 		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
 		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
-	}, lo.DefaultService().Out())
+	}, lo.Main().Out())
 }
 
 func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
@@ -191,15 +191,15 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a.NoError(err)
 	a.NotNil(lo)
 
-	lo.DefaultService().Out().Bufferize()
+	lo.Main().Out().Bufferize()
 	lo.Delegate("iteration").Out().Bufferize()
 
 	lo.Start()
 
-	pInit := lo.DefaultService().In()
+	pInit := lo.Main().In()
 	pIteration := lo.Delegate("iteration").In()
 	pState := lo.Delegate("iteration").Out().Stream()
-	pEnd := lo.DefaultService().Out()
+	pEnd := lo.Main().Out()
 
 	bos := core.BOS{}
 	pInit.Push(bos)

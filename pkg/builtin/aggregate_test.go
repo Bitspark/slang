@@ -55,17 +55,17 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 
 	ao.SetParent(do)
 
-	r.NoError(do.DefaultService().In().Stream().Map("init").Connect(ao.DefaultService().In().Map("init")))
-	r.NoError(do.DefaultService().In().Stream().Map("items").Connect(ao.DefaultService().In().Map("items")))
+	r.NoError(do.Main().In().Stream().Map("init").Connect(ao.Main().In().Map("init")))
+	r.NoError(do.Main().In().Stream().Map("items").Connect(ao.Main().In().Map("items")))
 	r.NoError(ao.Delegate("iteration").Out().Stream().Map("state").Connect(ao.Delegate("iteration").In().Stream()))
-	r.NoError(ao.DefaultService().Out().Connect(do.DefaultService().Out().Stream()))
+	r.NoError(ao.Main().Out().Connect(do.Main().Out().Stream()))
 
-	do.DefaultService().Out().Bufferize()
+	do.Main().Out().Bufferize()
 
 	do.Start()
 
-	do.DefaultService().In().Push([]interface{}{map[string]interface{}{"init": 0.0, "items": []interface{}{}}})
-	a.PortPushes([]interface{}{[]interface{}{0.0}}, do.DefaultService().Out())
+	do.Main().In().Push([]interface{}{map[string]interface{}{"init": 0.0, "items": []interface{}{}}})
+	a.PortPushes([]interface{}{[]interface{}{0.0}}, do.Main().Out())
 }
 
 func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
@@ -90,8 +90,8 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	fo, err := core.NewOperator(
 		"add",
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.DEFAULT_SERVICE].In()
-			out := srvs[core.DEFAULT_SERVICE].Out()
+			in := srvs[core.MAIN_SERVICE].In()
+			out := srvs[core.MAIN_SERVICE].Out()
 			for true {
 				i := in.Pull()
 				m, ok := i.(map[string]interface{})
@@ -113,24 +113,24 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	require.NoError(t, err)
 
 	// Connect
-	require.NoError(t, ao.Delegate("iteration").Out().Stream().Connect(fo.DefaultService().In()))
-	require.NoError(t, fo.DefaultService().Out().Connect(ao.Delegate("iteration").In().Stream()))
+	require.NoError(t, ao.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
+	require.NoError(t, fo.Main().Out().Connect(ao.Delegate("iteration").In().Stream()))
 
-	ao.DefaultService().Out().Bufferize()
+	ao.Main().Out().Bufferize()
 
-	ao.DefaultService().In().Map("init").Push(0.0)
-	ao.DefaultService().In().Map("init").Push(8.0)
-	ao.DefaultService().In().Map("init").Push(999.0)
-	ao.DefaultService().In().Map("init").Push(4.0)
-	ao.DefaultService().In().Map("items").Push([]interface{}{1.0, 2.0, 3.0})
-	ao.DefaultService().In().Map("items").Push([]interface{}{2.0, 4.0, 6.0})
-	ao.DefaultService().In().Map("items").Push([]interface{}{})
-	ao.DefaultService().In().Map("items").Push([]interface{}{1.0, 2.0, 3.0})
+	ao.Main().In().Map("init").Push(0.0)
+	ao.Main().In().Map("init").Push(8.0)
+	ao.Main().In().Map("init").Push(999.0)
+	ao.Main().In().Map("init").Push(4.0)
+	ao.Main().In().Map("items").Push([]interface{}{1.0, 2.0, 3.0})
+	ao.Main().In().Map("items").Push([]interface{}{2.0, 4.0, 6.0})
+	ao.Main().In().Map("items").Push([]interface{}{})
+	ao.Main().In().Map("items").Push([]interface{}{1.0, 2.0, 3.0})
 
 	ao.Start()
 	fo.Start()
 
-	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.DefaultService().Out())
+	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Main().Out())
 }
 
 func TestBuiltinAggregate__PassMarkers(t *testing.T) {
@@ -174,19 +174,19 @@ func TestBuiltinAggregate__PassMarkers(t *testing.T) {
 	r.NoError(err)
 	a.NotNil(ao)
 
-	err = o.DefaultService().Out().Connect(ao.DefaultService().In())
+	err = o.Main().Out().Connect(ao.Main().In())
 	r.NoError(err)
 
-	ao.DefaultService().Out().Bufferize()
+	ao.Main().Out().Bufferize()
 	ao.Delegate("iteration").Out().Bufferize()
 
 	ao.Start()
 
-	a.Equal(o.DefaultService().Out().Map("items"), ao.Delegate("iteration").Out().StreamSource())
+	a.Equal(o.Main().Out().Map("items"), ao.Delegate("iteration").Out().StreamSource())
 
-	o.DefaultService().Out().Push(map[string]interface{}{"init": 0, "items": []interface{}{1, 2, 3}})
+	o.Main().Out().Push(map[string]interface{}{"init": 0, "items": []interface{}{1, 2, 3}})
 
 	i := ao.Delegate("iteration").Out().Stream().Map("item").Pull()
 	a.True(ao.Delegate("iteration").Out().OwnBOS(i))
-	a.True(o.DefaultService().Out().Map("items").OwnBOS(i))
+	a.True(o.Main().Out().Map("items").OwnBOS(i))
 }

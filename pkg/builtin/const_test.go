@@ -58,8 +58,8 @@ func TestBuiltinConst__Correct(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Equal(core.TYPE_TRIGGER, ao.DefaultService().In().Type())
-	a.Equal(core.TYPE_NUMBER, ao.DefaultService().Out().Type())
+	a.Equal(core.TYPE_TRIGGER, ao.Main().In().Type())
+	a.Equal(core.TYPE_NUMBER, ao.Main().Out().Type())
 }
 
 func TestBuiltinConst__PushBoolean(t *testing.T) {
@@ -78,17 +78,17 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Equal(core.TYPE_BOOLEAN, ao.DefaultService().Out().Type())
+	a.Equal(core.TYPE_BOOLEAN, ao.Main().Out().Type())
 
-	ao.DefaultService().Out().Bufferize()
+	ao.Main().Out().Bufferize()
 	ao.Start()
 
 	for i := 0; i < 20; i++ {
-		ao.DefaultService().In().Push(1)
+		ao.Main().In().Push(1)
 	}
 
-	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.DefaultService().Out())
-	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.DefaultService().Out())
+	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Main().Out())
+	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Main().Out())
 	// ...
 }
 
@@ -111,18 +111,18 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Equal(core.TYPE_STREAM, ao.DefaultService().Out().Type())
+	a.Equal(core.TYPE_STREAM, ao.Main().Out().Type())
 
-	ao.DefaultService().Out().Bufferize()
+	ao.Main().Out().Bufferize()
 	ao.Start()
 
 	for i := 0; i < 3; i++ {
-		ao.DefaultService().In().Push(1)
+		ao.Main().In().Push(1)
 	}
 
-	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.DefaultService().Out())
-	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.DefaultService().Out())
-	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.DefaultService().Out())
+	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
+	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
+	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
 	// ...
 }
 
@@ -150,18 +150,18 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(ao)
 
-	a.Equal(core.TYPE_MAP, ao.DefaultService().Out().Type())
+	a.Equal(core.TYPE_MAP, ao.Main().Out().Type())
 
-	ao.DefaultService().Out().Bufferize()
+	ao.Main().Out().Bufferize()
 	ao.Start()
 
 	for i := 0; i < 3; i++ {
-		ao.DefaultService().In().Push(1)
+		ao.Main().In().Push(1)
 	}
 
-	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.DefaultService().Out())
-	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.DefaultService().Out())
-	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.DefaultService().Out())
+	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
+	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
+	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
 	// ...
 }
 
@@ -183,11 +183,11 @@ func TestOperatorConst__SimpleNumber(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(co)
 
-	co.DefaultService().Out().Bufferize()
+	co.Main().Out().Bufferize()
 	co.Start()
 
-	co.DefaultService().In().Push(true)
-	a.PortPushes([]interface{}{5.0}, co.DefaultService().Out())
+	co.Main().In().Push(true)
+	a.PortPushes([]interface{}{5.0}, co.Main().Out())
 }
 
 func TestOperatorConst__ComplexStreamMap(t *testing.T) {
@@ -219,12 +219,12 @@ func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(co)
 
-	co.DefaultService().Out().Bufferize()
+	co.Main().Out().Bufferize()
 	co.Start()
 
-	co.DefaultService().In().Push(true)
-	a.PortPushes([]interface{}{[]interface{}{1.0, 2.0, 3.0}}, co.DefaultService().Out().Map("a"))
-	a.PortPushes([]interface{}{"test"}, co.DefaultService().Out().Map("b"))
+	co.Main().In().Push(true)
+	a.PortPushes([]interface{}{[]interface{}{1.0, 2.0, 3.0}}, co.Main().Out().Map("a"))
+	a.PortPushes([]interface{}{"test"}, co.Main().Out().Map("b"))
 }
 
 func TestOperatorConst__PassMarkers(t *testing.T) {
@@ -245,15 +245,15 @@ func TestOperatorConst__PassMarkers(t *testing.T) {
 	require.NoError(t, err)
 	a.NotNil(co)
 
-	co.DefaultService().Out().Bufferize()
+	co.Main().Out().Bufferize()
 	co.Start()
 
 	bos := core.BOS{}
 	eos := core.BOS{}
 
-	co.DefaultService().In().Push(bos)
-	co.DefaultService().In().Push(true)
-	co.DefaultService().In().Push(eos)
+	co.Main().In().Push(bos)
+	co.Main().In().Push(true)
+	co.Main().In().Push(eos)
 
-	a.PortPushes([]interface{}{bos, 5.0, eos}, co.DefaultService().Out())
+	a.PortPushes([]interface{}{bos, 5.0, eos}, co.Main().Out())
 }

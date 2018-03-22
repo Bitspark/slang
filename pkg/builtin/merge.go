@@ -7,7 +7,7 @@ import (
 var mergeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
-			core.DEFAULT_SERVICE: {
+			core.MAIN_SERVICE: {
 				In: core.PortDef{
 					Type: "map",
 					Map: map[string]*core.PortDef{
@@ -44,8 +44,8 @@ var mergeOpCfg = &builtinConfig{
 		},
 	},
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.DEFAULT_SERVICE].In()
-		out := srvs[core.DEFAULT_SERVICE].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Map("select").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
@@ -101,8 +101,8 @@ var mergeOpCfg = &builtinConfig{
 	},
 	oConnFunc: func(dest, src *core.Port) error {
 		o := dest.Operator()
-		if dest == o.Service(core.DEFAULT_SERVICE).In().Map("select") {
-			o.Service(core.DEFAULT_SERVICE).Out().SetStreamSource(src.StreamSource())
+		if dest == o.Service(core.MAIN_SERVICE).In().Map("select") {
+			o.Service(core.MAIN_SERVICE).Out().SetStreamSource(src.StreamSource())
 		}
 		return nil
 	},

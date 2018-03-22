@@ -76,7 +76,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err
 		}
-		o.DefaultService().Out().Bufferize()
+		o.Main().Out().Bufferize()
 		o.Start()
 
 		success := true
@@ -85,8 +85,8 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 			in := tc.Data.In[j]
 			expected := utils.CleanValue(tc.Data.Out[j])
 
-			o.DefaultService().In().Push(utils.CleanValue(in))
-			actual := o.DefaultService().Out().Pull()
+			o.Main().In().Push(utils.CleanValue(in))
+			actual := o.Main().Out().Pull()
 
 			if !testEqual(expected, actual) {
 				fmt.Fprintf(writer, "  expected: %v (%T)\n", expected, expected)

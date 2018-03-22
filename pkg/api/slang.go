@@ -147,7 +147,55 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			p = o.Main().Out()
 		}
 	} else {
-		if !strings.Contains(refSplit[opIdx], ".") {
+		if strings.Contains(refSplit[opIdx], ".") {
+			opSplit := strings.Split(refSplit[opIdx], ".")
+			if len(opSplit) != 2 {
+				return nil, fmt.Errorf(`connection string malformed (2): "%s"`, refStr)
+			}
+			opName := opSplit[0]
+			dlgName := opSplit[1]
+			if opSplit[0] == "" {
+				o = par
+			} else {
+				o = par.Child(opName)
+				if o == nil {
+					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
+				}
+			}
+			if dlg := o.Delegate(dlgName); dlg != nil {
+				if in {
+					p = dlg.In()
+				} else {
+					p = dlg.Out()
+				}
+			} else {
+				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), dlgName)
+			}
+		} else if strings.Contains(refSplit[opIdx], "@") {
+			opSplit := strings.Split(refSplit[opIdx], "@")
+			if len(opSplit) != 2 {
+				return nil, fmt.Errorf(`connection string malformed (3): "%s"`, refStr)
+			}
+			opName := opSplit[1]
+			srvName := opSplit[0]
+			if opName == "" {
+				o = par
+			} else {
+				o = par.Child(opSplit[1])
+				if o == nil {
+					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
+				}
+			}
+			if srv := o.Service(srvName); srv != nil {
+				if in {
+					p = srv.In()
+				} else {
+					p = srv.Out()
+				}
+			} else {
+				return nil, fmt.Errorf(`operator "%s" has no service "%s"`, o.Name(), srvName)
+			}
+		} else {
 			o = par.Child(refSplit[opIdx])
 			if o == nil {
 				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
@@ -156,39 +204,6 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 				p = o.Main().In()
 			} else {
 				p = o.Main().Out()
-			}
-		} else {
-			opSplit := strings.Split(refSplit[opIdx], ".")
-			if len(opSplit) != 2 {
-				return nil, fmt.Errorf(`connection string malformed (2): "%s"`, refStr)
-			}
-			if opSplit[0] == "" {
-				o = par
-			} else {
-				o = par.Child(opSplit[0])
-				if o == nil {
-					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
-				}
-			}
-			srv := o.Service(opSplit[1])
-			if srv != nil {
-				if in {
-					p = srv.In()
-				} else {
-					p = srv.Out()
-				}
-			}
-			dlg := o.Delegate(opSplit[1])
-			if dlg != nil {
-				if in {
-					p = dlg.In()
-				} else {
-					p = dlg.Out()
-				}
-			}
-
-			if p == nil {
-				return nil, fmt.Errorf(`operator "%s" has no service/delegate "%s"`, o.Name(), opSplit[1])
 			}
 		}
 	}

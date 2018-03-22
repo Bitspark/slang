@@ -400,3 +400,65 @@ func TestParsePortReference__Delegates_Map(t *testing.T) {
 	a.NoError(err)
 	a.Equal(o2.Delegate("test").In().Map("a"), p, "wrong port")
 }
+
+func TestParsePortReference__Services_In(t *testing.T) {
+	a := assertions.New(t)
+	o, _ := core.NewOperator(
+		"o1",
+		nil, nil,
+		map[string]*core.ServiceDef{
+			"srv1": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"},
+			},
+		},
+		nil)
+	p, err := api.ParsePortReference("(srv1@", o)
+	a.NoError(err)
+	a.Equal(o.Service("srv1").In(), p, "wrong port")
+}
+
+func TestParsePortReference__Services_Out(t *testing.T) {
+	a := assertions.New(t)
+	o, _ := core.NewOperator(
+		"o1",
+		nil, nil,
+		map[string]*core.ServiceDef{
+			"srv1": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"},
+			},
+		},
+		nil)
+	p, err := api.ParsePortReference("srv1@)", o)
+	a.NoError(err)
+	a.Equal(o.Service("srv1").Out(), p, "wrong port")
+}
+
+func TestParsePortReference__Services_SingleIn(t *testing.T) {
+	a := assertions.New(t)
+	o1, _ := core.NewOperator(
+		"o1",
+		nil, nil,
+		map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"},
+			},
+		},
+		nil)
+	o2, _ := core.NewOperator(
+		"o2",
+		nil, nil,
+		map[string]*core.ServiceDef{
+			"srv2": {
+				In:  core.PortDef{Type: "number"},
+				Out: core.PortDef{Type: "number"},
+			},
+		},
+		nil)
+	o2.SetParent(o1)
+	p, err := api.ParsePortReference("(srv2@o2", o1)
+	a.NoError(err)
+	a.Equal(o2.Service("srv2").In(), p, "wrong port")
+}

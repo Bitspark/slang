@@ -139,7 +139,7 @@ var httpServerOpCfg = &builtinConfig{
 			slangHandler.Out().Stream())
 		go sync.Worker()
 
-		for true {
+		for {
 			port, marker := in.PullInt()
 			if marker != nil {
 				out.Push(marker)

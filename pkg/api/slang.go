@@ -16,7 +16,7 @@ import (
 	"runtime"
 )
 
-var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
+var FILE_ENDINGS = []string{".yaml", ".json"} // Order of endings matters!
 
 type Environ struct {
 	paths []string
@@ -59,20 +59,20 @@ func (e *Environ) BuildOperator(opFilePath string, generics map[string]*core.Por
 	}
 
 	// Find correct file
-	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
+	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, FILE_ENDINGS)
 	if err != nil {
 		return nil, err
 	}
 
 	// Read operator definition and perform recursion detection
-	def, err := e.readOperatorDef(opDefFilePath, generics, nil)
+	def, err := e.ReadOperatorDef(opDefFilePath, generics, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and internally connect the operator
-	op, err := buildAndConnectOperator(opFilePath, props, def, nil)
+	op, err := BuildAndConnectOperator(opFilePath, props, def, nil)
 
 	if err != nil {
 		return nil, err
@@ -253,7 +253,7 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 		// Find correct file
 		var opDefFilePath string
 
-		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, fileEndings)
+		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, FILE_ENDINGS)
 
 		if err != nil {
 			continue
@@ -267,9 +267,9 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 
 // READ OPERATOR DEFINITION
 
-// readOperatorDef reads the operator definition for the given file and replaces all generic types according to the
+// ReadOperatorDef reads the operator definition for the given file and replaces all generic types according to the
 // generics map given. The generics map must not contain any further generic types.
-func (e *Environ) readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
+func (e *Environ) ReadOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
 
 	// Make sure generics is free of further generics
@@ -370,7 +370,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 	// Iterate through the paths and take the first operator we find
 	if opDefFilePath, err = e.getOperatorDefFilePath(relFilePath, enforcedPath); err == nil {
-		if def, err = e.readOperatorDef(opDefFilePath, insDef.Generics, pathsRead); err == nil {
+		if def, err = e.ReadOperatorDef(opDefFilePath, insDef.Generics, pathsRead); err == nil {
 			return def, nil
 		}
 	}
@@ -381,10 +381,10 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
-// buildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
+// BuildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
 // It recursively creates child operators which might as well be builtin operators. It also connects the operators
 // according to the given operator definition.
-func buildAndConnectOperator(insName string, props map[string]interface{}, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+func BuildAndConnectOperator(insName string, props map[string]interface{}, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -505,5 +505,5 @@ func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, e
 		return nil, errors.New("instance has no operator definition")
 	}
 	// No builtin operator, so create new one according to the operator definition saved in the instance definition
-	return buildAndConnectOperator(insDef.Name, insDef.Properties, insDef.OperatorDef(), par)
+	return BuildAndConnectOperator(insDef.Name, insDef.Properties, insDef.OperatorDef(), par)
 }

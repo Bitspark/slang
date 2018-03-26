@@ -127,7 +127,7 @@ var evalOpCfg = &builtinConfig{
 		expr := store.(functionStore).evalExpr
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			i := in.Pull()
 
 			if core.IsMarker(i) {

@@ -51,7 +51,7 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 	o.Main().In().Map("false").Push(falses)
 	o.Main().In().Map("select").Push(selects)
 
-	a.PortPushes([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
+	a.PortPushesAll([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
 }
 
 func TestBuiltin_Merge__ComplexItems(t *testing.T) {
@@ -87,7 +87,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	o.Main().In().Map("false").Push(falses)
 	o.Main().In().Map("select").Push(selects)
 
-	a.PortPushes([]interface{}{[]interface{}{
+	a.PortPushesAll([]interface{}{[]interface{}{
 		map[string]interface{}{"red": "Red Bull", "blue": "Blues"},
 		map[string]interface{}{"red": "Roses", "blue": "Violets"},
 		map[string]interface{}{"red": "Apples", "blue": "Blueberries"},

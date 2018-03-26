@@ -28,7 +28,7 @@ var constOpCfg = &builtinConfig{
 		v := store.(valueStore).value
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			if i := in.Pull(); !core.IsMarker(i) {
 				out.Push(v)
 			} else {

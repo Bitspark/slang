@@ -34,7 +34,7 @@ var syncMergeOpCfg = &builtinConfig{
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			item := in.Pull()
 			m, ok := item.(map[string]interface{})
 			if !ok {

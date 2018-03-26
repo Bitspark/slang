@@ -63,7 +63,7 @@ var aggregateOpCfg = &builtinConfig{
 		iOut := dels["iteration"].Out()
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			state := in.Map("init").Pull()
 
 			// Redirect all markers
@@ -80,7 +80,7 @@ var aggregateOpCfg = &builtinConfig{
 			iOut.PushBOS()
 			iIn.PullBOS()
 
-			for true {
+			for {
 				item := in.Map("items").Stream().Pull()
 
 				if core.IsMarker(item) {

@@ -5,7 +5,7 @@ import (
 	"github.com/tealeg/xlsx"
 )
 
-var readXlsxOpCfg = &builtinConfig{
+var xlsxReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -39,7 +39,7 @@ var readXlsxOpCfg = &builtinConfig{
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			filename, i := in.PullString()
 			if i != nil {
 				out.Push(i)

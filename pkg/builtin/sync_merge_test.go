@@ -61,7 +61,7 @@ func TestBuiltin_SyncMerge__Works(t *testing.T) {
 		o.Main().In().Map("select").Push(v)
 	}
 
-	a.PortPushes([]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}, o.Main().Out())
+	a.PortPushesAll([]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}, o.Main().Out())
 }
 
 func TestBuiltin_SyncMerge__ComplexItems(t *testing.T) {
@@ -106,7 +106,7 @@ func TestBuiltin_SyncMerge__ComplexItems(t *testing.T) {
 		o.Main().In().Map("select").Push(v)
 	}
 
-	a.PortPushes([]interface{}{
+	a.PortPushesAll([]interface{}{
 		map[string]interface{}{"red": "Red Bull", "blue": "Blues"},
 		map[string]interface{}{"red": "Roses", "blue": "Violets"},
 		map[string]interface{}{"red": "Apples", "blue": "Blueberries"},

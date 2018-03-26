@@ -29,20 +29,26 @@ func checkMapping(port *core.Port, mapping []string) error {
 
 var csvReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "string",
-		},
-		Out: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type:    "generic",
-				Generic: "colMap",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type: "string",
+				},
+				Out: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type:    "generic",
+						Generic: "colMap",
+					},
+				},
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for {
 			csvText, marker := in.PullString()
 			if marker != nil {
@@ -102,7 +108,7 @@ var csvReadOpCfg = &builtinConfig{
 			for i, row := range mapArray {
 				csvParams.colMapping[i] = row.(string)
 			}
-			if err := checkMapping(op.Out().Stream(), csvParams.colMapping); err != nil {
+			if err := checkMapping(op.Main().Out().Stream(), csvParams.colMapping); err != nil {
 				return err
 			}
 		}

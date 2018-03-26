@@ -13,28 +13,34 @@ type windowCountStore struct {
 
 var windowCountOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type:    "generic",
-				Generic: "itemType",
-			},
-		},
-		Out: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type: "stream",
-				Stream: &core.PortDef{
-					Type:    "generic",
-					Generic: "itemType",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type:    "generic",
+						Generic: "itemType",
+					},
+				},
+				Out: core.PortDef{
+					Type: "stream",
+					Stream: &core.PortDef{
+						Type: "stream",
+						Stream: &core.PortDef{
+							Type:    "generic",
+							Generic: "itemType",
+						},
+					},
 				},
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		s := store.(windowCountStore)
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for {
 			i := in.Stream().Pull()
 			if core.IsMarker(i) && !in.OwnBOS(i) {

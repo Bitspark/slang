@@ -50,7 +50,7 @@ var loopOpCfg = &builtinConfig{
 		iOut := dels["iteration"].Out()
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			i := in.Pull()
 
 			// Redirect all markers
@@ -74,7 +74,7 @@ var loopOpCfg = &builtinConfig{
 
 			iIn.PullBOS()
 
-			for true {
+			for {
 				iter := iIn.Stream().Pull().(map[string]interface{})
 				newState := iter["state"]
 				cont := iter["continue"].(bool)

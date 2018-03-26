@@ -65,7 +65,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	do.Start()
 
 	do.Main().In().Push([]interface{}{map[string]interface{}{"init": 0.0, "items": []interface{}{}}})
-	a.PortPushes([]interface{}{[]interface{}{0.0}}, do.Main().Out())
+	a.PortPushesAll([]interface{}{[]interface{}{0.0}}, do.Main().Out())
 }
 
 func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
@@ -92,7 +92,7 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 			in := srvs[core.MAIN_SERVICE].In()
 			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+			for {
 				i := in.Pull()
 				m, ok := i.(map[string]interface{})
 				if !ok {
@@ -130,7 +130,7 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	ao.Start()
 	fo.Start()
 
-	a.PortPushes([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Main().Out())
 }
 
 func TestBuiltinAggregate__PassMarkers(t *testing.T) {

@@ -19,7 +19,7 @@ var plotOpCfg = &builtinConfig{
 	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		in := srvs[core.MAIN_SERVICE].In()
 		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+		for {
 			// TODO: Implement
 			out.Push(in.Pull())
 		}

@@ -7,14 +7,20 @@ import (
 
 var delayOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "number",
-		},
-		Out: core.PortDef{
-			Type: "trigger",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type: "number",
+				},
+				Out: core.PortDef{
+					Type: "trigger",
+				},
+			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for {
 			i, err := in.PullInt()
 			if err != nil {

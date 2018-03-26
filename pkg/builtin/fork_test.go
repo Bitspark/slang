@@ -93,8 +93,8 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{[]interface{}{"hallo", 100}}, o.Main().Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.Main().Out().Map("false"))
+	a.PortPushesAll([]interface{}{[]interface{}{"hallo", 100}}, o.Main().Out().Map("true"))
+	a.PortPushesAll([]interface{}{[]interface{}{"welt", 101}}, o.Main().Out().Map("false"))
 }
 
 func TestBuiltin_Fork__ComplexItems(t *testing.T) {
@@ -129,6 +129,6 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Main().Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Main().Out().Map("false"))
+	a.PortPushesAll([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Main().Out().Map("true"))
+	a.PortPushesAll([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Main().Out().Map("false"))
 }

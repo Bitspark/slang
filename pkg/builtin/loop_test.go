@@ -36,7 +36,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 			in := srvs[core.MAIN_SERVICE].In()
 			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+			for {
 				i := in.Pull()
 				f, ok := i.(float64)
 				if !ok {
@@ -56,7 +56,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 			in := srvs[core.MAIN_SERVICE].In()
 			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+			for {
 				i := in.Pull()
 				f, ok := i.(float64)
 				if !ok {
@@ -85,7 +85,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{16.0, 10.0}, lo.Main().Out())
+	a.PortPushesAll([]interface{}{16.0, 10.0}, lo.Main().Out())
 }
 
 func TestBuiltin_Loop__Fibo(t *testing.T) {
@@ -117,7 +117,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 			in := srvs[core.MAIN_SERVICE].In()
 			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+			for {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
 				if !ok {
@@ -138,7 +138,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 			in := srvs[core.MAIN_SERVICE].In()
 			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+			for {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
 				if !ok {
@@ -170,7 +170,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{
+	a.PortPushesAll([]interface{}{
 		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
 		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
 	}, lo.Main().Out())

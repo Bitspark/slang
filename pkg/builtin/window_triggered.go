@@ -7,38 +7,45 @@ import (
 
 var windowTriggeredOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"trigger": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type: "trigger",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type: "map",
+					Map: map[string]*core.PortDef{
+						"trigger": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type: "trigger",
+							},
+						},
+						"stream": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
 					},
 				},
-				"stream": {
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
+						Type: "stream",
+						Stream: &core.PortDef{
+							Type:    "generic",
+							Generic: "itemType",
+						},
 					},
-				},
-			},
-		},
-		Out: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type: "stream",
-				Stream: &core.PortDef{
-					Type:    "generic",
-					Generic: "itemType",
 				},
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
+
 		var mutex = &sync.Mutex{}
 		collecting := false
 		var window []interface{}
@@ -92,8 +99,8 @@ var windowTriggeredOpCfg = &builtinConfig{
 	},
 	oConnFunc: func(dest, src *core.Port) error {
 		o := dest.Operator()
-		if dest == o.In().Map("trigger") {
-			o.Out().SetStreamSource(src.StreamSource())
+		if dest == o.Main().In().Map("trigger") {
+			o.Main().Out().SetStreamSource(src.StreamSource())
 		}
 		return nil
 	},

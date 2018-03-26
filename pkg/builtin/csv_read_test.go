@@ -44,13 +44,13 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 	r.NoError(err)
 	r.NotNil(co)
 
-	co.Out().Bufferize()
+	co.Main().Out().Bufferize()
 	co.Start()
 
-	co.In().Push("a,b,c\ne,f,g\nh,i,j")
+	co.Main().In().Push("a,b,c\ne,f,g\nh,i,j")
 
-	co.Out().PullBOS()
-	a.PortPushes(map[string]interface{}{"a": "e", "b": "f", "c": "g"}, co.Out().Stream())
-	a.PortPushes(map[string]interface{}{"a": "h", "b": "i", "c": "j"}, co.Out().Stream())
-	co.Out().PullEOS()
+	co.Main().Out().PullBOS()
+	a.PortPushes(map[string]interface{}{"a": "e", "b": "f", "c": "g"}, co.Main().Out().Stream())
+	a.PortPushes(map[string]interface{}{"a": "h", "b": "i", "c": "j"}, co.Main().Out().Stream())
+	co.Main().Out().PullEOS()
 }

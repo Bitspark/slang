@@ -87,8 +87,8 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 		ao.Main().In().Push(1)
 	}
 
-	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Main().Out())
-	a.PortPushes([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{true, true, true, true, true, true, true, true, true, true}, ao.Main().Out())
 	// ...
 }
 
@@ -120,9 +120,9 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 		ao.Main().In().Push(1)
 	}
 
-	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
-	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
-	a.PortPushes([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{[]interface{}{1.0, "slang", true}}, ao.Main().Out())
 	// ...
 }
 
@@ -159,9 +159,9 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 		ao.Main().In().Push(1)
 	}
 
-	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
-	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
-	a.PortPushes([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
+	a.PortPushesAll([]interface{}{map[string]interface{}{"a": 1.0, "b": false}}, ao.Main().Out())
 	// ...
 }
 
@@ -187,7 +187,7 @@ func TestOperatorConst__SimpleNumber(t *testing.T) {
 	co.Start()
 
 	co.Main().In().Push(true)
-	a.PortPushes([]interface{}{5.0}, co.Main().Out())
+	a.PortPushesAll([]interface{}{5.0}, co.Main().Out())
 }
 
 func TestOperatorConst__ComplexStreamMap(t *testing.T) {
@@ -223,8 +223,8 @@ func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 	co.Start()
 
 	co.Main().In().Push(true)
-	a.PortPushes([]interface{}{[]interface{}{1.0, 2.0, 3.0}}, co.Main().Out().Map("a"))
-	a.PortPushes([]interface{}{"test"}, co.Main().Out().Map("b"))
+	a.PortPushesAll([]interface{}{[]interface{}{1.0, 2.0, 3.0}}, co.Main().Out().Map("a"))
+	a.PortPushesAll([]interface{}{"test"}, co.Main().Out().Map("b"))
 }
 
 func TestOperatorConst__PassMarkers(t *testing.T) {
@@ -255,5 +255,5 @@ func TestOperatorConst__PassMarkers(t *testing.T) {
 	co.Main().In().Push(true)
 	co.Main().In().Push(eos)
 
-	a.PortPushes([]interface{}{bos, 5.0, eos}, co.Main().Out())
+	a.PortPushesAll([]interface{}{bos, 5.0, eos}, co.Main().Out())
 }

@@ -4,29 +4,22 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
-type windowCountStore struct {
-	size  int
-	slide int
-	start int
-	end   int
-}
-
 var windowCountOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "stream",
-						Stream: &core.PortDef{
+						Stream: &core.TypeDef{
 							Type:    "generic",
 							Generic: "itemType",
 						},
@@ -37,10 +30,20 @@ var windowCountOpCfg = &builtinConfig{
 		Delegates: map[string]*core.DelegateDef{
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		s := store.(windowCountStore)
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		s := struct {
+			size  int
+			slide int
+			start int
+			end   int
+		}{
+			op.Property("size").(int),
+			op.Property("slide").(int),
+			op.Property("start").(int),
+			op.Property("end").(int),
+		}
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Stream().Pull()
 			if core.IsMarker(i) && !in.OwnBOS(i) {
@@ -79,18 +82,15 @@ var windowCountOpCfg = &builtinConfig{
 			out.PushEOS()
 		}
 	},
-	oPropFunc: func(op *core.Operator, i map[string]interface{}) error {
-		store := windowCountStore{}
+	oPropFunc: func(props core.Properties) error {
+		props["size"] = int(props["size"].(float64))
+		props["slide"] = int(props["slide"].(float64))
+		props["start"] = int(props["start"].(float64))
+		props["end"] = int(props["end"].(float64))
 
-		store.size = int(i["size"].(float64))
-		store.slide = int(i["slide"].(float64))
-		store.start = int(i["start"].(float64))
-		store.end = int(i["end"].(float64))
-
-		op.SetStore(store)
 		return nil
 	},
-	oConnFunc: func(dest, src *core.Port) error {
+	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		return nil
 	},
 }

@@ -269,10 +269,10 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "a+b"},
-		Generics: map[string]*core.PortDef{
+		Generics: map[string]*core.TypeDef{
 			"paramsMap": {
 				Type: "map",
-				Map: map[string]*core.PortDef{
+				Map: map[string]*core.TypeDef{
 					"a": {Type: "number"},
 					"b": {Type: "number"},
 				},
@@ -297,10 +297,10 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "floor(a)"},
-		Generics: map[string]*core.PortDef{
+		Generics: map[string]*core.TypeDef{
 			"paramsMap": {
 				Type: "map",
-				Map: map[string]*core.PortDef{
+				Map: map[string]*core.TypeDef{
 					"a": {Type: "number"},
 				},
 			},
@@ -324,10 +324,10 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "ceil(a)"},
-		Generics: map[string]*core.PortDef{
+		Generics: map[string]*core.TypeDef{
 			"paramsMap": {
 				Type: "map",
-				Map: map[string]*core.PortDef{
+				Map: map[string]*core.TypeDef{
 					"a": {Type: "number"},
 				},
 			},
@@ -351,10 +351,10 @@ func TestBuiltin_Eval__IsNull(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "isNull(a)"},
-		Generics: map[string]*core.PortDef{
+		Generics: map[string]*core.TypeDef{
 			"paramsMap": {
 				Type: "map",
-				Map: map[string]*core.PortDef{
+				Map: map[string]*core.TypeDef{
 					"a": {Type: "primitive"},
 				},
 			},
@@ -378,10 +378,10 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "a && (b != c)"},
-		Generics: map[string]*core.PortDef{
+		Generics: map[string]*core.TypeDef{
 			"paramsMap": {
 				Type: "map",
-				Map: map[string]*core.PortDef{
+				Map: map[string]*core.TypeDef{
 					"a": {Type: "boolean"},
 					"b": {Type: "number"},
 					"c": {Type: "number"},
@@ -409,12 +409,12 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	fo, err := MakeOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{"expression": "vec0.x*vec1.x+vec0.y*vec1.y"},
-		Generics: map[string]*core.PortDef{
+		Generics: map[string]*core.TypeDef{
 			"paramsMap": {
 				Type: "map",
-				Map: map[string]*core.PortDef{
-					"vec0": {Type: "map", Map: map[string]*core.PortDef{"x": {Type: "number"}, "y": {Type: "number"}}},
-					"vec1": {Type: "map", Map: map[string]*core.PortDef{"x": {Type: "number"}, "y": {Type: "number"}}},
+				Map: map[string]*core.TypeDef{
+					"vec0": {Type: "map", Map: map[string]*core.TypeDef{"x": {Type: "number"}, "y": {Type: "number"}}},
+					"vec1": {Type: "map", Map: map[string]*core.TypeDef{"x": {Type: "number"}, "y": {Type: "number"}}},
 				},
 			},
 		},

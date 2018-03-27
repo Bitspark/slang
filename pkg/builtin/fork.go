@@ -8,11 +8,11 @@ var forkOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"item": {
 								Type:    "generic",
 								Generic: "itemType",
@@ -23,19 +23,19 @@ var forkOpCfg = &builtinConfig{
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"true": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 						"false": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
@@ -45,9 +45,9 @@ var forkOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Stream().Pull()
 

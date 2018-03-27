@@ -9,18 +9,18 @@ var delayOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "number",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "trigger",
 				},
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i, err := in.PullInt()
 			if err != nil {
@@ -35,10 +35,10 @@ var delayOpCfg = &builtinConfig{
 			out.Push(1)
 		}
 	},
-	oPropFunc: func(op *core.Operator, i map[string]interface{}) error {
+	oPropFunc: func(props core.Properties) error {
 		return nil
 	},
-	oConnFunc: func(dest, src *core.Port) error {
+	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		return nil
 	},
 }

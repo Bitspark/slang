@@ -19,7 +19,7 @@ func makeTestMonoWindow(t *testing.T, size, slide, start, end int) *core.Operato
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.window.count",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "string",
 				},

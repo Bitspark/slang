@@ -73,9 +73,9 @@ func TestNetwork_DoubleSum(t *testing.T) {
 	defStr := api.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := api.ParsePortDef(`{"type":"number"}`)
 
-	double := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	double := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -86,9 +86,9 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	sum := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	sum := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -205,9 +205,9 @@ func TestNetwork_NumgenSum(t *testing.T) {
 	defStr := api.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	def := api.ParsePortDef(`{"type":"number"}`)
 
-	numgen := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	numgen := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if n, ok := i.(float64); ok {
@@ -222,9 +222,9 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	sum := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	sum := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -368,9 +368,9 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 	defMap2In := defMap1Out
 	defMap2Out := defMap1In
 
-	evalMap1 := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	evalMap1 := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if i, ok := i.(float64); ok {
@@ -382,9 +382,9 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	evalMap2 := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	evalMap2 := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -451,9 +451,9 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 	defSumIn := api.ParsePortDef(`{"type":"stream","stream":{"type":"number"}}`)
 	defSumOut := api.ParsePortDef(`{"type":"number"}`)
 
-	sumEval := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	sumEval := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if ns, ok := i.([]interface{}); ok {
@@ -468,9 +468,9 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	filterEval := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	filterEval := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {
@@ -483,9 +483,9 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	addEval := func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	addEval := func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			i := in.Pull()
 			if m, ok := i.(map[string]interface{}); ok {

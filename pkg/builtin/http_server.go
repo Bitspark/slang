@@ -54,29 +54,29 @@ var httpServerOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "number",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "string",
 				},
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"handler": {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"status": {
 								Type: "number",
 							},
 							"headers": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "map",
-									Map: map[string]*core.PortDef{
+									Map: map[string]*core.TypeDef{
 										"key": {
 											Type: "string",
 										},
@@ -92,11 +92,11 @@ var httpServerOpCfg = &builtinConfig{
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"method": {
 								Type: "string",
 							},
@@ -108,9 +108,9 @@ var httpServerOpCfg = &builtinConfig{
 							},
 							"headers": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "map",
-									Map: map[string]*core.PortDef{
+									Map: map[string]*core.TypeDef{
 										"key": {
 											Type: "string",
 										},
@@ -129,10 +129,10 @@ var httpServerOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		slangHandler := dels["handler"]
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		slangHandler := op.Delegate("handler")
 		sync := &core.Synchronizer{}
 		sync.Init(
 			slangHandler.In().Stream(),
@@ -165,7 +165,7 @@ var httpServerOpCfg = &builtinConfig{
 			slangHandler.In().PullEOS()
 		}
 	},
-	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
+	oPropFunc: func(props core.Properties) error {
 		return nil
 	},
 }

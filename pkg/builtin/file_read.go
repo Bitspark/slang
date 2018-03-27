@@ -9,12 +9,12 @@ var fileReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "string",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"content": {
 							Type: "binary",
 						},
@@ -26,9 +26,9 @@ var fileReadOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			file, marker := in.PullString()
 			if marker != nil {

@@ -20,7 +20,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 		core.InstanceDef{
 			Name:     "loop",
 			Operator: "slang.loop",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
 				},
@@ -33,9 +33,9 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	// Condition operator
 	co, _ := core.NewOperator(
 		"cond",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
 			for {
 				i := in.Pull()
 				f, ok := i.(float64)
@@ -47,15 +47,15 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "boolean"}}},
+		map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "boolean"}}},
 		nil)
 
 	// Double function operator
 	fo, _ := core.NewOperator(
 		"double",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
 			for {
 				i := in.Pull()
 				f, ok := i.(float64)
@@ -67,7 +67,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}},
+		map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}},
 		nil)
 
 	// Connect
@@ -90,9 +90,9 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 
 func TestBuiltin_Loop__Fibo(t *testing.T) {
 	a := assertions.New(t)
-	stateType := core.PortDef{
+	stateType := core.TypeDef{
 		Type: "map",
-		Map: map[string]*core.PortDef{
+		Map: map[string]*core.TypeDef{
 			"i":      {Type: "number"},
 			"fib":    {Type: "number"},
 			"oldFib": {Type: "number"},
@@ -101,7 +101,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.loop",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"stateType": &stateType,
 			},
 		},
@@ -114,9 +114,9 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	// Condition operator
 	co, _ := core.NewOperator(
 		"cond",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
 			for {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
@@ -129,15 +129,15 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: stateType, Out: core.PortDef{Type: "boolean"}}},
+		map[string]*core.ServiceDef{"main": {In: stateType, Out: core.TypeDef{Type: "boolean"}}},
 		nil)
 
 	// Fibonacci function operator
 	fo, _ := core.NewOperator(
 		"fib",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
 			for {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
@@ -181,7 +181,7 @@ func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	lo, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.loop",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
 				},

@@ -21,7 +21,9 @@ delegates:
           generic: gen
 
 properties:
-  - val
+  val:
+    type: generic
+    generic: gen
 
 operators:
   del:

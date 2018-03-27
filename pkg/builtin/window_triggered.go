@@ -9,29 +9,29 @@ var windowTriggeredOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"trigger": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type: "trigger",
 							},
 						},
 						"stream": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "stream",
-						Stream: &core.PortDef{
+						Stream: &core.TypeDef{
 							Type:    "generic",
 							Generic: "itemType",
 						},
@@ -42,9 +42,9 @@ var windowTriggeredOpCfg = &builtinConfig{
 		Delegates: map[string]*core.DelegateDef{
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 
 		var mutex = &sync.Mutex{}
 		collecting := false
@@ -94,13 +94,12 @@ var windowTriggeredOpCfg = &builtinConfig{
 			mutex.Unlock()
 		}
 	},
-	oPropFunc: func(op *core.Operator, i map[string]interface{}) error {
+	oPropFunc: func(props core.Properties) error {
 		return nil
 	},
-	oConnFunc: func(dest, src *core.Port) error {
-		o := dest.Operator()
-		if dest == o.Main().In().Map("trigger") {
-			o.Main().Out().SetStreamSource(src.StreamSource())
+	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
+		if dst == op.Main().In().Map("trigger") {
+			op.Main().Out().SetStreamSource(src.StreamSource())
 		}
 		return nil
 	},

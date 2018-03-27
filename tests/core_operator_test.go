@@ -25,10 +25,10 @@ func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 
 func TestOperator_Compile__Nested1Child(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	op2, _ := core.NewOperator("a", nil, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op1, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
+	op2, _ := core.NewOperator("a", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op3, _ := core.NewOperator("b", func(*core.Operator) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op3.SetParent(op2)
 
 	// op1
@@ -59,16 +59,16 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 
 func TestOperator_Compile__NestedChildren(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	op2, _ := core.NewOperator("a", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op1, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
+	op2, _ := core.NewOperator("a", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op3, _ := core.NewOperator("b", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op3.SetParent(op1)
-	op4, _ := core.NewOperator("c", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op4, _ := core.NewOperator("c", func(*core.Operator) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op4.SetParent(op2)
-	op5, _ := core.NewOperator("d", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op5, _ := core.NewOperator("d", func(*core.Operator) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op5.SetParent(op2)
-	op6, _ := core.NewOperator("e", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op6, _ := core.NewOperator("e", func(*core.Operator) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}, nil)
 	op6.SetParent(op3)
 
 	// op1

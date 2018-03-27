@@ -30,7 +30,7 @@ func TestOperator_Take__InPorts(t *testing.T) {
 	to, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
 				},
@@ -54,7 +54,7 @@ func TestOperator_Take__OutPorts(t *testing.T) {
 	to, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
 				},
@@ -77,7 +77,7 @@ func TestOperator_Take__Simple1(t *testing.T) {
 	to, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
 				},

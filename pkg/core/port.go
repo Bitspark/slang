@@ -55,7 +55,7 @@ type Port struct {
 }
 
 // Makes a new port.
-func NewPort(srv *Service, del *Delegate, def PortDef, dir int) (*Port, error) {
+func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -618,7 +618,7 @@ func (p *Port) wire(q *Port) {
 	q.src = p
 	q.strSrc = p.strSrc
 	if q.operator != nil && q.operator.connectFunc != nil {
-		q.operator.connectFunc(q, p)
+		q.operator.connectFunc(q.operator, q, p)
 	}
 }
 

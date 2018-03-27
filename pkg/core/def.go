@@ -15,7 +15,7 @@ type InstanceDef struct {
 	Operator   string              `json:"operator" yaml:"operator"`
 	Name       string              `json:"name" yaml:"name"`
 	Properties Properties          `json:"properties" yaml:"properties"`
-	Generics   map[string]*PortDef `json:"generics" yaml:"generics"`
+	Generics   map[string]*TypeDef `json:"generics" yaml:"generics"`
 
 	valid       bool
 	operatorDef OperatorDef
@@ -25,31 +25,31 @@ type OperatorDef struct {
 	Services    map[string]*ServiceDef  `json:"services" yaml:"services"`
 	Delegates   map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
 	Operators   OperatorsList           `json:"operators" yaml:"operators"`
+	Properties  map[string]TypeDef      `json:"properties" yaml:"properties"`
 	Connections map[string][]string     `json:"connections" yaml:"connections"`
-	Properties  []string                `json:"properties" yaml:"properties"`
 
 	valid bool
 }
 
 type DelegateDef struct {
-	In  PortDef `json:"in" yaml:"in"`
-	Out PortDef `json:"out" yaml:"out"`
+	In  TypeDef `json:"in" yaml:"in"`
+	Out TypeDef `json:"out" yaml:"out"`
 
 	valid bool
 }
 
 type ServiceDef struct {
-	In  PortDef `json:"in" yaml:"in"`
-	Out PortDef `json:"out" yaml:"out"`
+	In  TypeDef `json:"in" yaml:"in"`
+	Out TypeDef `json:"out" yaml:"out"`
 
 	valid bool
 }
 
-type PortDef struct {
+type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
 	Type    string              `json:"type" yaml:"type"`
-	Stream  *PortDef            `json:"stream" yaml:"stream"`
-	Map     map[string]*PortDef `json:"map" yaml:"map"`
+	Stream  *TypeDef            `json:"stream" yaml:"stream"`
+	Map     map[string]*TypeDef `json:"map" yaml:"map"`
 	Generic string              `json:"generic" yaml:"generic"`
 
 	valid bool
@@ -126,17 +126,17 @@ func (d *OperatorDef) Validate() error {
 	return nil
 }
 
-// SpecifyGenericPorts replaces generic types in the operator definition with the types given in the generics map.
+// SpecifyGenerics replaces generic types in the operator definition with the types given in the generics map.
 // The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
 // replaces them with a reference on a copy.
-func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	srvs := make(map[string]*ServiceDef)
 	for srvName := range d.Services {
 		srv := d.Services[srvName].Copy()
-		if err := srv.In.SpecifyGenericPorts(generics); err != nil {
+		if err := srv.In.SpecifyGenerics(generics); err != nil {
 			return err
 		}
-		if err := srv.Out.SpecifyGenericPorts(generics); err != nil {
+		if err := srv.Out.SpecifyGenerics(generics); err != nil {
 			return err
 		}
 		srvs[srvName] = &srv
@@ -146,10 +146,10 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	dels := make(map[string]*DelegateDef)
 	for delName := range d.Delegates {
 		del := d.Delegates[delName].Copy()
-		if err := del.In.SpecifyGenericPorts(generics); err != nil {
+		if err := del.In.SpecifyGenerics(generics); err != nil {
 			return err
 		}
-		if err := del.Out.SpecifyGenericPorts(generics); err != nil {
+		if err := del.Out.SpecifyGenerics(generics); err != nil {
 			return err
 		}
 		dels[delName] = &del
@@ -157,7 +157,7 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	d.Delegates = dels
 	for _, op := range d.Operators {
 		for _, gp := range op.Generics {
-			if err := gp.SpecifyGenericPorts(generics); err != nil {
+			if err := gp.SpecifyGenerics(generics); err != nil {
 				return err
 			}
 		}
@@ -248,9 +248,9 @@ func (d DelegateDef) Copy() DelegateDef {
 	return cpy
 }
 
-// PORT DEFINITION
+// TYPE DEFINITION
 
-func (d PortDef) Equals(p PortDef) bool {
+func (d TypeDef) Equals(p TypeDef) bool {
 	if d.Type != p.Type {
 		return false
 	}
@@ -278,11 +278,11 @@ func (d PortDef) Equals(p PortDef) bool {
 	return true
 }
 
-func (d *PortDef) Valid() bool {
+func (d *TypeDef) Valid() bool {
 	return d.valid
 }
 
-func (d *PortDef) Validate() error {
+func (d *TypeDef) Validate() error {
 	if d.Type == "" {
 		return errors.New("type must not be empty")
 	}
@@ -327,15 +327,15 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d PortDef) Copy() PortDef {
-	cpy := PortDef{Type: d.Type, Generic: d.Generic}
+func (d TypeDef) Copy() TypeDef {
+	cpy := TypeDef{Type: d.Type, Generic: d.Generic}
 
 	if d.Stream != nil {
 		strCpy := d.Stream.Copy()
 		cpy.Stream = &strCpy
 	}
 	if d.Map != nil {
-		cpy.Map = make(map[string]*PortDef)
+		cpy.Map = make(map[string]*TypeDef)
 		for k, e := range d.Map {
 			subCpy := e.Copy()
 			cpy.Map[k] = &subCpy
@@ -345,10 +345,10 @@ func (d PortDef) Copy() PortDef {
 	return cpy
 }
 
-// SpecifyGenericPorts replaces generic types in the port definition with the types given in the generics map.
+// SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
 // The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
 // replaces them with a reference on a copy, which is very important to prevent unintended side effects.
-func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+func (d *TypeDef) SpecifyGenerics(generics map[string]*TypeDef) error {
 	for identifier, pd := range generics {
 		if d.Generic == identifier {
 			*d = pd.Copy()
@@ -358,12 +358,12 @@ func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 		if d.Type == "stream" {
 			strCpy := d.Stream.Copy()
 			d.Stream = &strCpy
-			return strCpy.SpecifyGenericPorts(generics)
+			return strCpy.SpecifyGenerics(generics)
 		} else if d.Type == "map" {
-			mapCpy := make(map[string]*PortDef)
+			mapCpy := make(map[string]*TypeDef)
 			for k, e := range d.Map {
 				eCpy := e.Copy()
-				if err := eCpy.SpecifyGenericPorts(generics); err != nil {
+				if err := eCpy.SpecifyGenerics(generics); err != nil {
 					return err
 				}
 				mapCpy[k] = &eCpy
@@ -374,7 +374,7 @@ func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	return nil
 }
 
-func (d PortDef) GenericsSpecified() error {
+func (d TypeDef) GenericsSpecified() error {
 	if d.Type == "generic" || d.Generic != "" {
 		return errors.New("generic not replaced: " + d.Generic)
 	}

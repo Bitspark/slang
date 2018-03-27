@@ -8,28 +8,28 @@ var takeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"true": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 						"false": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
@@ -38,17 +38,17 @@ var takeOpCfg = &builtinConfig{
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"compare": {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "boolean",
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"true": {
 								Type:    "generic",
 								Generic: "itemType",
@@ -63,11 +63,11 @@ var takeOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		cIn := dels["compare"].In()
-		cOut := dels["compare"].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		cIn := op.Delegate("compare").In()
+		cOut := op.Delegate("compare").Out()
 		for {
 			t := in.Map("true").Stream().Pull()
 			f := in.Map("false").Stream().Pull()

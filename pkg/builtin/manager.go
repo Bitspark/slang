@@ -7,10 +7,11 @@ import (
 	"github.com/Bitspark/go-funk"
 )
 
-type PropertyFunc func(*core.Operator, map[string]interface{}) error
+// Validates a property map
+type PFunc func(core.Properties) error
 
 type builtinConfig struct {
-	oPropFunc PropertyFunc
+	oPropFunc PFunc
 	oConnFunc core.CFunc
 	oFunc     core.OFunc
 	oDef      core.OperatorDef
@@ -23,6 +24,13 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 
 	if cfg == nil {
 		return nil, errors.New("unknown builtin operator")
+	}
+
+	if cfg.oPropFunc != nil {
+		err := cfg.oPropFunc(def.Properties)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	srvs := make(map[string]*core.ServiceDef)
@@ -38,19 +46,19 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	}
 
 	for _, srv := range srvs {
-		if err := srv.Out.SpecifyGenericPorts(def.Generics); err != nil {
+		if err := srv.Out.SpecifyGenerics(def.Generics); err != nil {
 			return nil, err
 		}
-		if err := srv.In.SpecifyGenericPorts(def.Generics); err != nil {
+		if err := srv.In.SpecifyGenerics(def.Generics); err != nil {
 			return nil, err
 		}
 	}
 
 	for _, del := range dels {
-		if err := del.Out.SpecifyGenericPorts(def.Generics); err != nil {
+		if err := del.Out.SpecifyGenerics(def.Generics); err != nil {
 			return nil, err
 		}
-		if err := del.In.SpecifyGenericPorts(def.Generics); err != nil {
+		if err := del.In.SpecifyGenerics(def.Generics); err != nil {
 			return nil, err
 		}
 	}
@@ -78,12 +86,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, err
 	}
 
-	if cfg.oPropFunc != nil {
-		err = cfg.oPropFunc(o, def.Properties)
-		if err != nil {
-			return nil, err
-		}
-	}
+	o.SetProperties(def.Properties)
 
 	return o, nil
 }

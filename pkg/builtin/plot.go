@@ -8,17 +8,20 @@ var plotOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 				},
 			},
 		},
 		Delegates: map[string]*core.DelegateDef{},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			// TODO: Implement
 			out.Push(in.Pull())

@@ -9,22 +9,22 @@ var xlsxReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "string",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"name": {
 								Type: "string",
 							},
 							"content": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "stream",
-									Stream: &core.PortDef{
+									Stream: &core.TypeDef{
 										Type: "string",
 									},
 								},
@@ -36,9 +36,9 @@ var xlsxReadOpCfg = &builtinConfig{
 		},
 		Delegates: map[string]*core.DelegateDef{},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			filename, i := in.PullString()
 			if i != nil {

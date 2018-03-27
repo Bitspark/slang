@@ -22,7 +22,7 @@ func TestOperatorWindowTriggered(t *testing.T) {
 		core.InstanceDef{
 			Name:     "testop",
 			Operator: "slang.window.triggered",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "string",
 				},

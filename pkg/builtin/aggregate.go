@@ -8,23 +8,23 @@ var aggregateOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"init": {
 							Type:    "generic",
 							Generic: "stateType",
 						},
 						"items": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type:    "generic",
 					Generic: "stateType",
 				},
@@ -32,18 +32,18 @@ var aggregateOpCfg = &builtinConfig{
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"iteration": {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "stateType",
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"item": {
 								Type:    "generic",
 								Generic: "itemType",
@@ -58,11 +58,11 @@ var aggregateOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		iIn := dels["iteration"].In()
-		iOut := dels["iteration"].Out()
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		iIn := op.Delegate("iteration").In()
+		iOut := op.Delegate("iteration").Out()
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			state := in.Map("init").Pull()
 
@@ -101,10 +101,9 @@ var aggregateOpCfg = &builtinConfig{
 			}
 		}
 	},
-	oConnFunc: func(dest, src *core.Port) error {
-		o := dest.Operator()
-		if dest == o.Service(core.MAIN_SERVICE).In().Map("items") {
-			iOut := o.Delegate("iteration").Out()
+	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
+		if dst == op.Main().In().Map("items") {
+			iOut := op.Delegate("iteration").Out()
 			iOut.SetStreamSource(src.StreamSource())
 		}
 		return nil

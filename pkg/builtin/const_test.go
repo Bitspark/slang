@@ -19,7 +19,7 @@ func TestOperatorConst__NoProps(t *testing.T) {
 	co, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
 				},
@@ -47,7 +47,7 @@ func TestBuiltinConst__Correct(t *testing.T) {
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
 				},
@@ -67,7 +67,7 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "boolean",
 				},
@@ -97,10 +97,10 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "primitive",
 					},
 				},
@@ -131,10 +131,10 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"a": {
 							Type: "number",
 						},
@@ -170,7 +170,7 @@ func TestOperatorConst__SimpleNumber(t *testing.T) {
 	co, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
 				},
@@ -195,13 +195,13 @@ func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 	co, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"a": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type: "number",
 							},
 						},
@@ -232,7 +232,7 @@ func TestOperatorConst__PassMarkers(t *testing.T) {
 	co, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
 				},

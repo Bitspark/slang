@@ -8,35 +8,16 @@ import (
 	"errors"
 )
 
-type csvReadStore struct {
-	colMapping []string
-	delimiter  rune
-}
-
-func checkMapping(port *core.Port, mapping []string) error {
-	for i := 0; i < len(mapping); i++ {
-		for j := i + 1; j < len(mapping); j++ {
-			if mapping[i] == mapping[j] {
-				return errors.New("duplicate " + mapping[i])
-			}
-		}
-		if port.Map(mapping[i]) == nil {
-			return errors.New("no map for " + mapping[i])
-		}
-	}
-	return nil
-}
-
 var csvReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		Services: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "string",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "colMap",
 					},
@@ -46,9 +27,9 @@ var csvReadOpCfg = &builtinConfig{
 		Delegates: map[string]*core.DelegateDef{
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
 		for {
 			csvText, marker := in.PullString()
 			if marker != nil {
@@ -60,12 +41,11 @@ var csvReadOpCfg = &builtinConfig{
 
 			out.PushBOS()
 
-			csvProps := store.(csvReadStore)
-			mapping := csvProps.colMapping
+			mapping, _ := op.Property("colMapping").([]string)
 			mapSize := outStream.MapSize()
 
 			r := csv.NewReader(strings.NewReader(csvText))
-			r.Comma = csvProps.delimiter
+			r.Comma = op.Property("delimiter").(rune)
 			for {
 				rec, err := r.Read()
 				if err == io.EOF {
@@ -76,9 +56,6 @@ var csvReadOpCfg = &builtinConfig{
 				}
 
 				if mapping == nil {
-					if err := checkMapping(outStream, rec); err != nil {
-						break
-					}
 					mapping = rec
 				} else {
 					for i, col := range mapping {
@@ -89,35 +66,28 @@ var csvReadOpCfg = &builtinConfig{
 			out.PushEOS()
 		}
 	},
-	oPropFunc: func(op *core.Operator, i map[string]interface{}) error {
-		csvParams := csvReadStore{}
-
-		if delim, ok := i["delimiter"]; ok {
+	oPropFunc: func(props core.Properties) error {
+		if delim, ok := props["delimiter"]; ok {
 			delimStr := delim.(string)
 			if len(delimStr) != 1 {
 				return errors.New("delimiter must not be single character")
 			}
-			csvParams.delimiter = rune(delimStr[0])
+			props["delimiter"] = rune(delimStr[0])
 		} else {
-			csvParams.delimiter = ','
+			props["delimiter"] = ','
 		}
 
-		if mapping, ok := i["colMapping"]; ok {
+		if mapping, ok := props["colMapping"]; ok {
 			mapArray := mapping.([]interface{})
-			csvParams.colMapping = make([]string, len(mapArray))
+			colMapping := make([]string, len(mapArray))
 			for i, row := range mapArray {
-				csvParams.colMapping[i] = row.(string)
+				colMapping[i] = row.(string)
 			}
-			if err := checkMapping(op.Main().Out().Stream(), csvParams.colMapping); err != nil {
-				return err
-			}
+			props["colMapping"] = colMapping
 		}
-
-		op.SetStore(csvParams)
-
 		return nil
 	},
-	oConnFunc: func(dest, src *core.Port) error {
+	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		return nil
 	},
 }

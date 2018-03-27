@@ -2,8 +2,8 @@ package core
 
 import "errors"
 
-type OFunc func(services map[string]*Service, dels map[string]*Delegate, store interface{})
-type CFunc func(dest, src *Port) error
+type OFunc func(op *Operator)
+type CFunc func(op *Operator, dst, src *Port) error
 
 var MAIN_SERVICE = "main"
 
@@ -15,7 +15,7 @@ type Operator struct {
 	parent      *Operator
 	children    map[string]*Operator
 	function    OFunc
-	store       interface{}
+	properties  Properties
 	connectFunc CFunc
 }
 
@@ -82,6 +82,14 @@ func (o *Operator) Delegate(del string) *Delegate {
 	return nil
 }
 
+func (o *Operator) Property(prop string) interface{} {
+	return o.properties[prop]
+}
+
+func (o *Operator) SetProperties(properties Properties) {
+	o.properties = properties
+}
+
 func (o *Operator) Name() string {
 	return o.name
 }
@@ -112,7 +120,7 @@ func (o *Operator) Child(name string) *Operator {
 
 func (o *Operator) Start() {
 	if o.function != nil {
-		go o.function(o.services, o.delegates, o.store)
+		go o.function(o)
 	} else {
 		for _, c := range o.children {
 			c.Start()
@@ -121,10 +129,6 @@ func (o *Operator) Start() {
 }
 
 func (o *Operator) Stop() {
-}
-
-func (o *Operator) SetStore(store interface{}) {
-	o.store = store
 }
 
 func (o *Operator) Builtin() bool {

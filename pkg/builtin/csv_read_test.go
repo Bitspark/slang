@@ -20,10 +20,10 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 	co, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.encoding.csv.read",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"colMap": {
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"a": {
 							Type: "string",
 						},

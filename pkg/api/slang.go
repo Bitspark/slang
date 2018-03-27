@@ -53,7 +53,7 @@ func (e *Environ) WorkingDir() string {
 	return e.paths[0]
 }
 
-func (e *Environ) BuildOperator(opFilePath string, generics map[string]*core.PortDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
+func (e *Environ) BuildOperator(opFilePath string, generics map[string]*core.TypeDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
 	if !path.IsAbs(opFilePath) {
 		opFilePath = path.Join(e.WorkingDir(), opFilePath)
 	}
@@ -86,8 +86,8 @@ func (e *Environ) BuildOperator(opFilePath string, generics map[string]*core.Por
 	return op, nil
 }
 
-func ParsePortDef(defStr string) core.PortDef {
-	def := core.PortDef{}
+func ParsePortDef(defStr string) core.TypeDef {
+	def := core.TypeDef{}
 	json.Unmarshal([]byte(defStr), &def)
 	return def
 }
@@ -269,7 +269,7 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 
 // ReadOperatorDef reads the operator definition for the given file and replaces all generic types according to the
 // generics map given. The generics map must not contain any further generic types.
-func (e *Environ) ReadOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
+func (e *Environ) ReadOperatorDef(opDefFilePath string, generics map[string]*core.TypeDef, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
 
 	// Make sure generics is free of further generics
@@ -393,7 +393,7 @@ func BuildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Check if all properties are defined
-	for _, prop := range def.Properties {
+	for prop := range def.Properties {
 		if _, ok := props[prop]; !ok {
 			return nil, fmt.Errorf("property \"%s\" has not been specified", prop)
 		}

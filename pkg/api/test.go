@@ -17,7 +17,7 @@ import (
 type TestCaseDef struct {
 	Name        string                   `json:"name" yaml:"name"`
 	Description string                   `json:"description" yaml:"description"`
-	Generics    map[string]*core.PortDef `json:"generics" yaml:"generics"`
+	Generics    map[string]*core.TypeDef `json:"generics" yaml:"generics"`
 	Properties  map[string]interface{}   `json:"properties" yaml:"properties"`
 	Data struct {
 		In  []interface{} `json:"in" yaml:"in"`

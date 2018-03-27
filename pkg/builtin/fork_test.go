@@ -20,7 +20,7 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -41,7 +41,7 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -62,7 +62,7 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -102,10 +102,10 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	o, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"a": {Type: "number"},
 						"b": {Type: "string"},
 					},

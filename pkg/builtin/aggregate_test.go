@@ -21,7 +21,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.aggregate",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
 				},
@@ -40,13 +40,13 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 		nil,
 		map[string]*core.ServiceDef{
 			"main": {
-				In: core.PortDef{Type: "stream",
-					Stream: &core.PortDef{Type: "map",
-						Map: map[string]*core.PortDef{
+				In: core.TypeDef{Type: "stream",
+					Stream: &core.TypeDef{Type: "map",
+						Map: map[string]*core.TypeDef{
 							"init":  {Type: "number"},
-							"items": {Type: "stream", Stream: &core.PortDef{Type: "number"}}}}},
-				Out: core.PortDef{Type: "stream",
-					Stream: &core.PortDef{Type: "number"}},
+							"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}}}}},
+				Out: core.TypeDef{Type: "stream",
+					Stream: &core.TypeDef{Type: "number"}},
 			},
 		},
 		nil)
@@ -73,7 +73,7 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	ao, err := MakeOperator(
 		core.InstanceDef{
 			Operator: "slang.aggregate",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
 				},
@@ -89,9 +89,9 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	// Add function operator
 	fo, err := core.NewOperator(
 		"add",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
 			for {
 				i := in.Pull()
 				m, ok := i.(map[string]interface{})
@@ -105,8 +105,8 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 		nil,
 		map[string]*core.ServiceDef{
 			"main": {
-				In:  core.PortDef{Type: "map", Map: map[string]*core.PortDef{"state": {Type: "number"}, "item": {Type: "number"}}},
-				Out: core.PortDef{Type: "number"},
+				In:  core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"state": {Type: "number"}, "item": {Type: "number"}}},
+				Out: core.TypeDef{Type: "number"},
 			},
 		},
 		nil)
@@ -139,15 +139,15 @@ func TestBuiltinAggregate__PassMarkers(t *testing.T) {
 
 	o, err := core.NewOperator(
 		"test",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {},
+		func(op *core.Operator) {},
 		nil,
 		map[string]*core.ServiceDef{
 			"main": {
-				In: core.PortDef{Type: "trigger"},
-				Out: core.PortDef{Type: "map",
-					Map: map[string]*core.PortDef{
+				In: core.TypeDef{Type: "trigger"},
+				Out: core.TypeDef{Type: "map",
+					Map: map[string]*core.TypeDef{
 						"init":  {Type: "number"},
-						"items": {Type: "stream", Stream: &core.PortDef{Type: "number"}},
+						"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}},
 					},
 				},
 			},
@@ -161,7 +161,7 @@ func TestBuiltinAggregate__PassMarkers(t *testing.T) {
 		core.InstanceDef{
 			Name:     "testOp",
 			Operator: "slang.aggregate",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
 				},

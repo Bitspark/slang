@@ -6,8 +6,10 @@ services:
       type: boolean
 
 properties:
-  - val
-  - expr
+  val:
+    type: number
+  expr:
+    type: string
 
 operators:
   del2:

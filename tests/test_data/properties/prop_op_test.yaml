@@ -5,6 +5,9 @@ testCases:
 - name: Value 1
   properties:
     val: 1
+  generics:
+    valueType:
+      type: number
   data:
     in:
     - true
@@ -15,6 +18,9 @@ testCases:
 - name: Value 2
   properties:
     val: 2
+  generics:
+    valueType:
+      type: number
   data:
     in:
     - "test"
@@ -25,6 +31,9 @@ testCases:
 - name: Value 3
   properties:
     val: 3
+  generics:
+    valueType:
+      type: number
   data:
     in:
     - {"a":5,"b":"test"}

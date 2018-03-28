@@ -17,6 +17,12 @@ var constOpCfg = &builtinConfig{
 				},
 			},
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"value": {
+				Type: "generic",
+				Generic: "valueType",
+			},
+		},
 	},
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()

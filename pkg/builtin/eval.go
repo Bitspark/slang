@@ -117,6 +117,11 @@ var evalOpCfg = &builtinConfig{
 				},
 			},
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"expression": {
+				Type: "string",
+			},
+		},
 	},
 	oFunc: func(op *core.Operator) {
 		expr, _ := newEvaluableExpression(op.Property("expression").(string))

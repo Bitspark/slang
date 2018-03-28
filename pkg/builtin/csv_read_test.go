@@ -37,7 +37,8 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 				},
 			},
 			Properties: map[string]interface{}{
-				"delimiter": ',',
+				"delimiter": ",",
+				"columns": nil,
 			},
 		},
 	)

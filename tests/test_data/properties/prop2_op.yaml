@@ -19,10 +19,16 @@ operators:
     operator: .prop_op
     properties:
       val: $v
+    generics:
+      valueType:
+        type: primitive
   p2:
     operator: .prop_op
     properties:
       val: 3
+    generics:
+      valueType:
+        type: primitive
 
 connections:
   (:

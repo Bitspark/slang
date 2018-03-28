@@ -32,8 +32,8 @@ func makeTestMonoWindow(t *testing.T, size, slide, start, end int) *core.Operato
 			},
 		},
 	)
-	r.NotNil(o)
 	r.NoError(err)
+	r.NotNil(o)
 	o.Main().Out().Bufferize()
 	o.Start()
 	return o

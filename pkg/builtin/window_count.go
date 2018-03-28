@@ -29,6 +29,20 @@ var windowCountOpCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"size": {
+				Type: "number",
+			},
+			"slide": {
+				Type: "number",
+			},
+			"start": {
+				Type: "number",
+			},
+			"end": {
+				Type: "number",
+			},
+		},
 	},
 	oFunc: func(op *core.Operator) {
 		s := struct {

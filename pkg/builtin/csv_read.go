@@ -25,6 +25,17 @@ var csvReadOpCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"delimiter": {
+				Type: "string",
+			},
+			"columns": {
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "string",
+				},
+			},
+		},
 	},
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
@@ -40,11 +51,16 @@ var csvReadOpCfg = &builtinConfig{
 
 			out.PushBOS()
 
-			mapping, _ := op.Property("colMapping").([]string)
+			var mapping []string
+			if op.Property("columns") != nil {
+				for _, col := range op.Property("columns").([]interface{}) {
+					mapping = append(mapping, col.(string))
+				}
+			}
 			mapSize := outStream.MapSize()
 
 			r := csv.NewReader(strings.NewReader(csvText))
-			r.Comma = op.Property("delimiter").(rune)
+			r.Comma = rune(op.Property("delimiter").(string)[0])
 			for {
 				rec, err := r.Read()
 				if err == io.EOF {

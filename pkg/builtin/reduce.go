@@ -48,6 +48,12 @@ var reduceOpCfg = &builtinConfig{
 				},
 			},
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"emptyValue": {
+				Type: "generic",
+				Generic: "itemType",
+			},
+		},
 	},
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()

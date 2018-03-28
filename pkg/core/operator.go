@@ -42,9 +42,18 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	o.connectFunc = c
 	o.name = name
 	o.children = make(map[string]*Operator)
-	o.properties = props
 
 	var err error
+
+	if err := def.PropertyDefs.SpecifyGenerics(gens); err != nil {
+		return nil, err
+	}
+
+	if err := def.PropertyDefs.VerifyData(props); err != nil {
+		return nil, err
+	}
+
+	o.properties = props
 
 	for _, srv := range def.ServiceDefs {
 		if err := srv.Out.SpecifyGenerics(gens); err != nil {

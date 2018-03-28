@@ -419,12 +419,79 @@ func (d TypeDef) GenericsSpecified() error {
 }
 
 func (d TypeDef) VerifyData(data interface{}) error {
-	return nil
+	switch v := data.(type) {
+	case nil:
+		if d.Type == "stream" || d.Type == "primitive" {
+			return nil
+		}
+	case string:
+		if d.Type == "string" || d.Type == "primitive" {
+			return nil
+		}
+	case int:
+		if d.Type == "number" || d.Type == "primitive" {
+			return nil
+		}
+	case float64:
+		if d.Type == "number" || d.Type == "primitive" {
+			return nil
+		}
+	case bool:
+		if d.Type == "boolean" || d.Type == "primitive" {
+			return nil
+		}
+	case map[string]interface{}:
+		if d.Type == "map" {
+			for k, v := range v {
+				mt, ok := d.Map[k]
+				if !ok {
+					return errors.New("missing entry " + k)
+				}
+				if err := mt.VerifyData(v); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case []interface{}:
+		if d.Type == "stream" {
+			for _, v := range v {
+				if err := d.Stream.VerifyData(v); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf("exptected %s, got %v", d.Type, data)
 }
 
 // TYPE DEF MAP
 
-func (t TypeDefMap) VerifyData(data interface{}) error {
+func (t TypeDefMap) VerifyData(data map[string]interface{}) error {
+	for k, v := range t {
+		if _, ok := data[k]; !ok {
+			return errors.New("missing entry " + k)
+		}
+		if err := v.VerifyData(data[k]); err != nil {
+			return fmt.Errorf("%s: %s", k, err.Error())
+		}
+	}
+	for k := range data {
+		if _, ok := t[k]; !ok {
+			return errors.New("unexpected " + k)
+		}
+	}
+	return nil
+}
+
+func (t TypeDefMap) SpecifyGenerics(generics map[string]*TypeDef) error {
+	for _, v := range t {
+		if err := v.SpecifyGenerics(generics); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

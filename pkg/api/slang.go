@@ -370,11 +370,6 @@ func BuildAndConnectOperator(insName string, gens core.Generics, props core.Prop
 		}
 	}
 
-	// Check if all properties are defined
-	if err := def.PropertyDefs.VerifyData(props); err != nil {
-		return nil, err
-	}
-
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, gens, props, def)
 	if err != nil {

@@ -48,6 +48,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 		},
 		nil,
 		nil,
+		nil,
 		map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "boolean"}}},
 		nil)
 
@@ -67,6 +68,7 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 				}
 			}
 		},
+		nil,
 		nil,
 		nil,
 		map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}},
@@ -132,6 +134,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 		},
 		nil,
 		nil,
+		nil,
 		map[string]*core.ServiceDef{"main": {In: stateType, Out: core.TypeDef{Type: "boolean"}}},
 		nil)
 
@@ -154,6 +157,7 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 				}
 			}
 		},
+		nil,
 		nil,
 		nil,
 		map[string]*core.ServiceDef{"main": {In: stateType, Out: stateType}},

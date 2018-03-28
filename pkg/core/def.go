@@ -11,12 +11,13 @@ import (
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]TypeDef
 type Properties utils.MapStr
+type Generics map[string]*TypeDef
 
 type InstanceDef struct {
-	Operator   string              `json:"operator" yaml:"operator"`
-	Name       string              `json:"name" yaml:"name"`
-	Properties Properties          `json:"properties" yaml:"properties"`
-	Generics   map[string]*TypeDef `json:"generics" yaml:"generics"`
+	Operator   string     `json:"operator" yaml:"operator"`
+	Name       string     `json:"name" yaml:"name"`
+	Properties Properties `json:"properties" yaml:"properties"`
+	Generics   Generics   `json:"generics" yaml:"generics"`
 
 	valid       bool
 	operatorDef OperatorDef

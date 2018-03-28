@@ -39,6 +39,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		map[string]*core.ServiceDef{
 			"main": {
 				In: core.TypeDef{Type: "stream",
@@ -105,6 +106,7 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 		},
 		nil,
 		nil,
+		nil,
 		map[string]*core.ServiceDef{
 			"main": {
 				In:  core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"state": {Type: "number"}, "item": {Type: "number"}}},
@@ -142,6 +144,7 @@ func TestBuiltinAggregate__PassMarkers(t *testing.T) {
 	o, err := core.NewOperator(
 		"test",
 		func(op *core.Operator) {},
+		nil,
 		nil,
 		nil,
 		map[string]*core.ServiceDef{

@@ -3,7 +3,6 @@ package builtin
 import (
 	"errors"
 	"github.com/Bitspark/slang/pkg/core"
-	"fmt"
 	"github.com/Bitspark/go-funk"
 )
 
@@ -40,43 +39,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		dels[delName] = &delCpy
 	}
 
-	for _, srv := range srvs {
-		if err := srv.Out.SpecifyGenerics(def.Generics); err != nil {
-			return nil, err
-		}
-		if err := srv.In.SpecifyGenerics(def.Generics); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, del := range dels {
-		if err := del.Out.SpecifyGenerics(def.Generics); err != nil {
-			return nil, err
-		}
-		if err := del.In.SpecifyGenerics(def.Generics); err != nil {
-			return nil, err
-		}
-	}
-
-	for srvName, srv := range srvs {
-		if err := srv.Out.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
-		}
-		if err := srv.In.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
-		}
-	}
-
-	for delName, del := range dels {
-		if err := del.Out.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", delName, err.Error())
-		}
-		if err := del.In.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", delName, err.Error())
-		}
-	}
-
-	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Properties, srvs, dels)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, srvs, dels)
 	if err != nil {
 		return nil, err
 	}

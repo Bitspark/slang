@@ -376,7 +376,7 @@ func BuildAndConnectOperator(insName string, gens core.Generics, props core.Prop
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, gens, props, def.ServiceDefs, def.DelegateDefs)
+	o, err := core.NewOperator(insName, nil, nil, gens, props, def)
 	if err != nil {
 		return nil, err
 	}

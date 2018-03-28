@@ -40,18 +40,20 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		map[string]*core.ServiceDef{
-			"main": {
-				In: core.TypeDef{Type: "stream",
-					Stream: &core.TypeDef{Type: "map",
-						Map: map[string]*core.TypeDef{
-							"init":  {Type: "number"},
-							"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}}}}},
-				Out: core.TypeDef{Type: "stream",
-					Stream: &core.TypeDef{Type: "number"}},
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{
+				"main": {
+					In: core.TypeDef{Type: "stream",
+						Stream: &core.TypeDef{Type: "map",
+							Map: map[string]*core.TypeDef{
+								"init":  {Type: "number"},
+								"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}}}}},
+					Out: core.TypeDef{Type: "stream",
+						Stream: &core.TypeDef{Type: "number"}},
+				},
 			},
 		},
-		nil)
+	)
 	require.NoError(t, err)
 	a.NotNil(do)
 
@@ -107,13 +109,15 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		map[string]*core.ServiceDef{
-			"main": {
-				In:  core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"state": {Type: "number"}, "item": {Type: "number"}}},
-				Out: core.TypeDef{Type: "number"},
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{
+				"main": {
+					In:  core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"state": {Type: "number"}, "item": {Type: "number"}}},
+					Out: core.TypeDef{Type: "number"},
+				},
 			},
 		},
-		nil)
+	)
 	require.NoError(t, err)
 
 	// Connect
@@ -147,18 +151,19 @@ func TestBuiltinAggregate__PassMarkers(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		map[string]*core.ServiceDef{
-			"main": {
-				In: core.TypeDef{Type: "trigger"},
-				Out: core.TypeDef{Type: "map",
-					Map: map[string]*core.TypeDef{
-						"init":  {Type: "number"},
-						"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}},
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{
+				"main": {
+					In: core.TypeDef{Type: "trigger"},
+					Out: core.TypeDef{Type: "map",
+						Map: map[string]*core.TypeDef{
+							"init":  {Type: "number"},
+							"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}},
+						},
 					},
 				},
 			},
 		},
-		nil,
 	)
 	r.NoError(err)
 	a.NotNil(o)

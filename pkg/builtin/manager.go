@@ -21,12 +21,6 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	for prop, propType := range cfg.oDef.PropertyDefs {
-		if err := propType.VerifyData(def.Properties[prop]); err != nil {
-			return nil, err
-		}
-	}
-
 	srvs := make(map[string]*core.ServiceDef)
 	for srvName, srv := range cfg.oDef.ServiceDefs {
 		srvCpy := srv.Copy()
@@ -39,7 +33,9 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		dels[delName] = &delCpy
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, srvs, dels)
+	defCpy := cfg.oDef.Copy() // TODO: Implement
+
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, defCpy)
 	if err != nil {
 		return nil, err
 	}

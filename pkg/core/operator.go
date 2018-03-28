@@ -36,7 +36,7 @@ type Service struct {
 	outPort *Port
 }
 
-func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, srvs map[string]*ServiceDef, dlgs map[string]*DelegateDef) (*Operator, error) {
+func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def OperatorDef) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.connectFunc = c
@@ -46,7 +46,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 
 	var err error
 
-	for _, srv := range srvs {
+	for _, srv := range def.ServiceDefs {
 		if err := srv.Out.SpecifyGenerics(gens); err != nil {
 			return nil, err
 		}
@@ -55,7 +55,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 		}
 	}
 
-	for _, del := range dlgs {
+	for _, del := range def.DelegateDefs {
 		if err := del.Out.SpecifyGenerics(gens); err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 		}
 	}
 
-	for srvName, srv := range srvs {
+	for srvName, srv := range def.ServiceDefs {
 		if err := srv.Out.GenericsSpecified(); err != nil {
 			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
 		}
@@ -73,7 +73,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 		}
 	}
 
-	for delName, del := range dlgs {
+	for delName, del := range def.DelegateDefs {
 		if err := del.Out.GenericsSpecified(); err != nil {
 			return nil, fmt.Errorf("%s: %s", delName, err.Error())
 		}
@@ -83,7 +83,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	}
 
 	o.services = make(map[string]*Service)
-	for serName, ser := range srvs {
+	for serName, ser := range def.ServiceDefs {
 		o.services[serName], err = NewService(serName, o, *ser)
 		if err != nil {
 			return nil, err
@@ -91,10 +91,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	}
 
 	o.delegates = make(map[string]*Delegate)
-	for delName, del := range dlgs {
-		if delName == MAIN_SERVICE {
-			return nil, errors.New("delegate must not be named " + MAIN_SERVICE + " (reserved for default service)")
-		}
+	for delName, del := range def.DelegateDefs {
 		o.delegates[delName], err = NewDelegate(delName, o, *del)
 		if err != nil {
 			return nil, err

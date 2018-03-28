@@ -33,7 +33,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		dels[delName] = &delCpy
 	}
 
-	defCpy := cfg.oDef.Copy() // TODO: Implement
+	defCpy := cfg.oDef.Copy()
 
 	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, defCpy)
 	if err != nil {

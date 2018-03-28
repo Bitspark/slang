@@ -9,7 +9,7 @@ import (
 )
 
 type InstanceDefList []*InstanceDef
-type TypeDefMap map[string]TypeDef
+type TypeDefMap map[string]*TypeDef
 type Properties utils.MapStr
 type Generics map[string]*TypeDef
 
@@ -192,6 +192,30 @@ func (d OperatorDef) GenericsSpecified() error {
 		}
 	}
 	return nil
+}
+
+func (d OperatorDef) Copy() OperatorDef {
+	cpy := OperatorDef{}
+
+	cpy.ServiceDefs = make(map[string]*ServiceDef)
+	for k, v := range d.ServiceDefs {
+		c := v.Copy()
+		cpy.ServiceDefs[k] = &c
+	}
+
+	cpy.DelegateDefs = make(map[string]*DelegateDef)
+	for k, v := range d.DelegateDefs {
+		c := v.Copy()
+		cpy.DelegateDefs[k] = &c
+	}
+
+	cpy.PropertyDefs = make(map[string]*TypeDef)
+	for k, v := range d.PropertyDefs {
+		c := v.Copy()
+		cpy.PropertyDefs[k] = &c
+	}
+
+	return cpy
 }
 
 // SERVICE DEFINITION

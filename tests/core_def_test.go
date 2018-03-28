@@ -104,7 +104,7 @@ func TestOperatorDef_SpecifyGenericPorts__InPortGenerics(t *testing.T) {
 			Type: "boolean",
 		},
 	}))
-	a.Equal("boolean", op.Services[core.MAIN_SERVICE].In.Type)
+	a.Equal("boolean", op.ServiceDefs[core.MAIN_SERVICE].In.Type)
 }
 
 func TestOperatorDef_SpecifyGenericPorts__OutPortGenerics(t *testing.T) {
@@ -116,7 +116,7 @@ func TestOperatorDef_SpecifyGenericPorts__OutPortGenerics(t *testing.T) {
 			Type: "boolean",
 		},
 	}))
-	a.Equal("boolean", op.Services[core.MAIN_SERVICE].Out.Type)
+	a.Equal("boolean", op.ServiceDefs[core.MAIN_SERVICE].Out.Type)
 }
 
 func TestOperatorDef_SpecifyGenericPorts__GenericPortsGenerics(t *testing.T) {
@@ -129,7 +129,7 @@ func TestOperatorDef_SpecifyGenericPorts__GenericPortsGenerics(t *testing.T) {
 			Type: "boolean",
 		},
 	}))
-	a.Equal("boolean", op.Operators[0].Generics["itemType"].Type)
+	a.Equal("boolean", op.InstanceDefs[0].Generics["itemType"].Type)
 }
 
 func TestOperatorDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
@@ -141,7 +141,7 @@ func TestOperatorDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
 			Type: "boolean",
 		},
 	}))
-	a.Equal("generic", op.Services[core.MAIN_SERVICE].In.Type)
+	a.Equal("generic", op.ServiceDefs[core.MAIN_SERVICE].In.Type)
 }
 
 func TestOperatorDef_GenericsSpecified__InPortGenerics(t *testing.T) {

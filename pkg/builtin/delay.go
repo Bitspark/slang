@@ -7,7 +7,7 @@ import (
 
 var delayOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "number",
@@ -34,9 +34,6 @@ var delayOpCfg = &builtinConfig{
 			<-time.After(time.Millisecond * time.Duration(i))
 			out.Push(1)
 		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		return nil
 	},
 	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		return nil

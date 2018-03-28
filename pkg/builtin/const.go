@@ -2,13 +2,11 @@ package builtin
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"errors"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var constOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "trigger",
@@ -30,14 +28,6 @@ var constOpCfg = &builtinConfig{
 			} else {
 				out.Push(i)
 			}
-		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		if v, ok := props["value"]; ok {
-			props["value"] = utils.CleanValue(v)
-			return nil
-		} else {
-			return errors.New("no value given")
 		}
 	},
 }

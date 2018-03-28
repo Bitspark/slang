@@ -6,7 +6,7 @@ import (
 
 var plotOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "map",
@@ -17,7 +17,7 @@ var plotOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{},
+		DelegateDefs: map[string]*core.DelegateDef{},
 	},
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()

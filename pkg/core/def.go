@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-type OperatorsList []*InstanceDef
+type InstanceDefList []*InstanceDef
+type TypeDefMap map[string]TypeDef
 type Properties utils.MapStr
 
 type InstanceDef struct {
@@ -22,11 +23,11 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
-	Services    map[string]*ServiceDef  `json:"services" yaml:"services"`
-	Delegates   map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
-	Operators   OperatorsList           `json:"operators" yaml:"operators"`
-	Properties  map[string]TypeDef      `json:"properties" yaml:"properties"`
-	Connections map[string][]string     `json:"connections" yaml:"connections"`
+	ServiceDefs  map[string]*ServiceDef  `json:"services" yaml:"services"`
+	DelegateDefs map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
+	InstanceDefs InstanceDefList         `json:"operators" yaml:"operators"`
+	PropertyDefs TypeDefMap              `json:"properties" yaml:"properties"`
+	Connections  map[string][]string     `json:"connections" yaml:"connections"`
 
 	valid bool
 }
@@ -98,20 +99,20 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	for _, srv := range d.Services {
+	for _, srv := range d.ServiceDefs {
 		if err := srv.Validate(); err != nil {
 			return err
 		}
 	}
 
-	for _, del := range d.Delegates {
+	for _, del := range d.DelegateDefs {
 		if err := del.Validate(); err != nil {
 			return err
 		}
 	}
 
 	alreadyUsedInsNames := make(map[string]bool)
-	for _, insDef := range d.Operators {
+	for _, insDef := range d.InstanceDefs {
 		if err := insDef.Validate(); err != nil {
 			return err
 		}
@@ -131,8 +132,8 @@ func (d *OperatorDef) Validate() error {
 // replaces them with a reference on a copy.
 func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	srvs := make(map[string]*ServiceDef)
-	for srvName := range d.Services {
-		srv := d.Services[srvName].Copy()
+	for srvName := range d.ServiceDefs {
+		srv := d.ServiceDefs[srvName].Copy()
 		if err := srv.In.SpecifyGenerics(generics); err != nil {
 			return err
 		}
@@ -141,11 +142,11 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 		}
 		srvs[srvName] = &srv
 	}
-	d.Services = srvs
+	d.ServiceDefs = srvs
 
 	dels := make(map[string]*DelegateDef)
-	for delName := range d.Delegates {
-		del := d.Delegates[delName].Copy()
+	for delName := range d.DelegateDefs {
+		del := d.DelegateDefs[delName].Copy()
 		if err := del.In.SpecifyGenerics(generics); err != nil {
 			return err
 		}
@@ -154,8 +155,8 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 		}
 		dels[delName] = &del
 	}
-	d.Delegates = dels
-	for _, op := range d.Operators {
+	d.DelegateDefs = dels
+	for _, op := range d.InstanceDefs {
 		for _, gp := range op.Generics {
 			if err := gp.SpecifyGenerics(generics); err != nil {
 				return err
@@ -166,7 +167,7 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 }
 
 func (d OperatorDef) GenericsSpecified() error {
-	for _, srv := range d.Services {
+	for _, srv := range d.ServiceDefs {
 		if err := srv.In.GenericsSpecified(); err != nil {
 			return err
 		}
@@ -174,7 +175,7 @@ func (d OperatorDef) GenericsSpecified() error {
 			return err
 		}
 	}
-	for _, del := range d.Delegates {
+	for _, del := range d.DelegateDefs {
 		if err := del.In.GenericsSpecified(); err != nil {
 			return err
 		}
@@ -182,7 +183,7 @@ func (d OperatorDef) GenericsSpecified() error {
 			return err
 		}
 	}
-	for _, op := range d.Operators {
+	for _, op := range d.InstanceDefs {
 		for _, gp := range op.Generics {
 			if err := gp.GenericsSpecified(); err != nil {
 				return err
@@ -392,9 +393,19 @@ func (d TypeDef) GenericsSpecified() error {
 	return nil
 }
 
+func (d TypeDef) VerifyData(data interface{}) error {
+	return nil
+}
+
+// TYPE DEF MAP
+
+func (t TypeDefMap) VerifyData(data interface{}) error {
+	return nil
+}
+
 // OPERATOR LIST MARSHALLING
 
-func (ol *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
+func (ol *InstanceDefList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
 	var im map[string]*InstanceDef
 	if err := unmarshal(&im); err != nil {
 		return err
@@ -412,7 +423,7 @@ func (ol *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) erro
 	return nil
 }
 
-func (ol *OperatorsList) UnmarshalJSON(data []byte) error {
+func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {
 	var im map[string]*InstanceDef
 	if err := json.Unmarshal(data, &im); err != nil {
 		return err

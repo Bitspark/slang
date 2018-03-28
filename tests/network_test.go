@@ -11,7 +11,7 @@ func TestNetwork_EmptyOperator(t *testing.T) {
 	a := assertions.New(t)
 	defIn := api.ParsePortDef(`{"type":"number"}`)
 	defOut := api.ParsePortDef(`{"type":"number"}`)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
 
 	o1.Main().In().Connect(o1.Main().Out())
 
@@ -25,12 +25,12 @@ func TestNetwork_EmptyOperators(t *testing.T) {
 	a := assertions.New(t)
 	defIn := api.ParsePortDef(`{"type":"number"}`)
 	defOut := api.ParsePortDef(`{"type":"number"}`)
-	o1, _ := core.NewOperator("o1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
-	o2, _ := core.NewOperator("o2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
+	o1, _ := core.NewOperator("o1", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
+	o2, _ := core.NewOperator("o2", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
 	o2.SetParent(o1)
-	o3, _ := core.NewOperator("o3", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
+	o3, _ := core.NewOperator("o3", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
 	o3.SetParent(o2)
-	o4, _ := core.NewOperator("o4", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
+	o4, _ := core.NewOperator("o4", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
 	o4.SetParent(o2)
 
 	o3.Main().In().Connect(o3.Main().Out())
@@ -103,12 +103,12 @@ func TestNetwork_DoubleSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := core.NewOperator("O1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStrStr, Out: defStr}}, nil)
-	o2, _ := core.NewOperator("O2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: def}}, nil)
+	o1, _ := core.NewOperator("O1", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStrStr, Out: defStr}}, nil)
+	o2, _ := core.NewOperator("O2", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: def}}, nil)
 	o2.SetParent(o1)
-	o3, _ := core.NewOperator("O3", double, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: def, Out: def}}, nil)
+	o3, _ := core.NewOperator("O3", double, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: def, Out: def}}, nil)
 	o3.SetParent(o2)
-	o4, _ := core.NewOperator("O4", sum, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: def}}, nil)
+	o4, _ := core.NewOperator("O4", sum, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: def}}, nil)
 	o4.SetParent(o2)
 
 	err := o2.Main().In().Stream().Connect(o3.Main().In())
@@ -239,14 +239,14 @@ func TestNetwork_NumgenSum(t *testing.T) {
 		}
 	}
 
-	o1, _ := core.NewOperator("O1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: defStrStr}}, nil)
-	o2, _ := core.NewOperator("O2", numgen, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: def, Out: defStr}}, nil)
+	o1, _ := core.NewOperator("O1", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: defStrStr}}, nil)
+	o2, _ := core.NewOperator("O2", numgen, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: def, Out: defStr}}, nil)
 	o2.SetParent(o1)
-	o3, _ := core.NewOperator("O3", numgen, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: def, Out: defStr}}, nil)
+	o3, _ := core.NewOperator("O3", numgen, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: def, Out: defStr}}, nil)
 	o3.SetParent(o1)
-	o4, _ := core.NewOperator("O4", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStrStrStr, Out: defStrStr}}, nil)
+	o4, _ := core.NewOperator("O4", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStrStrStr, Out: defStrStr}}, nil)
 	o4.SetParent(o1)
-	o5, _ := core.NewOperator("O5", sum, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: def}}, nil)
+	o5, _ := core.NewOperator("O5", sum, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStr, Out: def}}, nil)
 	o5.SetParent(o4)
 
 	o4.Main().In().Stream().Stream().Stream().Connect(o5.Main().In().Stream())
@@ -397,10 +397,10 @@ func TestNetwork_Maps_Simple(t *testing.T) {
 		}
 	}
 
-	o, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
-	oMap1, _ := core.NewOperator("Map1", evalMap1, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defMap1In, Out: defMap1Out}}, nil)
+	o, _ := core.NewOperator("", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defIn, Out: defOut}}, nil)
+	oMap1, _ := core.NewOperator("Map1", evalMap1, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defMap1In, Out: defMap1Out}}, nil)
 	oMap1.SetParent(o)
-	oMap2, _ := core.NewOperator("Map2", evalMap2, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defMap2In, Out: defMap2Out}}, nil)
+	oMap2, _ := core.NewOperator("Map2", evalMap2, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defMap2In, Out: defMap2Out}}, nil)
 	oMap2.SetParent(o)
 
 	o.Main().In().Map("a").Connect(oMap2.Main().In().Map("a"))
@@ -498,14 +498,14 @@ func TestNetwork_Maps_Complex(t *testing.T) {
 		}
 	}
 
-	o, _ := core.NewOperator("Global", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStrMapStr, Out: defStrMap}}, nil)
-	sum, _ := core.NewOperator("Sum", sumEval, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defSumIn, Out: defSumOut}}, nil)
+	o, _ := core.NewOperator("Global", nil, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defStrMapStr, Out: defStrMap}}, nil)
+	sum, _ := core.NewOperator("Sum", sumEval, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defSumIn, Out: defSumOut}}, nil)
 	sum.SetParent(o)
-	add, _ := core.NewOperator("Add", addEval, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defAddIn, Out: defAddOut}}, nil)
+	add, _ := core.NewOperator("Add", addEval, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defAddIn, Out: defAddOut}}, nil)
 	add.SetParent(o)
-	filter1, _ := core.NewOperator("Filter1", filterEval, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defFilterIn, Out: defFilterOut}}, nil)
+	filter1, _ := core.NewOperator("Filter1", filterEval, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defFilterIn, Out: defFilterOut}}, nil)
 	filter1.SetParent(o)
-	filter2, _ := core.NewOperator("Filter2", filterEval, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defFilterIn, Out: defFilterOut}}, nil)
+	filter2, _ := core.NewOperator("Filter2", filterEval, nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defFilterIn, Out: defFilterOut}}, nil)
 	filter2.SetParent(o)
 
 	o.Main().In().Stream().Map("N").Connect(sum.Main().In())

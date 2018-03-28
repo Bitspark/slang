@@ -25,10 +25,10 @@ func makeTestMonoWindow(t *testing.T, size, slide, start, end int) *core.Operato
 				},
 			},
 			Properties: map[string]interface{}{
-				"size":  float64(size),  // maximum and normal size of ordinary windows
-				"slide": float64(slide), // distance between two first elements of two consecutive windows
-				"start": float64(start), // minimum size of the first window
-				"end":   float64(end),   // minimum size of the last window
+				"size":  int(size),  // maximum and normal size of ordinary windows
+				"slide": int(slide), // distance between two first elements of two consecutive windows
+				"start": int(start), // minimum size of the first window
+				"end":   int(end),   // minimum size of the last window
 			},
 		},
 	)

@@ -7,11 +7,7 @@ import (
 	"github.com/Bitspark/go-funk"
 )
 
-// Validates a property map
-type PFunc func(core.Properties) error
-
 type builtinConfig struct {
-	oPropFunc PFunc
 	oConnFunc core.CFunc
 	oFunc     core.OFunc
 	oDef      core.OperatorDef
@@ -26,21 +22,20 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	if cfg.oPropFunc != nil {
-		err := cfg.oPropFunc(def.Properties)
-		if err != nil {
+	for prop, propType := range cfg.oDef.PropertyDefs {
+		if err := propType.VerifyData(def.Properties[prop]); err != nil {
 			return nil, err
 		}
 	}
 
 	srvs := make(map[string]*core.ServiceDef)
-	for srvName, srv := range cfg.oDef.Services {
+	for srvName, srv := range cfg.oDef.ServiceDefs {
 		srvCpy := srv.Copy()
 		srvs[srvName] = &srvCpy
 	}
 
 	dels := make(map[string]*core.DelegateDef)
-	for delName, del := range cfg.oDef.Delegates {
+	for delName, del := range cfg.oDef.DelegateDefs {
 		delCpy := del.Copy()
 		dels[delName] = &delCpy
 	}
@@ -81,12 +76,10 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		}
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, srvs, dels)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Properties, srvs, dels)
 	if err != nil {
 		return nil, err
 	}
-
-	o.SetProperties(def.Properties)
 
 	return o, nil
 }

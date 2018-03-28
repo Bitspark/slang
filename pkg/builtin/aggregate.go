@@ -6,7 +6,7 @@ import (
 
 var aggregateOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "map",
@@ -30,7 +30,7 @@ var aggregateOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 			"iteration": {
 				In: core.TypeDef{
 					Type: "stream",

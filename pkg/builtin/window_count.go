@@ -6,7 +6,7 @@ import (
 
 var windowCountOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "stream",
@@ -27,7 +27,7 @@ var windowCountOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 		},
 	},
 	oFunc: func(op *core.Operator) {
@@ -81,14 +81,6 @@ var windowCountOpCfg = &builtinConfig{
 			}
 			out.PushEOS()
 		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		props["size"] = int(props["size"].(float64))
-		props["slide"] = int(props["slide"].(float64))
-		props["start"] = int(props["start"].(float64))
-		props["end"] = int(props["end"].(float64))
-
-		return nil
 	},
 	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		return nil

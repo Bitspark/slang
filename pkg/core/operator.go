@@ -33,12 +33,13 @@ type Service struct {
 	outPort *Port
 }
 
-func NewOperator(name string, f OFunc, c CFunc, services map[string]*ServiceDef, delegates map[string]*DelegateDef) (*Operator, error) {
+func NewOperator(name string, f OFunc, c CFunc, props Properties, services map[string]*ServiceDef, delegates map[string]*DelegateDef) (*Operator, error) {
 	o := &Operator{}
 	o.function = f
 	o.connectFunc = c
 	o.name = name
 	o.children = make(map[string]*Operator)
+	o.properties = props
 
 	var err error
 

@@ -106,7 +106,7 @@ func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 
 var evalOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type:    "generic",
@@ -137,30 +137,5 @@ var evalOpCfg = &builtinConfig{
 				panic("invalid item")
 			}
 		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		exprStr, ok := props["expression"]
-
-		if !ok {
-			return errors.New("no expression given")
-		}
-
-		expr, ok := exprStr.(string)
-
-		if expr == "" {
-			return errors.New("no expression given")
-		}
-
-		if !ok {
-			return errors.New("expression must be string")
-		}
-
-		_, err := newEvaluableExpression(expr)
-
-		if err != nil {
-			return err
-		}
-
-		return nil
 	},
 }

@@ -52,7 +52,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 var httpServerOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "number",
@@ -62,7 +62,7 @@ var httpServerOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 			"handler": {
 				In: core.TypeDef{
 					Type: "stream",
@@ -164,8 +164,5 @@ var httpServerOpCfg = &builtinConfig{
 			slangHandler.Out().PushEOS()
 			slangHandler.In().PullEOS()
 		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		return nil
 	},
 }

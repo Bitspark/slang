@@ -330,7 +330,7 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, generics map[string]*cor
 	currDir := path.Dir(opDefFilePath)
 
 	// Descend to child operators
-	for _, childOpInsDef := range def.Operators {
+	for _, childOpInsDef := range def.InstanceDefs {
 		childDef, err := e.getOperatorDef(childOpInsDef, currDir, pathsRead)
 
 		if err != nil {
@@ -384,7 +384,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 // BuildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
 // It recursively creates child operators which might as well be builtin operators. It also connects the operators
 // according to the given operator definition.
-func BuildAndConnectOperator(insName string, props map[string]interface{}, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+func BuildAndConnectOperator(insName string, props core.Properties, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -393,14 +393,12 @@ func BuildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Check if all properties are defined
-	for prop := range def.Properties {
-		if _, ok := props[prop]; !ok {
-			return nil, fmt.Errorf("property \"%s\" has not been specified", prop)
-		}
+	if err := def.PropertyDefs.VerifyData(props); err != nil {
+		return nil, err
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, def.Services, def.Delegates)
+	o, err := core.NewOperator(insName, nil, nil, props, def.ServiceDefs, def.DelegateDefs)
 	if err != nil {
 		return nil, err
 	}
@@ -409,7 +407,7 @@ func BuildAndConnectOperator(insName string, props map[string]interface{}, def c
 	o.SetParent(par)
 
 	// Recursively create all child operators from top to bottom
-	for _, childOpInsDef := range def.Operators {
+	for _, childOpInsDef := range def.InstanceDefs {
 		// Propagate property values to child operators
 		for prop, propVal := range childOpInsDef.Properties {
 			propKey, ok := propVal.(string)

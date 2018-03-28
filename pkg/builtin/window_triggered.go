@@ -7,7 +7,7 @@ import (
 
 var windowTriggeredOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "map",
@@ -39,7 +39,7 @@ var windowTriggeredOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 		},
 	},
 	oFunc: func(op *core.Operator) {
@@ -93,9 +93,6 @@ var windowTriggeredOpCfg = &builtinConfig{
 			}
 			mutex.Unlock()
 		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		return nil
 	},
 	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		if dst == op.Main().In().Map("trigger") {

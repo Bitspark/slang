@@ -5,12 +5,11 @@ import (
 	"strings"
 	"encoding/csv"
 	"io"
-	"errors"
 )
 
 var csvReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "string",
@@ -24,7 +23,7 @@ var csvReadOpCfg = &builtinConfig{
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 		},
 	},
 	oFunc: func(op *core.Operator) {
@@ -65,27 +64,6 @@ var csvReadOpCfg = &builtinConfig{
 			}
 			out.PushEOS()
 		}
-	},
-	oPropFunc: func(props core.Properties) error {
-		if delim, ok := props["delimiter"]; ok {
-			delimStr := delim.(string)
-			if len(delimStr) != 1 {
-				return errors.New("delimiter must not be single character")
-			}
-			props["delimiter"] = rune(delimStr[0])
-		} else {
-			props["delimiter"] = ','
-		}
-
-		if mapping, ok := props["colMapping"]; ok {
-			mapArray := mapping.([]interface{})
-			colMapping := make([]string, len(mapArray))
-			for i, row := range mapArray {
-				colMapping[i] = row.(string)
-			}
-			props["colMapping"] = colMapping
-		}
-		return nil
 	},
 	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
 		return nil

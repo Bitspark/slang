@@ -57,7 +57,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 
 	newSrvs := make(map[string]*ServiceDef)
 	for name, srv := range def.ServiceDefs {
-		parsed, _ := ParseProperty(name, props, def.PropertyDefs)
+		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
 		for _, p := range parsed {
 			srvCpy := &ServiceDef{}
 			srvCpy.In = srv.In.Copy()
@@ -71,7 +71,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 
 	newDels := make(map[string]*DelegateDef)
 	for name, dlg := range def.DelegateDefs {
-		parsed, _ := ParseProperty(name, props, def.PropertyDefs)
+		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
 		for _, p := range parsed {
 			dlgCpy := &DelegateDef{}
 			dlgCpy.In = dlg.In.Copy()

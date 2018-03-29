@@ -17,8 +17,12 @@ var csvReadOpCfg = &builtinConfig{
 				Out: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
-						Type:    "generic",
-						Generic: "colMap",
+						Type: "map",
+						Map: map[string]*core.TypeDef{
+							"col_{$columns}": {
+								Type: "string",
+							},
+						},
 					},
 				},
 			},
@@ -52,10 +56,8 @@ var csvReadOpCfg = &builtinConfig{
 			out.PushBOS()
 
 			var mapping []string
-			if op.Property("columns") != nil {
-				for _, col := range op.Property("columns").([]interface{}) {
-					mapping = append(mapping, col.(string))
-				}
+			for _, col := range op.Property("columns").([]interface{}) {
+				mapping = append(mapping, col.(string))
 			}
 			mapSize := outStream.MapSize()
 
@@ -74,7 +76,7 @@ var csvReadOpCfg = &builtinConfig{
 					mapping = rec
 				} else {
 					for i, col := range mapping {
-						outStream.Map(col).Push(rec[i])
+						outStream.Map("col_" + col).Push(rec[i])
 					}
 				}
 			}

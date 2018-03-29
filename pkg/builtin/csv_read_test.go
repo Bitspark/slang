@@ -38,7 +38,7 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 			},
 			Properties: map[string]interface{}{
 				"delimiter": ",",
-				"columns": nil,
+				"columns": []interface{}{"a", "b", "c"},
 			},
 		},
 	)
@@ -48,10 +48,10 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 	co.Main().Out().Bufferize()
 	co.Start()
 
-	co.Main().In().Push("a,b,c\ne,f,g\nh,i,j")
+	co.Main().In().Push("e,f,g\nh,i,j")
 
 	co.Main().Out().PullBOS()
-	a.PortPushes(map[string]interface{}{"a": "e", "b": "f", "c": "g"}, co.Main().Out().Stream())
-	a.PortPushes(map[string]interface{}{"a": "h", "b": "i", "c": "j"}, co.Main().Out().Stream())
+	a.PortPushes(map[string]interface{}{"col_a": "e", "col_b": "f", "col_c": "g"}, co.Main().Out().Stream())
+	a.PortPushes(map[string]interface{}{"col_a": "h", "col_b": "i", "col_c": "j"}, co.Main().Out().Stream())
 	co.Main().Out().PullEOS()
 }

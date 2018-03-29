@@ -55,6 +55,36 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 
 	o.properties = props
 
+	newSrvs := make(map[string]*ServiceDef)
+	for name, srv := range def.ServiceDefs {
+		parsed, _ := ParseProperty(name, props, def.PropertyDefs)
+		for _, p := range parsed {
+			srvCpy := &ServiceDef{}
+			srvCpy.In = srv.In.Copy()
+			srvCpy.In.ApplyProperties(props, def.PropertyDefs)
+			srvCpy.Out = srv.Out.Copy()
+			srvCpy.Out.ApplyProperties(props, def.PropertyDefs)
+			newSrvs[p] = srvCpy
+		}
+	}
+	def.ServiceDefs = newSrvs
+
+	newDels := make(map[string]*DelegateDef)
+	for name, dlg := range def.DelegateDefs {
+		parsed, _ := ParseProperty(name, props, def.PropertyDefs)
+		for _, p := range parsed {
+			dlgCpy := &DelegateDef{}
+			dlgCpy.In = dlg.In.Copy()
+			dlgCpy.In.ApplyProperties(props, def.PropertyDefs)
+			dlgCpy.Out = dlg.Out.Copy()
+			dlgCpy.Out.ApplyProperties(props, def.PropertyDefs)
+			newDels[p] = dlgCpy
+		}
+	}
+	def.DelegateDefs = newDels
+
+	//
+
 	for _, srv := range def.ServiceDefs {
 		if err := srv.Out.SpecifyGenerics(gens); err != nil {
 			return nil, err
@@ -64,11 +94,11 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 		}
 	}
 
-	for _, del := range def.DelegateDefs {
-		if err := del.Out.SpecifyGenerics(gens); err != nil {
+	for _, dlg := range def.DelegateDefs {
+		if err := dlg.Out.SpecifyGenerics(gens); err != nil {
 			return nil, err
 		}
-		if err := del.In.SpecifyGenerics(gens); err != nil {
+		if err := dlg.In.SpecifyGenerics(gens); err != nil {
 			return nil, err
 		}
 	}
@@ -82,12 +112,12 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 		}
 	}
 
-	for delName, del := range def.DelegateDefs {
-		if err := del.Out.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", delName, err.Error())
+	for dlgName, dlg := range def.DelegateDefs {
+		if err := dlg.Out.GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("%s: %s", dlgName, err.Error())
 		}
-		if err := del.In.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", delName, err.Error())
+		if err := dlg.In.GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("%s: %s", dlgName, err.Error())
 		}
 	}
 

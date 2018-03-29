@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Bitspark/slang/pkg/utils"
 	"strings"
+	"regexp"
 )
 
 type InstanceDefList []*InstanceDef
@@ -421,26 +422,29 @@ func (d TypeDef) GenericsSpecified() error {
 func (d TypeDef) VerifyData(data interface{}) error {
 	switch v := data.(type) {
 	case nil:
-		if d.Type == "stream" || d.Type == "primitive" {
+		if d.Type == "stream" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
 	case string:
-		if d.Type == "string" || d.Type == "primitive" {
+		if d.Type == "string" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
 	case int:
-		if d.Type == "number" || d.Type == "primitive" {
+		if d.Type == "number" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
 	case float64:
-		if d.Type == "number" || d.Type == "primitive" {
+		if d.Type == "number" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
 	case bool:
-		if d.Type == "boolean" || d.Type == "primitive" {
+		if d.Type == "boolean" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
 	case map[string]interface{}:
+		if d.Type == "trigger" {
+			return nil
+		}
 		if d.Type == "map" {
 			for k, v := range v {
 				mt, ok := d.Map[k]
@@ -455,6 +459,9 @@ func (d TypeDef) VerifyData(data interface{}) error {
 		}
 	case []interface{}:
 		if d.Type == "stream" {
+			if d.Type == "trigger" {
+				return nil
+			}
 			for _, v := range v {
 				if err := d.Stream.VerifyData(v); err != nil {
 					return err
@@ -495,6 +502,37 @@ func (t TypeDefMap) SpecifyGenerics(generics map[string]*TypeDef) error {
 	return nil
 }
 
+func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef) error {
+	if d.Type == "primitive" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "trigger" {
+		return nil
+	}
+	var parsed []string
+	if d.Type == "generic" {
+		parsed, _ = ParseProperty(d.Generic, props, propDefs)
+		if len(parsed) != 1 {
+			return errors.New("generic must be 1")
+		}
+		d.Generic = parsed[0]
+	}
+	if d.Type == "stream" {
+		return d.Stream.ApplyProperties(props, propDefs)
+	}
+	if d.Type == "map" {
+		newMap := make(map[string]*TypeDef)
+		for k, v := range d.Map {
+			parsed, _ = ParseProperty(k, props, propDefs)
+			for _, k2 := range parsed {
+				vCpy := v.Copy()
+				vCpy.ApplyProperties(props, propDefs)
+				newMap[k2] = &vCpy
+			}
+		}
+		d.Map = newMap
+		return nil
+	}
+	return errors.New("unknown type " + d.Type)
+}
+
 // OPERATOR LIST MARSHALLING
 
 func (ol *InstanceDefList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
@@ -531,4 +569,35 @@ func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {
 
 	*ol = instances
 	return nil
+}
+
+// PROPERTY PARSING
+
+func ParseProperty(expr string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+	re := regexp.MustCompile("{\\$(.*?)}")
+	parts := re.FindAllStringSubmatch(expr, -1)
+	exprs := []string{expr}
+	for _, match := range parts {
+		part := match[1]
+		prop, ok := props[part]
+		if !ok {
+			return nil, errors.New("missing property " + part)
+		}
+		propDef := propDefs[part]
+		var newExprs []string
+		if propDef.Type == "stream" {
+			vals := prop.([]interface{})
+			for _, val := range vals {
+				for _, e := range exprs {
+					newExprs = append(newExprs, strings.Replace(e, match[0], fmt.Sprintf("%v", val), -1))
+				}
+			}
+		} else {
+			for _, e := range exprs {
+				newExprs = append(newExprs, strings.Replace(e, part, fmt.Sprintf("%v", prop), -1))
+			}
+		}
+		exprs = newExprs
+	}
+	return exprs, nil
 }

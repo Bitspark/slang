@@ -382,7 +382,6 @@ func BuildAndConnectOperator(insName string, gens core.Generics, props core.Prop
 	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.InstanceDefs {
 		// Propagate property values to child operators
-		// TODO: Use property language
 		for prop, propVal := range childOpInsDef.Properties {
 			propKey, ok := propVal.(string)
 			if !ok {

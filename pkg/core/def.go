@@ -422,7 +422,7 @@ func (d TypeDef) GenericsSpecified() error {
 func (d TypeDef) VerifyData(data interface{}) error {
 	switch v := data.(type) {
 	case nil:
-		if d.Type == "stream" || d.Type == "primitive" || d.Type == "trigger" {
+		if d.Type == "stream" || d.Type == "primitive" || d.Type == "trigger" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" {
 			return nil
 		}
 	case string:
@@ -571,10 +571,34 @@ func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (p Properties) Clean() {
+	for k, v := range p {
+		p[k] = utils.CleanValue(v)
+	}
+}
+
 // PROPERTY PARSING
 
+func expandExpressionPart(exprPart string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+	var vals []string
+	prop, ok := props[exprPart]
+	if !ok {
+		return nil, errors.New("missing property " + exprPart)
+	}
+	propDef := propDefs[exprPart]
+	if propDef.Type == "stream" {
+		els := prop.([]interface{})
+		for _, el := range els {
+			vals = append(vals, fmt.Sprintf("%v", el))
+		}
+	} else {
+		vals = []string{fmt.Sprintf("%v", prop)}
+	}
+	return vals, nil
+}
+
 func ExpandExpression(expr string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
-	re := regexp.MustCompile("{\\$(.*?)}")
+	re := regexp.MustCompile("{(.*?)}")
 	exprs := []string{expr}
 	for _, expr := range exprs {
 		parts := re.FindAllStringSubmatch(expr, -1)
@@ -582,27 +606,17 @@ func ExpandExpression(expr string, props Properties, propDefs map[string]*TypeDe
 			break
 		}
 		for _, match := range parts {
-			// vals contains the values which are derived from the expression found in match/part
-			var vals []interface{}
-
 			// This could be extended with more complex logic in the future
-			part := match[1]
-			prop, ok := props[part]
-			if !ok {
-				return nil, errors.New("missing property " + part)
-			}
-			propDef := propDefs[part]
-			if propDef.Type == "stream" {
-				vals = prop.([]interface{})
-			} else {
-				vals = []interface{}{prop}
+			vals, err := expandExpressionPart(match[1], props, propDefs)
+			if err != nil {
+				return nil, err
 			}
 
 			// Actual replacement
 			var newExprs []string
 			for _, val := range vals {
 				for _, e := range exprs {
-					newExprs = append(newExprs, strings.Replace(e, match[0], fmt.Sprintf("%v", val), 1))
+					newExprs = append(newExprs, strings.Replace(e, match[0], fmt.Sprintf("%s", val), 1))
 				}
 			}
 			exprs = newExprs

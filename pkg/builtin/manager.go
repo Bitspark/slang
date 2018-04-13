@@ -98,6 +98,8 @@ func init() {
 	Register("slang.encoding.xlsx.read", xlsxReadOpCfg)
 
 	Register("slang.time.delay", delayOpCfg)
+
+	Register("slang.plot", plotOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

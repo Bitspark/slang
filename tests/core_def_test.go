@@ -318,6 +318,7 @@ func makeProps() (map[string]*core.TypeDef, core.Properties) {
 	propDefs["boolvar"] = &core.TypeDef{Type: "boolean"}
 	propDefs["arrvar1"] = &core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "string"}}
 	propDefs["arrvar2"] = &core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "number"}}
+	propDefs["arrmap1"] = &core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"a" : {Type: "string"}, "b" : {Type: "boolean"}}}}
 	return propDefs, props
 }
 
@@ -344,7 +345,7 @@ func TestExpandExpression__String1(t *testing.T) {
 	r := require.New(t)
 	propDefs, props := makeProps()
 	props["strvar"] = "testval"
-	parts, err := core.ExpandExpression("{$strvar}", props, propDefs)
+	parts, err := core.ExpandExpression("{strvar}", props, propDefs)
 	r.NoError(err)
 	a.Equal([]string{"testval"}, parts)
 }
@@ -355,7 +356,7 @@ func TestExpandExpression__StringAndNumber(t *testing.T) {
 	propDefs, props := makeProps()
 	props["strvar"] = "testval"
 	props["numvar"] = 12
-	parts, err := core.ExpandExpression("{$strvar}_{$numvar}", props, propDefs)
+	parts, err := core.ExpandExpression("{strvar}_{numvar}", props, propDefs)
 	r.NoError(err)
 	a.Equal([]string{"testval_12"}, parts)
 }
@@ -365,7 +366,7 @@ func TestExpandExpression__Array1(t *testing.T) {
 	r := require.New(t)
 	propDefs, props := makeProps()
 	props["arrvar1"] = []interface{}{"a", "b", "c"}
-	parts, err := core.ExpandExpression("val_{$arrvar1}_end", props, propDefs)
+	parts, err := core.ExpandExpression("val_{arrvar1}_end", props, propDefs)
 	r.NoError(err)
 	a.Equal([]string{"val_a_end", "val_b_end", "val_c_end"}, parts)
 }
@@ -376,7 +377,7 @@ func TestExpandExpression__ArrayAndBoolean(t *testing.T) {
 	propDefs, props := makeProps()
 	props["arrvar1"] = []interface{}{"a", "b", "c"}
 	props["boolvar"] = true
-	parts, err := core.ExpandExpression("{$arrvar1}_{$boolvar}", props, propDefs)
+	parts, err := core.ExpandExpression("{arrvar1}_{boolvar}", props, propDefs)
 	r.NoError(err)
 	a.Equal([]string{"a_true", "b_true", "c_true"}, parts)
 }
@@ -387,7 +388,7 @@ func TestExpandExpression__ArrayCross1(t *testing.T) {
 	propDefs, props := makeProps()
 	props["arrvar1"] = []interface{}{"a", "b", "c"}
 	props["arrvar2"] = []interface{}{1, 2}
-	parts, err := core.ExpandExpression("{$arrvar1}_{$arrvar2}", props, propDefs)
+	parts, err := core.ExpandExpression("{arrvar1}_{arrvar2}", props, propDefs)
 	r.NoError(err)
 	a.Equal([]string{"a_1", "b_1", "c_1", "a_2", "b_2", "c_2"}, parts)
 }
@@ -397,7 +398,7 @@ func TestExpandExpression__ArrayCross2(t *testing.T) {
 	r := require.New(t)
 	propDefs, props := makeProps()
 	props["arrvar1"] = []interface{}{"a", "b", "c"}
-	parts, err := core.ExpandExpression("{$arrvar1}_{$arrvar1}", props, propDefs)
+	parts, err := core.ExpandExpression("{arrvar1}_{arrvar1}", props, propDefs)
 	r.NoError(err)
 	a.Equal([]string{"a_a", "b_a", "c_a", "a_b", "b_b", "c_b", "a_c", "b_c", "c_c"}, parts)
 }

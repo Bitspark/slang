@@ -51,10 +51,10 @@ var windowCountOpCfg = &builtinConfig{
 			start int
 			end   int
 		}{
-			op.Property("size").(int),
-			op.Property("slide").(int),
-			op.Property("start").(int),
-			op.Property("end").(int),
+			int(op.Property("size").(float64)),
+			int(op.Property("slide").(float64)),
+			int(op.Property("start").(float64)),
+			int(op.Property("end").(float64)),
 		}
 		in := op.Main().In()
 		out := op.Main().Out()

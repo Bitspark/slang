@@ -19,7 +19,7 @@ var csvReadOpCfg = &builtinConfig{
 					Stream: &core.TypeDef{
 						Type: "map",
 						Map: map[string]*core.TypeDef{
-							"col_{$columns}": {
+							"col_{columns}": {
 								Type: "string",
 							},
 						},

@@ -49,6 +49,8 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 		return nil, err
 	}
 
+	props.Clean()
+
 	if err := def.PropertyDefs.VerifyData(props); err != nil {
 		return nil, err
 	}

@@ -13,17 +13,8 @@
     "doubler": {
       "operator": "slang.eval",
       "properties": {
-        "expression": "a+a"
-      },
-      "generics": {
-        "paramsMap": {
-          "type": "map",
-          "map": {
-            "a": {
-              "type": "number"
-            }
-          }
-        }
+        "expression": "a+a",
+        "variables": ["a"]
       }
     }
   },

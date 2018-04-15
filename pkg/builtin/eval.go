@@ -109,8 +109,12 @@ var evalOpCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type:    "generic",
-					Generic: "paramsMap",
+					Type:    "map",
+					Map: map[string]*core.TypeDef{
+						"{variables}": {
+							Type: "primitive",
+						},
+					},
 				},
 				Out: core.TypeDef{
 					Type: "primitive",
@@ -120,6 +124,12 @@ var evalOpCfg = &builtinConfig{
 		PropertyDefs: map[string]*core.TypeDef{
 			"expression": {
 				Type: "string",
+			},
+			"variables": {
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "string",
+				},
 			},
 		},
 	},

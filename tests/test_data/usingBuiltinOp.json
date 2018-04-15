@@ -14,17 +14,10 @@
     "passer": {
       "operator": "slang.eval",
       "properties": {
-        "expression": "a"
-      },
-      "generics": {
-        "paramsMap": {
-          "type": "map",
-          "map": {
-            "a": {
-              "type": "primitive"
-            }
-          }
-        }
+        "expression": "a",
+        "variables": [
+          "a"
+        ]
       }
     }
   },

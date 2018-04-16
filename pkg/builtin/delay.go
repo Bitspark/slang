@@ -32,7 +32,7 @@ var delayOpCfg = &builtinConfig{
 			}
 
 			<-time.After(time.Millisecond * time.Duration(i))
-			out.Push(1)
+			out.Push(nil)
 		}
 	},
 	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {

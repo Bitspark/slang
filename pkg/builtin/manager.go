@@ -93,13 +93,17 @@ func init() {
 	Register("slang.net.httpServer", httpServerOpCfg)
 
 	Register("slang.files.read", fileReadOpCfg)
+	Register("slang.files.write", fileWriteOpCfg)
 
 	Register("slang.encoding.csv.read", csvReadOpCfg)
+	Register("slang.encoding.json.write", jsonWriteOpCfg)
 	Register("slang.encoding.xlsx.read", xlsxReadOpCfg)
 
 	Register("slang.time.delay", delayOpCfg)
 
 	Register("slang.plot", plotOpCfg)
+
+	Register("slang.template.format", templateFormatOpCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

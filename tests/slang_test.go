@@ -35,7 +35,7 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 	oPasser := o.Child("passer")
 	a.NotNil(oPasser)
-	a.True(o.Main().In().Connected(oPasser.Main().In()))
+	a.False(o.Main().In().Connected(oPasser.Main().In()))
 	a.True(oPasser.Main().Out().Connected(o.Main().Out()))
 
 	o.Main().Out().Bufferize()

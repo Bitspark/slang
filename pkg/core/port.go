@@ -24,7 +24,7 @@ const (
 	DIRECTION_OUT = iota
 )
 
-const CHANNEL_SIZE = 100
+const CHANNEL_SIZE = 1024
 
 type BOS struct {
 	src *Port
@@ -167,11 +167,24 @@ func (p *Port) Connect(q *Port) error {
 		return fmt.Errorf("%s -> %s: already connected", p.Name(), q.Name())
 	}
 
-	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_TRIGGER && p.itemType != q.itemType {
+	if q.itemType == TYPE_PRIMITIVE {
+		return p.connect(q)
+	}
+
+	if q.itemType == TYPE_TRIGGER {
+		if p.itemType == TYPE_MAP {
+			for _, sub := range p.subs {
+				return sub.Connect(q)
+			}
+		}
+		return p.connect(q)
+	}
+
+	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.primitive() {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.primitive() || q.Type() == TYPE_TRIGGER {
+	if p.primitive() {
 		return p.connect(q)
 	}
 
@@ -347,6 +360,13 @@ func (p *Port) Push(item interface{}) {
 }
 
 func (p *Port) PushBOS() {
+	// For triggers, we need to push right here
+	for dest := range p.dests {
+		if dest.Type() == TYPE_TRIGGER {
+			dest.Push(nil)
+		}
+	}
+
 	p.sub.Push(BOS{p.strSrc})
 }
 

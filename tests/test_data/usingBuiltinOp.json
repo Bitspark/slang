@@ -3,7 +3,12 @@
   "services": {
     "main": {
       "in": {
-        "type": "primitive"
+        "type": "map",
+        "map": {
+          "a": {
+            "type": "number"
+          }
+        }
       },
       "out": {
         "type": "number"

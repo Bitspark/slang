@@ -446,12 +446,12 @@ func (d TypeDef) VerifyData(data interface{}) error {
 			return nil
 		}
 		if d.Type == "map" {
-			for k, v := range v {
-				mt, ok := d.Map[k]
+			for k, sub := range d.Map {
+				e, ok := v[k]
 				if !ok {
 					return errors.New("missing entry " + k)
 				}
-				if err := mt.VerifyData(v); err != nil {
+				if err := sub.VerifyData(e); err != nil {
 					return err
 				}
 			}

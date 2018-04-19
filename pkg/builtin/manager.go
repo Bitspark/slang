@@ -89,11 +89,13 @@ func init() {
 	Register("slang.reduce", reduceOpCfg)
 
 	Register("slang.stream.extract", extractOpCfg)
+	Register("slang.stream.mapAccess", mapAccessOpCfg)
 
 	Register("slang.window.count", windowCountOpCfg)
 	Register("slang.window.triggered", windowTriggeredOpCfg)
 
 	Register("slang.net.httpServer", httpServerOpCfg)
+	Register("slang.net.sendEmail", sendEmailOpCfg)
 
 	Register("slang.files.read", fileReadOpCfg)
 	Register("slang.files.write", fileWriteOpCfg)

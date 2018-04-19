@@ -502,6 +502,16 @@ func (t TypeDefMap) SpecifyGenerics(generics map[string]*TypeDef) error {
 	return nil
 }
 
+func (t TypeDefMap) GenericsSpecified() error {
+	for k, v := range t {
+		if err := v.GenericsSpecified(); err != nil {
+			return fmt.Errorf("%s: %s", k, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef) error {
 	if d.Type == "primitive" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "trigger" {
 		return nil

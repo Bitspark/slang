@@ -140,15 +140,15 @@ var httpServerOpCfg = &builtinConfig{
 							},
 							"params": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "map",
-									Map: map[string]*core.PortDef{
+									Map: map[string]*core.TypeDef{
 										"key": {
 											Type: "string",
 										},
 										"values": {
 											Type: "stream",
-											Stream: &core.PortDef{
+											Stream: &core.TypeDef{
 												Type: "string",
 											},
 										},

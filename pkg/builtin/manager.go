@@ -82,10 +82,13 @@ func init() {
 	Register("slang.merge", mergeOpCfg)
 	Register("slang.syncMerge", syncMergeOpCfg)
 	Register("slang.take", takeOpCfg)
+	Register("slang.convert", convertOpCfg)
 
 	Register("slang.loop", loopOpCfg)
 	Register("slang.aggregate", aggregateOpCfg)
 	Register("slang.reduce", reduceOpCfg)
+
+	Register("slang.stream.extract", extractOpCfg)
 
 	Register("slang.window.count", windowCountOpCfg)
 	Register("slang.window.triggered", windowTriggeredOpCfg)

@@ -66,14 +66,18 @@ func (e *Environ) BuildOperator(opFilePath string, gens map[string]*core.TypeDef
 
 	// Read operator definition and perform recursion detection
 	def, err := e.ReadOperatorDef(opDefFilePath, nil)
+	if err != nil {
+		return nil, err
+	}
 
+	// Specify generics and propagate properties
+	err = SpecifyOperator(gens, props, &def)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and internally connect the operator
 	op, err := BuildAndConnectOperator(opFilePath, gens, props, def, nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -359,6 +363,47 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
+func SpecifyOperator(gens core.Generics, props core.Properties, def *core.OperatorDef) error {
+	if !def.Valid() {
+		err := def.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, childOpInsDef := range def.InstanceDefs {
+		// Propagate property values to child operators
+		for prop, propVal := range childOpInsDef.Properties {
+			propKey, ok := propVal.(string)
+			if !ok {
+				continue
+			}
+			// Parameterized properties must start with a '$'
+			if !strings.HasPrefix(propKey, "$") {
+				continue
+			}
+			propKey = propKey[1:]
+			if val, ok := props[propKey]; ok {
+				childOpInsDef.Properties[prop] = val
+			} else {
+				return fmt.Errorf("unknown property \"%s\"", prop)
+			}
+		}
+
+		for _, gen := range childOpInsDef.Generics {
+			gen.SpecifyGenerics(gens)
+		}
+
+		err := SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties, childOpInsDef.OperatorDefPtr())
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
 // BuildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
 // It recursively creates child operators which might as well be builtin operators. It also connects the operators
 // according to the given operator definition.
@@ -381,29 +426,6 @@ func BuildAndConnectOperator(insName string, gens core.Generics, props core.Prop
 
 	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.InstanceDefs {
-		// Propagate property values to child operators
-		for prop, propVal := range childOpInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
-				continue
-			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childOpInsDef.Properties[prop] = val
-			} else {
-				return nil, fmt.Errorf("unknown property \"%s\"", prop)
-			}
-		}
-
-		// TODO: Look at this again
-		for _, gen := range childOpInsDef.Generics {
-			gen.SpecifyGenerics(gens)
-		}
-
 		_, err := getOperator(*childOpInsDef, o)
 
 		if err != nil {

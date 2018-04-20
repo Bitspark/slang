@@ -85,6 +85,10 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
+func (d InstanceDef) OperatorDefPtr() *OperatorDef {
+	return &d.operatorDef
+}
+
 func (d InstanceDef) OperatorDef() OperatorDef {
 	return d.operatorDef
 }

@@ -64,15 +64,26 @@ func (e *Environ) BuildOperator(opFilePath string, gens map[string]*core.TypeDef
 		return nil, err
 	}
 
-	// Read operator definition and perform recursion detection
+	// Recursively read operator definitions and perform recursion detection
 	def, err := e.ReadOperatorDef(opDefFilePath, nil)
-
 	if err != nil {
 		return nil, err
 	}
 
-	// Create and internally connect the operator
-	op, err := BuildAndConnectOperator(opFilePath, gens, props, def, nil)
+	// Recursively replace generics by their actual types and propagate properties
+	err = SpecifyOperator(gens, props, &def)
+	if err != nil {
+		return nil, err
+	}
+
+	// Flattens the operator
+	err = FlattenOperator("", &def, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the operator
+	op, err := CreateOperator(opFilePath, gens, props, def)
 
 	if err != nil {
 		return nil, err
@@ -157,7 +168,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			}
 			opName := opSplit[0]
 			dlgName := opSplit[1]
-			if opSplit[0] == "" {
+			if opName == "" {
 				o = par
 			} else {
 				o = par.Child(opName)
@@ -184,7 +195,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			if opName == "" {
 				o = par
 			} else {
-				o = par.Child(opSplit[1])
+				o = par.Child(opName)
 				if o == nil {
 					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
 				}
@@ -240,9 +251,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 }
 
 func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string) (string, error) {
-
 	var err error
-
 	relevantPaths := e.paths
 	if enforcedPath != "" {
 		relevantPaths = []string{enforcedPath}
@@ -254,7 +263,6 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 		var opDefFilePath string
 
 		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, FILE_ENDINGS)
-
 		if err != nil {
 			continue
 		}
@@ -314,7 +322,6 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 	// Descend to child operators
 	for _, childOpInsDef := range def.InstanceDefs {
 		childDef, err := e.getOperatorDef(childOpInsDef, currDir, pathsRead)
-
 		if err != nil {
 			return def, err
 		}
@@ -359,27 +366,14 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
-// BuildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
-// It recursively creates child operators which might as well be builtin operators. It also connects the operators
-// according to the given operator definition.
-func BuildAndConnectOperator(insName string, gens core.Generics, props core.Properties, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
+func SpecifyOperator(gens core.Generics, props core.Properties, def *core.OperatorDef) error {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, gens, props, def)
-	if err != nil {
-		return nil, err
-	}
-
-	// Attach it to the parent
-	o.SetParent(par)
-
-	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.InstanceDefs {
 		// Propagate property values to child operators
 		for prop, propVal := range childOpInsDef.Properties {
@@ -395,16 +389,80 @@ func BuildAndConnectOperator(insName string, gens core.Generics, props core.Prop
 			if val, ok := props[propKey]; ok {
 				childOpInsDef.Properties[prop] = val
 			} else {
-				return nil, fmt.Errorf("unknown property \"%s\"", prop)
+				return fmt.Errorf("unknown property \"%s\"", prop)
 			}
 		}
 
-		// TODO: Look at this again
 		for _, gen := range childOpInsDef.Generics {
 			gen.SpecifyGenerics(gens)
 		}
 
-		_, err := getOperator(*childOpInsDef, o)
+		err := SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties, childOpInsDef.OperatorDefPtr())
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func FlattenOperator(name string, def *core.OperatorDef, parDef *core.OperatorDef) error {
+	if len(def.InstanceDefs) == 0 {
+		return nil
+	}
+
+	for _, child := range def.InstanceDefs {
+		// We descend to the lowest levels first
+		if err := FlattenOperator(child.Name, child.OperatorDefPtr(), def); err != nil {
+			return err
+		}
+	}
+
+	// We are ready if this is the topmost operator
+	if parDef == nil {
+		return nil
+	}
+
+	// Remove this instance from parent
+	var instances core.InstanceDefList
+	for _, pins := range parDef.InstanceDefs {
+		if pins.Name == name {
+			continue
+		}
+		instances = append(instances, pins)
+	}
+
+	// Replace it with this instance's child instances
+	for _, child := range def.InstanceDefs {
+		child.Name = name + "#" + child.Name
+		instances = append(instances, child)
+	}
+	parDef.InstanceDefs = instances
+
+	return nil
+}
+
+// ConnectOperator connects the operators according to the given operator definition.
+func CreateOperator(insName string, gens core.Generics, props core.Properties, def core.OperatorDef) (*core.Operator, error) {
+	// Create new non-builtin operator
+	o, err := core.NewOperator(insName, nil, nil, gens, props, def)
+	if err != nil {
+		return nil, err
+	}
+
+	// Recursively create all child operators from top to bottom
+	for _, childOpInsDef := range def.InstanceDefs {
+		if builtinOp, err := builtin.MakeOperator(*childOpInsDef); err == nil {
+			// Builtin operator has been found
+			builtinOp.SetParent(o)
+			return builtinOp, nil
+		} else if builtin.IsRegistered(childOpInsDef.Operator) {
+			// Builtin operator with that name exists, but still could not create it, so an error must have occurred
+			return nil, err
+		} else {
+			return nil, errors.New("unknown builtin " + childOpInsDef.Operator)
+		}
 
 		if err != nil {
 			return nil, err
@@ -463,23 +521,4 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, fo
 		}
 	}
 	return nil
-}
-
-// getOperator creates and returns an operator according to the instance definition. If there exists a suitable
-// builtin operator it will be returned. Otherwise, a new operator will be created.
-func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, error) {
-	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
-		// Builtin operator has been found
-		builtinOp.SetParent(par)
-		return builtinOp, nil
-	} else if builtin.IsRegistered(insDef.Operator) {
-		// Builtin operator with that name exists, but still could not create it, so an error must have occurred
-		return nil, err
-	}
-	// Instance definition must have an appropriate operator definition
-	if !insDef.OperatorDef().Valid() {
-		return nil, errors.New("instance has no operator definition")
-	}
-	// No builtin operator, so create new one according to the operator definition saved in the instance definition
-	return BuildAndConnectOperator(insDef.Name, insDef.Generics, insDef.Properties, insDef.OperatorDef(), par)
 }

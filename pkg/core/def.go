@@ -89,6 +89,10 @@ func (d InstanceDef) OperatorDef() OperatorDef {
 	return d.operatorDef
 }
 
+func (d InstanceDef) OperatorDefPtr() *OperatorDef {
+	return &d.operatorDef
+}
+
 func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
 	d.operatorDef = operatorDef
 	return nil

@@ -15,8 +15,8 @@ type Properties utils.MapStr
 type Generics map[string]*TypeDef
 
 type InstanceDef struct {
+	Name       string     `json:"-" yaml:"-"`
 	Operator   string     `json:"operator" yaml:"operator"`
-	Name       string     `json:"name" yaml:"name"`
 	Properties Properties `json:"properties" yaml:"properties"`
 	Generics   Generics   `json:"generics" yaml:"generics"`
 
@@ -29,7 +29,8 @@ type OperatorDef struct {
 	DelegateDefs map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
 	InstanceDefs InstanceDefList         `json:"operators" yaml:"operators"`
 	PropertyDefs TypeDefMap              `json:"properties" yaml:"properties"`
-	Connections  map[string][]string     `json:"connections" yaml:"connections"`
+	Connections  map[string][]string     `json:"connections" yaml:"connections,omitempty"`
+	Elementary   string                  `json:"-" yaml:"-"`
 
 	valid bool
 }
@@ -51,9 +52,9 @@ type ServiceDef struct {
 type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
 	Type    string              `json:"type" yaml:"type"`
-	Stream  *TypeDef            `json:"stream" yaml:"stream"`
-	Map     map[string]*TypeDef `json:"map" yaml:"map"`
-	Generic string              `json:"generic" yaml:"generic"`
+	Stream  *TypeDef            `json:"stream" yaml:"stream,omitempty"`
+	Map     map[string]*TypeDef `json:"map" yaml:"map,omitempty"`
+	Generic string              `json:"generic" yaml:"generic,omitempty"`
 
 	valid bool
 }
@@ -91,10 +92,6 @@ func (d InstanceDef) OperatorDefPtr() *OperatorDef {
 
 func (d InstanceDef) OperatorDef() OperatorDef {
 	return d.operatorDef
-}
-
-func (d InstanceDef) OperatorDefPtr() *OperatorDef {
-	return &d.operatorDef
 }
 
 func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
@@ -204,7 +201,9 @@ func (d OperatorDef) GenericsSpecified() error {
 }
 
 func (d OperatorDef) Copy() OperatorDef {
-	cpy := OperatorDef{}
+	cpy := d
+	cpy.InstanceDefs = nil
+	cpy.Connections = nil
 
 	cpy.ServiceDefs = make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
@@ -569,6 +568,14 @@ func (ol *InstanceDefList) UnmarshalYAML(unmarshal func(v interface{}) error) er
 
 	*ol = instances
 	return nil
+}
+
+func (ol InstanceDefList) MarshalYAML() (interface{}, error) {
+	im := make(map[string]*InstanceDef)
+	for _, ins := range ol {
+		im[ins.Name] = ins
+	}
+	return im, nil
 }
 
 func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {

@@ -66,6 +66,7 @@ func IsRegistered(name string) bool {
 
 func Register(name string, cfg *builtinConfig) {
 	cfgs[name] = cfg
+	cfg.oDef.Elementary = name
 }
 
 func GetBuiltinNames() []string {

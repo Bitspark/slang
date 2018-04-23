@@ -35,16 +35,6 @@ func TestInstanceDef_Validate__FailsMissingOperator(t *testing.T) {
 	a.Error(err)
 }
 
-func TestInstanceDef_Validate__Succeeds(t *testing.T) {
-	a := assertions.New(t)
-	ins, err := validateJSONInstanceDef(`{
-		"operator": "opr",
-		"name":"oprInstance"
-	}`)
-	a.NoError(err)
-	a.True(ins.Valid())
-}
-
 // OPERATOR DEFINITION
 
 func TestOperatorDef_Validate__FailsPortMustBeDefined_In(t *testing.T) {

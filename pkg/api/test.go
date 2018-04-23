@@ -65,13 +65,12 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fails := 0
 
 	for i, tc := range test.TestCases {
-		o, err := NewEnviron("./").BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties, false)
+		o, err := NewEnviron("./").BuildAndCompileOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties)
 		if err != nil {
 			return 0, 0, err
 		}
 
-		cmp := o.Compile()
-		fmt.Fprintf(writer, "Test case %3d/%3d: %s (compiled: %d, size: %d)\n", i+1, len(test.TestCases), tc.Name, cmp, len(tc.Data.In))
+		fmt.Fprintf(writer, "Test case %3d/%3d: %s (operators: %d, size: %d)\n", i+1, len(test.TestCases), tc.Name, len(o.Children()), len(tc.Data.In))
 
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err

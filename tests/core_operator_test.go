@@ -40,11 +40,13 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 	op3.Main().Out().Connect(op2.Main().Out())
 
 	// Compile
-	a.Equal(1, op1.Compile())
+	c, d := op1.Compile()
+	a.Equal(1, c)
+	a.Equal(1, d)
 
 	a.True(len(op1.Children()) == 1)
 
-	if _, ok := op1.Children()["a.b"]; !ok {
+	if _, ok := op1.Children()["a#b"]; !ok {
 		t.Error("child not there")
 	}
 
@@ -86,19 +88,21 @@ func TestOperator_Compile__NestedChildren(t *testing.T) {
 	op6.Main().Out().Connect(op3.Main().Out())
 
 	// Compile
-	a.Equal(2, op1.Compile())
+	c, d := op1.Compile()
+	a.Equal(1, d)
+	a.Equal(2, c)
 
 	a.True(len(op1.Children()) == 3)
 
-	if _, ok := op1.Children()["a.c"]; !ok {
+	if _, ok := op1.Children()["a#c"]; !ok {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.Children()["a.d"]; !ok {
+	if _, ok := op1.Children()["a#d"]; !ok {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.Children()["b.e"]; !ok {
+	if _, ok := op1.Children()["b#e"]; !ok {
 		t.Error("child not there")
 	}
 

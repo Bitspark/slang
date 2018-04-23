@@ -53,15 +53,24 @@ func (e *Environ) WorkingDir() string {
 	return e.paths[0]
 }
 
-func (e *Environ) BuildOperator(opFilePath string, gens map[string]*core.TypeDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
+func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
 	if !path.IsAbs(opFilePath) {
 		opFilePath = path.Join(e.WorkingDir(), opFilePath)
 	}
+
+	insName := ""
 
 	// Find correct file
 	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, FILE_ENDINGS)
 	if err != nil {
 		return nil, err
+	}
+
+	opDefFilePathWithoutEnding := ""
+	if strings.HasSuffix(opDefFilePath, ".json") {
+		opDefFilePathWithoutEnding = opDefFilePath[:len(opDefFilePath)-5]
+	} else if strings.HasSuffix(opDefFilePath, ".yaml") {
+		opDefFilePathWithoutEnding = opDefFilePath[:len(opDefFilePath)-5]
 	}
 
 	// Recursively read operator definitions and perform recursion detection
@@ -76,25 +85,32 @@ func (e *Environ) BuildOperator(opFilePath string, gens map[string]*core.TypeDef
 		return nil, err
 	}
 
-	// Flattens the operator
-	err = FlattenOperator("", &def, nil)
+	// Create and connect the operator
+	op, err := CreateAndConnectOperator(insName, def, nil, nil, false)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the operator
-	op, err := CreateOperator(opFilePath, gens, props, def)
+	// Compile
+	op.Compile()
 
+	// Connect
+	flatDef, err := op.Define()
 	if err != nil {
 		return nil, err
 	}
 
-	if compile {
-		// Compile when requested
-		op.Compile()
+	// Write file
+	bytes, _ := yaml.Marshal(flatDef)
+	ioutil.WriteFile(opDefFilePathWithoutEnding+"_compiled.yaml", bytes, 0644)
+
+	// Create and connect the flat operator
+	flatOp, err := CreateAndConnectOperator(insName, flatDef, nil, nil, true)
+	if err != nil {
+		return nil, err
 	}
 
-	return op, nil
+	return flatOp, nil
 }
 
 func ParsePortDef(defStr string) core.TypeDef {
@@ -374,6 +390,16 @@ func SpecifyOperator(gens core.Generics, props core.Properties, def *core.Operat
 		}
 	}
 
+	for _, srv := range def.ServiceDefs {
+		srv.In.SpecifyGenerics(gens)
+		srv.Out.SpecifyGenerics(gens)
+	}
+
+	for _, dlg := range def.DelegateDefs {
+		dlg.In.SpecifyGenerics(gens)
+		dlg.Out.SpecifyGenerics(gens)
+	}
+
 	for _, childOpInsDef := range def.InstanceDefs {
 		// Propagate property values to child operators
 		for prop, propVal := range childOpInsDef.Properties {
@@ -401,50 +427,14 @@ func SpecifyOperator(gens core.Generics, props core.Properties, def *core.Operat
 		if err != nil {
 			return err
 		}
-
 	}
+
+	def.PropertyDefs = nil
 
 	return nil
 }
 
-func FlattenOperator(name string, def *core.OperatorDef, parDef *core.OperatorDef) error {
-	if len(def.InstanceDefs) == 0 {
-		return nil
-	}
-
-	for _, child := range def.InstanceDefs {
-		// We descend to the lowest levels first
-		if err := FlattenOperator(child.Name, child.OperatorDefPtr(), def); err != nil {
-			return err
-		}
-	}
-
-	// We are ready if this is the topmost operator
-	if parDef == nil {
-		return nil
-	}
-
-	// Remove this instance from parent
-	var instances core.InstanceDefList
-	for _, pins := range parDef.InstanceDefs {
-		if pins.Name == name {
-			continue
-		}
-		instances = append(instances, pins)
-	}
-
-	// Replace it with this instance's child instances
-	for _, child := range def.InstanceDefs {
-		child.Name = name + "#" + child.Name
-		instances = append(instances, child)
-	}
-	parDef.InstanceDefs = instances
-
-	return nil
-}
-
-// ConnectOperator connects the operators according to the given operator definition.
-func CreateOperator(insName string, gens core.Generics, props core.Properties, def core.OperatorDef) (*core.Operator, error) {
+func CreateAndConnectOperator(insName string, def core.OperatorDef, gens core.Generics, props core.Properties, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, gens, props, def)
 	if err != nil {
@@ -456,17 +446,18 @@ func CreateOperator(insName string, gens core.Generics, props core.Properties, d
 		if builtinOp, err := builtin.MakeOperator(*childOpInsDef); err == nil {
 			// Builtin operator has been found
 			builtinOp.SetParent(o)
-			return builtinOp, nil
+			continue
 		} else if builtin.IsRegistered(childOpInsDef.Operator) {
 			// Builtin operator with that name exists, but still could not create it, so an error must have occurred
 			return nil, err
-		} else {
-			return nil, errors.New("unknown builtin " + childOpInsDef.Operator)
 		}
 
+		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.OperatorDef(), childOpInsDef.Generics, childOpInsDef.Properties, ordered)
 		if err != nil {
 			return nil, err
 		}
+
+		oc.SetParent(o)
 	}
 
 	// Parse all connections before starting to connect
@@ -486,37 +477,56 @@ func CreateOperator(insName string, gens core.Generics, props core.Properties, d
 		}
 	}
 
-	if err := connectAllDestinations(o, parsedConns); err != nil {
+	if err := connectDestinations(o, parsedConns, ordered); err != nil {
 		return nil, err
 	}
 
 	return o, nil
 }
 
-func connectAllDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) error {
-	if err := connectDestinations(o, conns, false); err != nil {
-		return err
-	}
-	return connectDestinations(o, conns, true)
-}
-
 // connectDestinations connects operators following from the in port to the out port
-func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, followDelegates bool) error {
+func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, ordered bool) error {
 	var ops []*core.Operator
 	for pSrc, pDsts := range conns {
-		if pSrc.Operator() == o && (followDelegates || pSrc.Delegate() == nil) {
-			for _, pDst := range pDsts {
-				if err := pSrc.Connect(pDst); err != nil {
-					return err
-				}
-				ops = append(ops, pDst.Operator())
-			}
-			// Set the destinations nil so that we do not end in an infinite recursion
-			conns[pSrc] = nil
+		if pSrc.Operator() != o {
+			continue
 		}
+		// Start with operator o
+		for _, pDst := range pDsts {
+			if err := pSrc.Connect(pDst); err != nil {
+				return err
+			}
+			ops = append(ops, pDst.Operator())
+		}
+		// Set the destinations nil so that we do not end in an infinite recursion
+		conns[pSrc] = nil
 	}
-	for _, op := range ops {
-		if err := connectAllDestinations(op, conns); err != nil {
+
+	var contdOps []*core.Operator
+	if ordered {
+		// Filter for ops that have all in ports connected
+		for _, op := range ops {
+			connected := true
+			for _, pDsts := range conns {
+				for _, pDst := range pDsts {
+					if op == pDst.Operator() && pDst.Delegate() == nil {
+						connected = false
+						goto end
+					}
+				}
+			}
+		end:
+			if connected {
+				contdOps = append(contdOps, op)
+			}
+		}
+	} else {
+		contdOps = ops
+	}
+
+	// Continue with ops that are completely connected
+	for _, op := range contdOps {
+		if err := connectDestinations(op, conns, ordered); err != nil {
 			return err
 		}
 	}

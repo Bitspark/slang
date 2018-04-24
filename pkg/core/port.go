@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"sync"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 	DIRECTION_OUT = iota
 )
 
-const CHANNEL_SIZE = 20000
+const CHANNEL_SIZE = 64
 
 type BOS struct {
 	src *Port
@@ -51,7 +52,8 @@ type Port struct {
 	sub  *Port
 	subs map[string]*Port
 
-	buf chan interface{}
+	buf   chan interface{}
+	mutex sync.Mutex
 }
 
 // Makes a new port.
@@ -326,10 +328,33 @@ func (p *Port) DirectlyConnected() error {
 	return nil
 }
 
+func (p *Port) assertChannelSpace() {
+	c := cap(p.buf)
+	if len(p.buf) > c/2 {
+		newChan := make(chan interface{}, 2*c)
+		p.mutex.Lock()
+		for {
+			select {
+			case i := <- p.buf:
+				newChan <- i
+			default:
+				goto end
+			}
+		}
+	end:
+		p.buf = newChan
+		p.mutex.Unlock()
+	}
+}
+
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
+		p.assertChannelSpace()
+
+		p.mutex.Lock()
 		p.buf <- item
+		p.mutex.Unlock()
 	}
 
 	for dest := range p.dests {
@@ -395,7 +420,17 @@ func (p *Port) Pull() interface{} {
 	}
 
 	if p.buf != nil {
-		return <-p.buf
+		for {
+			p.mutex.Lock()
+			select {
+			case i := <-p.buf:
+				p.mutex.Unlock()
+				return i
+			default:
+				p.mutex.Unlock()
+			}
+			time.Sleep(1 * time.Millisecond)
+		}
 	}
 
 	if p.primitive() {
@@ -507,7 +542,7 @@ func (p *Port) PullEOS() bool {
 }
 
 // Similar to Port.Pull but will return nil when there is no item after timeout
-func (p *Port) Poll() (i interface{}) {
+func (p *Port) Poll() interface{} {
 	if p.buf == nil {
 		panic("no buffer")
 	}
@@ -519,7 +554,11 @@ func (p *Port) Poll() (i interface{}) {
 		}
 	}
 
-	return <-p.buf
+	p.mutex.Lock()
+	i := <-p.buf
+	p.mutex.Unlock()
+
+	return i
 }
 
 func (p *Port) NewBOS() BOS {
@@ -627,12 +666,10 @@ func (p *Port) Bufferize() {
 
 	if p.primitive() {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
-
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {
 			sub.Bufferize()
 		}
-
 	} else if p.itemType == TYPE_STREAM {
 		p.sub.Bufferize()
 	}

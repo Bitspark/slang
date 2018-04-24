@@ -24,7 +24,7 @@ const (
 	DIRECTION_OUT = iota
 )
 
-const CHANNEL_SIZE = 1024
+const CHANNEL_SIZE = 20000
 
 type BOS struct {
 	src *Port

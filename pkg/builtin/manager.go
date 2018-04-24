@@ -90,6 +90,7 @@ func init() {
 	Register("slang.reduce", reduceOpCfg)
 
 	Register("slang.stream.extract", extractOpCfg)
+	Register("slang.stream.serialize", serializeOpCfg)
 	Register("slang.stream.mapAccess", mapAccessOpCfg)
 
 	Register("slang.window.count", windowCountOpCfg)

@@ -21,21 +21,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	srvs := make(map[string]*core.ServiceDef)
-	for srvName, srv := range cfg.oDef.ServiceDefs {
-		srvCpy := srv.Copy()
-		srvs[srvName] = &srvCpy
-	}
-
-	dels := make(map[string]*core.DelegateDef)
-	for delName, del := range cfg.oDef.DelegateDefs {
-		delCpy := del.Copy()
-		dels[delName] = &delCpy
-	}
-
-	defCpy := cfg.oDef.Copy()
-
-	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, defCpy)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, def.OperatorDef)
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +31,11 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 
 func GetOperatorDef(insDef *core.InstanceDef) (core.OperatorDef, error) {
 	cfg, ok := cfgs[insDef.Operator]
-	oDef := cfg.oDef
-
 	if !ok {
-		return oDef, errors.New("builtin operator not found")
+		return core.OperatorDef{}, errors.New("builtin operator not found")
 	}
 
-	// We must not change oDef in any way as this would affect other instances of this builtin operator
-	if err := oDef.SpecifyGenericPorts(insDef.Generics); err != nil {
-		return oDef, err
-	}
-
-	return oDef, nil
+	return cfg.oDef.Copy(), nil
 }
 
 func IsRegistered(name string) bool {
@@ -90,6 +69,7 @@ func init() {
 	Register("slang.reduce", reduceOpCfg)
 
 	Register("slang.stream.extract", extractOpCfg)
+	Register("slang.stream.concat", concatOpCfg)
 	Register("slang.stream.serialize", serializeOpCfg)
 	Register("slang.stream.mapAccess", mapAccessOpCfg)
 

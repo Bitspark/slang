@@ -40,96 +40,20 @@ type Service struct {
 }
 
 func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def OperatorDef) (*Operator, error) {
+	props.Clean()
+
 	o := &Operator{}
 	o.function = f
 	o.connectFunc = c
 	o.name = name
 	o.elementary = def.Elementary
 	o.generics = gens
+	o.properties = props
 	o.children = make(map[string]*Operator)
 
 	var err error
-
-	if err := def.PropertyDefs.SpecifyGenerics(gens); err != nil {
-		return nil, err
-	}
-
 	if err := def.PropertyDefs.GenericsSpecified(); err != nil {
 		return nil, fmt.Errorf("%s: %s", "properties", err.Error())
-	}
-
-	props.Clean()
-
-	if err := def.PropertyDefs.VerifyData(props); err != nil {
-		return nil, err
-	}
-
-	o.properties = props
-
-	newSrvs := make(map[string]*ServiceDef)
-	for name, srv := range def.ServiceDefs {
-		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
-		for _, p := range parsed {
-			srvCpy := &ServiceDef{}
-			srvCpy.In = srv.In.Copy()
-			srvCpy.In.ApplyProperties(props, def.PropertyDefs)
-			srvCpy.Out = srv.Out.Copy()
-			srvCpy.Out.ApplyProperties(props, def.PropertyDefs)
-			newSrvs[p] = srvCpy
-		}
-	}
-	def.ServiceDefs = newSrvs
-
-	newDels := make(map[string]*DelegateDef)
-	for name, dlg := range def.DelegateDefs {
-		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
-		for _, p := range parsed {
-			dlgCpy := &DelegateDef{}
-			dlgCpy.In = dlg.In.Copy()
-			dlgCpy.In.ApplyProperties(props, def.PropertyDefs)
-			dlgCpy.Out = dlg.Out.Copy()
-			dlgCpy.Out.ApplyProperties(props, def.PropertyDefs)
-			newDels[p] = dlgCpy
-		}
-	}
-	def.DelegateDefs = newDels
-
-	//
-
-	for _, srv := range def.ServiceDefs {
-		if err := srv.Out.SpecifyGenerics(gens); err != nil {
-			return nil, err
-		}
-		if err := srv.In.SpecifyGenerics(gens); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, dlg := range def.DelegateDefs {
-		if err := dlg.Out.SpecifyGenerics(gens); err != nil {
-			return nil, err
-		}
-		if err := dlg.In.SpecifyGenerics(gens); err != nil {
-			return nil, err
-		}
-	}
-
-	for srvName, srv := range def.ServiceDefs {
-		if err := srv.Out.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
-		}
-		if err := srv.In.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
-		}
-	}
-
-	for dlgName, dlg := range def.DelegateDefs {
-		if err := dlg.Out.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", dlgName, err.Error())
-		}
-		if err := dlg.In.GenericsSpecified(); err != nil {
-			return nil, fmt.Errorf("%s: %s", dlgName, err.Error())
-		}
 	}
 
 	o.services = make(map[string]*Service)
@@ -306,6 +230,7 @@ func (o *Operator) Define() (OperatorDef, error) {
 		insDef.Operator = child.elementary
 		insDef.Generics = child.generics
 		insDef.Properties = child.properties
+		insDef.OperatorDef, _ = child.Define()
 		def.InstanceDefs = append(def.InstanceDefs, insDef)
 	}
 

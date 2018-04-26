@@ -17,18 +17,18 @@ type Generics map[string]*TypeDef
 type InstanceDef struct {
 	Name       string     `json:"-" yaml:"-"`
 	Operator   string     `json:"operator" yaml:"operator"`
-	Properties Properties `json:"properties" yaml:"properties"`
-	Generics   Generics   `json:"generics" yaml:"generics"`
+	Properties Properties `json:"properties" yaml:"properties,omitempty"`
+	Generics   Generics   `json:"generics" yaml:"generics,omitempty"`
 
 	valid       bool
-	operatorDef OperatorDef
+	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
 }
 
 type OperatorDef struct {
-	ServiceDefs  map[string]*ServiceDef  `json:"services" yaml:"services"`
-	DelegateDefs map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
-	InstanceDefs InstanceDefList         `json:"operators" yaml:"operators"`
-	PropertyDefs TypeDefMap              `json:"properties" yaml:"properties"`
+	ServiceDefs  map[string]*ServiceDef  `json:"services" yaml:"services,omitempty"`
+	DelegateDefs map[string]*DelegateDef `json:"delegates" yaml:"delegates,omitempty"`
+	InstanceDefs InstanceDefList         `json:"operators" yaml:"operators,omitempty"`
+	PropertyDefs TypeDefMap              `json:"properties" yaml:"properties,omitempty"`
 	Connections  map[string][]string     `json:"connections" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
@@ -83,19 +83,6 @@ func (d *InstanceDef) Validate() error {
 	}
 
 	d.valid = true
-	return nil
-}
-
-func (d InstanceDef) OperatorDefPtr() *OperatorDef {
-	return &d.operatorDef
-}
-
-func (d InstanceDef) OperatorDef() OperatorDef {
-	return d.operatorDef
-}
-
-func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
-	d.operatorDef = operatorDef
 	return nil
 }
 
@@ -224,6 +211,101 @@ func (d OperatorDef) Copy() OperatorDef {
 	}
 
 	return cpy
+}
+
+func SpecifyOperator(gens Generics, props Properties, def *OperatorDef) (*OperatorDef, error) {
+	if !def.Valid() {
+		err := def.Validate()
+		if err != nil {
+			return def, err
+		}
+	}
+
+	for _, srv := range def.ServiceDefs {
+		srv.In.SpecifyGenerics(gens)
+		srv.Out.SpecifyGenerics(gens)
+	}
+
+	for _, dlg := range def.DelegateDefs {
+		dlg.In.SpecifyGenerics(gens)
+		dlg.Out.SpecifyGenerics(gens)
+	}
+
+	def.PropertyDefs.SpecifyGenerics(gens)
+
+	props.Clean()
+
+	for prop, propDef := range def.PropertyDefs {
+		propVal, ok := props[prop]
+		if !ok {
+			return nil, errors.New("Missing property " + prop)
+		}
+		if err := propDef.VerifyData(propVal); err != nil {
+			return nil, err
+		}
+	}
+
+	newSrvs := make(map[string]*ServiceDef)
+	for name, srv := range def.ServiceDefs {
+		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
+		for _, p := range parsed {
+			srvCpy := &ServiceDef{}
+			srvCpy.In = srv.In.Copy()
+			srvCpy.In.ApplyProperties(props, def.PropertyDefs)
+			srvCpy.Out = srv.Out.Copy()
+			srvCpy.Out.ApplyProperties(props, def.PropertyDefs)
+			newSrvs[p] = srvCpy
+		}
+	}
+	def.ServiceDefs = newSrvs
+
+	newDels := make(map[string]*DelegateDef)
+	for name, dlg := range def.DelegateDefs {
+		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
+		for _, p := range parsed {
+			dlgCpy := &DelegateDef{}
+			dlgCpy.In = dlg.In.Copy()
+			dlgCpy.In.ApplyProperties(props, def.PropertyDefs)
+			dlgCpy.Out = dlg.Out.Copy()
+			dlgCpy.Out.ApplyProperties(props, def.PropertyDefs)
+			newDels[p] = dlgCpy
+		}
+	}
+	def.DelegateDefs = newDels
+
+	for _, childOpInsDef := range def.InstanceDefs {
+		// Propagate property values to child operators
+		for prop, propVal := range childOpInsDef.Properties {
+			propKey, ok := propVal.(string)
+			if !ok {
+				continue
+			}
+			// Parameterized properties must start with a '$'
+			if !strings.HasPrefix(propKey, "$") {
+				continue
+			}
+			propKey = propKey[1:]
+			if val, ok := props[propKey]; ok {
+				childOpInsDef.Properties[prop] = val
+			} else {
+				return nil, fmt.Errorf("unknown property \"%s\"", prop)
+			}
+		}
+
+		for _, gen := range childOpInsDef.Generics {
+			gen.SpecifyGenerics(gens)
+		}
+
+		opDef, err := SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties, &childOpInsDef.OperatorDef)
+		if err != nil {
+			return def, err
+		}
+		childOpInsDef.OperatorDef = *opDef
+	}
+
+	def.PropertyDefs = nil
+
+	return def, nil
 }
 
 // SERVICE DEFINITION

@@ -73,13 +73,13 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 	}
 
 	// Recursively replace generics by their actual types and propagate properties
-	err = SpecifyOperator(gens, props, &def)
+	specDef, err := core.SpecifyOperator(gens, props, &def)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and connect the operator
-	op, err := CreateAndConnectOperator(insName, def, nil, nil, false)
+	op, err := CreateAndConnectOperator(insName, *specDef, false)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 	}
 
 	// Create and connect the flat operator
-	flatOp, err := CreateAndConnectOperator(insName, flatDef, nil, nil, true)
+	flatOp, err := CreateAndConnectOperator(insName, flatDef, true)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 		}
 
 		// Save the definition in the instance for the next build step: creating operators and connecting
-		childOpInsDef.SetOperatorDef(childDef)
+		childOpInsDef.OperatorDef = childDef
 	}
 
 	return def, nil
@@ -377,61 +377,9 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
-func SpecifyOperator(gens core.Generics, props core.Properties, def *core.OperatorDef) error {
-	if !def.Valid() {
-		err := def.Validate()
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, srv := range def.ServiceDefs {
-		srv.In.SpecifyGenerics(gens)
-		srv.Out.SpecifyGenerics(gens)
-	}
-
-	for _, dlg := range def.DelegateDefs {
-		dlg.In.SpecifyGenerics(gens)
-		dlg.Out.SpecifyGenerics(gens)
-	}
-
-	for _, childOpInsDef := range def.InstanceDefs {
-		// Propagate property values to child operators
-		for prop, propVal := range childOpInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
-				continue
-			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childOpInsDef.Properties[prop] = val
-			} else {
-				return fmt.Errorf("unknown property \"%s\"", prop)
-			}
-		}
-
-		for _, gen := range childOpInsDef.Generics {
-			gen.SpecifyGenerics(gens)
-		}
-
-		err := SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties, childOpInsDef.OperatorDefPtr())
-		if err != nil {
-			return err
-		}
-	}
-
-	def.PropertyDefs = nil
-
-	return nil
-}
-
-func CreateAndConnectOperator(insName string, def core.OperatorDef, gens core.Generics, props core.Properties, ordered bool) (*core.Operator, error) {
+func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, gens, props, def)
+	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +395,7 @@ func CreateAndConnectOperator(insName string, def core.OperatorDef, gens core.Ge
 			return nil, err
 		}
 
-		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.OperatorDef(), childOpInsDef.Generics, childOpInsDef.Properties, ordered)
+		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.OperatorDef, ordered)
 		if err != nil {
 			return nil, err
 		}

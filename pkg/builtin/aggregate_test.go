@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"github.com/stretchr/testify/require"
-	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOperatorCreator__Aggregate__IsRegistered(t *testing.T) {

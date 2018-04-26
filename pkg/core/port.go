@@ -25,14 +25,15 @@ const (
 	DIRECTION_OUT = iota
 )
 
-const CHANNEL_SIZE = 64
+var CHANNEL_SIZE = 2048
+var CHANNEL_DYNAMIC = false
 
 type BOS struct {
-	src *Port
+	src  *Port
 }
 
 type EOS struct {
-	src *Port
+	src  *Port
 }
 
 type Port struct {
@@ -301,6 +302,9 @@ func (p *Port) DirectlyConnected() error {
 		if p.src == nil {
 			return errors.New(p.Name() + " not connected")
 		}
+		if p.src.direction != DIRECTION_OUT && p.src.operator.name != "" {
+			return errors.New(p.Name() + " only out ports can be connected with in ports")
+		}
 		if p.src.src != nil {
 			return errors.New(p.Name() + " has connected source " + p.src.Name() + ": " + p.src.src.Name())
 		}
@@ -335,7 +339,7 @@ func (p *Port) assertChannelSpace() {
 		p.mutex.Lock()
 		for {
 			select {
-			case i := <- p.buf:
+			case i := <-p.buf:
 				newChan <- i
 			default:
 				goto end
@@ -350,15 +354,21 @@ func (p *Port) assertChannelSpace() {
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
-		p.assertChannelSpace()
+		if CHANNEL_DYNAMIC {
+			p.assertChannelSpace()
 
-		p.mutex.Lock()
-		p.buf <- item
-		p.mutex.Unlock()
+			p.mutex.Lock()
+			p.buf <- item
+			p.mutex.Unlock()
+		} else {
+			//fmt.Printf("%s <- %#v\n", p.StringifyComplete(), item)
+			p.buf <- item
+		}
 	}
 
 	for dest := range p.dests {
 		if dest.Type() == TYPE_TRIGGER || p.primitive() {
+			//fmt.Printf("%s -> %#v to %s\n", p.StringifyComplete(), item, dest.StringifyComplete())
 			dest.Push(item)
 		}
 	}
@@ -390,12 +400,16 @@ func (p *Port) Push(item interface{}) {
 			return
 		}
 
-		p.PushBOS()
+		p.PushNoTriggerBOS()
 		for _, i := range items {
 			p.sub.Push(i)
 		}
 		p.PushEOS()
 	}
+}
+
+func (p *Port) PushNoTriggerBOS() {
+	p.sub.Push(BOS{p.strSrc})
 }
 
 func (p *Port) PushBOS() {
@@ -420,16 +434,20 @@ func (p *Port) Pull() interface{} {
 	}
 
 	if p.buf != nil {
-		for {
-			p.mutex.Lock()
-			select {
-			case i := <-p.buf:
-				p.mutex.Unlock()
-				return i
-			default:
-				p.mutex.Unlock()
+		if CHANNEL_DYNAMIC {
+			for {
+				p.mutex.Lock()
+				select {
+				case i := <-p.buf:
+					p.mutex.Unlock()
+					return i
+				default:
+					p.mutex.Unlock()
+				}
+				time.Sleep(1 * time.Millisecond)
 			}
-			time.Sleep(1 * time.Millisecond)
+		} else {
+			return <-p.buf
 		}
 	}
 
@@ -529,7 +547,7 @@ func (p *Port) PullBinary() ([]byte, interface{}) {
 func (p *Port) PullBOS() bool {
 	i := p.sub.Pull()
 	if !p.OwnBOS(i) {
-		panic("expected own BOS: " + i.(BOS).src.StringifyComplete() + " != " + p.strSrc.StringifyComplete())
+		panic(p.operator.Name() + ": expected own BOS: " + i.(BOS).src.StringifyComplete() + " != " + p.strSrc.StringifyComplete())
 	}
 	return true
 }
@@ -554,9 +572,14 @@ func (p *Port) Poll() interface{} {
 		}
 	}
 
-	p.mutex.Lock()
-	i := <-p.buf
-	p.mutex.Unlock()
+	var i interface{}
+	if CHANNEL_DYNAMIC {
+		p.mutex.Lock()
+		i = <-p.buf
+		p.mutex.Unlock()
+	} else {
+		i = <-p.buf
+	}
 
 	return i
 }

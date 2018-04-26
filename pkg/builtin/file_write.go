@@ -3,6 +3,7 @@ package builtin
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
+	"path"
 )
 
 var fileWriteOpCfg = &builtinConfig{
@@ -46,7 +47,7 @@ var fileWriteOpCfg = &builtinConfig{
 			}
 			filename := data["filename"].(string)
 
-			err := ioutil.WriteFile(filename, content, 0644)
+			err := ioutil.WriteFile(path.Join(core.WORKING_DIR, filename), content, 0644)
 
 			if err == nil {
 				out.Push(nil)

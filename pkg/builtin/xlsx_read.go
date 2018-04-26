@@ -3,6 +3,7 @@ package builtin
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/tealeg/xlsx"
+	"path"
 )
 
 var xlsxReadOpCfg = &builtinConfig{
@@ -45,7 +46,7 @@ var xlsxReadOpCfg = &builtinConfig{
 				out.Push(i)
 				continue
 			}
-			xlsxFile, err := xlsx.OpenFile(filename)
+			xlsxFile, err := xlsx.OpenFile(path.Join(core.WORKING_DIR, filename))
 			if err != nil {
 				panic(err)
 			}

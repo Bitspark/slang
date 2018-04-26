@@ -9,6 +9,7 @@ type OFunc func(op *Operator)
 type CFunc func(op *Operator, dst, src *Port) error
 
 var MAIN_SERVICE = "main"
+var WORKING_DIR = "./"
 
 type Operator struct {
 	name        string

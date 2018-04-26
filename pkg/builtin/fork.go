@@ -50,7 +50,6 @@ var forkOpCfg = &builtinConfig{
 		out := op.Main().Out()
 		for {
 			i := in.Stream().Pull()
-
 			if !in.OwnBOS(i) {
 				out.Push(i)
 				continue
@@ -61,7 +60,6 @@ var forkOpCfg = &builtinConfig{
 
 			for {
 				i := in.Stream().Pull()
-
 				if in.OwnEOS(i) {
 					out.Map("true").PushEOS()
 					out.Map("false").PushEOS()
@@ -70,13 +68,12 @@ var forkOpCfg = &builtinConfig{
 
 				if m, ok := i.(map[string]interface{}); ok {
 					pI := m["item"]
-
 					pSelect := m["select"].(bool)
 
 					if pSelect {
-						out.Map("true").Push(pI)
+						out.Map("true").Stream().Push(pI)
 					} else {
-						out.Map("false").Push(pI)
+						out.Map("false").Stream().Push(pI)
 					}
 				} else {
 					panic("invalid item")

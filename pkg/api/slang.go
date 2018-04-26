@@ -66,13 +66,6 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 		return nil, err
 	}
 
-	opDefFilePathWithoutEnding := ""
-	if strings.HasSuffix(opDefFilePath, ".json") {
-		opDefFilePathWithoutEnding = opDefFilePath[:len(opDefFilePath)-5]
-	} else if strings.HasSuffix(opDefFilePath, ".yaml") {
-		opDefFilePathWithoutEnding = opDefFilePath[:len(opDefFilePath)-5]
-	}
-
 	// Recursively read operator definitions and perform recursion detection
 	def, err := e.ReadOperatorDef(opDefFilePath, nil)
 	if err != nil {
@@ -100,12 +93,14 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 		return nil, err
 	}
 
-	// Write file
-	bytes, _ := yaml.Marshal(flatDef)
-	ioutil.WriteFile(opDefFilePathWithoutEnding+"_compiled.yaml", bytes, 0644)
-
 	// Create and connect the flat operator
 	flatOp, err := CreateAndConnectOperator(insName, flatDef, nil, nil, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if all in ports are connected
+	err = flatOp.CorrectlyCompiled()
 	if err != nil {
 		return nil, err
 	}

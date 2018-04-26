@@ -4,6 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"strconv"
 	"fmt"
+	"strings"
 )
 
 var convertOpCfg = &builtinConfig{
@@ -65,7 +66,19 @@ var convertOpCfg = &builtinConfig{
 				case core.TYPE_BINARY:
 					out.Push([]byte(item))
 				case core.TYPE_NUMBER:
-					floatItem, _ := strconv.ParseFloat(item, 64)
+					item = strings.Trim(item, " ")
+					floatItem := 0.0
+					if strings.Contains(item, ":") {
+						items := strings.Split(item, ":")
+						factor := 1.0
+						for i := len(items) - 1; i >= 0; i-- {
+							part, _ := strconv.ParseFloat(items[i], 64)
+							floatItem += factor * part
+							factor *= 60
+						}
+					} else {
+						floatItem, _ = strconv.ParseFloat(item, 64)
+					}
 					out.Push(floatItem)
 				default:
 					panic("not supported yet")

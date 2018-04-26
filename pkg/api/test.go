@@ -88,8 +88,8 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 			actual := o.Main().Out().Pull()
 
 			if !testEqual(expected, actual) {
-				fmt.Fprintf(writer, "  expected: %v (%T)\n", expected, expected)
-				fmt.Fprintf(writer, "  actual:   %v (%T)\n", actual, actual)
+				fmt.Fprintf(writer, "  expected: %#v (%T)\n", expected, expected)
+				fmt.Fprintf(writer, "  actual:   %#v (%T)\n", actual, actual)
 
 				success = false
 

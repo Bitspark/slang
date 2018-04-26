@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"fmt"
 )
 
 var aggregateOpCfg = &builtinConfig{
@@ -72,6 +73,10 @@ var aggregateOpCfg = &builtinConfig{
 					panic("should be marker")
 				}
 				out.Push(state)
+
+				iOut.Push(state)
+				iIn.Pull()
+
 				continue
 			}
 
@@ -87,10 +92,11 @@ var aggregateOpCfg = &builtinConfig{
 					if in.Map("items").OwnEOS(item) {
 						iOut.PushEOS()
 						iIn.PullEOS()
+
 						out.Push(state)
 						break
 					} else {
-						panic("unexpected unknown marker")
+						panic(fmt.Sprintf(op.Name() + ": unknown marker: %#v", item))
 					}
 				}
 

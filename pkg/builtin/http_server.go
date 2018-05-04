@@ -15,10 +15,12 @@ type requestHandler struct {
 }
 
 func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+
 	token := r.sync.Push(func(out *core.Port) {
 		// Push out all request information
 		out.Map("method").Push(req.Method)
-		out.Map("path").Push(req.URL.String())
+		out.Map("path").Push(req.URL.Path)
 		out.Map("protocol").Push(req.Proto)
 
 		out.Map("headers").PushBOS()
@@ -28,6 +30,19 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 			headersOut.Map("value").Push(val)
 		}
 		out.Map("headers").PushEOS()
+
+		out.Map("params").PushBOS()
+		paramsOut := out.Map("params").Stream()
+		for key, vals := range req.Form {
+			paramsOut.Map("key").Push(key)
+			paramsOut.Map("values").PushBOS()
+			valuesOut := paramsOut.Map("values").Stream()
+			for _, val := range vals {
+				valuesOut.Push(val)
+			}
+			paramsOut.Map("values").PushEOS()
+		}
+		out.Map("params").PushEOS()
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(req.Body)
@@ -118,6 +133,23 @@ var httpServerOpCfg = &builtinConfig{
 							},
 							"body": {
 								Type: "binary",
+							},
+							"params": {
+								Type: "stream",
+								Stream: &core.PortDef{
+									Type: "map",
+									Map: map[string]*core.PortDef{
+										"key": {
+											Type: "string",
+										},
+										"values": {
+											Type: "stream",
+											Stream: &core.PortDef{
+												Type: "string",
+											},
+										},
+									},
+								},
 							},
 						},
 					},

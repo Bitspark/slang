@@ -57,7 +57,7 @@ var aggregateOpCfg = &builtinConfig{
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		iIn := dels["iteration"].In()
 		iOut := dels["iteration"].Out()
-		for true {
+		for {
 			state := in.Map("init").Pull()
 
 			// Redirect all markers
@@ -74,7 +74,7 @@ var aggregateOpCfg = &builtinConfig{
 			iOut.PushBOS()
 			iIn.PullBOS()
 
-			for true {
+			for {
 				item := in.Map("items").Stream().Pull()
 
 				if core.IsMarker(item) {

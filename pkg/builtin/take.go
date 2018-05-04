@@ -62,7 +62,7 @@ var takeOpCfg = &builtinConfig{
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		cIn := dels["compare"].In()
 		cOut := dels["compare"].Out()
-		for true {
+		for {
 			t := in.Map("true").Stream().Pull()
 			f := in.Map("false").Stream().Pull()
 
@@ -96,7 +96,7 @@ var takeOpCfg = &builtinConfig{
 
 			t = nil
 			f = nil
-			for true {
+			for {
 				if t == nil {
 					t = in.Map("true").Stream().Pull()
 				}
@@ -108,7 +108,7 @@ var takeOpCfg = &builtinConfig{
 					if !in.Map("true").OwnEOS(t) {
 						panic("expected EOS")
 					}
-					for true {
+					for {
 						if core.IsMarker(f) {
 							if !in.Map("false").OwnEOS(f) {
 								panic("expected EOS")
@@ -122,7 +122,7 @@ var takeOpCfg = &builtinConfig{
 					if !in.Map("false").OwnEOS(f) {
 						panic("expected EOS")
 					}
-					for true {
+					for {
 						if core.IsMarker(t) {
 							if !in.Map("true").OwnEOS(t) {
 								panic("expected EOS")

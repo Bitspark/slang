@@ -22,7 +22,7 @@ var constOpCfg = &builtinConfig{
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		v := store.(valueStore).value
-		for true {
+		for {
 			if i := in.Pull(); !core.IsMarker(i) {
 				out.Push(v)
 			} else {

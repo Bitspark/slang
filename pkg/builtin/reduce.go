@@ -49,7 +49,7 @@ var reduceOpCfg = &builtinConfig{
 		sIn := dels["selection"].In()
 		sOut := dels["selection"].Out()
 		nullValue := store.(valueStore).value
-		for true {
+		for {
 			i := in.Pull()
 
 			if core.IsMarker(i) {
@@ -96,7 +96,7 @@ var reduceOpCfg = &builtinConfig{
 
 			// POOL
 
-			for true {
+			for {
 				p := sIn.Pull()
 
 				items, ok := p.([]interface{})

@@ -121,7 +121,7 @@ var evalOpCfg = &builtinConfig{
 	},
 	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
 		expr := store.(functionStore).evalExpr
-		for true {
+		for {
 			i := in.Pull()
 
 			if core.IsMarker(i) {

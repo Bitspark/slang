@@ -19,7 +19,7 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	o.Out().Bufferize()
 	o.In().Push("hallo")
 
-	a.PortPushes([]interface{}{"hallo"}, o.Out())
+	a.PortPushesAll([]interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
@@ -43,7 +43,7 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallo"}, o.Out())
+	a.PortPushesAll([]interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
@@ -56,7 +56,7 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallo"}, o.Out())
+	a.PortPushesAll([]interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
@@ -69,7 +69,7 @@ func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallo"}, o.Out())
+	a.PortPushesAll([]interface{}{"hallo"}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
@@ -83,7 +83,7 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hallohallo", 4.0}, o.Out())
+	a.PortPushesAll([]interface{}{"hallohallo", 4.0}, o.Out())
 }
 
 func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
@@ -97,7 +97,7 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 
 	o.Start()
 
-	a.PortPushes([]interface{}{"hey", false}, o.Out())
+	a.PortPushesAll([]interface{}{"hey", false}, o.Out())
 }
 
 func TestOperator_ReadOperator__Recursion(t *testing.T) {
@@ -115,8 +115,8 @@ func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
 	o.Out().Bufferize()
 	o.In().Push("hallo")
 
-	a.PortPushes([]interface{}{"hallo"}, o.Out().Map("left"))
-	a.PortPushes([]interface{}{"hallo"}, o.Out().Map("right"))
+	a.PortPushesAll([]interface{}{"hallo"}, o.Out().Map("left"))
+	a.PortPushesAll([]interface{}{"hallo"}, o.Out().Map("right"))
 }
 
 func TestParsePortReference__NilOperator(t *testing.T) {

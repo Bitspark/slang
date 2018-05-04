@@ -61,6 +61,7 @@ func init() {
 	Register("slang.syncFork", syncForkOpCfg)
 	Register("slang.merge", mergeOpCfg)
 	Register("slang.syncMerge", syncMergeOpCfg)
+	Register("slang.switch", switchOpCfg)
 	Register("slang.take", takeOpCfg)
 	Register("slang.convert", convertOpCfg)
 

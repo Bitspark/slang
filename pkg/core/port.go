@@ -775,11 +775,7 @@ func (p *Port) connect(q *Port, original bool) error {
 			p.wire(q, original)
 
 			if p.parStr != nil {
-				if q.parStr != nil {
-					p.parStr.connect(q.parStr, false)
-				} else {
-					// TODO: Investigate this case - when does this happen?
-				}
+				p.parStr.connect(q.parStr, false)
 			} else if p.operator.basePort != nil {
 				p.operator.basePort.connect(q.parStr, false)
 			}

@@ -20,9 +20,9 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	a.NotNil(o.In().Map("true").Stream())
-	a.NotNil(o.In().Map("false").Stream())
-	a.NotNil(o.In().Map("select").Stream())
+	a.NotNil(o.Main().In().Map("true").Stream())
+	a.NotNil(o.Main().In().Map("false").Stream())
+	a.NotNil(o.Main().In().Map("select").Stream())
 }
 
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
@@ -31,7 +31,7 @@ func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	a.NotNil(o.Out().Stream())
+	a.NotNil(o.Main().Out().Stream())
 }
 
 func TestBuiltin_Merge__Works(t *testing.T) {
@@ -40,18 +40,18 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 	o, err := MakeOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.Main().Out().Bufferize()
 	o.Start()
 
 	trues := []interface{}{"Roses", "Violets", "are", 1, 2, 4}
 	falses := []interface{}{"are", "red.", "blue.", 3}
 	selects := []interface{}{true, false, false, true, true, false, true, true, false, true}
 
-	o.In().Map("true").Push(trues)
-	o.In().Map("false").Push(falses)
-	o.In().Map("select").Push(selects)
+	o.Main().In().Map("true").Push(trues)
+	o.Main().In().Map("false").Push(falses)
+	o.Main().In().Map("select").Push(selects)
 
-	a.PortPushes([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Out())
+	a.PortPushes([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
 }
 
 func TestBuiltin_Merge__ComplexItems(t *testing.T) {
@@ -62,7 +62,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.Main().Out().Bufferize()
 	o.Start()
 
 	trues := []interface{}{
@@ -83,13 +83,13 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	}
 	selects := []interface{}{false, true, true}
 
-	o.In().Map("true").Push(trues)
-	o.In().Map("false").Push(falses)
-	o.In().Map("select").Push(selects)
+	o.Main().In().Map("true").Push(trues)
+	o.Main().In().Map("false").Push(falses)
+	o.Main().In().Map("select").Push(selects)
 
 	a.PortPushes([]interface{}{[]interface{}{
 		map[string]interface{}{"red": "Red Bull", "blue": "Blues"},
 		map[string]interface{}{"red": "Roses", "blue": "Violets"},
 		map[string]interface{}{"red": "Apples", "blue": "Blueberries"},
-	}}, o.Out())
+	}}, o.Main().Out())
 }

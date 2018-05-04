@@ -7,22 +7,28 @@ import (
 
 var fileReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "string",
-		},
-		Out: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"content": {
-					Type: "binary",
-				},
-				"error": {
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
 					Type: "string",
+				},
+				Out: core.PortDef{
+					Type: "map",
+					Map: map[string]*core.PortDef{
+						"content": {
+							Type: "binary",
+						},
+						"error": {
+							Type: "string",
+						},
+					},
 				},
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			file, marker := in.PullString()
 			if marker != nil {

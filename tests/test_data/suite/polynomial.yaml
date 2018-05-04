@@ -1,18 +1,20 @@
 # Polynomial operator
 ---
-in:
-  type: map
-  map:
-    a:
+services:
+  main:
+    in:
+      type: map
+      map:
+        a:
+          type: number
+        b:
+          type: number
+        c:
+          type: number
+        x:
+          type: number
+    out:
       type: number
-    b:
-      type: number
-    c:
-      type: number
-    x:
-      type: number
-out:
-  type: number
 operators:
   pfunc:
     operator: slang.eval

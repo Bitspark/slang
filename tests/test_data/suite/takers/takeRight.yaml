@@ -1,16 +1,18 @@
 ---
-in:
-  type: map
-  map:
-    left:
+services:
+  main:
+    in:
+      type: map
+      map:
+        left:
+          type: generic
+          generic: itemType
+        right:
+          type: generic
+          generic: itemType
+    out:
       type: generic
       generic: itemType
-    right:
-      type: generic
-      generic: itemType
-out:
-  type: generic
-  generic: itemType
 connections:
   right(:
   - )

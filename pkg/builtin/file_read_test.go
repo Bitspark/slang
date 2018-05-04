@@ -24,8 +24,8 @@ func TestBuiltin_FileRead__InPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.In())
-	a.Equal(core.TYPE_STRING, o.In().Type())
+	a.NotNil(o.Main().In())
+	a.Equal(core.TYPE_STRING, o.Main().In().Type())
 }
 
 func TestBuiltin_FileRead__OutPorts(t *testing.T) {
@@ -38,10 +38,10 @@ func TestBuiltin_FileRead__OutPorts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	a.NotNil(o.Out())
-	a.Equal(core.TYPE_MAP, o.Out().Type())
-	a.Equal(core.TYPE_BINARY, o.Out().Map("content").Type())
-	a.Equal(core.TYPE_STRING, o.Out().Map("error").Type())
+	a.NotNil(o.Main().Out())
+	a.Equal(core.TYPE_MAP, o.Main().Out().Type())
+	a.Equal(core.TYPE_BINARY, o.Main().Out().Map("content").Type())
+	a.Equal(core.TYPE_STRING, o.Main().Out().Map("error").Type())
 }
 
 func TestBuiltin_FileRead__Simple(t *testing.T) {
@@ -54,12 +54,12 @@ func TestBuiltin_FileRead__Simple(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.Main().Out().Bufferize()
 	o.Start()
 
-	o.In().Push("../../tests/test_data/hello.txt")
-	a.Equal([]byte("hello slang"), o.Out().Map("content").Pull())
-	a.Nil(o.Out().Map("error").Pull())
+	o.Main().In().Push("../../tests/test_data/hello.txt")
+	a.Equal([]byte("hello slang"), o.Main().Out().Map("content").Pull())
+	a.Nil(o.Main().Out().Map("error").Pull())
 }
 
 func TestBuiltin_FileRead__NotFound(t *testing.T) {
@@ -72,10 +72,10 @@ func TestBuiltin_FileRead__NotFound(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	o.Out().Bufferize()
+	o.Main().Out().Bufferize()
 	o.Start()
 
-	o.In().Push("./tests/test_data/nonexistentfile")
-	a.Nil(o.Out().Map("content").Pull())
-	a.NotNil(o.Out().Map("error").Pull())
+	o.Main().In().Push("./tests/test_data/nonexistentfile")
+	a.Nil(o.Main().Out().Map("content").Pull())
+	a.NotNil(o.Main().Out().Map("error").Pull())
 }

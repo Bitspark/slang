@@ -36,6 +36,7 @@ type EOS struct {
 
 type Port struct {
 	operator  *Operator
+	service   *Service
 	delegate  *Delegate
 	dests     map[*Port]bool
 	src       *Port
@@ -54,7 +55,7 @@ type Port struct {
 }
 
 // Makes a new port.
-func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
+func NewPort(srv *Service, del *Delegate, def PortDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -69,8 +70,13 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 	p := &Port{}
 	p.strSrc = p
 	p.direction = dir
-	p.operator = o
-	p.delegate = d
+	if srv != nil {
+		p.operator = srv.op
+	} else if del != nil {
+		p.operator = del.op
+	}
+	p.service = srv
+	p.delegate = del
 	p.dests = make(map[*Port]bool)
 
 	var err error
@@ -79,7 +85,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_MAP
 		p.subs = make(map[string]*Port)
 		for k, e := range def.Map {
-			p.subs[k], err = NewPort(o, d, *e, dir)
+			p.subs[k], err = NewPort(srv, del, *e, dir)
 			if err != nil {
 				return nil, err
 			}
@@ -88,7 +94,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 		}
 	case "stream":
 		p.itemType = TYPE_STREAM
-		p.sub, err = NewPort(o, d, *def.Stream, dir)
+		p.sub, err = NewPort(srv, del, *def.Stream, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +113,7 @@ func NewPort(o *Operator, d *Delegate, def PortDef, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	}
 
-	if p.primitive() && dir == DIRECTION_IN && o != nil && o.function != nil {
+	if p.primitive() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	}
 

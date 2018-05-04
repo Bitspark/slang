@@ -6,13 +6,17 @@ import (
 
 var loopOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type:    "generic",
-			Generic: "stateType",
-		},
-		Out: core.PortDef{
-			Type:    "generic",
-			Generic: "stateType",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type:    "generic",
+					Generic: "stateType",
+				},
+				Out: core.PortDef{
+					Type:    "generic",
+					Generic: "stateType",
+				},
+			},
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"iteration": {
@@ -41,9 +45,11 @@ var loopOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		iIn := dels["iteration"].In()
 		iOut := dels["iteration"].Out()
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 

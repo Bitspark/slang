@@ -67,11 +67,15 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 var httpServerOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "number",
-		},
-		Out: core.PortDef{
-			Type: "string",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type: "number",
+				},
+				Out: core.PortDef{
+					Type: "string",
+				},
+			},
 		},
 		Delegates: map[string]*core.DelegateDef{
 			"handler": {
@@ -157,7 +161,9 @@ var httpServerOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		slangHandler := dels["handler"]
 		sync := &core.Synchronizer{}
 		sync.Init(

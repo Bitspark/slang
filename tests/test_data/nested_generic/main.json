@@ -1,15 +1,19 @@
 {
-  "in": {
-    "type": "number"
-  },
-  "out": {
-    "type": "map",
-    "map": {
-      "left": {
+  "services": {
+    "main": {
+      "in": {
         "type": "number"
       },
-      "right": {
-        "type": "number"
+      "out": {
+        "type": "map",
+        "map": {
+          "left": {
+            "type": "number"
+          },
+          "right": {
+            "type": "number"
+          }
+        }
       }
     }
   },

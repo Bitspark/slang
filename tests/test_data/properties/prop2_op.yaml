@@ -1,12 +1,15 @@
-in:
-  type: trigger
-out:
-  type: map
-  map:
-    a:
-      type: number
-    b:
-      type: number
+services:
+  main:
+    in:
+      type: trigger
+    out:
+      type: map
+      map:
+        a:
+          type: number
+        b:
+          type: number
+
 properties:
   - v
 

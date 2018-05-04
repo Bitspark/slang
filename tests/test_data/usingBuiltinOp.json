@@ -1,10 +1,14 @@
 {
   "name": "opr",
-  "in": {
-    "type": "primitive"
-  },
-  "out": {
-    "type": "number"
+  "services": {
+    "main": {
+      "in": {
+        "type": "primitive"
+      },
+      "out": {
+        "type": "number"
+      }
+    }
   },
   "operators": {
     "passer": {

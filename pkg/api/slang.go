@@ -108,7 +108,6 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
 	}
-
 	if len(refStr) == 0 {
 		return nil, errors.New("empty connection string")
 	}
@@ -132,58 +131,87 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	}
 
 	refSplit := strings.Split(refStr, sep)
-
 	if len(refSplit) != 2 {
 		return nil, fmt.Errorf(`connection string malformed (1): "%s"`, refStr)
 	}
+	opPart := refSplit[opIdx]
+	portPart := refSplit[portIdx]
 
 	var o *core.Operator
-	var d *core.Delegate
-	if refSplit[opIdx] == "" {
+	var p *core.Port
+	if opPart == "" {
 		o = par
-	} else {
-		if !strings.Contains(refSplit[opIdx], ".") {
-			o = par.Child(refSplit[opIdx])
-			if o == nil {
-				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
-			}
+		if in {
+			p = o.Main().In()
 		} else {
-			opSplit := strings.Split(refSplit[opIdx], ".")
+			p = o.Main().Out()
+		}
+	} else {
+		if strings.Contains(opPart, ".") && strings.Contains(opPart, "@") {
+			return nil, fmt.Errorf(`cannot reference both service and delegate: "%s"`, refStr)
+		}
+		if strings.Contains(opPart, ".") {
+			opSplit := strings.Split(opPart, ".")
 			if len(opSplit) != 2 {
 				return nil, fmt.Errorf(`connection string malformed (2): "%s"`, refStr)
 			}
+			opName := opSplit[0]
+			dlgName := opSplit[1]
 			if opSplit[0] == "" {
 				o = par
 			} else {
-				o = par.Child(opSplit[0])
+				o = par.Child(opName)
 				if o == nil {
-					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opSplit[0])
+					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
 				}
 			}
-			d = o.Delegate(opSplit[1])
-			if d == nil {
-				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), opSplit[1])
+			if dlg := o.Delegate(dlgName); dlg != nil {
+				if in {
+					p = dlg.In()
+				} else {
+					p = dlg.Out()
+				}
+			} else {
+				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), dlgName)
+			}
+		} else if strings.Contains(opPart, "@") {
+			opSplit := strings.Split(opPart, "@")
+			if len(opSplit) != 2 {
+				return nil, fmt.Errorf(`connection string malformed (3): "%s"`, refStr)
+			}
+			opName := opSplit[1]
+			srvName := opSplit[0]
+			if opName == "" {
+				o = par
+			} else {
+				o = par.Child(opSplit[1])
+				if o == nil {
+					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
+				}
+			}
+			if srv := o.Service(srvName); srv != nil {
+				if in {
+					p = srv.In()
+				} else {
+					p = srv.Out()
+				}
+			} else {
+				return nil, fmt.Errorf(`operator "%s" has no service "%s"`, o.Name(), srvName)
+			}
+		} else {
+			o = par.Child(opPart)
+			if o == nil {
+				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
+			}
+			if in {
+				p = o.Main().In()
+			} else {
+				p = o.Main().Out()
 			}
 		}
 	}
 
-	pathSplit := strings.Split(refSplit[portIdx], ".")
-
-	var p *core.Port
-	if in {
-		if d == nil {
-			p = o.In()
-		} else {
-			p = d.In()
-		}
-	} else {
-		if d == nil {
-			p = o.Out()
-		} else {
-			p = d.Out()
-		}
-	}
-
+	pathSplit := strings.Split(portPart, ".")
 	if len(pathSplit) == 1 && pathSplit[0] == "" {
 		return p, nil
 	}
@@ -372,7 +400,7 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 	}
 
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, def.In, def.Out, def.Delegates)
+	o, err := core.NewOperator(insName, nil, nil, def.Services, def.Delegates)
 	if err != nil {
 		return nil, err
 	}

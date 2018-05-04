@@ -6,40 +6,46 @@ import (
 
 var mergeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type: "map",
-			Map: map[string]*core.PortDef{
-				"true": {
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type: "map",
+					Map: map[string]*core.PortDef{
+						"true": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
+						"false": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
+						"select": {
+							Type: "stream",
+							Stream: &core.PortDef{
+								Type: "boolean",
+							},
+						},
+					},
+				},
+				Out: core.PortDef{
 					Type: "stream",
 					Stream: &core.PortDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
-				"false": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
-				},
-				"select": {
-					Type: "stream",
-					Stream: &core.PortDef{
-						Type: "boolean",
-					},
-				},
-			},
-		},
-		Out: core.PortDef{
-			Type: "stream",
-			Stream: &core.PortDef{
-				Type:    "generic",
-				Generic: "itemType",
 			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Map("select").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
@@ -95,8 +101,8 @@ var mergeOpCfg = &builtinConfig{
 	},
 	oConnFunc: func(dest, src *core.Port) error {
 		o := dest.Operator()
-		if dest == o.In().Map("select") {
-			o.Out().SetStreamSource(src.StreamSource())
+		if dest == o.Service(core.MAIN_SERVICE).In().Map("select") {
+			o.Service(core.MAIN_SERVICE).Out().SetStreamSource(src.StreamSource())
 		}
 		return nil
 	},

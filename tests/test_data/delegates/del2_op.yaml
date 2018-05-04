@@ -1,8 +1,11 @@
-in:
-  type: generic
-  generic: gen
-out:
-  type: boolean
+services:
+  main:
+    in:
+      type: generic
+      generic: gen
+    out:
+      type: boolean
+
 delegates:
   cmp:
     in:
@@ -16,6 +19,7 @@ delegates:
         b:
           type: generic
           generic: gen
+
 properties:
   - val
 

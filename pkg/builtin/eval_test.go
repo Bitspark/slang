@@ -281,15 +281,15 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 	})
 	a.NoError(err)
 	a.NotNil(fo)
-	fo.Out().Bufferize()
+	fo.Main().Out().Bufferize()
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{"a": 1.0, "b": 2.0})
-	fo.In().Push(map[string]interface{}{"a": -5.0, "b": 2.5})
-	fo.In().Push(map[string]interface{}{"a": 0.0, "b": 333.0})
+	fo.Main().In().Push(map[string]interface{}{"a": 1.0, "b": 2.0})
+	fo.Main().In().Push(map[string]interface{}{"a": -5.0, "b": 2.5})
+	fo.Main().In().Push(map[string]interface{}{"a": 0.0, "b": 333.0})
 
-	a.PortPushes([]interface{}{3.0, -2.5, 333.0}, fo.Out())
+	a.PortPushes([]interface{}{3.0, -2.5, 333.0}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__Floor(t *testing.T) {
@@ -308,15 +308,15 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 	})
 	a.NoError(err)
 	a.NotNil(fo)
-	fo.Out().Bufferize()
+	fo.Main().Out().Bufferize()
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{"a": 1.0})
-	fo.In().Push(map[string]interface{}{"a": 1.1})
-	fo.In().Push(map[string]interface{}{"a": 2.9})
+	fo.Main().In().Push(map[string]interface{}{"a": 1.0})
+	fo.Main().In().Push(map[string]interface{}{"a": 1.1})
+	fo.Main().In().Push(map[string]interface{}{"a": 2.9})
 
-	a.PortPushes([]interface{}{1.0, 1.0, 2.0}, fo.Out())
+	a.PortPushes([]interface{}{1.0, 1.0, 2.0}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__Ceil(t *testing.T) {
@@ -335,15 +335,15 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 	})
 	a.NoError(err)
 	a.NotNil(fo)
-	fo.Out().Bufferize()
+	fo.Main().Out().Bufferize()
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{"a": 1.0})
-	fo.In().Push(map[string]interface{}{"a": 1.1})
-	fo.In().Push(map[string]interface{}{"a": 2.9})
+	fo.Main().In().Push(map[string]interface{}{"a": 1.0})
+	fo.Main().In().Push(map[string]interface{}{"a": 1.1})
+	fo.Main().In().Push(map[string]interface{}{"a": 2.9})
 
-	a.PortPushes([]interface{}{1.0, 2.0, 3.0}, fo.Out())
+	a.PortPushes([]interface{}{1.0, 2.0, 3.0}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__IsNull(t *testing.T) {
@@ -362,15 +362,15 @@ func TestBuiltin_Eval__IsNull(t *testing.T) {
 	})
 	a.NoError(err)
 	a.NotNil(fo)
-	fo.Out().Bufferize()
+	fo.Main().Out().Bufferize()
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{"a": 1.0})
-	fo.In().Push(map[string]interface{}{"a": nil})
-	fo.In().Push(map[string]interface{}{"a": "testtest"})
+	fo.Main().In().Push(map[string]interface{}{"a": 1.0})
+	fo.Main().In().Push(map[string]interface{}{"a": nil})
+	fo.Main().In().Push(map[string]interface{}{"a": "testtest"})
 
-	a.PortPushes([]interface{}{false, true, false}, fo.Out())
+	a.PortPushes([]interface{}{false, true, false}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
@@ -391,17 +391,17 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	})
 	a.NoError(err)
 	a.NotNil(fo)
-	fo.Out().Bufferize()
+	fo.Main().Out().Bufferize()
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 2.0})
-	fo.In().Push(map[string]interface{}{"a": false, "b": 8.0, "c": 8.0})
-	fo.In().Push(map[string]interface{}{"a": false, "b": 3.0, "c": 2.0})
-	fo.In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 0.0})
-	fo.In().Push(map[string]interface{}{"a": true, "b": 8.0, "c": 8.0})
+	fo.Main().In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 2.0})
+	fo.Main().In().Push(map[string]interface{}{"a": false, "b": 8.0, "c": 8.0})
+	fo.Main().In().Push(map[string]interface{}{"a": false, "b": 3.0, "c": 2.0})
+	fo.Main().In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 0.0})
+	fo.Main().In().Push(map[string]interface{}{"a": true, "b": 8.0, "c": 8.0})
 
-	a.PortPushes([]interface{}{true, false, false, true, false}, fo.Out())
+	a.PortPushes([]interface{}{true, false, false, true, false}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
@@ -421,11 +421,11 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	})
 	a.NoError(err)
 	a.NotNil(fo)
-	fo.Out().Bufferize()
+	fo.Main().Out().Bufferize()
 
 	go fo.Start()
 
-	fo.In().Push(map[string]interface{}{
+	fo.Main().In().Push(map[string]interface{}{
 		"vec0": map[string]interface{}{
 			"x": 2,
 			"y": 4,
@@ -435,7 +435,7 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 			"y": 5,
 		},
 	})
-	fo.In().Push(map[string]interface{}{
+	fo.Main().In().Push(map[string]interface{}{
 		"vec0": map[string]interface{}{
 			"x": 10,
 			"y": 0,
@@ -445,7 +445,7 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 			"y": 10,
 		},
 	})
-	fo.In().Push(map[string]interface{}{
+	fo.Main().In().Push(map[string]interface{}{
 		"vec0": map[string]interface{}{
 			"x": 1,
 			"y": 1,
@@ -456,5 +456,5 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{26., 0., 2.}, fo.Out())
+	a.PortPushes([]interface{}{26., 0., 2.}, fo.Main().Out())
 }

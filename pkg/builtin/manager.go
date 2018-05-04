@@ -25,21 +25,27 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	dels := make(map[string]*core.DelegateDef)
+	srvs := make(map[string]*core.ServiceDef)
+	for srvName, srv := range cfg.oDef.Services {
+		srvCpy := srv.Copy()
+		srvs[srvName] = &srvCpy
+	}
 
-	in := cfg.oDef.In.Copy()
-	out := cfg.oDef.Out.Copy()
+	dels := make(map[string]*core.DelegateDef)
 	for delName, del := range cfg.oDef.Delegates {
 		delCpy := del.Copy()
 		dels[delName] = &delCpy
 	}
 
-	if err := in.SpecifyGenericPorts(def.Generics); err != nil {
-		return nil, err
+	for _, srv := range srvs {
+		if err := srv.Out.SpecifyGenericPorts(def.Generics); err != nil {
+			return nil, err
+		}
+		if err := srv.In.SpecifyGenericPorts(def.Generics); err != nil {
+			return nil, err
+		}
 	}
-	if err := out.SpecifyGenericPorts(def.Generics); err != nil {
-		return nil, err
-	}
+
 	for _, del := range dels {
 		if err := del.Out.SpecifyGenericPorts(def.Generics); err != nil {
 			return nil, err
@@ -49,12 +55,15 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		}
 	}
 
-	if err := in.GenericsSpecified(); err != nil {
-		return nil, err
+	for srvName, srv := range srvs {
+		if err := srv.Out.GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
+		}
+		if err := srv.In.GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("%s: %s", srvName, err.Error())
+		}
 	}
-	if err := out.GenericsSpecified(); err != nil {
-		return nil, err
-	}
+
 	for delName, del := range dels {
 		if err := del.Out.GenericsSpecified(); err != nil {
 			return nil, fmt.Errorf("%s: %s", delName, err.Error())
@@ -64,7 +73,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		}
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, in, out, dels)
+	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, srvs, dels)
 	if err != nil {
 		return nil, err
 	}

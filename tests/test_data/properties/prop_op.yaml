@@ -1,7 +1,10 @@
-in:
-  type: trigger
-out:
-  type: number
+services:
+  main:
+    in:
+      type: trigger
+    out:
+      type: number
+
 properties:
   - val
 

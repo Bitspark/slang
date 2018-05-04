@@ -111,16 +111,22 @@ type functionStore struct {
 
 var evalOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		In: core.PortDef{
-			Type:    "generic",
-			Generic: "paramsMap",
-		},
-		Out: core.PortDef{
-			Type: "primitive",
+		Services: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.PortDef{
+					Type:    "generic",
+					Generic: "paramsMap",
+				},
+				Out: core.PortDef{
+					Type: "primitive",
+				},
+			},
 		},
 	},
-	oFunc: func(in, out *core.Port, dels map[string]*core.Delegate, store interface{}) {
+	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
 		expr := store.(functionStore).evalExpr
+		in := srvs[core.MAIN_SERVICE].In()
+		out := srvs[core.MAIN_SERVICE].Out()
 		for true {
 			i := in.Pull()
 

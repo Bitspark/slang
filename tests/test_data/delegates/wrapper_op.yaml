@@ -1,7 +1,10 @@
-in:
-  type: number
-out:
-  type: boolean
+services:
+  main:
+    in:
+      type: number
+    out:
+      type: boolean
+
 properties:
   - val
   - expr

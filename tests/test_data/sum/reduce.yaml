@@ -1,11 +1,13 @@
 # Main
 ---
-in:
-  type: stream
-  stream:
-    type: number
-out:
-  type: number
+services:
+  main:
+    in:
+      type: stream
+      stream:
+        type: number
+    out:
+      type: number
 operators:
   adder:
     operator: slang.eval

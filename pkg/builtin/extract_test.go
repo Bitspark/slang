@@ -17,7 +17,7 @@ func TestBuiltin_Extract__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Extract__String(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.stream.extract",
 			Generics: map[string]*core.TypeDef{

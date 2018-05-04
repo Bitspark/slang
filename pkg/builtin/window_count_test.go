@@ -16,7 +16,7 @@ func TestOperatorWindow__IsRegistered(t *testing.T) {
 
 func makeTestMonoWindow(t *testing.T, size, slide, start, end int) *core.Operator {
 	r := require.New(t)
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.window.count",
 			Generics: map[string]*core.TypeDef{

@@ -17,7 +17,7 @@ func TestBuiltin_SyncMerge__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_SyncMerge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().In().Map("true"))
@@ -31,7 +31,7 @@ func TestBuiltin_SyncMerge__InPorts(t *testing.T) {
 func TestBuiltin_SyncMerge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().Out())
@@ -41,7 +41,7 @@ func TestBuiltin_SyncMerge__OutPorts(t *testing.T) {
 func TestBuiltin_SyncMerge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.syncMerge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	o.Main().Out().Bufferize()
@@ -66,7 +66,7 @@ func TestBuiltin_SyncMerge__Works(t *testing.T) {
 
 func TestBuiltin_SyncMerge__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-	o, err := MakeOperator(core.InstanceDef{
+	o, err := buildOperator(core.InstanceDef{
 		Operator: "slang.syncMerge",
 		Generics: map[string]*core.TypeDef{"itemType": {Type: "map", Map: map[string]*core.TypeDef{"red": {Type: "string"}, "blue": {Type: "string"}}}},
 	})

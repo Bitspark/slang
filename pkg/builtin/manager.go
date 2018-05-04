@@ -20,6 +20,10 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	if cfg == nil {
 		return nil, errors.New("unknown builtin operator")
 	}
+	
+	if err := def.OperatorDef.GenericsSpecified(); err != nil {
+		return nil, err
+	}
 
 	o, err := core.NewOperator(def.Name, cfg.oFunc, cfg.oConnFunc, def.Generics, def.Properties, def.OperatorDef)
 	if err != nil {
@@ -29,8 +33,8 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetOperatorDef(insDef *core.InstanceDef) (core.OperatorDef, error) {
-	cfg, ok := cfgs[insDef.Operator]
+func GetOperatorDef(operator string) (core.OperatorDef, error) {
+	cfg, ok := cfgs[operator]
 	if !ok {
 		return core.OperatorDef{}, errors.New("builtin operator not found")
 	}
@@ -97,4 +101,15 @@ func init() {
 func getBuiltinCfg(name string) *builtinConfig {
 	c, _ := cfgs[name]
 	return c
+}
+
+// Mainly for testing
+
+func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
+	insDef.OperatorDef, _ = GetOperatorDef(insDef.Operator)
+	err := insDef.OperatorDef.SpecifyOperator(insDef.Generics, insDef.Properties)
+	if err != nil {
+		return nil, err
+	}
+	return MakeOperator(insDef)
 }

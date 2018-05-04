@@ -17,7 +17,7 @@ func TestBuiltin_MapAccess__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_MapAccess__String(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.stream.mapAccess",
 			Generics: map[string]*core.TypeDef{

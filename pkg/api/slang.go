@@ -73,13 +73,13 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 	}
 
 	// Recursively replace generics by their actual types and propagate properties
-	specDef, err := core.SpecifyOperator(gens, props, &def)
+	err = def.SpecifyOperator(gens, props)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and connect the operator
-	op, err := CreateAndConnectOperator(insName, *specDef, false)
+	op, err := CreateAndConnectOperator(insName, def, false)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +348,7 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
 		// Case 1: We found it in the builtin package, return
-		return builtin.GetOperatorDef(insDef)
+		return builtin.GetOperatorDef(insDef.Operator)
 	}
 
 	// Case 2: We have to read it from the file system

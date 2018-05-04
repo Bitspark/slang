@@ -17,7 +17,7 @@ func TestOperatorCSVRead__IsRegistered(t *testing.T) {
 func TestOperatorCSVRead__3Lines(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
-	co, err := MakeOperator(
+	co, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.encoding.csv.read",
 			Generics: map[string]*core.TypeDef{

@@ -44,7 +44,7 @@ func TestBuiltinConst__NoGenerics(t *testing.T) {
 
 func TestBuiltinConst__Correct(t *testing.T) {
 	a := assertions.New(t)
-	ao, err := MakeOperator(
+	ao, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{
@@ -64,7 +64,7 @@ func TestBuiltinConst__Correct(t *testing.T) {
 
 func TestBuiltinConst__PushBoolean(t *testing.T) {
 	a := assertions.New(t)
-	ao, err := MakeOperator(
+	ao, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{
@@ -94,7 +94,7 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 
 func TestBuiltinConst__PushStream(t *testing.T) {
 	a := assertions.New(t)
-	ao, err := MakeOperator(
+	ao, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{
@@ -128,7 +128,7 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 
 func TestBuiltinConst__PushMap(t *testing.T) {
 	a := assertions.New(t)
-	ao, err := MakeOperator(
+	ao, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{
@@ -167,7 +167,7 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 
 func TestOperatorConst__SimpleNumber(t *testing.T) {
 	a := assertions.New(t)
-	co, err := MakeOperator(
+	co, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{
@@ -192,7 +192,7 @@ func TestOperatorConst__SimpleNumber(t *testing.T) {
 
 func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 	a := assertions.New(t)
-	co, err := MakeOperator(
+	co, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{
@@ -229,7 +229,7 @@ func TestOperatorConst__ComplexStreamMap(t *testing.T) {
 
 func TestOperatorConst__PassMarkers(t *testing.T) {
 	a := assertions.New(t)
-	co, err := MakeOperator(
+	co, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.const",
 			Generics: map[string]*core.TypeDef{

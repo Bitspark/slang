@@ -17,7 +17,7 @@ func TestBuiltin_TemplateFormat__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_TemplateFormat__String(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.template.format",
 			Properties: map[string]interface{}{

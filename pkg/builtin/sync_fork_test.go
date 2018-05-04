@@ -17,7 +17,7 @@ func TestBuiltin_SyncFork__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_SyncFork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.syncFork",
 			Generics: map[string]*core.TypeDef{
@@ -38,7 +38,7 @@ func TestBuiltin_SyncFork__InPorts(t *testing.T) {
 func TestBuiltin_SyncFork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.syncFork",
 			Generics: map[string]*core.TypeDef{
@@ -59,7 +59,7 @@ func TestBuiltin_SyncFork__OutPorts(t *testing.T) {
 func TestBuiltin_SyncFork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.syncFork",
 			Generics: map[string]*core.TypeDef{
@@ -101,7 +101,7 @@ func TestBuiltin_SyncFork__Correct(t *testing.T) {
 
 func TestBuiltin_SyncFork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.syncFork",
 			Generics: map[string]*core.TypeDef{

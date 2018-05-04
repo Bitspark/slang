@@ -16,7 +16,7 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 
 func TestBuiltin_Loop__Simple(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(
+	lo, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
 			Operator: "slang.loop",
@@ -107,7 +107,7 @@ TestBuiltin_Loop__Fibo(t *testing.T) {
 			"oldFib": {Type: "number"},
 		},
 	}
-	lo, err := MakeOperator(
+	lo, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.loop",
 			Generics: map[string]*core.TypeDef{
@@ -196,7 +196,7 @@ TestBuiltin_Loop__Fibo(t *testing.T) {
 func
 TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(
+	lo, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.loop",
 			Generics: map[string]*core.TypeDef{

@@ -18,7 +18,7 @@ func TestOperatorWindowTriggered__IsRegistered(t *testing.T) {
 func TestOperatorWindowTriggered(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Name:     "testop",
 			Operator: "slang.window.triggered",

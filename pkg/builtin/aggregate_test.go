@@ -18,21 +18,19 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	ao, err := MakeOperator(
-		core.InstanceDef{
-			Operator: "slang.aggregate",
-			Generics: map[string]*core.TypeDef{
-				"itemType": {
-					Type: "number",
-				},
-				"stateType": {
-					Type: "number",
-				},
+	ao, err := buildOperator(core.InstanceDef{
+		Operator: "slang.aggregate",
+		Generics: map[string]*core.TypeDef{
+			"itemType": {
+				Type: "number",
+			},
+			"stateType": {
+				Type: "number",
 			},
 		},
-	)
+	})
 	require.NoError(t, err)
-	a.NotNil(ao)
+	require.NotNil(t, ao)
 
 	do, err := core.NewOperator(
 		"wrapper",
@@ -55,7 +53,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	a.NotNil(do)
+	require.NotNil(t, do)
 
 	ao.SetParent(do)
 
@@ -74,7 +72,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 
 func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	a := assertions.New(t)
-	ao, err := MakeOperator(
+	ao, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.aggregate",
 			Generics: map[string]*core.TypeDef{
@@ -168,7 +166,7 @@ func TestBuiltinAggregate__PassMarkers(t *testing.T) {
 	r.NoError(err)
 	a.NotNil(o)
 
-	ao, err := MakeOperator(
+	ao, err := buildOperator(
 		core.InstanceDef{
 			Name:     "testOp",
 			Operator: "slang.aggregate",

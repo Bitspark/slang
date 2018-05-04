@@ -16,7 +16,7 @@ func TestOperator_Take__IsRegistered(t *testing.T) {
 
 func TestOperator_Take__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
-	co, err := MakeOperator(
+	co, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
 		},
@@ -27,7 +27,7 @@ func TestOperator_Take__NoGenerics(t *testing.T) {
 
 func TestOperator_Take__InPorts(t *testing.T) {
 	a := assertions.New(t)
-	to, err := MakeOperator(
+	to, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
 			Generics: map[string]*core.TypeDef{
@@ -51,7 +51,7 @@ func TestOperator_Take__InPorts(t *testing.T) {
 
 func TestOperator_Take__OutPorts(t *testing.T) {
 	a := assertions.New(t)
-	to, err := MakeOperator(
+	to, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
 			Generics: map[string]*core.TypeDef{
@@ -74,7 +74,7 @@ func TestOperator_Take__OutPorts(t *testing.T) {
 
 func TestOperator_Take__Simple1(t *testing.T) {
 	a := assertions.New(t)
-	to, err := MakeOperator(
+	to, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.take",
 			Generics: map[string]*core.TypeDef{

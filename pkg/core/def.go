@@ -213,11 +213,11 @@ func (d OperatorDef) Copy() OperatorDef {
 	return cpy
 }
 
-func SpecifyOperator(gens Generics, props Properties, def *OperatorDef) (*OperatorDef, error) {
+func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
-			return def, err
+			return err
 		}
 	}
 
@@ -238,10 +238,10 @@ func SpecifyOperator(gens Generics, props Properties, def *OperatorDef) (*Operat
 	for prop, propDef := range def.PropertyDefs {
 		propVal, ok := props[prop]
 		if !ok {
-			return nil, errors.New("Missing property " + prop)
+			return errors.New("Missing property " + prop)
 		}
 		if err := propDef.VerifyData(propVal); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -288,7 +288,7 @@ func SpecifyOperator(gens Generics, props Properties, def *OperatorDef) (*Operat
 			if val, ok := props[propKey]; ok {
 				childOpInsDef.Properties[prop] = val
 			} else {
-				return nil, fmt.Errorf("unknown property \"%s\"", prop)
+				return fmt.Errorf("unknown property \"%s\"", prop)
 			}
 		}
 
@@ -296,16 +296,15 @@ func SpecifyOperator(gens Generics, props Properties, def *OperatorDef) (*Operat
 			gen.SpecifyGenerics(gens)
 		}
 
-		opDef, err := SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties, &childOpInsDef.OperatorDef)
+		err := childOpInsDef.OperatorDef.SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties)
 		if err != nil {
-			return def, err
+			return err
 		}
-		childOpInsDef.OperatorDef = *opDef
 	}
 
 	def.PropertyDefs = nil
 
-	return def, nil
+	return nil
 }
 
 // SERVICE DEFINITION

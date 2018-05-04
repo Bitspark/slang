@@ -17,7 +17,7 @@ func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Fork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
 			Generics: map[string]*core.TypeDef{
@@ -38,7 +38,7 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
 			Generics: map[string]*core.TypeDef{
@@ -59,7 +59,7 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 func TestBuiltin_Fork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
 			Generics: map[string]*core.TypeDef{
@@ -99,7 +99,7 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 
 func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
 			Generics: map[string]*core.TypeDef{

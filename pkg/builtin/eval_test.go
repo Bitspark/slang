@@ -248,25 +248,25 @@ func TestBuiltin_Eval__IsRegistered(t *testing.T) {
 
 func TestBuiltin_Eval__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval"})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval"})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": ""}})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": "+"}})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__Add(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator: "slang.eval",
 		Properties: map[string]interface{}{
 			"expression": "a+b",
@@ -288,7 +288,7 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 
 func TestBuiltin_Eval__Floor(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator: "slang.eval",
 		Properties: map[string]interface{}{
 			"expression": "floor(a)",
@@ -310,7 +310,7 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 
 func TestBuiltin_Eval__Ceil(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{
 			"expression": "ceil(a)",
@@ -332,7 +332,7 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 
 func TestBuiltin_Eval__IsNull(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{
 			"expression": "isNull(a)",
@@ -354,7 +354,7 @@ func TestBuiltin_Eval__IsNull(t *testing.T) {
 
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{
 			"expression": "a && (b != c)",
@@ -378,7 +378,7 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
 		Properties: map[string]interface{}{
 			"expression": "vec0.x*vec1.x+vec0.y*vec1.y",

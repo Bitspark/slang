@@ -17,7 +17,7 @@ func TestBuiltin_JsonWrite__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_JsonWrite__String(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.encoding.json.write",
 			Generics: map[string]*core.TypeDef{

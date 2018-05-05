@@ -180,7 +180,7 @@ func TestOperatorDef_GenericsSpecified__GenericPortsNoGenerics(t *testing.T) {
 
 // PORT DEFINITION
 
-func TestPortDef_Copy__Simple(t *testing.T) {
+func TestTypeDef_Copy__Simple(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "number"}
 	require.NoError(t, pd.Validate())
@@ -189,7 +189,7 @@ func TestPortDef_Copy__Simple(t *testing.T) {
 	a.Equal("number", pdCpy.Type)
 }
 
-func TestPortDef_Copy__Stream(t *testing.T) {
+func TestTypeDef_Copy__Stream(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "string"}}
 	require.NoError(t, pd.Validate())
@@ -199,7 +199,7 @@ func TestPortDef_Copy__Stream(t *testing.T) {
 	a.False(pd.Stream == pdCpy.Stream)
 }
 
-func TestPortDef_Copy__Map(t *testing.T) {
+func TestTypeDef_Copy__Map(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"a": {Type: "string"}}}
 	require.NoError(t, pd.Validate())
@@ -209,7 +209,7 @@ func TestPortDef_Copy__Map(t *testing.T) {
 	a.False(pd.Map["a"] == pdCpy.Map["a"])
 }
 
-func TestPortDef_SpecifyGenericPorts__Simple(t *testing.T) {
+func TestTypeDef_SpecifyGenericPorts__Simple(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "generic", Generic: "t1"}
 	require.NoError(t, pd.Validate())
@@ -219,7 +219,7 @@ func TestPortDef_SpecifyGenericPorts__Simple(t *testing.T) {
 	a.Equal("number", pd.Type)
 }
 
-func TestPortDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
+func TestTypeDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "generic", Generic: "t1"}
 	require.NoError(t, pd.Validate())
@@ -229,7 +229,7 @@ func TestPortDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
 	a.Equal("generic", pd.Type)
 }
 
-func TestPortDef_SpecifyGenericPorts__MultipleIdentifiers(t *testing.T) {
+func TestTypeDef_SpecifyGenericPorts__MultipleIdentifiers(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{
 		Type: "map",
@@ -243,7 +243,7 @@ func TestPortDef_SpecifyGenericPorts__MultipleIdentifiers(t *testing.T) {
 	a.Equal("generic", pd.Map["b"].Type)
 }
 
-func TestPortDef_SpecifyGenericPorts__Stream(t *testing.T) {
+func TestTypeDef_SpecifyGenericPorts__Stream(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "generic", Generic: "t1"}}
 	require.NoError(t, pd.Validate())
@@ -253,7 +253,7 @@ func TestPortDef_SpecifyGenericPorts__Stream(t *testing.T) {
 	a.Equal("number", pd.Stream.Type)
 }
 
-func TestPortDef_SpecifyGenericPorts__Map(t *testing.T) {
+func TestTypeDef_SpecifyGenericPorts__Map(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"a": {Type: "generic", Generic: "t1"}}}
 	require.NoError(t, pd.Validate())
@@ -263,35 +263,35 @@ func TestPortDef_SpecifyGenericPorts__Map(t *testing.T) {
 	a.Equal("number", pd.Map["a"].Type)
 }
 
-func TestPortDef_GenericsSpecified__SimpleGeneric(t *testing.T) {
+func TestTypeDef_GenericsSpecified__SimpleGeneric(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "generic", Generic: "t1"}
 	require.NoError(t, pd.Validate())
 	a.Error(pd.GenericsSpecified())
 }
 
-func TestPortDef_GenericsSpecified__SimpleNoGeneric(t *testing.T) {
+func TestTypeDef_GenericsSpecified__SimpleNoGeneric(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "number"}
 	require.NoError(t, pd.Validate())
 	a.NoError(pd.GenericsSpecified())
 }
 
-func TestPortDef_GenericsSpecified__StreamGenerics(t *testing.T) {
+func TestTypeDef_GenericsSpecified__StreamGenerics(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "generic", Generic: "t1"}}
 	require.NoError(t, pd.Validate())
 	a.Error(pd.GenericsSpecified())
 }
 
-func TestPortDef_GenericsSpecified__StreamNoGenerics(t *testing.T) {
+func TestTypeDef_GenericsSpecified__StreamNoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "stream", Stream: &core.TypeDef{Type: "number"}}
 	require.NoError(t, pd.Validate())
 	a.NoError(pd.GenericsSpecified())
 }
 
-func TestPortDef_GenericsSpecified__MapGenerics(t *testing.T) {
+func TestTypeDef_GenericsSpecified__MapGenerics(t *testing.T) {
 	a := assertions.New(t)
 	pd := core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"a": {Type: "number"}}}
 	require.NoError(t, pd.Validate())

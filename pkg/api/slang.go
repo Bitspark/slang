@@ -108,7 +108,7 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 	return flatOp, nil
 }
 
-func ParsePortDef(defStr string) core.TypeDef {
+func ParseTypeDef(defStr string) core.TypeDef {
 	def := core.TypeDef{}
 	json.Unmarshal([]byte(defStr), &def)
 	return def

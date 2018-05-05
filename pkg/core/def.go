@@ -122,7 +122,7 @@ func (d *OperatorDef) Validate() error {
 }
 
 // SpecifyGenerics replaces generic types in the operator definition with the types given in the generics map.
-// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy.
 func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	srvs := make(map[string]*ServiceDef)
@@ -461,7 +461,7 @@ func (d TypeDef) Copy() TypeDef {
 }
 
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
-// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy, which is very important to prevent unintended side effects.
 func (d *TypeDef) SpecifyGenerics(generics map[string]*TypeDef) error {
 	for identifier, pd := range generics {

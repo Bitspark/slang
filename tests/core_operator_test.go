@@ -8,7 +8,7 @@ import (
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
-	defPort := api.ParsePortDef(`{"type":"number"}`)
+	defPort := api.ParseTypeDef(`{"type":"number"}`)
 	oParent, _ := core.NewOperator("parent", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1, _ := core.NewOperator("child1", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1.SetParent(oParent)

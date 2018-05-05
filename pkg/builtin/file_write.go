@@ -1,0 +1,59 @@
+package builtin
+
+import (
+	"github.com/Bitspark/slang/pkg/core"
+	"io/ioutil"
+	"path"
+)
+
+var fileWriteOpCfg = &builtinConfig{
+	oDef: core.OperatorDef{
+		ServiceDefs: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.TypeDef{
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"content": {
+							Type: "binary",
+						},
+						"filename": {
+							Type: "string",
+						},
+					},
+				},
+				Out: core.TypeDef{
+					Type: "string",
+				},
+			},
+		},
+	},
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		for {
+			i := in.Pull()
+			if core.IsMarker(i) {
+				out.Push(i)
+				continue
+			}
+
+			data := i.(map[string]interface{})
+			var content []byte
+			if b, ok := data["content"].([]byte); ok {
+				content = b
+			}
+			if s, ok := data["content"].(string); ok {
+				content = []byte(s)
+			}
+			filename := data["filename"].(string)
+
+			err := ioutil.WriteFile(path.Join(core.WORKING_DIR, filename), content, 0644)
+
+			if err == nil {
+				out.Push(nil)
+			} else {
+				out.Push(err.Error())
+			}
+		}
+	},
+}

@@ -6,36 +6,36 @@ import (
 
 var mergeOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"true": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 						"false": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 						"select": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type: "boolean",
 							},
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
@@ -43,10 +43,10 @@ var mergeOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		for {
 			i := in.Map("select").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
 			pFalse := in.Map("false").Stream().Pull()
@@ -66,7 +66,7 @@ var mergeOpCfg = &builtinConfig{
 				panic("port select received BOS too early")
 			}
 
-			for true {
+			for {
 				i := in.Map("select").Stream().Pull()
 
 				if in.Map("select").OwnEOS(i) {
@@ -99,10 +99,9 @@ var mergeOpCfg = &builtinConfig{
 
 		}
 	},
-	oConnFunc: func(dest, src *core.Port) error {
-		o := dest.Operator()
-		if dest == o.Service(core.MAIN_SERVICE).In().Map("select") {
-			o.Service(core.MAIN_SERVICE).Out().SetStreamSource(src.StreamSource())
+	oConnFunc: func(op *core.Operator, dst, src *core.Port) error {
+		if dst == op.Main().In().Map("select") {
+			op.Main().Out().SetStreamSource(src.StreamSource())
 		}
 		return nil
 	},

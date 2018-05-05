@@ -16,7 +16,7 @@ import (
 	"runtime"
 )
 
-var fileEndings = []string{".yaml", ".json"} // Order of endings matters!
+var FILE_ENDINGS = []string{".yaml", ".json"} // Order of endings matters!
 
 type Environ struct {
 	paths []string
@@ -53,41 +53,63 @@ func (e *Environ) WorkingDir() string {
 	return e.paths[0]
 }
 
-func (e *Environ) BuildOperator(opFilePath string, generics map[string]*core.PortDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
+func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
 	if !path.IsAbs(opFilePath) {
 		opFilePath = path.Join(e.WorkingDir(), opFilePath)
 	}
 
+	insName := ""
+
 	// Find correct file
-	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, fileEndings)
+	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, FILE_ENDINGS)
 	if err != nil {
 		return nil, err
 	}
 
-	// Read operator definition and perform recursion detection
-	def, err := e.readOperatorDef(opDefFilePath, generics, nil)
-
+	// Recursively read operator definitions and perform recursion detection
+	def, err := e.ReadOperatorDef(opDefFilePath, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create and internally connect the operator
-	op, err := buildAndConnectOperator(opFilePath, props, def, nil)
-
+	// Recursively replace generics by their actual types and propagate properties
+	err = def.SpecifyOperator(gens, props)
 	if err != nil {
 		return nil, err
 	}
 
-	if compile {
-		// Compile when requested
-		op.Compile()
+	// Create and connect the operator
+	op, err := CreateAndConnectOperator(insName, def, false)
+	if err != nil {
+		return nil, err
 	}
 
-	return op, nil
+	// Compile
+	op.Compile()
+
+	// Connect
+	flatDef, err := op.Define()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create and connect the flat operator
+	flatOp, err := CreateAndConnectOperator(insName, flatDef, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if all in ports are connected
+	err = flatOp.CorrectlyCompiled()
+	if err != nil {
+		return nil, err
+	}
+
+	return flatOp, nil
 }
 
-func ParsePortDef(defStr string) core.PortDef {
-	def := core.PortDef{}
+func ParseTypeDef(defStr string) core.TypeDef {
+	def := core.TypeDef{}
 	json.Unmarshal([]byte(defStr), &def)
 	return def
 }
@@ -157,7 +179,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			}
 			opName := opSplit[0]
 			dlgName := opSplit[1]
-			if opSplit[0] == "" {
+			if opName == "" {
 				o = par
 			} else {
 				o = par.Child(opName)
@@ -184,7 +206,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 			if opName == "" {
 				o = par
 			} else {
-				o = par.Child(opSplit[1])
+				o = par.Child(opName)
 				if o == nil {
 					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
 				}
@@ -240,9 +262,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 }
 
 func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string) (string, error) {
-
 	var err error
-
 	relevantPaths := e.paths
 	if enforcedPath != "" {
 		relevantPaths = []string{enforcedPath}
@@ -253,8 +273,7 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 		// Find correct file
 		var opDefFilePath string
 
-		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, fileEndings)
-
+		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, FILE_ENDINGS)
 		if err != nil {
 			continue
 		}
@@ -267,17 +286,9 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 
 // READ OPERATOR DEFINITION
 
-// readOperatorDef reads the operator definition for the given file and replaces all generic types according to the
-// generics map given. The generics map must not contain any further generic types.
-func (e *Environ) readOperatorDef(opDefFilePath string, generics map[string]*core.PortDef, pathsRead []string) (core.OperatorDef, error) {
+// ReadOperatorDef reads the operator definition for the given file.
+func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef, error) {
 	var def core.OperatorDef
-
-	// Make sure generics is free of further generics
-	for _, g := range generics {
-		if err := g.GenericsSpecified(); err != nil {
-			return def, err
-		}
-	}
 
 	b, err := ioutil.ReadFile(opDefFilePath)
 	if err != nil {
@@ -317,32 +328,17 @@ func (e *Environ) readOperatorDef(opDefFilePath string, generics map[string]*cor
 		}
 	}
 
-	// Replace all generics in the definition
-	if err := def.SpecifyGenericPorts(generics); err != nil {
-		return def, err
-	}
-
-	// Make sure we replaced all generics in the definition
-	if err := def.GenericsSpecified(); err != nil {
-		return def, err
-	}
-
 	currDir := path.Dir(opDefFilePath)
 
 	// Descend to child operators
-	for _, childOpInsDef := range def.Operators {
+	for _, childOpInsDef := range def.InstanceDefs {
 		childDef, err := e.getOperatorDef(childOpInsDef, currDir, pathsRead)
-
 		if err != nil {
 			return def, err
 		}
 
-		if err := childDef.GenericsSpecified(); err != nil {
-			return def, err
-		}
-
 		// Save the definition in the instance for the next build step: creating operators and connecting
-		childOpInsDef.SetOperatorDef(childDef)
+		childOpInsDef.OperatorDef = childDef
 	}
 
 	return def, nil
@@ -352,7 +348,7 @@ func (e *Environ) readOperatorDef(opDefFilePath string, generics map[string]*cor
 func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
 		// Case 1: We found it in the builtin package, return
-		return builtin.GetOperatorDef(insDef)
+		return builtin.GetOperatorDef(insDef.Operator)
 	}
 
 	// Case 2: We have to read it from the file system
@@ -370,7 +366,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 	// Iterate through the paths and take the first operator we find
 	if opDefFilePath, err = e.getOperatorDefFilePath(relFilePath, enforcedPath); err == nil {
-		if def, err = e.readOperatorDef(opDefFilePath, insDef.Generics, pathsRead); err == nil {
+		if def, err = e.ReadOperatorDef(opDefFilePath, pathsRead); err == nil {
 			return def, nil
 		}
 	}
@@ -381,58 +377,30 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 
 // MAKE OPERATORS, PORTS AND CONNECTIONS
 
-// buildAndConnectOperator creates a new non-builtin operator and attaches it to the given parent operator.
-// It recursively creates child operators which might as well be builtin operators. It also connects the operators
-// according to the given operator definition.
-func buildAndConnectOperator(insName string, props map[string]interface{}, def core.OperatorDef, par *core.Operator) (*core.Operator, error) {
-	if !def.Valid() {
-		err := def.Validate()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Check if all properties are defined
-	for _, prop := range def.Properties {
-		if _, ok := props[prop]; !ok {
-			return nil, fmt.Errorf("property \"%s\" has not been specified", prop)
-		}
-	}
-
+func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
-	o, err := core.NewOperator(insName, nil, nil, def.Services, def.Delegates)
+	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)
 	if err != nil {
 		return nil, err
 	}
 
-	// Attach it to the parent
-	o.SetParent(par)
-
 	// Recursively create all child operators from top to bottom
-	for _, childOpInsDef := range def.Operators {
-		// Propagate property values to child operators
-		for prop, propVal := range childOpInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
-				continue
-			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childOpInsDef.Properties[prop] = val
-			} else {
-				return nil, fmt.Errorf("unknown property \"%s\"", prop)
-			}
+	for _, childOpInsDef := range def.InstanceDefs {
+		if builtinOp, err := builtin.MakeOperator(*childOpInsDef); err == nil {
+			// Builtin operator has been found
+			builtinOp.SetParent(o)
+			continue
+		} else if builtin.IsRegistered(childOpInsDef.Operator) {
+			// Builtin operator with that name exists, but still could not create it, so an error must have occurred
+			return nil, err
 		}
 
-		_, err := getOperator(*childOpInsDef, o)
-
+		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.OperatorDef, ordered)
 		if err != nil {
 			return nil, err
 		}
+
+		oc.SetParent(o)
 	}
 
 	// Parse all connections before starting to connect
@@ -452,58 +420,58 @@ func buildAndConnectOperator(insName string, props map[string]interface{}, def c
 		}
 	}
 
-	if err := connectAllDestinations(o, parsedConns); err != nil {
+	if err := connectDestinations(o, parsedConns, ordered); err != nil {
 		return nil, err
 	}
 
 	return o, nil
 }
 
-func connectAllDestinations(o *core.Operator, conns map[*core.Port][]*core.Port) error {
-	if err := connectDestinations(o, conns, false); err != nil {
-		return err
-	}
-	return connectDestinations(o, conns, true)
-}
-
 // connectDestinations connects operators following from the in port to the out port
-func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, followDelegates bool) error {
+func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, ordered bool) error {
 	var ops []*core.Operator
 	for pSrc, pDsts := range conns {
-		if pSrc.Operator() == o && (followDelegates || pSrc.Delegate() == nil) {
-			for _, pDst := range pDsts {
-				if err := pSrc.Connect(pDst); err != nil {
-					return err
-				}
-				ops = append(ops, pDst.Operator())
-			}
-			// Set the destinations nil so that we do not end in an infinite recursion
-			conns[pSrc] = nil
+		if pSrc.Operator() != o {
+			continue
 		}
+		// Start with operator o
+		for _, pDst := range pDsts {
+			if err := pSrc.Connect(pDst); err != nil {
+				return err
+			}
+			ops = append(ops, pDst.Operator())
+		}
+		// Set the destinations nil so that we do not end in an infinite recursion
+		conns[pSrc] = nil
 	}
-	for _, op := range ops {
-		if err := connectAllDestinations(op, conns); err != nil {
+
+	var contdOps []*core.Operator
+	if ordered {
+		// Filter for ops that have all in ports connected
+		for _, op := range ops {
+			connected := true
+			for _, pDsts := range conns {
+				for _, pDst := range pDsts {
+					if op == pDst.Operator() && pDst.Delegate() == nil {
+						connected = false
+						goto end
+					}
+				}
+			}
+		end:
+			if connected {
+				contdOps = append(contdOps, op)
+			}
+		}
+	} else {
+		contdOps = ops
+	}
+
+	// Continue with ops that are completely connected
+	for _, op := range contdOps {
+		if err := connectDestinations(op, conns, ordered); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-// getOperator creates and returns an operator according to the instance definition. If there exists a suitable
-// builtin operator it will be returned. Otherwise, a new operator will be created.
-func getOperator(insDef core.InstanceDef, par *core.Operator) (*core.Operator, error) {
-	if builtinOp, err := builtin.MakeOperator(insDef); err == nil {
-		// Builtin operator has been found
-		builtinOp.SetParent(par)
-		return builtinOp, nil
-	} else if builtin.IsRegistered(insDef.Operator) {
-		// Builtin operator with that name exists, but still could not create it, so an error must have occurred
-		return nil, err
-	}
-	// Instance definition must have an appropriate operator definition
-	if !insDef.OperatorDef().Valid() {
-		return nil, errors.New("instance has no operator definition")
-	}
-	// No builtin operator, so create new one according to the operator definition saved in the instance definition
-	return buildAndConnectOperator(insDef.Name, insDef.Properties, insDef.OperatorDef(), par)
 }

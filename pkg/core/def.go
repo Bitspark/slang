@@ -6,51 +6,55 @@ import (
 	"fmt"
 	"github.com/Bitspark/slang/pkg/utils"
 	"strings"
+	"regexp"
 )
 
-type OperatorsList []*InstanceDef
+type InstanceDefList []*InstanceDef
+type TypeDefMap map[string]*TypeDef
 type Properties utils.MapStr
+type Generics map[string]*TypeDef
 
 type InstanceDef struct {
-	Operator   string              `json:"operator" yaml:"operator"`
-	Name       string              `json:"name" yaml:"name"`
-	Properties Properties          `json:"properties" yaml:"properties"`
-	Generics   map[string]*PortDef `json:"generics" yaml:"generics"`
+	Name       string     `json:"-" yaml:"-"`
+	Operator   string     `json:"operator" yaml:"operator"`
+	Properties Properties `json:"properties" yaml:"properties,omitempty"`
+	Generics   Generics   `json:"generics" yaml:"generics,omitempty"`
 
 	valid       bool
-	operatorDef OperatorDef
+	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
 }
 
 type OperatorDef struct {
-	Services    map[string]*ServiceDef  `json:"services" yaml:"services"`
-	Delegates   map[string]*DelegateDef `json:"delegates" yaml:"delegates"`
-	Operators   OperatorsList           `json:"operators" yaml:"operators"`
-	Connections map[string][]string     `json:"connections" yaml:"connections"`
-	Properties  []string                `json:"properties" yaml:"properties"`
+	ServiceDefs  map[string]*ServiceDef  `json:"services" yaml:"services,omitempty"`
+	DelegateDefs map[string]*DelegateDef `json:"delegates" yaml:"delegates,omitempty"`
+	InstanceDefs InstanceDefList         `json:"operators" yaml:"operators,omitempty"`
+	PropertyDefs TypeDefMap              `json:"properties" yaml:"properties,omitempty"`
+	Connections  map[string][]string     `json:"connections" yaml:"connections,omitempty"`
+	Elementary   string                  `json:"-" yaml:"-"`
 
 	valid bool
 }
 
 type DelegateDef struct {
-	In  PortDef `json:"in" yaml:"in"`
-	Out PortDef `json:"out" yaml:"out"`
+	In  TypeDef `json:"in" yaml:"in"`
+	Out TypeDef `json:"out" yaml:"out"`
 
 	valid bool
 }
 
 type ServiceDef struct {
-	In  PortDef `json:"in" yaml:"in"`
-	Out PortDef `json:"out" yaml:"out"`
+	In  TypeDef `json:"in" yaml:"in"`
+	Out TypeDef `json:"out" yaml:"out"`
 
 	valid bool
 }
 
-type PortDef struct {
+type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
 	Type    string              `json:"type" yaml:"type"`
-	Stream  *PortDef            `json:"stream" yaml:"stream"`
-	Map     map[string]*PortDef `json:"map" yaml:"map"`
-	Generic string              `json:"generic" yaml:"generic"`
+	Stream  *TypeDef            `json:"stream" yaml:"stream,omitempty"`
+	Map     map[string]*TypeDef `json:"map" yaml:"map,omitempty"`
+	Generic string              `json:"generic" yaml:"generic,omitempty"`
 
 	valid bool
 }
@@ -82,15 +86,6 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
-func (d InstanceDef) OperatorDef() OperatorDef {
-	return d.operatorDef
-}
-
-func (d *InstanceDef) SetOperatorDef(operatorDef OperatorDef) error {
-	d.operatorDef = operatorDef
-	return nil
-}
-
 // OPERATOR DEFINITION
 
 func (d OperatorDef) Valid() bool {
@@ -98,20 +93,20 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	for _, srv := range d.Services {
+	for _, srv := range d.ServiceDefs {
 		if err := srv.Validate(); err != nil {
 			return err
 		}
 	}
 
-	for _, del := range d.Delegates {
+	for _, del := range d.DelegateDefs {
 		if err := del.Validate(); err != nil {
 			return err
 		}
 	}
 
 	alreadyUsedInsNames := make(map[string]bool)
-	for _, insDef := range d.Operators {
+	for _, insDef := range d.InstanceDefs {
 		if err := insDef.Validate(); err != nil {
 			return err
 		}
@@ -126,38 +121,38 @@ func (d *OperatorDef) Validate() error {
 	return nil
 }
 
-// SpecifyGenericPorts replaces generic types in the operator definition with the types given in the generics map.
-// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// SpecifyGenerics replaces generic types in the operator definition with the types given in the generics map.
+// The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy.
-func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	srvs := make(map[string]*ServiceDef)
-	for srvName := range d.Services {
-		srv := d.Services[srvName].Copy()
-		if err := srv.In.SpecifyGenericPorts(generics); err != nil {
+	for srvName := range d.ServiceDefs {
+		srv := d.ServiceDefs[srvName].Copy()
+		if err := srv.In.SpecifyGenerics(generics); err != nil {
 			return err
 		}
-		if err := srv.Out.SpecifyGenericPorts(generics); err != nil {
+		if err := srv.Out.SpecifyGenerics(generics); err != nil {
 			return err
 		}
 		srvs[srvName] = &srv
 	}
-	d.Services = srvs
+	d.ServiceDefs = srvs
 
 	dels := make(map[string]*DelegateDef)
-	for delName := range d.Delegates {
-		del := d.Delegates[delName].Copy()
-		if err := del.In.SpecifyGenericPorts(generics); err != nil {
+	for delName := range d.DelegateDefs {
+		del := d.DelegateDefs[delName].Copy()
+		if err := del.In.SpecifyGenerics(generics); err != nil {
 			return err
 		}
-		if err := del.Out.SpecifyGenericPorts(generics); err != nil {
+		if err := del.Out.SpecifyGenerics(generics); err != nil {
 			return err
 		}
 		dels[delName] = &del
 	}
-	d.Delegates = dels
-	for _, op := range d.Operators {
+	d.DelegateDefs = dels
+	for _, op := range d.InstanceDefs {
 		for _, gp := range op.Generics {
-			if err := gp.SpecifyGenericPorts(generics); err != nil {
+			if err := gp.SpecifyGenerics(generics); err != nil {
 				return err
 			}
 		}
@@ -166,7 +161,7 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 }
 
 func (d OperatorDef) GenericsSpecified() error {
-	for _, srv := range d.Services {
+	for _, srv := range d.ServiceDefs {
 		if err := srv.In.GenericsSpecified(); err != nil {
 			return err
 		}
@@ -174,7 +169,7 @@ func (d OperatorDef) GenericsSpecified() error {
 			return err
 		}
 	}
-	for _, del := range d.Delegates {
+	for _, del := range d.DelegateDefs {
 		if err := del.In.GenericsSpecified(); err != nil {
 			return err
 		}
@@ -182,13 +177,133 @@ func (d OperatorDef) GenericsSpecified() error {
 			return err
 		}
 	}
-	for _, op := range d.Operators {
+	for _, op := range d.InstanceDefs {
 		for _, gp := range op.Generics {
 			if err := gp.GenericsSpecified(); err != nil {
 				return err
 			}
 		}
 	}
+	return nil
+}
+
+func (d OperatorDef) Copy() OperatorDef {
+	cpy := d
+	cpy.InstanceDefs = nil
+	cpy.Connections = nil
+
+	cpy.ServiceDefs = make(map[string]*ServiceDef)
+	for k, v := range d.ServiceDefs {
+		c := v.Copy()
+		cpy.ServiceDefs[k] = &c
+	}
+
+	cpy.DelegateDefs = make(map[string]*DelegateDef)
+	for k, v := range d.DelegateDefs {
+		c := v.Copy()
+		cpy.DelegateDefs[k] = &c
+	}
+
+	cpy.PropertyDefs = make(map[string]*TypeDef)
+	for k, v := range d.PropertyDefs {
+		c := v.Copy()
+		cpy.PropertyDefs[k] = &c
+	}
+
+	return cpy
+}
+
+func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
+	if !def.Valid() {
+		err := def.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, srv := range def.ServiceDefs {
+		srv.In.SpecifyGenerics(gens)
+		srv.Out.SpecifyGenerics(gens)
+	}
+
+	for _, dlg := range def.DelegateDefs {
+		dlg.In.SpecifyGenerics(gens)
+		dlg.Out.SpecifyGenerics(gens)
+	}
+
+	def.PropertyDefs.SpecifyGenerics(gens)
+
+	props.Clean()
+
+	for prop, propDef := range def.PropertyDefs {
+		propVal, ok := props[prop]
+		if !ok {
+			return errors.New("Missing property " + prop)
+		}
+		if err := propDef.VerifyData(propVal); err != nil {
+			return err
+		}
+	}
+
+	newSrvs := make(map[string]*ServiceDef)
+	for name, srv := range def.ServiceDefs {
+		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
+		for _, p := range parsed {
+			srvCpy := &ServiceDef{}
+			srvCpy.In = srv.In.Copy()
+			srvCpy.In.ApplyProperties(props, def.PropertyDefs)
+			srvCpy.Out = srv.Out.Copy()
+			srvCpy.Out.ApplyProperties(props, def.PropertyDefs)
+			newSrvs[p] = srvCpy
+		}
+	}
+	def.ServiceDefs = newSrvs
+
+	newDels := make(map[string]*DelegateDef)
+	for name, dlg := range def.DelegateDefs {
+		parsed, _ := ExpandExpression(name, props, def.PropertyDefs)
+		for _, p := range parsed {
+			dlgCpy := &DelegateDef{}
+			dlgCpy.In = dlg.In.Copy()
+			dlgCpy.In.ApplyProperties(props, def.PropertyDefs)
+			dlgCpy.Out = dlg.Out.Copy()
+			dlgCpy.Out.ApplyProperties(props, def.PropertyDefs)
+			newDels[p] = dlgCpy
+		}
+	}
+	def.DelegateDefs = newDels
+
+	for _, childOpInsDef := range def.InstanceDefs {
+		// Propagate property values to child operators
+		for prop, propVal := range childOpInsDef.Properties {
+			propKey, ok := propVal.(string)
+			if !ok {
+				continue
+			}
+			// Parameterized properties must start with a '$'
+			if !strings.HasPrefix(propKey, "$") {
+				continue
+			}
+			propKey = propKey[1:]
+			if val, ok := props[propKey]; ok {
+				childOpInsDef.Properties[prop] = val
+			} else {
+				return fmt.Errorf("unknown property \"%s\"", prop)
+			}
+		}
+
+		for _, gen := range childOpInsDef.Generics {
+			gen.SpecifyGenerics(gens)
+		}
+
+		err := childOpInsDef.OperatorDef.SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties)
+		if err != nil {
+			return err
+		}
+	}
+
+	def.PropertyDefs = nil
+
 	return nil
 }
 
@@ -248,9 +363,9 @@ func (d DelegateDef) Copy() DelegateDef {
 	return cpy
 }
 
-// PORT DEFINITION
+// TYPE DEFINITION
 
-func (d PortDef) Equals(p PortDef) bool {
+func (d TypeDef) Equals(p TypeDef) bool {
 	if d.Type != p.Type {
 		return false
 	}
@@ -278,11 +393,11 @@ func (d PortDef) Equals(p PortDef) bool {
 	return true
 }
 
-func (d *PortDef) Valid() bool {
+func (d *TypeDef) Valid() bool {
 	return d.valid
 }
 
-func (d *PortDef) Validate() error {
+func (d *TypeDef) Validate() error {
 	if d.Type == "" {
 		return errors.New("type must not be empty")
 	}
@@ -327,15 +442,15 @@ func (d *PortDef) Validate() error {
 	return nil
 }
 
-func (d PortDef) Copy() PortDef {
-	cpy := PortDef{Type: d.Type, Generic: d.Generic}
+func (d TypeDef) Copy() TypeDef {
+	cpy := TypeDef{Type: d.Type, Generic: d.Generic}
 
 	if d.Stream != nil {
 		strCpy := d.Stream.Copy()
 		cpy.Stream = &strCpy
 	}
 	if d.Map != nil {
-		cpy.Map = make(map[string]*PortDef)
+		cpy.Map = make(map[string]*TypeDef)
 		for k, e := range d.Map {
 			subCpy := e.Copy()
 			cpy.Map[k] = &subCpy
@@ -345,10 +460,10 @@ func (d PortDef) Copy() PortDef {
 	return cpy
 }
 
-// SpecifyGenericPorts replaces generic types in the port definition with the types given in the generics map.
-// The values of the map are the according identifiers. It does not touch referenced values such as *PortDef but
+// SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
+// The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy, which is very important to prevent unintended side effects.
-func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
+func (d *TypeDef) SpecifyGenerics(generics map[string]*TypeDef) error {
 	for identifier, pd := range generics {
 		if d.Generic == identifier {
 			*d = pd.Copy()
@@ -358,12 +473,12 @@ func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 		if d.Type == "stream" {
 			strCpy := d.Stream.Copy()
 			d.Stream = &strCpy
-			return strCpy.SpecifyGenericPorts(generics)
+			return strCpy.SpecifyGenerics(generics)
 		} else if d.Type == "map" {
-			mapCpy := make(map[string]*PortDef)
+			mapCpy := make(map[string]*TypeDef)
 			for k, e := range d.Map {
 				eCpy := e.Copy()
-				if err := eCpy.SpecifyGenericPorts(generics); err != nil {
+				if err := eCpy.SpecifyGenerics(generics); err != nil {
 					return err
 				}
 				mapCpy[k] = &eCpy
@@ -374,7 +489,7 @@ func (d *PortDef) SpecifyGenericPorts(generics map[string]*PortDef) error {
 	return nil
 }
 
-func (d PortDef) GenericsSpecified() error {
+func (d TypeDef) GenericsSpecified() error {
 	if d.Type == "generic" || d.Generic != "" {
 		return errors.New("generic not replaced: " + d.Generic)
 	}
@@ -392,9 +507,133 @@ func (d PortDef) GenericsSpecified() error {
 	return nil
 }
 
+func (d TypeDef) VerifyData(data interface{}) error {
+	switch v := data.(type) {
+	case nil:
+		if d.Type == "stream" || d.Type == "primitive" || d.Type == "trigger" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" {
+			return nil
+		}
+	case string:
+		if d.Type == "string" || d.Type == "primitive" || d.Type == "trigger" {
+			return nil
+		}
+	case int:
+		if d.Type == "number" || d.Type == "primitive" || d.Type == "trigger" {
+			return nil
+		}
+	case float64:
+		if d.Type == "number" || d.Type == "primitive" || d.Type == "trigger" {
+			return nil
+		}
+	case bool:
+		if d.Type == "boolean" || d.Type == "primitive" || d.Type == "trigger" {
+			return nil
+		}
+	case map[string]interface{}:
+		if d.Type == "trigger" {
+			return nil
+		}
+		if d.Type == "map" {
+			for k, sub := range d.Map {
+				e, ok := v[k]
+				if !ok {
+					return errors.New("missing entry " + k)
+				}
+				if err := sub.VerifyData(e); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case []interface{}:
+		if d.Type == "stream" {
+			if d.Type == "trigger" {
+				return nil
+			}
+			for _, v := range v {
+				if err := d.Stream.VerifyData(v); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf("exptected %s, got %v", d.Type, data)
+}
+
+// TYPE DEF MAP
+
+func (t TypeDefMap) VerifyData(data map[string]interface{}) error {
+	for k, v := range t {
+		if _, ok := data[k]; !ok {
+			return errors.New("missing entry " + k)
+		}
+		if err := v.VerifyData(data[k]); err != nil {
+			return fmt.Errorf("%s: %s", k, err.Error())
+		}
+	}
+	for k := range data {
+		if _, ok := t[k]; !ok {
+			return errors.New("unexpected " + k)
+		}
+	}
+	return nil
+}
+
+func (t TypeDefMap) SpecifyGenerics(generics map[string]*TypeDef) error {
+	for _, v := range t {
+		if err := v.SpecifyGenerics(generics); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t TypeDefMap) GenericsSpecified() error {
+	for k, v := range t {
+		if err := v.GenericsSpecified(); err != nil {
+			return fmt.Errorf("%s: %s", k, err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef) error {
+	if d.Type == "primitive" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "trigger" {
+		return nil
+	}
+	var parsed []string
+	if d.Type == "generic" {
+		parsed, _ = ExpandExpression(d.Generic, props, propDefs)
+		if len(parsed) != 1 {
+			return errors.New("generic must be 1")
+		}
+		d.Generic = parsed[0]
+	}
+	if d.Type == "stream" {
+		return d.Stream.ApplyProperties(props, propDefs)
+	}
+	if d.Type == "map" {
+		newMap := make(map[string]*TypeDef)
+		for k, v := range d.Map {
+			parsed, _ = ExpandExpression(k, props, propDefs)
+			for _, k2 := range parsed {
+				vCpy := v.Copy()
+				vCpy.ApplyProperties(props, propDefs)
+				newMap[k2] = &vCpy
+			}
+		}
+		d.Map = newMap
+		return nil
+	}
+	return errors.New("unknown type " + d.Type)
+}
+
 // OPERATOR LIST MARSHALLING
 
-func (ol *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
+func (ol *InstanceDefList) UnmarshalYAML(unmarshal func(v interface{}) error) error {
 	var im map[string]*InstanceDef
 	if err := unmarshal(&im); err != nil {
 		return err
@@ -412,7 +651,15 @@ func (ol *OperatorsList) UnmarshalYAML(unmarshal func(v interface{}) error) erro
 	return nil
 }
 
-func (ol *OperatorsList) UnmarshalJSON(data []byte) error {
+func (ol InstanceDefList) MarshalYAML() (interface{}, error) {
+	im := make(map[string]*InstanceDef)
+	for _, ins := range ol {
+		im[ins.Name] = ins
+	}
+	return im, nil
+}
+
+func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {
 	var im map[string]*InstanceDef
 	if err := json.Unmarshal(data, &im); err != nil {
 		return err
@@ -428,4 +675,58 @@ func (ol *OperatorsList) UnmarshalJSON(data []byte) error {
 
 	*ol = instances
 	return nil
+}
+
+func (p Properties) Clean() {
+	for k, v := range p {
+		p[k] = utils.CleanValue(v)
+	}
+}
+
+// PROPERTY PARSING
+
+func expandExpressionPart(exprPart string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+	var vals []string
+	prop, ok := props[exprPart]
+	if !ok {
+		return nil, errors.New("missing property " + exprPart)
+	}
+	propDef := propDefs[exprPart]
+	if propDef.Type == "stream" {
+		els := prop.([]interface{})
+		for _, el := range els {
+			vals = append(vals, fmt.Sprintf("%v", el))
+		}
+	} else {
+		vals = []string{fmt.Sprintf("%v", prop)}
+	}
+	return vals, nil
+}
+
+func ExpandExpression(expr string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+	re := regexp.MustCompile("{(.*?)}")
+	exprs := []string{expr}
+	for _, expr := range exprs {
+		parts := re.FindAllStringSubmatch(expr, -1)
+		if len(parts) == 0 {
+			break
+		}
+		for _, match := range parts {
+			// This could be extended with more complex logic in the future
+			vals, err := expandExpressionPart(match[1], props, propDefs)
+			if err != nil {
+				return nil, err
+			}
+
+			// Actual replacement
+			var newExprs []string
+			for _, val := range vals {
+				for _, e := range exprs {
+					newExprs = append(newExprs, strings.Replace(e, match[0], fmt.Sprintf("%s", val), 1))
+				}
+			}
+			exprs = newExprs
+		}
+	}
+	return exprs, nil
 }

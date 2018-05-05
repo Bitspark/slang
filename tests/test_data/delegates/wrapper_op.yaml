@@ -6,8 +6,10 @@ services:
       type: boolean
 
 properties:
-  - val
-  - expr
+  val:
+    type: number
+  expr:
+    type: string
 
 operators:
   del2:
@@ -19,16 +21,9 @@ operators:
       val: $val
   cmp:
     operator: slang.eval
-    generics:
-      paramsMap:
-        type: map
-        map:
-          a:
-            type: number
-          b:
-            type: number
     properties:
       expression: $expr
+      variables: ["a", "b"]
 
 connections:
   (:

@@ -6,35 +6,35 @@ import (
 
 var reduceOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type:    "generic",
 					Generic: "itemType",
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 			"selection": {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"a": {
 								Type:    "generic",
 								Generic: "itemType",
@@ -48,14 +48,20 @@ var reduceOpCfg = &builtinConfig{
 				},
 			},
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"emptyValue": {
+				Type: "generic",
+				Generic: "itemType",
+			},
+		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		sIn := dels["selection"].In()
-		sOut := dels["selection"].Out()
-		nullValue := store.(valueStore).value
-		for true {
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		sIn := op.Delegate("selection").In()
+		sOut := op.Delegate("selection").Out()
+		nullValue := op.Property("emptyValue")
+		for {
 			i := in.Pull()
 
 			if core.IsMarker(i) {
@@ -102,7 +108,7 @@ var reduceOpCfg = &builtinConfig{
 
 			// POOL
 
-			for true {
+			for {
 				p := sIn.Pull()
 
 				items, ok := p.([]interface{})
@@ -139,13 +145,5 @@ var reduceOpCfg = &builtinConfig{
 				}
 			}
 		}
-	},
-	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
-		if v, ok := props["emptyValue"]; ok {
-			o.SetStore(valueStore{v})
-		} else {
-			o.SetStore(valueStore{nil})
-		}
-		return nil
 	},
 }

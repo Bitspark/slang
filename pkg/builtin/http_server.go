@@ -67,31 +67,31 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 var httpServerOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "number",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "string",
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 			"handler": {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"status": {
 								Type: "number",
 							},
 							"headers": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "map",
-									Map: map[string]*core.PortDef{
+									Map: map[string]*core.TypeDef{
 										"key": {
 											Type: "string",
 										},
@@ -107,11 +107,11 @@ var httpServerOpCfg = &builtinConfig{
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"method": {
 								Type: "string",
 							},
@@ -123,9 +123,9 @@ var httpServerOpCfg = &builtinConfig{
 							},
 							"headers": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "map",
-									Map: map[string]*core.PortDef{
+									Map: map[string]*core.TypeDef{
 										"key": {
 											Type: "string",
 										},
@@ -140,15 +140,15 @@ var httpServerOpCfg = &builtinConfig{
 							},
 							"params": {
 								Type: "stream",
-								Stream: &core.PortDef{
+								Stream: &core.TypeDef{
 									Type: "map",
-									Map: map[string]*core.PortDef{
+									Map: map[string]*core.TypeDef{
 										"key": {
 											Type: "string",
 										},
 										"values": {
 											Type: "stream",
-											Stream: &core.PortDef{
+											Stream: &core.TypeDef{
 												Type: "string",
 											},
 										},
@@ -161,17 +161,17 @@ var httpServerOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		slangHandler := dels["handler"]
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		slangHandler := op.Delegate("handler")
 		sync := &core.Synchronizer{}
 		sync.Init(
 			slangHandler.In().Stream(),
 			slangHandler.Out().Stream())
 		go sync.Worker()
 
-		for true {
+		for {
 			port, marker := in.PullInt()
 			if marker != nil {
 				out.Push(marker)
@@ -196,8 +196,5 @@ var httpServerOpCfg = &builtinConfig{
 			slangHandler.Out().PushEOS()
 			slangHandler.In().PullEOS()
 		}
-	},
-	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
-		return nil
 	},
 }

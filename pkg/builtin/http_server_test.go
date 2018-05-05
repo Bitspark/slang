@@ -20,7 +20,7 @@ func TestBuiltin_HTTP__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_HTTP__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.net.httpServer",
 		},
@@ -34,7 +34,7 @@ func TestBuiltin_HTTP__InPorts(t *testing.T) {
 func TestBuiltin_HTTP__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.net.httpServer",
 		},
@@ -48,7 +48,7 @@ func TestBuiltin_HTTP__OutPorts(t *testing.T) {
 func TestBuiltin_HTTP__Delegates(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.net.httpServer",
 		},
@@ -87,7 +87,7 @@ func TestBuiltin_HTTP__Delegates(t *testing.T) {
 func TestBuiltin_HTTP__Request(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.net.httpServer",
 		},
@@ -124,7 +124,7 @@ func TestBuiltin_HTTP__Request(t *testing.T) {
 func TestBuiltin_HTTP__Response200(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.net.httpServer",
 		},
@@ -159,7 +159,7 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 func TestBuiltin_HTTP__Response404(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.net.httpServer",
 		},

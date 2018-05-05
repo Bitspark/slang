@@ -6,11 +6,11 @@ import (
 
 var syncForkOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"item": {
 							Type:    "generic",
 							Generic: "itemType",
@@ -20,9 +20,9 @@ var syncForkOpCfg = &builtinConfig{
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"true": {
 							Type:    "generic",
 							Generic: "itemType",
@@ -36,10 +36,10 @@ var syncForkOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		for {
 			item := in.Pull()
 			m, ok := item.(map[string]interface{})
 			if !ok {

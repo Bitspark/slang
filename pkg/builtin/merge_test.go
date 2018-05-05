@@ -17,7 +17,7 @@ func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().In().Map("true").Stream())
@@ -28,7 +28,7 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().Out().Stream())
@@ -37,7 +37,7 @@ func TestBuiltin_Merge__OutPorts(t *testing.T) {
 func TestBuiltin_Merge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.PortDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	o.Main().Out().Bufferize()
@@ -51,14 +51,14 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 	o.Main().In().Map("false").Push(falses)
 	o.Main().In().Map("select").Push(selects)
 
-	a.PortPushes([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
+	a.PortPushesAll([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
 }
 
 func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-	o, err := MakeOperator(core.InstanceDef{
+	o, err := buildOperator(core.InstanceDef{
 		Operator: "slang.merge",
-		Generics: map[string]*core.PortDef{"itemType": {Type: "map", Map: map[string]*core.PortDef{"red": {Type: "string"}, "blue": {Type: "string"}}}},
+		Generics: map[string]*core.TypeDef{"itemType": {Type: "map", Map: map[string]*core.TypeDef{"red": {Type: "string"}, "blue": {Type: "string"}}}},
 	})
 	require.NoError(t, err)
 
@@ -87,7 +87,7 @@ func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	o.Main().In().Map("false").Push(falses)
 	o.Main().In().Map("select").Push(selects)
 
-	a.PortPushes([]interface{}{[]interface{}{
+	a.PortPushesAll([]interface{}{[]interface{}{
 		map[string]interface{}{"red": "Red Bull", "blue": "Blues"},
 		map[string]interface{}{"red": "Roses", "blue": "Violets"},
 		map[string]interface{}{"red": "Apples", "blue": "Blueberries"},

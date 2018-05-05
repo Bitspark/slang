@@ -6,25 +6,25 @@ import (
 
 var loopOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type:    "generic",
 					Generic: "stateType",
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type:    "generic",
 					Generic: "stateType",
 				},
 			},
 		},
-		Delegates: map[string]*core.DelegateDef{
+		DelegateDefs: map[string]*core.DelegateDef{
 			"iteration": {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"continue": {
 								Type: "boolean",
 							},
@@ -35,9 +35,9 @@ var loopOpCfg = &builtinConfig{
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type:    "generic",
 						Generic: "stateType",
 					},
@@ -45,12 +45,12 @@ var loopOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		iIn := dels["iteration"].In()
-		iOut := dels["iteration"].Out()
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+	oFunc: func(op *core.Operator) {
+		iIn := op.Delegate("iteration").In()
+		iOut := op.Delegate("iteration").Out()
+		in := op.Main().In()
+		out := op.Main().Out()
+		for {
 			i := in.Pull()
 
 			// Redirect all markers
@@ -74,7 +74,7 @@ var loopOpCfg = &builtinConfig{
 
 			iIn.PullBOS()
 
-			for true {
+			for {
 				iter := iIn.Stream().Pull().(map[string]interface{})
 				newState := iter["state"]
 				cont := iter["continue"].(bool)

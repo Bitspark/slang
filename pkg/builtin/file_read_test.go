@@ -17,7 +17,7 @@ func TestBuiltin_FileRead__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_FileRead__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.files.read",
 		},
@@ -31,7 +31,7 @@ func TestBuiltin_FileRead__InPorts(t *testing.T) {
 func TestBuiltin_FileRead__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.files.read",
 		},
@@ -47,7 +47,7 @@ func TestBuiltin_FileRead__OutPorts(t *testing.T) {
 func TestBuiltin_FileRead__Simple(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.files.read",
 		},
@@ -65,7 +65,7 @@ func TestBuiltin_FileRead__Simple(t *testing.T) {
 func TestBuiltin_FileRead__NotFound(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.files.read",
 		},

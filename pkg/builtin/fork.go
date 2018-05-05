@@ -6,13 +6,13 @@ import (
 
 var forkOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
+				In: core.TypeDef{
 					Type: "stream",
-					Stream: &core.PortDef{
+					Stream: &core.TypeDef{
 						Type: "map",
-						Map: map[string]*core.PortDef{
+						Map: map[string]*core.TypeDef{
 							"item": {
 								Type:    "generic",
 								Generic: "itemType",
@@ -23,19 +23,19 @@ var forkOpCfg = &builtinConfig{
 						},
 					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"true": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
 						"false": {
 							Type: "stream",
-							Stream: &core.PortDef{
+							Stream: &core.TypeDef{
 								Type:    "generic",
 								Generic: "itemType",
 							},
@@ -45,12 +45,11 @@ var forkOpCfg = &builtinConfig{
 			},
 		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+	oFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+		for {
 			i := in.Stream().Pull()
-
 			if !in.OwnBOS(i) {
 				out.Push(i)
 				continue
@@ -59,9 +58,8 @@ var forkOpCfg = &builtinConfig{
 			out.Map("true").PushBOS()
 			out.Map("false").PushBOS()
 
-			for true {
+			for {
 				i := in.Stream().Pull()
-
 				if in.OwnEOS(i) {
 					out.Map("true").PushEOS()
 					out.Map("false").PushEOS()
@@ -70,13 +68,12 @@ var forkOpCfg = &builtinConfig{
 
 				if m, ok := i.(map[string]interface{}); ok {
 					pI := m["item"]
-
 					pSelect := m["select"].(bool)
 
 					if pSelect {
-						out.Map("true").Push(pI)
+						out.Map("true").Stream().Push(pI)
 					} else {
-						out.Map("false").Push(pI)
+						out.Map("false").Stream().Push(pI)
 					}
 				} else {
 					panic("invalid item")

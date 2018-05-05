@@ -17,7 +17,7 @@ func TestBuiltin_Reduce__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Reduce__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce"})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.reduce"})
 	a.Error(err)
 }
 
@@ -25,7 +25,7 @@ func TestBuiltin_Reduce__InPorts(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	a.Equal(core.TYPE_STREAM, o.Main().In().Type())
@@ -36,7 +36,7 @@ func TestBuiltin_Reduce__InPorts(t *testing.T) {
 	a.Equal(itemType, o.Main().In().Stream().Type())
 	a.Equal(itemType, o.Delegate("selection").In().Stream().Type())
 
-	o, err = MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "string"}}})
+	o, err = buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
 	r.NoError(err)
 
 	// Item type
@@ -50,7 +50,7 @@ func TestBuiltin_Reduce__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	a.Equal(core.TYPE_NUMBER, o.Main().Out().Type())
@@ -62,7 +62,7 @@ func TestBuiltin_Reduce__OutPorts(t *testing.T) {
 	a.Equal(itemType, o.Delegate("selection").Out().Stream().Map("a").Type())
 	a.Equal(itemType, o.Delegate("selection").Out().Stream().Map("b").Type())
 
-	o, err = MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "string"}}})
+	o, err = buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
 	r.NoError(err)
 
 	// Item type
@@ -75,7 +75,7 @@ func TestBuiltin_Reduce__PassMarkers(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -89,16 +89,16 @@ func TestBuiltin_Reduce__PassMarkers(t *testing.T) {
 	o.Delegate("selection").In().Stream().Push(bos)
 	o.Delegate("selection").In().Stream().Push(eos)
 
-	a.PortPushes([]interface{}{bos, eos}, o.Main().Out())
+	a.PortPushesAll([]interface{}{bos, eos}, o.Main().Out())
 }
 
 func TestBuiltin_Reduce__SelectionFromItemsEmpty(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{
+	o, err := buildOperator(core.InstanceDef{
 		Operator: "slang.reduce",
-		Generics: map[string]*core.PortDef{"itemType": {Type: "string"}},
+		Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}},
 		Properties: map[string]interface{}{"emptyValue": "empty"},
 	})
 	r.NoError(err)
@@ -118,7 +118,7 @@ func TestBuiltin_Reduce__SelectionFromItemsSingle(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -136,7 +136,7 @@ func TestBuiltin_Reduce__SelectionFromItemsMultiple(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -158,7 +158,7 @@ func TestBuiltin_Reduce__SelectionFromPool(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -183,7 +183,7 @@ func TestBuiltin_Reduce__MixedSelection1(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -204,7 +204,7 @@ func TestBuiltin_Reduce__MixedSelection2(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -245,7 +245,7 @@ func TestBuiltin_Reduce__MixedSelection3(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := MakeOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.PortDef{"itemType": {Type: "number"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -256,5 +256,5 @@ func TestBuiltin_Reduce__MixedSelection3(t *testing.T) {
 	o.Main().In().Push([]interface{}{1.0, 2.0})
 	o.Delegate("selection").In().Push([]interface{}{3.0})
 
-	a.PortPushes([]interface{}{3.0}, o.Main().Out())
+	a.PortPushesAll([]interface{}{3.0}, o.Main().Out())
 }

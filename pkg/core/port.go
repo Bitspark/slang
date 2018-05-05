@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"sync"
 )
 
 const (
@@ -24,14 +25,15 @@ const (
 	DIRECTION_OUT = iota
 )
 
-const CHANNEL_SIZE = 100
+var CHANNEL_SIZE = 2048
+var CHANNEL_DYNAMIC = false
 
 type BOS struct {
-	src *Port
+	src  *Port
 }
 
 type EOS struct {
-	src *Port
+	src  *Port
 }
 
 type Port struct {
@@ -51,11 +53,12 @@ type Port struct {
 	sub  *Port
 	subs map[string]*Port
 
-	buf chan interface{}
+	buf   chan interface{}
+	mutex sync.Mutex
 }
 
 // Makes a new port.
-func NewPort(srv *Service, del *Delegate, def PortDef, dir int) (*Port, error) {
+func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 	if !def.valid {
 		err := def.Validate()
 		if err != nil {
@@ -151,6 +154,11 @@ func (p *Port) Map(name string) *Port {
 	return port
 }
 
+// Returns the length of the map ports
+func (p *Port) MapSize() interface{} {
+	return len(p.subs)
+}
+
 // Returns the substream port of this port. Port must be of type stream.
 func (p *Port) Stream() *Port {
 	return p.sub
@@ -159,15 +167,32 @@ func (p *Port) Stream() *Port {
 // Connects this port with port p.
 func (p *Port) Connect(q *Port) error {
 	if q.src != nil {
-		return fmt.Errorf("%s -> %s: already connected", p.Name(), q.Name())
+		if q.src == p {
+			return nil
+		}
+		return fmt.Errorf("%s -> %s: already connected", p.StringifyComplete(), q.StringifyComplete())
 	}
 
-	if p.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_PRIMITIVE && q.itemType != TYPE_TRIGGER && p.itemType != q.itemType {
+	if q.itemType == TYPE_PRIMITIVE {
+		return p.connect(q, true)
+	}
+
+	if q.itemType == TYPE_TRIGGER {
+		if p.itemType == TYPE_MAP {
+			for _, sub := range p.subs {
+				return sub.Connect(q)
+			}
+			return fmt.Errorf("%s -> %s: trigger connected with empty map", p.Name(), q.Name())
+		}
+		return p.connect(q, true)
+	}
+
+	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.primitive() {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.primitive() || q.Type() == TYPE_TRIGGER {
-		return p.connect(q)
+	if p.primitive() {
+		return p.connect(q, true)
 	}
 
 	if p.itemType == TYPE_MAP {
@@ -244,6 +269,16 @@ func (p *Port) Merge() bool {
 			merged = true
 		}
 		p.src.Disconnect(p)
+	} else if len(p.dests) != 0 {
+		for dest := range p.dests {
+			if dest.itemType != TYPE_TRIGGER {
+				continue
+			}
+
+			p.strSrc.dests[dest] = true
+			dest.strSrc = p.strSrc
+			merged = true
+		}
 	}
 
 	if p.sub != nil {
@@ -266,6 +301,9 @@ func (p *Port) DirectlyConnected() error {
 	if p.primitive() {
 		if p.src == nil {
 			return errors.New(p.Name() + " not connected")
+		}
+		if p.src.direction != DIRECTION_OUT && p.src.operator.name != "" {
+			return errors.New(p.Name() + " only out ports can be connected with in ports")
 		}
 		if p.src.src != nil {
 			return errors.New(p.Name() + " has connected source " + p.src.Name() + ": " + p.src.src.Name())
@@ -294,14 +332,43 @@ func (p *Port) DirectlyConnected() error {
 	return nil
 }
 
+func (p *Port) assertChannelSpace() {
+	c := cap(p.buf)
+	if len(p.buf) > c/2 {
+		newChan := make(chan interface{}, 2*c)
+		p.mutex.Lock()
+		for {
+			select {
+			case i := <-p.buf:
+				newChan <- i
+			default:
+				goto end
+			}
+		}
+	end:
+		p.buf = newChan
+		p.mutex.Unlock()
+	}
+}
+
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
 	if p.buf != nil {
-		p.buf <- item
+		if CHANNEL_DYNAMIC {
+			p.assertChannelSpace()
+
+			p.mutex.Lock()
+			p.buf <- item
+			p.mutex.Unlock()
+		} else {
+			//fmt.Printf("%s <- %#v\n", p.StringifyComplete(), item)
+			p.buf <- item
+		}
 	}
 
 	for dest := range p.dests {
 		if dest.Type() == TYPE_TRIGGER || p.primitive() {
+			//fmt.Printf("%s -> %#v to %s\n", p.StringifyComplete(), item, dest.StringifyComplete())
 			dest.Push(item)
 		}
 	}
@@ -333,7 +400,7 @@ func (p *Port) Push(item interface{}) {
 			return
 		}
 
-		p.PushBOS()
+		p.PushNoTriggerBOS()
 		for _, i := range items {
 			p.sub.Push(i)
 		}
@@ -341,7 +408,18 @@ func (p *Port) Push(item interface{}) {
 	}
 }
 
+func (p *Port) PushNoTriggerBOS() {
+	p.sub.Push(BOS{p.strSrc})
+}
+
 func (p *Port) PushBOS() {
+	// For triggers, we need to push right here
+	for dest := range p.dests {
+		if dest.Type() == TYPE_TRIGGER {
+			dest.Push(nil)
+		}
+	}
+
 	p.sub.Push(BOS{p.strSrc})
 }
 
@@ -356,7 +434,21 @@ func (p *Port) Pull() interface{} {
 	}
 
 	if p.buf != nil {
-		return <-p.buf
+		if CHANNEL_DYNAMIC {
+			for {
+				p.mutex.Lock()
+				select {
+				case i := <-p.buf:
+					p.mutex.Unlock()
+					return i
+				default:
+					p.mutex.Unlock()
+				}
+				time.Sleep(1 * time.Millisecond)
+			}
+		} else {
+			return <-p.buf
+		}
 	}
 
 	if p.primitive() {
@@ -396,7 +488,7 @@ func (p *Port) Pull() interface{} {
 
 		items := []interface{}{}
 
-		for true {
+		for {
 			i := p.sub.Pull()
 
 			if p.OwnEOS(i) {
@@ -453,8 +545,9 @@ func (p *Port) PullBinary() ([]byte, interface{}) {
 }
 
 func (p *Port) PullBOS() bool {
-	if !p.OwnBOS(p.sub.Pull()) {
-		panic("expected own BOS")
+	i := p.sub.Pull()
+	if !p.OwnBOS(i) {
+		panic(p.operator.Name() + ": expected own BOS: " + i.(BOS).src.StringifyComplete() + " != " + p.strSrc.StringifyComplete())
 	}
 	return true
 }
@@ -467,7 +560,7 @@ func (p *Port) PullEOS() bool {
 }
 
 // Similar to Port.Pull but will return nil when there is no item after timeout
-func (p *Port) Poll() (i interface{}) {
+func (p *Port) Poll() interface{} {
 	if p.buf == nil {
 		panic("no buffer")
 	}
@@ -479,7 +572,16 @@ func (p *Port) Poll() (i interface{}) {
 		}
 	}
 
-	return <-p.buf
+	var i interface{}
+	if CHANNEL_DYNAMIC {
+		p.mutex.Lock()
+		i = <-p.buf
+		p.mutex.Unlock()
+	} else {
+		i = <-p.buf
+	}
+
+	return i
 }
 
 func (p *Port) NewBOS() BOS {
@@ -515,6 +617,8 @@ func (p *Port) Name() string {
 	if p == nil {
 		return "<nil>"
 	}
+
+	return p.StringifyComplete()
 
 	var name string
 
@@ -585,12 +689,10 @@ func (p *Port) Bufferize() {
 
 	if p.primitive() {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
-
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {
 			sub.Bufferize()
 		}
-
 	} else if p.itemType == TYPE_STREAM {
 		p.sub.Bufferize()
 	}
@@ -608,38 +710,40 @@ func setParentStreams(p *Port, parent *Port) {
 	}
 }
 
-func (p *Port) wire(q *Port) {
-	p.dests[q] = true
-	q.src = p
+func (p *Port) wire(q *Port, original bool) {
+	if original {
+		p.dests[q] = true
+		q.src = p
+	}
 	q.strSrc = p.strSrc
 	if q.operator != nil && q.operator.connectFunc != nil {
-		q.operator.connectFunc(q, p)
+		q.operator.connectFunc(q.operator, q, p)
 	}
 }
 
-func (p *Port) connect(q *Port) error {
+func (p *Port) connect(q *Port, original bool) error {
 	if p.direction == DIRECTION_IN {
 		if q.direction == DIRECTION_IN {
 			if p.operator != q.operator.Parent() {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.wire(q)
+			p.wire(q, original)
 
 			if q.parStr == nil {
 				q.operator.basePort = p.parStr
 			} else if p.parStr != nil {
-				p.parStr.connect(q.parStr)
+				p.parStr.connect(q.parStr, false)
 			}
 		} else {
 			if p.operator != q.operator {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.wire(q)
+			p.wire(q, original)
 
 			if p.parStr != nil && q.parStr != nil {
-				p.parStr.connect(q.parStr)
+				p.parStr.connect(q.parStr, false)
 			}
 		}
 	} else {
@@ -648,7 +752,7 @@ func (p *Port) connect(q *Port) error {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.wire(q)
+			p.wire(q, original)
 
 			if q.parStr == nil {
 				if p.parStr != nil {
@@ -658,9 +762,9 @@ func (p *Port) connect(q *Port) error {
 				}
 			} else {
 				if p.parStr != nil {
-					p.parStr.connect(q.parStr)
+					p.parStr.connect(q.parStr, false)
 				} else if p.operator.basePort != nil {
-					p.operator.basePort.connect(q.parStr)
+					p.operator.basePort.connect(q.parStr, false)
 				}
 			}
 		} else {
@@ -668,12 +772,12 @@ func (p *Port) connect(q *Port) error {
 				return errors.New("wrong operator nesting")
 			}
 
-			p.wire(q)
+			p.wire(q, original)
 
 			if p.parStr != nil {
-				p.parStr.connect(q.parStr)
+				p.parStr.connect(q.parStr, false)
 			} else if p.operator.basePort != nil {
-				p.operator.basePort.connect(q.parStr)
+				p.operator.basePort.connect(q.parStr, false)
 			}
 		}
 	}
@@ -688,4 +792,109 @@ func (p *Port) primitive() bool {
 		p.itemType == TYPE_STRING ||
 		p.itemType == TYPE_BINARY ||
 		p.itemType == TYPE_BOOLEAN
+}
+
+func (p *Port) Define() TypeDef {
+	var def TypeDef
+
+	switch p.itemType {
+	case TYPE_PRIMITIVE:
+		def.Type = "primitive"
+	case TYPE_TRIGGER:
+		def.Type = "trigger"
+	case TYPE_STRING:
+		def.Type = "string"
+	case TYPE_NUMBER:
+		def.Type = "number"
+	case TYPE_BOOLEAN:
+		def.Type = "boolean"
+	case TYPE_BINARY:
+		def.Type = "binary"
+	case TYPE_GENERIC:
+		def.Type = "generic"
+	case TYPE_STREAM:
+		def.Type = "stream"
+		subDef := p.sub.Define()
+		def.Stream = &subDef
+	case TYPE_MAP:
+		def.Type = "map"
+		def.Map = make(map[string]*TypeDef)
+		for k, sub := range p.subs {
+			subDef := sub.Define()
+			def.Map[k] = &subDef
+		}
+	}
+
+	return def
+}
+
+func (p *Port) stringify() string {
+	if p.parMap != nil {
+		parMapStr := p.parMap.stringify()
+		entryStr := ""
+		for k, ps := range p.parMap.subs {
+			if ps == p {
+				entryStr = k
+				break
+			}
+		}
+		if parMapStr == "" {
+			return entryStr
+		}
+		return parMapStr + "." + entryStr
+	}
+
+	if p.parStr != nil {
+		parStrStr := p.parStr.stringify()
+		if parStrStr == "" {
+			return "~"
+		}
+		return parStrStr + ".~"
+	}
+
+	return ""
+}
+
+func (p *Port) StringifyComplete() string {
+	opStr := ""
+	if p.operator != nil {
+		opStr = p.operator.name
+	}
+	if p.service != nil {
+		if p.service.name != MAIN_SERVICE {
+			opStr = p.service.name + "@" + opStr
+		}
+	} else if p.delegate != nil {
+		opStr = opStr + "." + p.delegate.name
+	}
+
+	portStr := p.stringify()
+
+	if p.direction == DIRECTION_IN {
+		return portStr + "(" + opStr
+	} else if p.direction == DIRECTION_OUT {
+		return opStr + ")" + portStr
+	}
+
+	return ""
+}
+
+func (p *Port) defineConnections(def *OperatorDef) {
+	portStr := p.StringifyComplete()
+
+	if def.Connections[portStr] == nil {
+		def.Connections[portStr] = make([]string, 0)
+		for dst := range p.dests {
+			def.Connections[portStr] = append(def.Connections[portStr], dst.StringifyComplete())
+			dst.operator.defineConnections(def)
+		}
+	}
+
+	if p.sub != nil {
+		p.sub.defineConnections(def)
+	}
+
+	for _, sub := range p.subs {
+		sub.defineConnections(def)
+	}
 }

@@ -17,7 +17,7 @@ import (
 type TestCaseDef struct {
 	Name        string                   `json:"name" yaml:"name"`
 	Description string                   `json:"description" yaml:"description"`
-	Generics    map[string]*core.PortDef `json:"generics" yaml:"generics"`
+	Generics    map[string]*core.TypeDef `json:"generics" yaml:"generics"`
 	Properties  map[string]interface{}   `json:"properties" yaml:"properties"`
 	Data struct {
 		In  []interface{} `json:"in" yaml:"in"`
@@ -65,13 +65,12 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fails := 0
 
 	for i, tc := range test.TestCases {
-		o, err := NewEnviron("./").BuildOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties, false)
+		o, err := NewEnviron("./").BuildAndCompileOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties)
 		if err != nil {
 			return 0, 0, err
 		}
 
-		cmp := o.Compile()
-		fmt.Fprintf(writer, "Test case %3d/%3d: %s (compiled: %d, size: %d)\n", i+1, len(test.TestCases), tc.Name, cmp, len(tc.Data.In))
+		fmt.Fprintf(writer, "Test case %3d/%3d: %s (operators: %d, size: %d)\n", i+1, len(test.TestCases), tc.Name, len(o.Children()), len(tc.Data.In))
 
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err
@@ -89,8 +88,8 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 			actual := o.Main().Out().Pull()
 
 			if !testEqual(expected, actual) {
-				fmt.Fprintf(writer, "  expected: %v (%T)\n", expected, expected)
-				fmt.Fprintf(writer, "  actual:   %v (%T)\n", actual, actual)
+				fmt.Fprintf(writer, "  expected: %#v (%T)\n", expected, expected)
+				fmt.Fprintf(writer, "  actual:   %#v (%T)\n", actual, actual)
 
 				success = false
 

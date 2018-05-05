@@ -6,7 +6,9 @@ services:
       type: number
 
 properties:
-  - val
+  val:
+    type: generic
+    generic: valueType
 
 operators:
   const:

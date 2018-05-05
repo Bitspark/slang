@@ -248,35 +248,29 @@ func TestBuiltin_Eval__IsRegistered(t *testing.T) {
 
 func TestBuiltin_Eval__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval"})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval"})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": ""}})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := MakeOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": "+"}})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__Add(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "slang.eval",
-		Properties: map[string]interface{}{"expression": "a+b"},
-		Generics: map[string]*core.PortDef{
-			"paramsMap": {
-				Type: "map",
-				Map: map[string]*core.PortDef{
-					"a": {Type: "number"},
-					"b": {Type: "number"},
-				},
-			},
+	fo, err := buildOperator(core.InstanceDef{
+		Operator: "slang.eval",
+		Properties: map[string]interface{}{
+			"expression": "a+b",
+			"variables":  []interface{}{"a", "b"},
 		},
 	})
 	a.NoError(err)
@@ -289,21 +283,16 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 	fo.Main().In().Push(map[string]interface{}{"a": -5.0, "b": 2.5})
 	fo.Main().In().Push(map[string]interface{}{"a": 0.0, "b": 333.0})
 
-	a.PortPushes([]interface{}{3.0, -2.5, 333.0}, fo.Main().Out())
+	a.PortPushesAll([]interface{}{3.0, -2.5, 333.0}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__Floor(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
-		Operator:   "slang.eval",
-		Properties: map[string]interface{}{"expression": "floor(a)"},
-		Generics: map[string]*core.PortDef{
-			"paramsMap": {
-				Type: "map",
-				Map: map[string]*core.PortDef{
-					"a": {Type: "number"},
-				},
-			},
+	fo, err := buildOperator(core.InstanceDef{
+		Operator: "slang.eval",
+		Properties: map[string]interface{}{
+			"expression": "floor(a)",
+			"variables":  []interface{}{"a"},
 		},
 	})
 	a.NoError(err)
@@ -316,21 +305,16 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 	fo.Main().In().Push(map[string]interface{}{"a": 1.1})
 	fo.Main().In().Push(map[string]interface{}{"a": 2.9})
 
-	a.PortPushes([]interface{}{1.0, 1.0, 2.0}, fo.Main().Out())
+	a.PortPushesAll([]interface{}{1.0, 1.0, 2.0}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__Ceil(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
-		Properties: map[string]interface{}{"expression": "ceil(a)"},
-		Generics: map[string]*core.PortDef{
-			"paramsMap": {
-				Type: "map",
-				Map: map[string]*core.PortDef{
-					"a": {Type: "number"},
-				},
-			},
+		Properties: map[string]interface{}{
+			"expression": "ceil(a)",
+			"variables": []interface{}{"a"},
 		},
 	})
 	a.NoError(err)
@@ -343,21 +327,16 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 	fo.Main().In().Push(map[string]interface{}{"a": 1.1})
 	fo.Main().In().Push(map[string]interface{}{"a": 2.9})
 
-	a.PortPushes([]interface{}{1.0, 2.0, 3.0}, fo.Main().Out())
+	a.PortPushesAll([]interface{}{1.0, 2.0, 3.0}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__IsNull(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
-		Properties: map[string]interface{}{"expression": "isNull(a)"},
-		Generics: map[string]*core.PortDef{
-			"paramsMap": {
-				Type: "map",
-				Map: map[string]*core.PortDef{
-					"a": {Type: "primitive"},
-				},
-			},
+		Properties: map[string]interface{}{
+			"expression": "isNull(a)",
+			"variables": []interface{}{"a"},
 		},
 	})
 	a.NoError(err)
@@ -370,23 +349,16 @@ func TestBuiltin_Eval__IsNull(t *testing.T) {
 	fo.Main().In().Push(map[string]interface{}{"a": nil})
 	fo.Main().In().Push(map[string]interface{}{"a": "testtest"})
 
-	a.PortPushes([]interface{}{false, true, false}, fo.Main().Out())
+	a.PortPushesAll([]interface{}{false, true, false}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
-		Properties: map[string]interface{}{"expression": "a && (b != c)"},
-		Generics: map[string]*core.PortDef{
-			"paramsMap": {
-				Type: "map",
-				Map: map[string]*core.PortDef{
-					"a": {Type: "boolean"},
-					"b": {Type: "number"},
-					"c": {Type: "number"},
-				},
-			},
+		Properties: map[string]interface{}{
+			"expression": "a && (b != c)",
+			"variables": []interface{}{"a", "b", "c"},
 		},
 	})
 	a.NoError(err)
@@ -401,22 +373,16 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	fo.Main().In().Push(map[string]interface{}{"a": true, "b": 1.0, "c": 0.0})
 	fo.Main().In().Push(map[string]interface{}{"a": true, "b": 8.0, "c": 8.0})
 
-	a.PortPushes([]interface{}{true, false, false, true, false}, fo.Main().Out())
+	a.PortPushesAll([]interface{}{true, false, false, true, false}, fo.Main().Out())
 }
 
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	a := assertions.New(t)
-	fo, err := MakeOperator(core.InstanceDef{
+	fo, err := buildOperator(core.InstanceDef{
 		Operator:   "slang.eval",
-		Properties: map[string]interface{}{"expression": "vec0.x*vec1.x+vec0.y*vec1.y"},
-		Generics: map[string]*core.PortDef{
-			"paramsMap": {
-				Type: "map",
-				Map: map[string]*core.PortDef{
-					"vec0": {Type: "map", Map: map[string]*core.PortDef{"x": {Type: "number"}, "y": {Type: "number"}}},
-					"vec1": {Type: "map", Map: map[string]*core.PortDef{"x": {Type: "number"}, "y": {Type: "number"}}},
-				},
-			},
+		Properties: map[string]interface{}{
+			"expression": "vec0.x*vec1.x+vec0.y*vec1.y",
+			"variables": []interface{}{"vec0", "vec1"},
 		},
 	})
 	a.NoError(err)
@@ -456,5 +422,5 @@ func TestBuiltin_Eval_VectorArith(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{26., 0., 2.}, fo.Main().Out())
+	a.PortPushesAll([]interface{}{26., 0., 2.}, fo.Main().Out())
 }

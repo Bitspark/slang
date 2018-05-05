@@ -11,16 +11,9 @@ services:
 operators:
   adder:
     operator: slang.eval
-    generics:
-      paramsMap:
-        type: map
-        map:
-          a:
-            type: number
-          b:
-            type: number
     properties:
       expression: "a+b"
+      variables: ["a", "b"]
   reducer:
     operator: slang.reduce
     generics:

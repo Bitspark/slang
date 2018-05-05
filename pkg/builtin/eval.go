@@ -104,30 +104,40 @@ func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 	return nil, err
 }
 
-type functionStore struct {
-	expr     string
-	evalExpr *EvaluableExpression
-}
-
 var evalOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
-		Services: map[string]*core.ServiceDef{
+		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In: core.PortDef{
-					Type:    "generic",
-					Generic: "paramsMap",
+				In: core.TypeDef{
+					Type:    "map",
+					Map: map[string]*core.TypeDef{
+						"{variables}": {
+							Type: "primitive",
+						},
+					},
 				},
-				Out: core.PortDef{
+				Out: core.TypeDef{
 					Type: "primitive",
 				},
 			},
 		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"expression": {
+				Type: "string",
+			},
+			"variables": {
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "string",
+				},
+			},
+		},
 	},
-	oFunc: func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-		expr := store.(functionStore).evalExpr
-		in := srvs[core.MAIN_SERVICE].In()
-		out := srvs[core.MAIN_SERVICE].Out()
-		for true {
+	oFunc: func(op *core.Operator) {
+		expr, _ := newEvaluableExpression(op.Property("expression").(string))
+		in := op.Main().In()
+		out := op.Main().Out()
+		for {
 			i := in.Pull()
 
 			if core.IsMarker(i) {
@@ -142,34 +152,5 @@ var evalOpCfg = &builtinConfig{
 				panic("invalid item")
 			}
 		}
-	},
-	oPropFunc: func(o *core.Operator, props map[string]interface{}) error {
-		exprStr, ok := props["expression"]
-
-		if !ok {
-			return errors.New("no expression given")
-		}
-
-		expr, ok := exprStr.(string)
-
-		if expr == "" {
-			return errors.New("no expression given")
-		}
-
-		if !ok {
-			return errors.New("expression must be string")
-		}
-
-		evalExpr, err := newEvaluableExpression(expr)
-
-		if err != nil {
-			return err
-		}
-
-		if o != nil {
-			o.SetStore(functionStore{expr, evalExpr})
-		}
-
-		return nil
 	},
 }

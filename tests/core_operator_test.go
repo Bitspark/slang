@@ -8,11 +8,11 @@ import (
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
-	defPort := api.ParsePortDef(`{"type":"number"}`)
-	oParent, _ := core.NewOperator("parent", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}, nil)
-	oChild1, _ := core.NewOperator("child1", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}, nil)
+	defPort := api.ParseTypeDef(`{"type":"number"}`)
+	oParent, _ := core.NewOperator("parent", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
+	oChild1, _ := core.NewOperator("child1", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1.SetParent(oParent)
-	oChild2, _ := core.NewOperator("child2", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}, nil)
+	oChild2, _ := core.NewOperator("child2", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild2.SetParent(oParent)
 
 	if oParent != oChild1.Parent() || oParent != oChild2.Parent() {
@@ -25,10 +25,10 @@ func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
 
 func TestOperator_Compile__Nested1Child(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	op2, _ := core.NewOperator("a", nil, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op1, _ := core.NewOperator("", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
+	op2, _ := core.NewOperator("a", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil,  map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op3, _ := core.NewOperator("b", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op3.SetParent(op2)
 
 	// op1
@@ -40,11 +40,13 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 	op3.Main().Out().Connect(op2.Main().Out())
 
 	// Compile
-	a.Equal(1, op1.Compile())
+	c, d := op1.Compile()
+	a.Equal(1, c)
+	a.Equal(1, d)
 
 	a.True(len(op1.Children()) == 1)
 
-	if _, ok := op1.Children()["a.b"]; !ok {
+	if _, ok := op1.Children()["a#b"]; !ok {
 		t.Error("child not there")
 	}
 
@@ -59,16 +61,16 @@ func TestOperator_Compile__Nested1Child(t *testing.T) {
 
 func TestOperator_Compile__NestedChildren(t *testing.T) {
 	a := assertions.New(t)
-	op1, _ := core.NewOperator("", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
-	op2, _ := core.NewOperator("a", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op1, _ := core.NewOperator("", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
+	op2, _ := core.NewOperator("a", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op2.SetParent(op1)
-	op3, _ := core.NewOperator("b", nil, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op3, _ := core.NewOperator("b", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op3.SetParent(op1)
-	op4, _ := core.NewOperator("c", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op4, _ := core.NewOperator("c", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op4.SetParent(op2)
-	op5, _ := core.NewOperator("d", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op5, _ := core.NewOperator("d", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op5.SetParent(op2)
-	op6, _ := core.NewOperator("e", func(_ map[string]*core.Service, _ map[string]*core.Delegate, _ interface{}) {}, nil, map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}}, nil)
+	op6, _ := core.NewOperator("e", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op6.SetParent(op3)
 
 	// op1
@@ -86,19 +88,21 @@ func TestOperator_Compile__NestedChildren(t *testing.T) {
 	op6.Main().Out().Connect(op3.Main().Out())
 
 	// Compile
-	a.Equal(2, op1.Compile())
+	c, d := op1.Compile()
+	a.Equal(1, d)
+	a.Equal(2, c)
 
 	a.True(len(op1.Children()) == 3)
 
-	if _, ok := op1.Children()["a.c"]; !ok {
+	if _, ok := op1.Children()["a#c"]; !ok {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.Children()["a.d"]; !ok {
+	if _, ok := op1.Children()["a#d"]; !ok {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.Children()["b.e"]; !ok {
+	if _, ok := op1.Children()["b#e"]; !ok {
 		t.Error("child not there")
 	}
 

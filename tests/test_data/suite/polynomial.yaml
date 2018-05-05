@@ -20,18 +20,7 @@ operators:
     operator: slang.eval
     properties:
       expression: "a*x*x + b*x + c"
-    generics:
-      paramsMap:
-        type: map
-        map:
-          a:
-            type: number
-          b:
-            type: number
-          c:
-            type: number
-          x:
-            type: number
+      variables: ["a", "b", "c", "x"]
 connections:
   (:
   - (pfunc

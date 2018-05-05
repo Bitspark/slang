@@ -3,7 +3,12 @@
   "services": {
     "main": {
       "in": {
-        "type": "primitive"
+        "type": "map",
+        "map": {
+          "a": {
+            "type": "number"
+          }
+        }
       },
       "out": {
         "type": "number"
@@ -14,17 +19,10 @@
     "passer": {
       "operator": "slang.eval",
       "properties": {
-        "expression": "a"
-      },
-      "generics": {
-        "paramsMap": {
-          "type": "map",
-          "map": {
-            "a": {
-              "type": "primitive"
-            }
-          }
-        }
+        "expression": "a",
+        "variables": [
+          "a"
+        ]
       }
     }
   },

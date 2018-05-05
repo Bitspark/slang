@@ -17,10 +17,10 @@ func TestBuiltin_Fork__CreatorFuncIsRegistered(t *testing.T) {
 func TestBuiltin_Fork__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -38,10 +38,10 @@ func TestBuiltin_Fork__InPorts(t *testing.T) {
 func TestBuiltin_Fork__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -59,10 +59,10 @@ func TestBuiltin_Fork__OutPorts(t *testing.T) {
 func TestBuiltin_Fork__Correct(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
 				},
@@ -93,19 +93,19 @@ func TestBuiltin_Fork__Correct(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{[]interface{}{"hallo", 100}}, o.Main().Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{"welt", 101}}, o.Main().Out().Map("false"))
+	a.PortPushesAll([]interface{}{[]interface{}{"hallo", 100}}, o.Main().Out().Map("true"))
+	a.PortPushesAll([]interface{}{[]interface{}{"welt", 101}}, o.Main().Out().Map("false"))
 }
 
 func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
-	o, err := MakeOperator(
+	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.fork",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "map",
-					Map: map[string]*core.PortDef{
+					Map: map[string]*core.TypeDef{
 						"a": {Type: "number"},
 						"b": {Type: "string"},
 					},
@@ -129,6 +129,6 @@ func TestBuiltin_Fork__ComplexItems(t *testing.T) {
 		},
 	})
 
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Main().Out().Map("true"))
-	a.PortPushes([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Main().Out().Map("false"))
+	a.PortPushesAll([]interface{}{[]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}}}, o.Main().Out().Map("true"))
+	a.PortPushesAll([]interface{}{[]interface{}{map[string]interface{}{"a": "2", "b": "slang"}}}, o.Main().Out().Map("false"))
 }

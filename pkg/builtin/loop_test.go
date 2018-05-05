@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
@@ -16,11 +16,11 @@ func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
 
 func TestBuiltin_Loop__Simple(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(
+	lo, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
 			Operator: "slang.loop",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
 				},
@@ -33,10 +33,10 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	// Condition operator
 	co, _ := core.NewOperator(
 		"cond",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
+			for {
 				i := in.Pull()
 				f, ok := i.(float64)
 				if !ok {
@@ -47,16 +47,20 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "boolean"}}},
-		nil)
+		nil,
+		nil,
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "boolean"}}},
+		},
+	)
 
 	// Double function operator
 	fo, _ := core.NewOperator(
 		"double",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
+			for {
 				i := in.Pull()
 				f, ok := i.(float64)
 				if !ok {
@@ -67,8 +71,12 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: core.PortDef{Type: "number"}, Out: core.PortDef{Type: "number"}}},
-		nil)
+		nil,
+		nil,
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}},
+		},
+	)
 
 	// Connect
 	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
@@ -85,23 +93,24 @@ func TestBuiltin_Loop__Simple(t *testing.T) {
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{16.0, 10.0}, lo.Main().Out())
+	a.PortPushesAll([]interface{}{16.0, 10.0}, lo.Main().Out())
 }
 
-func TestBuiltin_Loop__Fibo(t *testing.T) {
+func
+TestBuiltin_Loop__Fibo(t *testing.T) {
 	a := assertions.New(t)
-	stateType := core.PortDef{
+	stateType := core.TypeDef{
 		Type: "map",
-		Map: map[string]*core.PortDef{
+		Map: map[string]*core.TypeDef{
 			"i":      {Type: "number"},
 			"fib":    {Type: "number"},
 			"oldFib": {Type: "number"},
 		},
 	}
-	lo, err := MakeOperator(
+	lo, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.loop",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"stateType": &stateType,
 			},
 		},
@@ -114,10 +123,10 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	// Condition operator
 	co, _ := core.NewOperator(
 		"cond",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
+			for {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
 				if !ok {
@@ -129,16 +138,20 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: stateType, Out: core.PortDef{Type: "boolean"}}},
-		nil)
+		nil,
+		nil,
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{"main": {In: stateType, Out: core.TypeDef{Type: "boolean"}}},
+		},
+	)
 
 	// Fibonacci function operator
 	fo, _ := core.NewOperator(
 		"fib",
-		func(srvs map[string]*core.Service, dels map[string]*core.Delegate, store interface{}) {
-			in := srvs[core.MAIN_SERVICE].In()
-			out := srvs[core.MAIN_SERVICE].Out()
-			for true {
+		func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
+			for {
 				i := in.Pull()
 				fm, ok := i.(map[string]interface{})
 				if !ok {
@@ -152,8 +165,12 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 			}
 		},
 		nil,
-		map[string]*core.ServiceDef{"main": {In: stateType, Out: stateType}},
-		nil)
+		nil,
+		nil,
+		core.OperatorDef{
+			ServiceDefs: map[string]*core.ServiceDef{"main": {In: stateType, Out: stateType}},
+		},
+	)
 
 	// Connect
 	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
@@ -170,18 +187,19 @@ func TestBuiltin_Loop__Fibo(t *testing.T) {
 	fo.Start()
 	co.Start()
 
-	a.PortPushes([]interface{}{
+	a.PortPushesAll([]interface{}{
 		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
 		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
 	}, lo.Main().Out())
 }
 
-func TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
+func
+TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := MakeOperator(
+	lo, err := buildOperator(
 		core.InstanceDef{
 			Operator: "slang.loop",
-			Generics: map[string]*core.PortDef{
+			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
 				},

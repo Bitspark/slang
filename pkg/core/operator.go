@@ -1,11 +1,15 @@
 package core
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
-type OFunc func(services map[string]*Service, dels map[string]*Delegate, store interface{})
-type CFunc func(dest, src *Port) error
+type OFunc func(op *Operator)
+type CFunc func(op *Operator, dst, src *Port) error
 
 var MAIN_SERVICE = "main"
+var WORKING_DIR = "./"
 
 type Operator struct {
 	name        string
@@ -15,8 +19,10 @@ type Operator struct {
 	parent      *Operator
 	children    map[string]*Operator
 	function    OFunc
-	store       interface{}
+	generics  Generics
+	properties  Properties
 	connectFunc CFunc
+	elementary  string
 }
 
 type Delegate struct {
@@ -33,17 +39,25 @@ type Service struct {
 	outPort *Port
 }
 
-func NewOperator(name string, f OFunc, c CFunc, services map[string]*ServiceDef, delegates map[string]*DelegateDef) (*Operator, error) {
+func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def OperatorDef) (*Operator, error) {
+	props.Clean()
+
 	o := &Operator{}
 	o.function = f
 	o.connectFunc = c
 	o.name = name
+	o.elementary = def.Elementary
+	o.generics = gens
+	o.properties = props
 	o.children = make(map[string]*Operator)
 
 	var err error
+	if err := def.PropertyDefs.GenericsSpecified(); err != nil {
+		return nil, fmt.Errorf("%s: %s", "properties", err.Error())
+	}
 
 	o.services = make(map[string]*Service)
-	for serName, ser := range services {
+	for serName, ser := range def.ServiceDefs {
 		o.services[serName], err = NewService(serName, o, *ser)
 		if err != nil {
 			return nil, err
@@ -51,10 +65,7 @@ func NewOperator(name string, f OFunc, c CFunc, services map[string]*ServiceDef,
 	}
 
 	o.delegates = make(map[string]*Delegate)
-	for delName, del := range delegates {
-		if delName == MAIN_SERVICE {
-			return nil, errors.New("delegate must not be named " + MAIN_SERVICE + " (reserved for default service)")
-		}
+	for delName, del := range def.DelegateDefs {
 		o.delegates[delName], err = NewDelegate(delName, o, *del)
 		if err != nil {
 			return nil, err
@@ -80,6 +91,14 @@ func (o *Operator) Delegate(del string) *Delegate {
 		return d
 	}
 	return nil
+}
+
+func (o *Operator) Property(prop string) interface{} {
+	return o.properties[prop]
+}
+
+func (o *Operator) SetProperties(properties Properties) {
+	o.properties = properties
 }
 
 func (o *Operator) Name() string {
@@ -112,7 +131,7 @@ func (o *Operator) Child(name string) *Operator {
 
 func (o *Operator) Start() {
 	if o.function != nil {
-		go o.function(o.services, o.delegates, o.store)
+		go o.function(o)
 	} else {
 		for _, c := range o.children {
 			c.Start()
@@ -123,28 +142,26 @@ func (o *Operator) Start() {
 func (o *Operator) Stop() {
 }
 
-func (o *Operator) SetStore(store interface{}) {
-	o.store = store
-}
-
 func (o *Operator) Builtin() bool {
 	return o.function != nil
 }
 
-func (o *Operator) Compile() int {
+func (o *Operator) Compile() (compiled int, depth int) {
 	if o.Builtin() {
-		return 0
+		return
 	}
-
-	compiled := 0
 
 	// Go down
 	for _, c := range o.children {
-		compiled += c.Compile()
+		cc, cd := c.Compile()
+		compiled += cc
+		if cd > depth {
+			depth = cd
+		}
 	}
 
 	if o.parent == nil {
-		return compiled
+		return
 	}
 
 	// Remove in and out port
@@ -160,7 +177,7 @@ func (o *Operator) Compile() int {
 
 	// Move children to parent and rename instances
 	for _, c := range o.children {
-		c.name = o.name + "." + c.name
+		c.name = o.name + "#" + c.name
 		c.parent = o.parent
 		o.parent.children[c.name] = c
 	}
@@ -168,7 +185,7 @@ func (o *Operator) Compile() int {
 	// Remove this operator from its parent
 	delete(o.parent.children, o.name)
 
-	return compiled + 1
+	return compiled + 1, depth + 1
 }
 
 func (o *Operator) CorrectlyCompiled() error {
@@ -188,6 +205,60 @@ func (o *Operator) CorrectlyCompiled() error {
 		}
 	}
 	return nil
+}
+
+func (o *Operator) defineConnections(def *OperatorDef) {
+	for _, srv := range o.services {
+		srv.outPort.defineConnections(def)
+	}
+
+	for _, dlg := range o.delegates {
+		dlg.outPort.defineConnections(def)
+	}
+}
+
+func (o *Operator) Define() (OperatorDef, error) {
+	var def OperatorDef
+	def.ServiceDefs = make(map[string]*ServiceDef)
+	def.DelegateDefs = make(map[string]*DelegateDef)
+	def.Connections = make(map[string][]string)
+	def.InstanceDefs = InstanceDefList{}
+
+	for insName, child := range o.children {
+		insDef := &InstanceDef{}
+		insDef.Name = insName
+		insDef.Operator = child.elementary
+		insDef.Generics = child.generics
+		insDef.Properties = child.properties
+		insDef.OperatorDef, _ = child.Define()
+		def.InstanceDefs = append(def.InstanceDefs, insDef)
+	}
+
+	for _, srv := range o.services {
+		srvDef := srv.Define()
+		def.ServiceDefs[srv.name] = &srvDef
+		srv.inPort.defineConnections(&def)
+	}
+
+	for _, dlg := range o.delegates {
+		dlgDef := dlg.Define()
+		def.DelegateDefs[dlg.name] = &dlgDef
+		dlg.inPort.defineConnections(&def)
+	}
+
+	nonemptyConns := make(map[string][]string)
+	for conn, conns := range def.Connections {
+		if len(conns) != 0 {
+			nonemptyConns[conn] = conns
+		}
+	}
+	def.Connections = nonemptyConns
+
+	if err := def.Validate(); err != nil {
+		return def, err
+	}
+
+	return def, nil
 }
 
 // SERVICE
@@ -229,6 +300,13 @@ func (s *Service) Out() *Port {
 	return s.outPort
 }
 
+func (s *Service) Define() ServiceDef {
+	var def ServiceDef
+	def.In = s.inPort.Define()
+	def.Out = s.outPort.Define()
+	return def
+}
+
 // DELEGATE
 
 func NewDelegate(name string, op *Operator, def DelegateDef) (*Delegate, error) {
@@ -266,4 +344,11 @@ func (d *Delegate) In() *Port {
 
 func (d *Delegate) Out() *Port {
 	return d.outPort
+}
+
+func (d *Delegate) Define() DelegateDef {
+	var def DelegateDef
+	def.In = d.inPort.Define()
+	def.Out = d.outPort.Define()
+	return def
 }

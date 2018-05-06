@@ -105,8 +105,8 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 	return flatOp, nil
 }
 
-func (e *Environ) IsLocalOperator(opFilePath string) bool {
-	_, err := e.GetOperatorDefFilePath(opFilePath, e.paths[0])
+func (e *Environ) IsLocalOperator(operator string) bool {
+	_, err := e.GetOperatorDefFilePath(strings.Replace(operator, ".", string(filepath.Separator), -1), e.paths[0])
 	return err == nil
 }
 
@@ -139,7 +139,9 @@ func (e *Environ) ListOperatorNames() ([]string, error) {
 			}
 
 			fullyQualiName := e.getFullyQualifiedName(path)
-			opsFilePathSet[fullyQualiName] = true
+			if fullyQualiName != "" {
+				opsFilePathSet[fullyQualiName] = true
+			}
 			return nil
 		})
 	}
@@ -200,6 +202,9 @@ func ParseJSONOperatorDef(defStr string) (core.OperatorDef, error) {
 func ParseYAMLOperatorDef(defStr string) (core.OperatorDef, error) {
 	def := core.OperatorDef{}
 	err := yaml.Unmarshal([]byte(defStr), &def)
+	for _, id := range def.InstanceDefs {
+		id.Properties.Clean()
+	}
 	return def, err
 }
 

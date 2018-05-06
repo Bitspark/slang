@@ -8,6 +8,8 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"strings"
 	"github.com/Bitspark/slang/pkg/builtin"
+	"path/filepath"
+	"log"
 )
 
 type DaemonService struct {
@@ -80,47 +82,45 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 
 		if err == nil {
 			builtinOpNames := builtin.GetBuiltinNames()
-			opDefList = make([]OperatorDefJSON, len(opNames)+len(builtinOpNames))
 
 			// Gather builtin/elementary opDefs
-			offset := 0
-			for i, opFQName := range builtinOpNames {
+			for _, opFQName := range builtinOpNames {
 				opDef, err := builtin.GetOperatorDef(opFQName)
 
 				if err != nil {
-					break;
+					break
 				}
 
-				opDefList[offset+i] = OperatorDefJSON{
+				opDefList = append(opDefList, OperatorDefJSON{
 					Name: opFQName,
 					Type: "elementary",
 					Def:  opDef,
-				}
+				})
 			}
 
 			if err == nil {
 				// Gather opDefs from local & lib
-				offset = len(builtinOpNames)
-				for i, opFQName := range opNames {
-					opDefFilePath, err := e.GetOperatorDefFilePath(strings.Replace(opFQName, ".", "/", -1), "")
-
+				for _, opFQName := range opNames {
+					opDefFilePath, err := e.GetOperatorDefFilePath(strings.Replace(opFQName, ".", string(filepath.Separator), -1), "")
 					if err != nil {
-						break;
+						continue
 					}
 
-					if opDef, err := e.ReadOperatorDef(opDefFilePath, nil); err != nil {
-
-						opType := "lib"
-						if e.IsLocalOperator(opDefFilePath) {
-							opType = "local"
-						}
-
-						opDefList[offset+i] = OperatorDefJSON{
-							Name: opFQName,
-							Type: opType,
-							Def:  opDef,
-						}
+					opDef, err := e.ReadOperatorDef(opDefFilePath, nil)
+					if err != nil {
+						continue
 					}
+
+					opType := "lib"
+					if e.IsLocalOperator(opFQName) {
+						opType = "local"
+					}
+
+					opDefList = append(opDefList, OperatorDefJSON{
+						Name: opFQName,
+						Type: opType,
+						Def:  opDef,
+					})
 				}
 			}
 		}
@@ -131,6 +131,11 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			dataOut = outJSON{Status: "error", Error: &Error{err.Error(), "E0001"}}
 		}
 
-		writeJSON(w, dataOut)
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(200)
+		err = writeJSON(w, dataOut)
+		if err != nil {
+			log.Print(err)
+		}
 	}},
 }}

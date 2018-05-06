@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"github.com/Bitspark/slang/pkg/builtin"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"strings"
 	"os"
-	"runtime"
 	"github.com/Bitspark/go-funk"
 )
 
@@ -26,12 +24,9 @@ type Environ struct {
 func NewEnviron(workingDir string) *Environ {
 	// Stores all library paths in the global paths variable
 	// We always look in the local directory first
-	paths := []string{workingDir}
+	paths := []string{filepath.Clean(workingDir)}
 
-	sep := ":"
-	if runtime.GOOS == "windows" {
-		sep = ";"
-	}
+	sep := string(filepath.Separator)
 
 	// Read from environment
 	for _, e := range os.Environ() {
@@ -39,8 +34,9 @@ func NewEnviron(workingDir string) *Environ {
 		if pair[0] == "SLANG_LIB" {
 			libPaths := strings.Split(pair[1], sep)
 			for _, libPath := range libPaths {
-				if !strings.HasSuffix(libPath, "/") {
-					libPath += "/"
+				libPath = filepath.Clean(libPath)
+				if !strings.HasSuffix(libPath, sep) {
+					libPath += sep
 				}
 				paths = append(paths, libPath)
 			}
@@ -55,8 +51,8 @@ func (e *Environ) WorkingDir() string {
 }
 
 func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
-	if !path.IsAbs(opFilePath) {
-		opFilePath = path.Join(e.WorkingDir(), opFilePath)
+	if !filepath.IsAbs(opFilePath) {
+		opFilePath = filepath.Join(e.WorkingDir(), opFilePath)
 	}
 
 	insName := ""
@@ -151,7 +147,7 @@ func (e *Environ) ListOperatorNames() ([]string, error) {
 	if outerErr != nil {
 		return nil, outerErr
 	} else if len(opsFilePathSet) == 0 {
-		return nil, fmt.Errorf("No operator files found")
+		return nil, fmt.Errorf("no operator files found")
 	} else {
 		return funk.Keys(opsFilePathSet).([]string), nil
 	}
@@ -168,7 +164,7 @@ func (e *Environ) getInstanceName(opDefFilePath string) string {
 func (e *Environ) getFullyQualifiedName(opDefFilePath string) string {
 	var relFilePath string
 
-	if path.IsAbs(opDefFilePath) {
+	if filepath.IsAbs(opDefFilePath) {
 		for _, p := range e.paths {
 			if strings.HasPrefix(opDefFilePath, p) {
 				relFilePath = strings.TrimSuffix(strings.TrimPrefix(opDefFilePath, p), filepath.Ext(opDefFilePath))
@@ -178,7 +174,7 @@ func (e *Environ) getFullyQualifiedName(opDefFilePath string) string {
 	} else {
 		relFilePath = opDefFilePath
 	}
-	return strings.Replace(relFilePath, "/", ".", -1)
+	return strings.Replace(relFilePath, string(filepath.Separator), ".", -1)
 }
 
 func isJSON(opDefFilePath string) bool {
@@ -350,7 +346,7 @@ func (e *Environ) GetOperatorDefFilePath(relFilePath string, enforcedPath string
 	}
 
 	for _, p := range relevantPaths {
-		defFilePath := path.Join(p, relFilePath)
+		defFilePath := filepath.Join(p, relFilePath)
 		// Find correct file
 		var opDefFilePath string
 
@@ -409,7 +405,7 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 		}
 	}
 
-	currDir := path.Dir(opDefFilePath)
+	currDir := filepath.Dir(opDefFilePath)
 
 	// Descend to child operators
 	for _, childOpInsDef := range def.InstanceDefs {
@@ -438,7 +434,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 	var err error
 	var opDefFilePath string
 
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)
+	relFilePath := strings.Replace(insDef.Operator, ".", string(filepath.Separator), -1)
 	enforcedPath := "" // when != "" --> only search for operatordef in path *enforcedPath*
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {

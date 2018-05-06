@@ -7,11 +7,11 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
-	"path"
 	"reflect"
 	"github.com/Bitspark/slang/pkg/utils"
 	"strings"
 	"github.com/Bitspark/slang/pkg/core"
+	"path/filepath"
 )
 
 type TestCaseDef struct {
@@ -65,7 +65,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fails := 0
 
 	for i, tc := range test.TestCases {
-		o, err := NewEnviron("./").BuildAndCompileOperator(path.Join(path.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties)
+		o, err := NewEnviron("./").BuildAndCompileOperator(filepath.Join(filepath.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties)
 		if err != nil {
 			return 0, 0, err
 		}

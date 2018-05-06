@@ -14,7 +14,7 @@ func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 	a := assertions.New(t)
 
 	inData, _ := json.Marshal(&inJSON{
-		WorkingDir: "tests/test_data/daemon/services/operator",
+		WorkingDir: "../../tests/test_data/daemon/services/operator",
 	})
 
 	r, _ := http.NewRequest("GET", "/", bytes.NewReader(inData))

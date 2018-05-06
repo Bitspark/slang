@@ -7,6 +7,7 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"strings"
+	"github.com/Bitspark/slang/pkg/builtin"
 )
 
 type DaemonService struct {
@@ -83,9 +84,25 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 		e := api.NewEnviron(dataIn.WorkingDir)
 
 		opNames, err := e.ListOperatorNames()
-		opDefList := make([]OperatorDefJSON, len(opNames))
+		builtinOpNames := builtin.GetBuiltinNames()
+		opDefList := make([]OperatorDefJSON, len(opNames)+len(builtinOpNames))
 
+		offset := 0
 		if err == nil {
+			// Gather builtin/elementary opDefs
+			for i, opFQName := range builtinOpNames {
+				if opDef, err := builtin.GetOperatorDef(opFQName); err != nil {
+					opDefList[offset+i] = OperatorDefJSON{
+						Name: opFQName,
+						Type: "elementary",
+						Def:  opDef,
+					}
+				}
+			}
+
+			offset = len(builtinOpNames)
+
+			// Gather opDefs from local & lib
 			for i, opFQName := range opNames {
 
 				opDefFilePath, err := e.GetOperatorDefFilePath(strings.Replace(opFQName, ".", ".", -1), "")
@@ -101,13 +118,14 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 						opType = "local"
 					}
 
-					opDefList[i] = OperatorDefJSON{
+					opDefList[offset+i] = OperatorDefJSON{
 						Name: opFQName,
 						Type: opType,
 						Def:  opDef,
 					}
 				}
 			}
+
 		}
 
 		if err != nil {

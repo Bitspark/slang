@@ -677,6 +677,14 @@ func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (ol InstanceDefList) MarshalJSON() ([]byte, error) {
+	im := make(map[string]*InstanceDef)
+	for _, ins := range ol {
+		im[ins.Name] = ins
+	}
+	return json.Marshal(im)
+}
+
 func (p Properties) Clean() {
 	for k, v := range p {
 		p[k] = utils.CleanValue(v)

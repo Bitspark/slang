@@ -168,6 +168,9 @@ func (e *Environ) getFullyQualifiedName(opDefFilePath string) string {
 
 	if filepath.IsAbs(opDefFilePath) {
 		for _, p := range e.paths {
+			if !strings.HasSuffix(p, string(filepath.Separator)) {
+				p += string(filepath.Separator)
+			}
 			if strings.HasPrefix(opDefFilePath, p) {
 				relFilePath = strings.TrimSuffix(strings.TrimPrefix(opDefFilePath, p), filepath.Ext(opDefFilePath))
 				break

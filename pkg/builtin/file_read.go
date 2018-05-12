@@ -3,7 +3,7 @@ package builtin
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 )
 
 var fileReadOpCfg = &builtinConfig{
@@ -37,7 +37,7 @@ var fileReadOpCfg = &builtinConfig{
 				continue
 			}
 
-			content, err := ioutil.ReadFile(path.Join(core.WORKING_DIR, file))
+			content, err := ioutil.ReadFile(filepath.Join(core.WORKING_DIR, file))
 			if err != nil {
 				out.Map("content").Push(nil)
 				out.Map("error").Push(err.Error())

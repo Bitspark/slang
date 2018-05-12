@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"github.com/Bitspark/slang/pkg/builtin"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"strings"
 	"os"
-	"runtime"
+	"github.com/Bitspark/go-funk"
 )
 
 var FILE_ENDINGS = []string{".yaml", ".json"} // Order of endings matters!
@@ -25,21 +24,20 @@ type Environ struct {
 func NewEnviron(workingDir string) *Environ {
 	// Stores all library paths in the global paths variable
 	// We always look in the local directory first
-	paths := []string{workingDir}
+	paths := []string{filepath.Clean(workingDir)}
 
-	sep := ":"
-	if runtime.GOOS == "windows" {
-		sep = ";"
-	}
+	pathSep := string(filepath.Separator)
+	pathListSep := string(filepath.ListSeparator)
 
 	// Read from environment
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")
 		if pair[0] == "SLANG_LIB" {
-			libPaths := strings.Split(pair[1], sep)
+			libPaths := strings.Split(pair[1], pathListSep)
 			for _, libPath := range libPaths {
-				if !strings.HasSuffix(libPath, "/") {
-					libPath += "/"
+				libPath = filepath.Clean(libPath)
+				if !strings.HasSuffix(libPath, pathSep) {
+					libPath += pathSep
 				}
 				paths = append(paths, libPath)
 			}
@@ -54,8 +52,8 @@ func (e *Environ) WorkingDir() string {
 }
 
 func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
-	if !path.IsAbs(opFilePath) {
-		opFilePath = path.Join(e.WorkingDir(), opFilePath)
+	if !filepath.IsAbs(opFilePath) {
+		opFilePath = filepath.Join(e.WorkingDir(), opFilePath)
 	}
 
 	insName := ""
@@ -108,6 +106,84 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 	return flatOp, nil
 }
 
+func (e *Environ) IsLocalOperator(operator string) bool {
+	_, err := e.GetOperatorDefFilePath(strings.Replace(operator, ".", string(filepath.Separator), -1), e.paths[0])
+	return err == nil
+}
+
+func (e *Environ) ListOperatorNames() ([]string, error) {
+	var outerErr error
+
+	opsFilePathSet := make(map[string]bool)
+
+	for i := len(e.paths); i > 0; i-- {
+		currRootDir := e.paths[i-1]
+
+		filepath.Walk(currRootDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				outerErr = err
+				return err
+			}
+
+			if info.IsDir() ||
+				strings.HasPrefix(info.Name(), ".") ||
+				strings.Contains(info.Name(), "_") ||
+				!e.hasSupportedSuffix(info.Name()) {
+				return nil
+			}
+
+			fullyQualiName := e.getFullyQualifiedName(path)
+			if fullyQualiName != "" {
+				opsFilePathSet[fullyQualiName] = true
+			}
+			return nil
+		})
+	}
+
+	if outerErr != nil {
+		return nil, outerErr
+	} else if len(opsFilePathSet) == 0 {
+		return nil, fmt.Errorf("no operator files found")
+	} else {
+		return funk.Keys(opsFilePathSet).([]string), nil
+	}
+}
+
+func (e *Environ) hasSupportedSuffix(filePath string) bool {
+	return isJSON(filePath) || isYAML(filePath)
+}
+
+func (e *Environ) getInstanceName(opDefFilePath string) string {
+	return strings.TrimSuffix(filepath.Base(opDefFilePath), filepath.Ext(opDefFilePath))
+}
+
+func (e *Environ) getFullyQualifiedName(opDefFilePath string) string {
+	var relFilePath string
+
+	if filepath.IsAbs(opDefFilePath) {
+		for _, p := range e.paths {
+			if !strings.HasSuffix(p, string(filepath.Separator)) {
+				p += string(filepath.Separator)
+			}
+			if strings.HasPrefix(opDefFilePath, p) {
+				relFilePath = strings.TrimSuffix(strings.TrimPrefix(opDefFilePath, p), filepath.Ext(opDefFilePath))
+				break
+			}
+		}
+	} else {
+		relFilePath = opDefFilePath
+	}
+	return strings.Replace(relFilePath, string(filepath.Separator), ".", -1)
+}
+
+func isJSON(opDefFilePath string) bool {
+	return strings.HasSuffix(opDefFilePath, ".json")
+}
+
+func isYAML(opDefFilePath string) bool {
+	return strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml")
+}
+
 func ParseTypeDef(defStr string) core.TypeDef {
 	def := core.TypeDef{}
 	json.Unmarshal([]byte(defStr), &def)
@@ -123,6 +199,9 @@ func ParseJSONOperatorDef(defStr string) (core.OperatorDef, error) {
 func ParseYAMLOperatorDef(defStr string) (core.OperatorDef, error) {
 	def := core.OperatorDef{}
 	err := yaml.Unmarshal([]byte(defStr), &def)
+	for _, id := range def.InstanceDefs {
+		id.Properties.Clean()
+	}
 	return def, err
 }
 
@@ -261,7 +340,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	return p, nil
 }
 
-func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string) (string, error) {
+func (e *Environ) GetOperatorDefFilePath(relFilePath string, enforcedPath string) (string, error) {
 	var err error
 	relevantPaths := e.paths
 	if enforcedPath != "" {
@@ -269,7 +348,7 @@ func (e *Environ) getOperatorDefFilePath(relFilePath string, enforcedPath string
 	}
 
 	for _, p := range relevantPaths {
-		defFilePath := path.Join(p, relFilePath)
+		defFilePath := filepath.Join(p, relFilePath)
 		// Find correct file
 		var opDefFilePath string
 
@@ -309,9 +388,9 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 	}
 
 	// Parse the file, just read it in
-	if strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml") {
+	if isYAML(opDefFilePath) {
 		def, err = ParseYAMLOperatorDef(string(b))
-	} else if strings.HasSuffix(opDefFilePath, ".json") {
+	} else if isJSON(opDefFilePath) {
 		def, err = ParseJSONOperatorDef(string(b))
 	} else {
 		err = errors.New("unsupported file ending")
@@ -328,7 +407,7 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 		}
 	}
 
-	currDir := path.Dir(opDefFilePath)
+	currDir := filepath.Dir(opDefFilePath)
 
 	// Descend to child operators
 	for _, childOpInsDef := range def.InstanceDefs {
@@ -357,7 +436,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 	var err error
 	var opDefFilePath string
 
-	relFilePath := strings.Replace(insDef.Operator, ".", "/", -1)
+	relFilePath := strings.Replace(insDef.Operator, ".", string(filepath.Separator), -1)
 	enforcedPath := "" // when != "" --> only search for operatordef in path *enforcedPath*
 	// Check if it is a local operator which has to be found relative to the current operator
 	if strings.HasPrefix(insDef.Operator, ".") {
@@ -365,7 +444,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 	}
 
 	// Iterate through the paths and take the first operator we find
-	if opDefFilePath, err = e.getOperatorDefFilePath(relFilePath, enforcedPath); err == nil {
+	if opDefFilePath, err = e.GetOperatorDefFilePath(relFilePath, enforcedPath); err == nil {
 		if def, err = e.ReadOperatorDef(opDefFilePath, pathsRead); err == nil {
 			return def, nil
 		}

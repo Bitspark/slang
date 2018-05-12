@@ -25,11 +25,11 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
-	ServiceDefs  map[string]*ServiceDef  `json:"services" yaml:"services,omitempty"`
-	DelegateDefs map[string]*DelegateDef `json:"delegates" yaml:"delegates,omitempty"`
-	InstanceDefs InstanceDefList         `json:"operators" yaml:"operators,omitempty"`
-	PropertyDefs TypeDefMap              `json:"properties" yaml:"properties,omitempty"`
-	Connections  map[string][]string     `json:"connections" yaml:"connections,omitempty"`
+	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
+	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
+	InstanceDefs InstanceDefList         `json:"operators,omitempty" yaml:"operators,omitempty"`
+	PropertyDefs TypeDefMap              `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
 	valid bool
@@ -52,9 +52,9 @@ type ServiceDef struct {
 type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
 	Type    string              `json:"type" yaml:"type"`
-	Stream  *TypeDef            `json:"stream" yaml:"stream,omitempty"`
-	Map     map[string]*TypeDef `json:"map" yaml:"map,omitempty"`
-	Generic string              `json:"generic" yaml:"generic,omitempty"`
+	Stream  *TypeDef            `json:"stream,omitempty" yaml:"stream,omitempty"`
+	Map     map[string]*TypeDef `json:"map,omitempty" yaml:"map,omitempty"`
+	Generic string              `json:"generic,omitempty" yaml:"generic,omitempty"`
 
 	valid bool
 }
@@ -675,6 +675,14 @@ func (ol *InstanceDefList) UnmarshalJSON(data []byte) error {
 
 	*ol = instances
 	return nil
+}
+
+func (ol InstanceDefList) MarshalJSON() ([]byte, error) {
+	im := make(map[string]*InstanceDef)
+	for _, ins := range ol {
+		im[ins.Name] = ins
+	}
+	return json.Marshal(im)
 }
 
 func (p Properties) Clean() {

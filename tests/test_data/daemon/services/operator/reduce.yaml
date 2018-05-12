@@ -1,0 +1,32 @@
+# Main
+---
+services:
+  main:
+    in:
+      type: stream
+      stream:
+        type: number
+    out:
+      type: number
+operators:
+  adder:
+    operator: slang.eval
+    properties:
+      expression: "a+b"
+      variables: ["a", "b"]
+  reducer:
+    operator: slang.reduce
+    generics:
+      itemType:
+        type: number
+    properties:
+      emptyValue: 0.0
+connections:
+  (:
+    - (reducer
+  reducer):
+    - )
+  reducer.selection)~:
+    - (adder
+  adder):
+    - ~(reducer.selection

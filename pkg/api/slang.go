@@ -125,13 +125,6 @@ func (e *Environ) ListOperatorNames() ([]string, error) {
 				return err
 			}
 
-			if err != nil {
-				fmt.Println("========")
-				fmt.Println(err)
-				fmt.Println(">>>", currRootDir, path, info)
-
-			}
-
 			if info.IsDir() ||
 				strings.HasPrefix(info.Name(), ".") ||
 				strings.Contains(info.Name(), "_") ||

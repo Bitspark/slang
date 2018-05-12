@@ -24,5 +24,5 @@ func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &outData)
 
 	a.Empty(outData.Error)
-	a.NotEmpty(outData.Objects)
+	a.True(0 < len(outData.Objects))
 }

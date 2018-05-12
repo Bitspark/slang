@@ -26,17 +26,18 @@ func NewEnviron(workingDir string) *Environ {
 	// We always look in the local directory first
 	paths := []string{filepath.Clean(workingDir)}
 
-	sep := string(filepath.Separator)
+	pathSep := string(filepath.Separator)
+	pathListSep := string(filepath.ListSeparator)
 
 	// Read from environment
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")
 		if pair[0] == "SLANG_LIB" {
-			libPaths := strings.Split(pair[1], sep)
+			libPaths := strings.Split(pair[1], pathListSep)
 			for _, libPath := range libPaths {
 				libPath = filepath.Clean(libPath)
-				if !strings.HasSuffix(libPath, sep) {
-					libPath += sep
+				if !strings.HasSuffix(libPath, pathSep) {
+					libPath += pathSep
 				}
 				paths = append(paths, libPath)
 			}

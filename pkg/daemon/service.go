@@ -47,29 +47,6 @@ type Error struct {
 }
 
 var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
-	/*
-	   Get all OperatorDefs of all local, stdlib and elementaries
-
-		REQUEST:
-
-		{
-			workingdir: path
-		}
-
-
-		RESPONSE:
-
-	  	{
-			objects: [
-				{
-					name: str,
-	 				def: OperatorDef,
-					type: str(local|elementary|lib),
-				},
-			]
-	    }
-
-	 */
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 		var dataOut outJSON
 		var opDefList []OperatorDefJSON

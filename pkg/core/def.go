@@ -17,8 +17,8 @@ type Generics map[string]*TypeDef
 type InstanceDef struct {
 	Name       string     `json:"-" yaml:"-"`
 	Operator   string     `json:"operator" yaml:"operator"`
-	Properties Properties `json:"properties" yaml:"properties,omitempty"`
-	Generics   Generics   `json:"generics" yaml:"generics,omitempty"`
+	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
 
 	valid       bool
 	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`

@@ -139,13 +139,13 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			}
 
 			fileEnding := ""
-			var data interface{}
-			err = json.Unmarshal(body, &data)
+			var def core.OperatorDef
+			err = json.Unmarshal(body, &def)
 			if err == nil {
 				fileEnding = "json"
 			}
 
-			err = yaml.Unmarshal(body, &data)
+			err = yaml.Unmarshal(body, &def)
 			if err == nil {
 				fileEnding = "yaml"
 			}
@@ -164,6 +164,19 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			if fileEnding == "json" {
+				body, err = json.Marshal(&def)
+			} else if fileEnding == "yaml" {
+				body, err = yaml.Marshal(&def)
+			}
+
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0007"}
 				send()
 				return
 			}
@@ -295,6 +308,12 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
 				send()
 				return
+			}
+
+			if fileEnding == "json" {
+				body, err = json.Marshal(&data)
+			} else if fileEnding == "yaml" {
+				body, err = yaml.Marshal(&data)
 			}
 
 			absPath := filepath.Join(p, relPath+"_visual."+fileEnding)

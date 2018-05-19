@@ -106,7 +106,6 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			dataOut = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
 		}
 
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(200)
 		err = writeJSON(w, dataOut)
 		if err != nil {
@@ -125,7 +124,6 @@ var VisualService = &DaemonService{map[string]*DaemonEndpoint{
 			}{}
 
 			send := func() {
-				w.Header().Add("Access-Control-Allow-Origin", "*")
 				w.WriteHeader(200)
 				err := writeJSON(w, dataOut)
 				if err != nil {
@@ -185,7 +183,6 @@ var VisualService = &DaemonService{map[string]*DaemonEndpoint{
 			}{}
 
 			send := func() {
-				w.Header().Add("Access-Control-Allow-Origin", "*")
 				w.WriteHeader(200)
 				err := writeJSON(w, dataOut)
 				if err != nil {

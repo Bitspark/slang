@@ -10,6 +10,9 @@ import (
 	"github.com/Bitspark/slang/pkg/builtin"
 	"path/filepath"
 	"log"
+	"github.com/Bitspark/slang/pkg/utils"
+	"io/ioutil"
+	"gopkg.in/yaml.v2"
 )
 
 type DaemonService struct {
@@ -20,25 +23,8 @@ type DaemonEndpoint struct {
 	Handle func(w http.ResponseWriter, r *http.Request)
 }
 
-func readJSON(r io.Reader, dat interface{}) error {
-	dec := json.NewDecoder(r)
-	return dec.Decode(&dat)
-}
-
 func writeJSON(w io.Writer, dat interface{}) error {
 	return json.NewEncoder(w).Encode(dat)
-}
-
-type outJSON struct {
-	Objects []OperatorDefJSON `json:"objects"`
-	Status  string            `json:"status"`
-	Error   *Error            `json:"error,omitempty"`
-}
-
-type OperatorDefJSON struct {
-	Name string           `json:"name"`
-	Def  core.OperatorDef `json:"def"`
-	Type string           `json:"type"`
 }
 
 type Error struct {
@@ -48,8 +34,20 @@ type Error struct {
 
 var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
+		type operatorDefJSON struct {
+			Name string           `json:"name"`
+			Def  core.OperatorDef `json:"def"`
+			Type string           `json:"type"`
+		}
+
+		type outJSON struct {
+			Objects []operatorDefJSON `json:"objects"`
+			Status  string            `json:"status"`
+			Error   *Error            `json:"error,omitempty"`
+		}
+
 		var dataOut outJSON
-		var opDefList []OperatorDefJSON
+		var opDefList []operatorDefJSON
 		var err error
 		cwd := r.FormValue("cwd")
 
@@ -68,7 +66,7 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 					break
 				}
 
-				opDefList = append(opDefList, OperatorDefJSON{
+				opDefList = append(opDefList, operatorDefJSON{
 					Name: opFQName,
 					Type: "elementary",
 					Def:  opDef,
@@ -78,7 +76,7 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			if err == nil {
 				// Gather opDefs from local & lib
 				for _, opFQName := range opNames {
-					opDefFilePath, err := e.GetOperatorDefFilePath(strings.Replace(opFQName, ".", string(filepath.Separator), -1), "")
+					opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(opFQName, ".", string(filepath.Separator), -1), "")
 					if err != nil {
 						continue
 					}
@@ -93,7 +91,7 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 						opType = "local"
 					}
 
-					opDefList = append(opDefList, OperatorDefJSON{
+					opDefList = append(opDefList, operatorDefJSON{
 						Name: opFQName,
 						Type: opType,
 						Def:  opDef,
@@ -105,7 +103,7 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 		if err == nil {
 			dataOut = outJSON{Status: "success", Objects: opDefList}
 		} else {
-			dataOut = outJSON{Status: "error", Error: &Error{err.Error(), "E0001"}}
+			dataOut = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
 		}
 
 		w.Header().Add("Access-Control-Allow-Origin", "*")
@@ -113,6 +111,141 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 		err = writeJSON(w, dataOut)
 		if err != nil {
 			log.Print(err)
+		}
+	}},
+}}
+
+var VisualService = &DaemonService{map[string]*DaemonEndpoint{
+	"/": {func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			dataOut := struct {
+				Data   interface{} `json:"data,omitempty"`
+				Status string      `json:"status"`
+				Error  *Error      `json:"error,omitempty"`
+			}{}
+
+			send := func() {
+				w.Header().Add("Access-Control-Allow-Origin", "*")
+				w.WriteHeader(200)
+				err := writeJSON(w, dataOut)
+				if err != nil {
+					log.Print(err)
+				}
+			}
+
+			var err error
+			var b []byte
+			cwd := r.FormValue("cwd")
+			opFQName := r.FormValue("fqop")
+
+			e := api.NewEnviron(cwd)
+
+			// Find the operator first
+			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
+			absPath, p, err := e.GetFilePathWithFileEnding(relPath, "")
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			// Then find the appropriate visual file and read it
+			absPath, _, err = e.GetFilePathWithFileEnding(relPath+"_visual", p)
+			b, err = ioutil.ReadFile(absPath)
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			// Marshal
+			if utils.IsJSON(absPath) {
+				err = json.Unmarshal(b, &dataOut.Data)
+			} else if utils.IsYAML(absPath) {
+				err = yaml.Unmarshal(b, &dataOut.Data)
+				dataOut.Data = utils.CleanValue(dataOut.Data)
+			}
+
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			// And send
+			dataOut.Status = "success"
+			send()
+		} else if r.Method == "POST" {
+			dataOut := struct {
+				Status string `json:"status"`
+				Error  *Error `json:"error,omitempty"`
+			}{}
+
+			send := func() {
+				w.Header().Add("Access-Control-Allow-Origin", "*")
+				w.WriteHeader(200)
+				err := writeJSON(w, dataOut)
+				if err != nil {
+					log.Print(err)
+				}
+			}
+
+			cwd := r.FormValue("cwd")
+			opFQName := r.FormValue("fqop")
+
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			fileEnding := ""
+			var data interface{}
+			err = json.Unmarshal(body, &data)
+			if err == nil {
+				fileEnding = "json"
+			}
+
+			err = yaml.Unmarshal(body, &data)
+			if err == nil {
+				fileEnding = "yaml"
+			}
+
+			if fileEnding == "" {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			e := api.NewEnviron(cwd)
+
+			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
+			_, p, err := e.GetFilePathWithFileEnding(relPath, "")
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			absPath := filepath.Join(p, relPath+"_visual."+fileEnding)
+			err = ioutil.WriteFile(absPath, body, 0644)
+
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			dataOut.Status = "success"
+			send()
 		}
 	}},
 }}

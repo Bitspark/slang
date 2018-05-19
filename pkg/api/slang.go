@@ -107,7 +107,7 @@ func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*co
 }
 
 func (e *Environ) IsLocalOperator(operator string) bool {
-	_, err := e.GetOperatorDefFilePath(strings.Replace(operator, ".", string(filepath.Separator), -1), e.paths[0])
+	_, _, err := e.GetFilePathWithFileEnding(strings.Replace(operator, ".", string(filepath.Separator), -1), e.paths[0])
 	return err == nil
 }
 
@@ -150,7 +150,7 @@ func (e *Environ) ListOperatorNames() ([]string, error) {
 }
 
 func (e *Environ) hasSupportedSuffix(filePath string) bool {
-	return isJSON(filePath) || isYAML(filePath)
+	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
 }
 
 func (e *Environ) getInstanceName(opDefFilePath string) string {
@@ -174,14 +174,6 @@ func (e *Environ) getFullyQualifiedName(opDefFilePath string) string {
 		relFilePath = opDefFilePath
 	}
 	return strings.Replace(relFilePath, string(filepath.Separator), ".", -1)
-}
-
-func isJSON(opDefFilePath string) bool {
-	return strings.HasSuffix(opDefFilePath, ".json")
-}
-
-func isYAML(opDefFilePath string) bool {
-	return strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml")
 }
 
 func ParseTypeDef(defStr string) core.TypeDef {
@@ -340,7 +332,7 @@ func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	return p, nil
 }
 
-func (e *Environ) GetOperatorDefFilePath(relFilePath string, enforcedPath string) (string, error) {
+func (e *Environ) GetFilePathWithFileEnding(relFilePath string, enforcedPath string) (string, string, error) {
 	var err error
 	relevantPaths := e.paths
 	if enforcedPath != "" {
@@ -357,10 +349,10 @@ func (e *Environ) GetOperatorDefFilePath(relFilePath string, enforcedPath string
 			continue
 		}
 
-		return opDefFilePath, nil
+		return opDefFilePath, p, nil
 	}
 
-	return "", err
+	return "", "", err
 }
 
 // READ OPERATOR DEFINITION
@@ -388,9 +380,9 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 	}
 
 	// Parse the file, just read it in
-	if isYAML(opDefFilePath) {
+	if utils.IsYAML(opDefFilePath) {
 		def, err = ParseYAMLOperatorDef(string(b))
-	} else if isJSON(opDefFilePath) {
+	} else if utils.IsJSON(opDefFilePath) {
 		def, err = ParseJSONOperatorDef(string(b))
 	} else {
 		err = errors.New("unsupported file ending")
@@ -444,7 +436,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 	}
 
 	// Iterate through the paths and take the first operator we find
-	if opDefFilePath, err = e.GetOperatorDefFilePath(relFilePath, enforcedPath); err == nil {
+	if opDefFilePath, _, err = e.GetFilePathWithFileEnding(relFilePath, enforcedPath); err == nil {
 		if def, err = e.ReadOperatorDef(opDefFilePath, pathsRead); err == nil {
 			return def, nil
 		}

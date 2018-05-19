@@ -26,3 +26,11 @@ func FileWithFileEnding(filename string, fileEndings []string) (string, error) {
 
 	return "", fmt.Errorf("%s: no appropriate file found", filename)
 }
+
+func IsJSON(opDefFilePath string) bool {
+	return strings.HasSuffix(opDefFilePath, ".json")
+}
+
+func IsYAML(opDefFilePath string) bool {
+	return strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml")
+}

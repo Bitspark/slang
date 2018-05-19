@@ -112,10 +112,76 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			log.Print(err)
 		}
 	}},
-}}
+	"/def/": {func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			dataOut := struct {
+				Status string `json:"status"`
+				Error  *Error `json:"error,omitempty"`
+			}{}
 
-var VisualService = &DaemonService{map[string]*DaemonEndpoint{
-	"/": {func(w http.ResponseWriter, r *http.Request) {
+			send := func() {
+				w.WriteHeader(200)
+				err := writeJSON(w, dataOut)
+				if err != nil {
+					log.Print(err)
+				}
+			}
+
+			cwd := r.FormValue("cwd")
+			opFQName := r.FormValue("fqop")
+
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			fileEnding := ""
+			var data interface{}
+			err = json.Unmarshal(body, &data)
+			if err == nil {
+				fileEnding = "json"
+			}
+
+			err = yaml.Unmarshal(body, &data)
+			if err == nil {
+				fileEnding = "yaml"
+			}
+
+			if fileEnding == "" {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			e := api.NewEnviron(cwd)
+
+			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
+			absPath, _, err := e.GetFilePathWithFileEnding(relPath, "")
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			err = ioutil.WriteFile(absPath, body, 0644)
+
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
+
+			dataOut.Status = "success"
+			send()
+		}
+	}},
+	"/meta/visual/": {func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			dataOut := struct {
 				Data   interface{} `json:"data,omitempty"`
@@ -246,3 +312,4 @@ var VisualService = &DaemonService{map[string]*DaemonEndpoint{
 		}
 	}},
 }}
+

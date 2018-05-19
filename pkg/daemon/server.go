@@ -17,7 +17,6 @@ func New(host string, port int) *DaemonServer {
 	r := mux.NewRouter().Host("localhost").Subrouter()
 	http.Handle("/", r)
 	return &DaemonServer{host, port, r}
-
 }
 
 func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {

@@ -13,6 +13,7 @@ import (
 	"github.com/Bitspark/slang/pkg/utils"
 	"io/ioutil"
 	"gopkg.in/yaml.v2"
+	"os"
 )
 
 type DaemonService struct {
@@ -157,10 +158,9 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			e := api.NewEnviron(cwd)
-
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
-			absPath, _, err := e.GetFilePathWithFileEnding(relPath, "")
+			absPath := filepath.Join(cwd, relPath+".yaml")
+			err = os.MkdirAll(filepath.Dir(absPath), 0644)
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -168,12 +168,7 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			if fileEnding == "json" {
-				body, err = json.Marshal(&def)
-			} else if fileEnding == "yaml" {
-				body, err = yaml.Marshal(&def)
-			}
-
+			body, err = yaml.Marshal(&def)
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0007"}
@@ -182,7 +177,6 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 			}
 
 			err = ioutil.WriteFile(absPath, body, 0644)
-
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -280,29 +274,11 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			fileEnding := ""
 			var data interface{}
 			err = json.Unmarshal(body, &data)
-			if err == nil {
-				fileEnding = "json"
+			if err != nil {
+				err = yaml.Unmarshal(body, &data)
 			}
-
-			err = yaml.Unmarshal(body, &data)
-			if err == nil {
-				fileEnding = "yaml"
-			}
-
-			if fileEnding == "" {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
-				return
-			}
-
-			e := api.NewEnviron(cwd)
-
-			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
-			_, p, err := e.GetFilePathWithFileEnding(relPath, "")
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -310,15 +286,25 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			if fileEnding == "json" {
-				body, err = json.Marshal(&data)
-			} else if fileEnding == "yaml" {
-				body, err = yaml.Marshal(&data)
+			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
+			absPath := filepath.Join(cwd, relPath+"_visual.yaml")
+			err = os.MkdirAll(filepath.Dir(absPath), 0644)
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
 			}
 
-			absPath := filepath.Join(p, relPath+"_visual."+fileEnding)
-			err = ioutil.WriteFile(absPath, body, 0644)
+			body, err = yaml.Marshal(&data)
+			if err != nil {
+				dataOut.Status = "error"
+				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
+				send()
+				return
+			}
 
+			err = ioutil.WriteFile(absPath, body, 0644)
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -331,4 +317,3 @@ var OperatorDefService = &DaemonService{map[string]*DaemonEndpoint{
 		}
 	}},
 }}
-

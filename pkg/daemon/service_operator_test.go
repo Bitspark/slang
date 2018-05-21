@@ -20,7 +20,11 @@ func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 
 	OperatorDefService.Routes["/"].Handle(w, r)
 
-	var outData outJSON
+	var outData struct {
+		Objects []interface{} `json:"objects"`
+		Status  string        `json:"status"`
+		Error   *Error        `json:"error,omitempty"`
+	}
 	json.Unmarshal(w.Body.Bytes(), &outData)
 
 	a.Empty(outData.Error)

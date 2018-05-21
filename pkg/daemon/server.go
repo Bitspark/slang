@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type DaemonServer struct {
@@ -16,7 +17,6 @@ func New(host string, port int) *DaemonServer {
 	r := mux.NewRouter().Host("localhost").Subrouter()
 	http.Handle("/", r)
 	return &DaemonServer{host, port, r}
-
 }
 
 func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
@@ -27,5 +27,6 @@ func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 }
 
 func (s *DaemonServer) Run() error {
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
+	handler := cors.Default().Handler(s.router)
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), handler)
 }

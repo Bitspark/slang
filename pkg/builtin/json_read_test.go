@@ -31,7 +31,7 @@ func TestBuiltin_JsonRead__String(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push("\"test\"")
+	o.Main().In().Push([]byte("\"test\""))
 	a.PortPushes("test", o.Main().Out())
 }
 
@@ -63,6 +63,6 @@ func TestBuiltin_JsonRead__Complex(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push("{\"a\":[1,2,3],\"b\":true}")
+	o.Main().In().Push([]byte("{\"a\":[1,2,3],\"b\":true}"))
 	a.PortPushes(map[string]interface{}{"a": []interface{}{1.0, 2.0, 3.0}, "b": true}, o.Main().Out())
 }

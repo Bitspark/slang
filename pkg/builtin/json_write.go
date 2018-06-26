@@ -14,7 +14,7 @@ var jsonWriteOpCfg = &builtinConfig{
 					Generic: "itemType",
 				},
 				Out: core.TypeDef{
-					Type: "string",
+					Type: "binary",
 				},
 			},
 		},
@@ -26,11 +26,11 @@ var jsonWriteOpCfg = &builtinConfig{
 		for {
 			i := in.Pull()
 			if core.IsMarker(i) {
-				out.Push(out)
+				out.Push(i)
 				continue
 			}
 			b, _ := json.Marshal(i)
-			out.Push(string(b))
+			out.Push(b)
 		}
 	},
 }

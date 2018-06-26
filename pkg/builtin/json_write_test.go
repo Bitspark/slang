@@ -32,5 +32,5 @@ func TestBuiltin_JsonWrite__String(t *testing.T) {
 	o.Main().Out().Bufferize()
 	o.Start()
 	o.Main().In().Push("test")
-	a.PortPushes("\"test\"", o.Main().Out())
+	a.PortPushes([]byte("\"test\""), o.Main().Out())
 }

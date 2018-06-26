@@ -10,7 +10,7 @@ var jsonReadOpCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "string",
+					Type: "binary",
 				},
 				Out: core.TypeDef{
 					Type:    "generic",
@@ -26,11 +26,11 @@ var jsonReadOpCfg = &builtinConfig{
 		for {
 			i := in.Pull()
 			if core.IsMarker(i) {
-				out.Push(out)
+				out.Push(i)
 				continue
 			}
 			var obj interface{}
-			err := json.Unmarshal([]byte(i.(string)), &obj)
+			err := json.Unmarshal(i.([]byte), &obj)
 			if err != nil {
 				out.Push(nil)
 				continue

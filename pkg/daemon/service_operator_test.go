@@ -18,7 +18,7 @@ func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 	w := httptest.NewRecorder()
 
-	OperatorDefService.Routes["/"].Handle(w, r)
+	DefinitionService.Routes["/"].Handle(w, r)
 
 	var outData struct {
 		Objects []interface{} `json:"objects"`

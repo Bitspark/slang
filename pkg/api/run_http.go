@@ -156,13 +156,83 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	} else {
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to unpack
+		unpackerIns := &core.InstanceDef{
+			Name: "unpacker",
+			Operator: "slang.encoding.json.read",
+			Generics: core.Generics{
+				"itemType": &inDef,
+			},
+		}
+		httpDef.InstanceDefs = append(httpDef.InstanceDefs, unpackerIns)
+		httpDef.Connections["httpServer.handler)~.body"] = []string{"(unpacker"}
+		httpDef.Connections["unpacker)"] = []string{"(operator"}
 	}
 
 	if outDef.Equals(HTTP_RESPONSE_DEF) {
 		// If the operator produces HTTP responses itself, just pass them
 		httpDef.Connections["operator)"] = []string{"~(httpServer.handler"}
 	} else {
-		panic("not implemented")
+		// In this case we are not interested in anything but the body
+		// It contains the JSON we need to pack
+		unpackerIns := &core.InstanceDef{
+			Name: "packer",
+			Operator: "slang.encoding.json.write",
+			Generics: core.Generics{
+				"itemType": &outDef,
+			},
+		}
+		httpDef.InstanceDefs = append(httpDef.InstanceDefs, unpackerIns)
+		httpDef.Connections["operator)"] = []string{"(packer"}
+		// We connect unpacker output later
+
+		// Now we still need status (200) and default headers ([])
+
+		// Status code operator
+		statusCodeIns := &core.InstanceDef{
+			Name: "statusCode",
+			Operator: "slang.const",
+			Generics: core.Generics{
+				"valueType": {
+					Type: "number",
+				},
+			},
+			Properties: core.Properties{
+				"value": 200,
+			},
+		}
+		httpDef.InstanceDefs = append(httpDef.InstanceDefs, statusCodeIns)
+		// We connect it later
+
+		// Status code operator
+		headersIns := &core.InstanceDef{
+			Name: "headers",
+			Operator: "slang.const",
+			Generics: core.Generics{
+				"valueType": {
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "map",
+						Map: map[string]*core.TypeDef{
+							"key": {
+								Type: "string",
+							},
+							"value": {
+								Type: "string",
+							},
+						},
+					},
+				},
+			},
+			Properties: core.Properties{
+				"value": []interface{}{},
+			},
+		}
+		httpDef.InstanceDefs = append(httpDef.InstanceDefs, headersIns)
+		// We connect it later
+
+		httpDef.Connections["packer)"] = []string{"~.body(httpServer.handler", "(statusCode", "(headers"}
+		httpDef.Connections["statusCode)"] = []string{"~.status(httpServer.handler"}
+		httpDef.Connections["headers)"] = []string{"~.headers(httpServer.handler"}
 	}
 
 	return httpDef, nil

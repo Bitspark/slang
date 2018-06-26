@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"gopkg.in/yaml.v2"
+	"strconv"
 )
 
 var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
@@ -37,19 +38,38 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 			return
 		}
 
+		port := 12345
+
 		env := api.NewEnviron(ri.Cwd)
-		httpDef, err := api.ConstructHttpEndpoint(env, 12345, ri.Fqn, ri.Gens, ri.Props)
+		httpDef, err := api.ConstructHttpEndpoint(env, port, ri.Fqn, ri.Gens, ri.Props)
 		if err != nil {
 			data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
 			writeJSON(w, &data)
 			return
 		}
 
+		packagedOperator := strings.Replace(ri.Fqn + "Packed", ".", string(filepath.Separator), -1) + ".yaml"
+
 		bytes, _ := yaml.Marshal(httpDef)
 		ioutil.WriteFile(
-			filepath.Join(env.WorkingDir(), strings.Replace(ri.Fqn + "Packed", ".", string(filepath.Separator), -1) + ".yaml"),
+			filepath.Join(env.WorkingDir(), packagedOperator),
 			bytes,
 			0644,
 		)
+
+		op, err := env.BuildAndCompileOperator(packagedOperator, nil, nil)
+		if err != nil {
+			data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0003"}}
+			writeJSON(w, &data)
+			return
+		}
+
+		op.Start()
+		op.Main().In().Push(nil) // Start server
+
+		data.Status = "success"
+		data.URL = "http://localhost:" + strconv.Itoa(port)
+
+		writeJSON(w, &data)
 	}},
 }}

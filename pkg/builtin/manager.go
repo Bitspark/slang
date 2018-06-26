@@ -88,7 +88,10 @@ func init() {
 	Register("slang.files.write", fileWriteOpCfg)
 
 	Register("slang.encoding.csv.read", csvReadOpCfg)
+
 	Register("slang.encoding.json.write", jsonWriteOpCfg)
+	Register("slang.encoding.json.read", jsonReadOpCfg)
+
 	Register("slang.encoding.xlsx.read", xlsxReadOpCfg)
 
 	Register("slang.time.delay", delayOpCfg)

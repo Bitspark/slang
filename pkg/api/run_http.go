@@ -154,7 +154,8 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// If the operator can handle HTTP requests itself, just pass them
 		httpDef.Connections["httpServer.handler)~"] = []string{"(operator"}
 	} else {
-		panic("not implemented")
+		// In this case we are not interested in anything but the body
+		// It contains the JSON we need to unpack
 	}
 
 	if outDef.Equals(HTTP_RESPONSE_DEF) {

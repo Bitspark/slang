@@ -12,6 +12,8 @@ import (
 	"strconv"
 )
 
+var port = 12345
+
 var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 		type runInstructionJSON struct {
@@ -37,8 +39,6 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 			writeJSON(w, &data)
 			return
 		}
-
-		port := 12345
 
 		env := api.NewEnviron(ri.Cwd)
 		httpDef, err := api.ConstructHttpEndpoint(env, port, ri.Fqn, ri.Gens, ri.Props)
@@ -69,6 +69,8 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 
 		data.Status = "success"
 		data.URL = "http://localhost:" + strconv.Itoa(port)
+
+		port++
 
 		writeJSON(w, &data)
 	}},

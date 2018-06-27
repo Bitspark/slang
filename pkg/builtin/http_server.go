@@ -17,6 +17,16 @@ type requestHandler struct {
 func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 
+	// CORS
+	if req.Method == "OPTIONS" {
+		resp.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		resp.Header().Set("Access-Control-Allow-Methods", "*")
+		resp.Header().Set("Access-Control-Allow-Origin", "*")
+		resp.WriteHeader(200)
+		resp.Write([]byte{})
+		return
+	}
+
 	token := r.sync.Push(func(out *core.Port) {
 		// Push out all request information
 		out.Map("method").Push(req.Method)

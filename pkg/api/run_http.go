@@ -224,7 +224,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 				},
 			},
 			Properties: core.Properties{
-				"value": []interface{}{},
+				"value": []interface{}{map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"}},
 			},
 		}
 		httpDef.InstanceDefs = append(httpDef.InstanceDefs, headersIns)

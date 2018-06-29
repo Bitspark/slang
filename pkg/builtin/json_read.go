@@ -3,6 +3,7 @@ package builtin
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"encoding/json"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var jsonReadOpCfg = &builtinConfig{
@@ -30,11 +31,12 @@ var jsonReadOpCfg = &builtinConfig{
 				continue
 			}
 			var obj interface{}
-			err := json.Unmarshal(i.([]byte), &obj)
+			err := json.Unmarshal([]byte(i.(utils.Binary)), &obj)
 			if err != nil {
 				out.Push(nil)
 				continue
 			}
+			obj = utils.CleanValue(obj)
 			out.Push(obj) // TODO: Make this safer
 		}
 	},

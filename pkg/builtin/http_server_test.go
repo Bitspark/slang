@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"bytes"
 	"time"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 func TestBuiltin_HTTP__CreatorFuncIsRegistered(t *testing.T) {
@@ -139,7 +140,7 @@ func TestBuiltin_HTTP__Response200(t *testing.T) {
 	o.Main().In().Push(9439)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
-	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": []byte("hallo slang!")})
+	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": utils.Binary("hallo slang!")})
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9439/test789")
@@ -174,7 +175,7 @@ func TestBuiltin_HTTP__Response404(t *testing.T) {
 	o.Main().In().Push(9440)
 	a.True(handler.Out().PullBOS())
 	handler.In().PushBOS()
-	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": []byte("bye slang!")})
+	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": utils.Binary("bye slang!")})
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9440/test789")

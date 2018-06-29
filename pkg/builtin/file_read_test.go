@@ -5,6 +5,7 @@ import (
 	"testing"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 func TestBuiltin_FileRead__CreatorFuncIsRegistered(t *testing.T) {
@@ -58,7 +59,7 @@ func TestBuiltin_FileRead__Simple(t *testing.T) {
 	o.Start()
 
 	o.Main().In().Push("../../tests/test_data/hello.txt")
-	a.Equal([]byte("hello slang"), o.Main().Out().Map("content").Pull())
+	a.Equal(utils.Binary("hello slang"), o.Main().Out().Map("content").Pull())
 	a.Nil(o.Main().Out().Map("error").Pull())
 }
 

@@ -5,6 +5,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 func TestBuiltin_JsonRead__CreatorFuncIsRegistered(t *testing.T) {
@@ -31,7 +32,7 @@ func TestBuiltin_JsonRead__String(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push([]byte("\"test\""))
+	o.Main().In().Push(utils.Binary("\"test\""))
 	a.PortPushes("test", o.Main().Out())
 }
 
@@ -63,6 +64,6 @@ func TestBuiltin_JsonRead__Complex(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push([]byte("{\"a\":[1,2,3],\"b\":true}"))
+	o.Main().In().Push(utils.Binary("{\"a\":[1,2,3],\"b\":true}"))
 	a.PortPushes(map[string]interface{}{"a": []interface{}{1.0, 2.0, 3.0}, "b": true}, o.Main().Out())
 }

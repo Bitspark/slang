@@ -4,6 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"strings"
 	"fmt"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var templateFormatOpCfg = &builtinConfig{
@@ -48,14 +49,14 @@ var templateFormatOpCfg = &builtinConfig{
 			}
 
 			data := i.(map[string]interface{})
-			content := string(data["content"].([]byte))
+			content := string(data["content"].(utils.Binary))
 			for _, v := range vars {
 				val := data[v.(string)]
 				valStr := fmt.Sprintf("%v", val)
 				content = strings.Replace(content, "{" + v.(string) + "}", valStr, -1)
 			}
 
-			out.Push([]byte(content))
+			out.Push(utils.Binary(content))
 		}
 	},
 }

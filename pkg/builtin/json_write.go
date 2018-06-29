@@ -3,6 +3,7 @@ package builtin
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"encoding/json"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var jsonWriteOpCfg = &builtinConfig{
@@ -29,8 +30,8 @@ var jsonWriteOpCfg = &builtinConfig{
 				out.Push(i)
 				continue
 			}
-			b, _ := json.Marshal(i)
-			out.Push(b)
+			b, _ := json.Marshal(&i)
+			out.Push(utils.Binary(b))
 		}
 	},
 }

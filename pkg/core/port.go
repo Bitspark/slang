@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"sync"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 const (
@@ -536,9 +537,9 @@ func (p *Port) PullString() (string, interface{}) {
 }
 
 // Pull a binary object and panic if not possible
-func (p *Port) PullBinary() ([]byte, interface{}) {
+func (p *Port) PullBinary() (utils.Binary, interface{}) {
 	item := p.Pull()
-	if b, ok := item.([]byte); ok {
+	if b, ok := item.(utils.Binary); ok {
 		return b, nil
 	}
 	return nil, item

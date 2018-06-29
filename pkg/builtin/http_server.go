@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"bytes"
 	"time"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 type requestHandler struct {
@@ -56,7 +57,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(req.Body)
-		out.Map("body").Push(buf.Bytes())
+		out.Map("body").Push(utils.Binary(buf.Bytes()))
 	})
 
 	r.sync.Pull(token, func(in *core.Port) {

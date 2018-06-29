@@ -250,6 +250,23 @@ func (p *Port) Connected(q *Port) bool {
 	return false
 }
 
+// Closes the port by closing all channels
+func (p *Port) Close() {
+	if p.buf != nil {
+		close(p.buf)
+	}
+
+	if p.sub != nil {
+		p.sub.Close()
+	}
+
+	if len(p.subs) > 0 {
+		for _, sub := range p.subs {
+			sub.Close()
+		}
+	}
+}
+
 func (p *Port) StreamSource() *Port {
 	return p.strSrc
 }

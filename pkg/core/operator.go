@@ -140,6 +140,13 @@ func (o *Operator) Start() {
 }
 
 func (o *Operator) Stop() {
+	if o.function != nil {
+		o.Main().In().Close()
+	} else {
+		for _, c := range o.children {
+			c.Stop()
+		}
+	}
 }
 
 func (o *Operator) Builtin() bool {

@@ -62,6 +62,8 @@ func CleanValue(v interface{}) interface{} {
 			}
 		}
 		return v
+	case Binary:
+		return v
 	case int:
 		return float64(v)
 	case float64:

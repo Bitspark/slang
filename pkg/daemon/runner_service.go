@@ -13,7 +13,6 @@ import (
 	"math/rand"
 )
 
-var port = 12345
 var runningInstances = make(map[int64]struct {
 	port int
 	op   *core.Operator
@@ -32,7 +31,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 
 			type outJSON struct {
 				URL    string `json:"url,omitempty"`
-				Handle int64 `json:"handle,omitempty"`
+				Handle string `json:"handle,omitempty"`
 				Status string `json:"status"`
 				Error  *Error `json:"error,omitempty"`
 			}
@@ -46,6 +45,19 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
 				writeJSON(w, &data)
 				return
+			}
+
+			port := 50000
+			portUsed := true
+			for portUsed {
+				portUsed = false
+				for _, ri := range runningInstances {
+					if ri.port == port {
+						portUsed = true
+						break
+					}
+				}
+				port++
 			}
 
 			env := api.NewEnviron(ri.Cwd)
@@ -76,13 +88,13 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 			runningInstances[handle] = struct {
 				port int
 				op   *core.Operator
-			}{port,op}
+			}{port, op}
 
 			op.Start()
 			op.Main().In().Push(nil) // Start server
 
 			data.Status = "success"
-			data.Handle = handle
+			data.Handle = strconv.FormatInt(handle, 16)
 			data.URL = "http://localhost:" + strconv.Itoa(port)
 
 			port++
@@ -90,7 +102,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 			writeJSON(w, &data)
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
-				Handle int64 `json:"handle"`
+				Handle string `json:"handle"`
 			}
 
 			type outJSON struct {
@@ -109,13 +121,15 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			if ii, ok := runningInstances[si.Handle]; !ok {
+			handle, _ := strconv.ParseInt(si.Handle, 16, 64)
+
+			if ii, ok := runningInstances[handle]; !ok {
 				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E0002"}}
 				writeJSON(w, &data)
 				return
 			} else {
 				ii.op.Stop()
-				delete(runningInstances, si.Handle)
+				delete(runningInstances, handle)
 
 				data.Status = "success"
 				writeJSON(w, &data)

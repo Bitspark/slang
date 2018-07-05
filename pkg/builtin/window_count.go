@@ -58,7 +58,7 @@ var windowCountOpCfg = &builtinConfig{
 		}
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i := in.Stream().Pull()
 			if core.IsMarker(i) && !in.OwnBOS(i) {
 				out.Push(i)

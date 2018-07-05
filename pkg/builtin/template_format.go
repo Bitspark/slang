@@ -41,7 +41,7 @@ var templateFormatOpCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		vars := op.Property("variables").([]interface{})
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)

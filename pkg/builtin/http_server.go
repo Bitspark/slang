@@ -182,7 +182,7 @@ var httpServerOpCfg = &builtinConfig{
 			slangHandler.Out().Stream())
 		go sync.Worker()
 
-		for {
+		for !op.CheckStop() {
 			port, marker := in.PullInt()
 			if marker != nil {
 				out.Push(marker)
@@ -200,6 +200,12 @@ var httpServerOpCfg = &builtinConfig{
 				WriteTimeout:   10 * time.Second,
 				MaxHeaderBytes: 1 << 20,
 			}
+
+			go func() {
+				op.WaitForStop()
+				s.Close()
+			}()
+
 			err := s.ListenAndServe()
 			out.Push(err.Error())
 

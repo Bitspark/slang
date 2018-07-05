@@ -30,7 +30,7 @@ var fileWriteOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)

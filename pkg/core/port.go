@@ -26,15 +26,15 @@ const (
 	DIRECTION_OUT = iota
 )
 
-var CHANNEL_SIZE = 2048
+var CHANNEL_SIZE = 1 << 15
 var CHANNEL_DYNAMIC = false
 
 type BOS struct {
-	src  *Port
+	src *Port
 }
 
 type EOS struct {
-	src  *Port
+	src *Port
 }
 
 type Port struct {
@@ -54,8 +54,9 @@ type Port struct {
 	sub  *Port
 	subs map[string]*Port
 
-	buf   chan interface{}
-	mutex sync.Mutex
+	buf    chan interface{}
+	mutex  sync.Mutex
+	closed bool
 }
 
 // Makes a new port.
@@ -250,8 +251,37 @@ func (p *Port) Connected(q *Port) bool {
 	return false
 }
 
+// Opens the port by opening all channels
+func (p *Port) Open() {
+	if !p.closed {
+		return
+	}
+
+	p.closed = false
+
+	if p.buf != nil {
+		p.buf = make(chan interface{}, CHANNEL_SIZE)
+	}
+
+	if p.sub != nil {
+		p.sub.Open()
+	}
+
+	if len(p.subs) > 0 {
+		for _, sub := range p.subs {
+			sub.Open()
+		}
+	}
+}
+
 // Closes the port by closing all channels
 func (p *Port) Close() {
+	if p.closed {
+		return
+	}
+
+	p.closed = true
+
 	if p.buf != nil {
 		close(p.buf)
 	}
@@ -371,6 +401,10 @@ func (p *Port) assertChannelSpace() {
 
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
+	if p.closed {
+		return
+	}
+
 	if p.buf != nil {
 		if CHANNEL_DYNAMIC {
 			p.assertChannelSpace()
@@ -379,14 +413,12 @@ func (p *Port) Push(item interface{}) {
 			p.buf <- item
 			p.mutex.Unlock()
 		} else {
-			//fmt.Printf("%s <- %#v\n", p.StringifyComplete(), item)
 			p.buf <- item
 		}
 	}
 
 	for dest := range p.dests {
 		if dest.Type() == TYPE_TRIGGER || p.primitive() {
-			//fmt.Printf("%s -> %#v to %s\n", p.StringifyComplete(), item, dest.StringifyComplete())
 			dest.Push(item)
 		}
 	}

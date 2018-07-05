@@ -61,7 +61,7 @@ var reduceOpCfg = &builtinConfig{
 		sIn := op.Delegate("selection").In()
 		sOut := op.Delegate("selection").Out()
 		nullValue := op.Property("emptyValue")
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 
 			if core.IsMarker(i) {

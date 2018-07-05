@@ -106,7 +106,7 @@ var plotOpCfg = &builtinConfig{
 		maxX := op.Property("maxX").(float64)
 		minY := op.Property("minX").(float64)
 		maxY := op.Property("maxX").(float64)
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)

@@ -70,7 +70,7 @@ var sendEmailOpCfg = &builtinConfig{
 		server := op.Property("server").(string)
 		username := op.Property("username").(string)
 		password := op.Property("password").(string)
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)

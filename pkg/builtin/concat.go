@@ -46,7 +46,7 @@ var concatOpCfg = &builtinConfig{
 		for i, idxProp := range indexesProp {
 			streams[i] = in.Map("stream_"+idxProp.(string))
 		}
-		for {
+		for !op.CheckStop() {
 			item := streams[0].Stream().Pull()
 			if !streams[0].OwnBOS(item) {
 				for i := 1; i < len(streams); i++ {

@@ -31,7 +31,7 @@ var fileReadOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			file, marker := in.PullString()
 			if marker != nil {
 				out.Push(marker)

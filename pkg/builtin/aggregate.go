@@ -64,7 +64,7 @@ var aggregateOpCfg = &builtinConfig{
 		iOut := op.Delegate("iteration").Out()
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			state := in.Map("init").Pull()
 
 			// Redirect all markers

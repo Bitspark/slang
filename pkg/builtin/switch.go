@@ -59,7 +59,7 @@ var switchOpCfg = &builtinConfig{
 			cs := fmt.Sprintf("%v", c)
 			cases[cs] = op.Delegate(cs)
 		}
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)

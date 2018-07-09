@@ -1,3 +1,5 @@
+## Slang daemon
+
 <img src="http://tryslang.com/slang2.png" height="130">
 
 *Powered by [Bitspark](https://bitspark.de)*

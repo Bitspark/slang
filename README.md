@@ -2,7 +2,7 @@
 
 #### Slang daemon written in Go.
 
-<img src="http://tryslang.com/slang.png" height="80">
+<img src="http://tryslang.com/slang2.png" height="130">
 
 *Powered by [Bitspark](https://bitspark.de)*
 

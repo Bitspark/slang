@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"bytes"
 	"time"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 type requestHandler struct {
@@ -16,6 +17,16 @@ type requestHandler struct {
 
 func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
+
+	// CORS
+	if req.Method == "OPTIONS" {
+		resp.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		resp.Header().Set("Access-Control-Allow-Methods", "*")
+		resp.Header().Set("Access-Control-Allow-Origin", "*")
+		resp.WriteHeader(200)
+		resp.Write([]byte{})
+		return
+	}
 
 	token := r.sync.Push(func(out *core.Port) {
 		// Push out all request information
@@ -46,7 +57,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(req.Body)
-		out.Map("body").Push(buf.Bytes())
+		out.Map("body").Push(utils.Binary(buf.Bytes()))
 	})
 
 	r.sync.Pull(token, func(in *core.Port) {
@@ -171,7 +182,7 @@ var httpServerOpCfg = &builtinConfig{
 			slangHandler.Out().Stream())
 		go sync.Worker()
 
-		for {
+		for !op.CheckStop() {
 			port, marker := in.PullInt()
 			if marker != nil {
 				out.Push(marker)
@@ -189,6 +200,12 @@ var httpServerOpCfg = &builtinConfig{
 				WriteTimeout:   10 * time.Second,
 				MaxHeaderBytes: 1 << 20,
 			}
+
+			go func() {
+				op.WaitForStop()
+				s.Close()
+			}()
+
 			err := s.ListenAndServe()
 			out.Push(err.Error())
 

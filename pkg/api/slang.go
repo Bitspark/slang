@@ -415,6 +415,25 @@ func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (cor
 	return def, nil
 }
 
+func (e *Environ) GetOperatorPath(operator string, currDir string) (string, error) {
+	relFilePath := strings.Replace(operator, ".", string(filepath.Separator), -1)
+	enforcedPath := "" // when != "" --> only search for operatorDef in path *enforcedPath*
+	// Check if it is a local operator which has to be found relative to the current operator
+	if strings.HasPrefix(operator, ".") {
+		enforcedPath = currDir
+	}
+
+	var err error
+	var opDefFilePath string
+
+	// Iterate through the paths and take the first operator we find
+	if opDefFilePath, _, err = e.GetFilePathWithFileEnding(relFilePath, enforcedPath); err == nil {
+		return opDefFilePath, nil
+	}
+
+	return "", err
+}
+
 // getOperatorDef tries to get the operator definition from the builtin package or the file system.
 func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
 	if builtin.IsRegistered(insDef.Operator) {
@@ -428,15 +447,7 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 	var err error
 	var opDefFilePath string
 
-	relFilePath := strings.Replace(insDef.Operator, ".", string(filepath.Separator), -1)
-	enforcedPath := "" // when != "" --> only search for operatordef in path *enforcedPath*
-	// Check if it is a local operator which has to be found relative to the current operator
-	if strings.HasPrefix(insDef.Operator, ".") {
-		enforcedPath = currDir
-	}
-
-	// Iterate through the paths and take the first operator we find
-	if opDefFilePath, _, err = e.GetFilePathWithFileEnding(relFilePath, enforcedPath); err == nil {
+	if opDefFilePath, err = e.GetOperatorPath(insDef.Operator, currDir); err == nil {
 		if def, err = e.ReadOperatorDef(opDefFilePath, pathsRead); err == nil {
 			return def, nil
 		}

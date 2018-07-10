@@ -48,7 +48,7 @@ var forkOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i := in.Stream().Pull()
 			if !in.OwnBOS(i) {
 				out.Push(i)

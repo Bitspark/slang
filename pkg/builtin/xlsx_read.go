@@ -40,7 +40,7 @@ var xlsxReadOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			filename, i := in.PullString()
 			if i != nil {
 				out.Push(i)

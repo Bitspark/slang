@@ -68,7 +68,7 @@ var takeOpCfg = &builtinConfig{
 		out := op.Main().Out()
 		cIn := op.Delegate("compare").In()
 		cOut := op.Delegate("compare").Out()
-		for {
+		for !op.CheckStop() {
 			t := in.Map("true").Stream().Pull()
 			f := in.Map("false").Stream().Pull()
 

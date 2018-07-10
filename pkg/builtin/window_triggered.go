@@ -51,7 +51,7 @@ var windowTriggeredOpCfg = &builtinConfig{
 		var window []interface{}
 
 		go func() {
-			for {
+			for !op.CheckStop() {
 				i := in.Map("trigger").Stream().Pull()
 				if !in.Map("trigger").OwnBOS(i) {
 					out.Push(i)
@@ -81,7 +81,7 @@ var windowTriggeredOpCfg = &builtinConfig{
 			}
 		}()
 
-		for {
+		for !op.CheckStop() {
 			i := in.Map("stream").Stream().Pull()
 			if core.IsMarker(i) {
 				continue

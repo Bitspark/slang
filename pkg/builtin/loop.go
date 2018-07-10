@@ -50,7 +50,7 @@ var loopOpCfg = &builtinConfig{
 		iOut := op.Delegate("iteration").Out()
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 
 			// Redirect all markers

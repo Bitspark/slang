@@ -5,6 +5,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 func TestBuiltin_TemplateFormat__CreatorFuncIsRegistered(t *testing.T) {
@@ -29,6 +30,6 @@ func TestBuiltin_TemplateFormat__String(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push(map[string]interface{}{"a": "test", "content": []byte("__{a}__")})
-	a.PortPushes([]byte("__test__"), o.Main().Out())
+	o.Main().In().Push(map[string]interface{}{"a": "test", "content": utils.Binary("__{a}__")})
+	a.PortPushes(utils.Binary("__test__"), o.Main().Out())
 }

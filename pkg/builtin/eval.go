@@ -137,7 +137,7 @@ var evalOpCfg = &builtinConfig{
 		expr, _ := newEvaluableExpression(op.Property("expression").(string))
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 
 			if core.IsMarker(i) {

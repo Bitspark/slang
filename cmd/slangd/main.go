@@ -10,7 +10,8 @@ const PORT = 5149 // sla[n]g == 5149
 func main() {
 	log.Println("Starting slangd...")
 	srv := daemon.New("localhost", PORT)
-	srv.AddService("/operator", daemon.OperatorDefService)
+	srv.AddService("/operator", daemon.DefinitionService)
+	srv.AddService("/run", daemon.RunnerService)
 	log.Printf("Listening on http://%s:%d/\n", srv.Host, srv.Port)
 	log.Fatal(srv.Run())
 }

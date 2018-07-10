@@ -19,10 +19,11 @@ type Operator struct {
 	parent      *Operator
 	children    map[string]*Operator
 	function    OFunc
-	generics  Generics
+	generics    Generics
 	properties  Properties
 	connectFunc CFunc
 	elementary  string
+	stopChannel chan bool
 }
 
 type Delegate struct {
@@ -130,6 +131,15 @@ func (o *Operator) Child(name string) *Operator {
 }
 
 func (o *Operator) Start() {
+	o.stopChannel = make(chan bool, 1)
+
+	for _, srv := range o.services {
+		srv.outPort.Open()
+	}
+	for _, dlg := range o.delegates {
+		dlg.outPort.Open()
+	}
+
 	if o.function != nil {
 		go o.function(o)
 	} else {
@@ -140,6 +150,32 @@ func (o *Operator) Start() {
 }
 
 func (o *Operator) Stop() {
+	o.stopChannel <- true
+
+	for _, srv := range o.services {
+		srv.outPort.Close()
+	}
+	for _, dlg := range o.delegates {
+		dlg.outPort.Close()
+	}
+
+	for _, c := range o.children {
+		c.Stop()
+	}
+}
+
+func (o *Operator) WaitForStop() {
+	<-o.stopChannel
+	o.stopChannel <- true
+}
+
+func (o *Operator) CheckStop() bool {
+	select {
+	case <-o.stopChannel:
+		return true
+	default:
+		return false
+	}
 }
 
 func (o *Operator) Builtin() bool {

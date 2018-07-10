@@ -53,7 +53,7 @@ var extractOpCfg = &builtinConfig{
 				indexes = append(indexes, idx)
 			}
 		}
-		for {
+		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)

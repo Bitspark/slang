@@ -46,7 +46,7 @@ var mergeOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i := in.Map("select").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
 			pFalse := in.Map("false").Stream().Pull()

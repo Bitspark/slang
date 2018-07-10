@@ -21,7 +21,7 @@ var delayOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			i, err := in.PullInt()
 			if err != nil {
 				if !core.IsMarker(i) {

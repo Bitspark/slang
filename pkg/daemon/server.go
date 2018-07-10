@@ -27,6 +27,8 @@ func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 }
 
 func (s *DaemonServer) Run() error {
-	handler := cors.Default().Handler(s.router)
+	handler := cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "DELETE"},
+	}).Handler(s.router)
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), handler)
 }

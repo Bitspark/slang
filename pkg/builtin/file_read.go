@@ -4,6 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
 	"path/filepath"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var fileReadOpCfg = &builtinConfig{
@@ -30,7 +31,7 @@ var fileReadOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			file, marker := in.PullString()
 			if marker != nil {
 				out.Push(marker)
@@ -44,7 +45,7 @@ var fileReadOpCfg = &builtinConfig{
 				continue
 			}
 
-			out.Map("content").Push(content)
+			out.Map("content").Push(utils.Binary(content))
 			out.Map("error").Push(nil)
 		}
 	},

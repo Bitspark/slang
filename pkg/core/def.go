@@ -517,6 +517,10 @@ func (d TypeDef) VerifyData(data interface{}) error {
 		if d.Type == "string" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
+	case utils.Binary:
+		if d.Type == "binary" {
+			return nil
+		}
 	case int:
 		if d.Type == "number" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil

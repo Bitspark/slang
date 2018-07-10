@@ -34,7 +34,7 @@ var syncMergeOpCfg = &builtinConfig{
 	oFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		for {
+		for !op.CheckStop() {
 			item := in.Pull()
 			m, ok := item.(map[string]interface{})
 			if !ok {

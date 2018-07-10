@@ -6,16 +6,16 @@ import (
 	"github.com/Bitspark/slang/pkg/utils"
 )
 
-var jsonWriteOpCfg = &builtinConfig{
+var jsonReadOpCfg = &builtinConfig{
 	oDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type:    "generic",
-					Generic: "itemType",
+					Type: "binary",
 				},
 				Out: core.TypeDef{
-					Type: "binary",
+					Type:    "generic",
+					Generic: "itemType",
 				},
 			},
 		},
@@ -30,8 +30,14 @@ var jsonWriteOpCfg = &builtinConfig{
 				out.Push(i)
 				continue
 			}
-			b, _ := json.Marshal(&i)
-			out.Push(utils.Binary(b))
+			var obj interface{}
+			err := json.Unmarshal([]byte(i.(utils.Binary)), &obj)
+			if err != nil {
+				out.Push(nil)
+				continue
+			}
+			obj = utils.CleanValue(obj)
+			out.Push(obj) // TODO: Make this safer
 		}
 	},
 }

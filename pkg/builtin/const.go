@@ -28,7 +28,7 @@ var constOpCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		v := op.Property("value")
-		for {
+		for !op.CheckStop() {
 			if i := in.Pull(); !core.IsMarker(i) {
 				out.Push(v)
 			} else {

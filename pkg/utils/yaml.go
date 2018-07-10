@@ -2,9 +2,12 @@ package utils
 
 import (
 	"fmt"
+	"encoding/base64"
+	"strings"
 )
 
 type MapStr map[string]interface{}
+type Binary []byte
 
 func (ms *MapStr) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var result map[interface{}]interface{}
@@ -14,6 +17,10 @@ func (ms *MapStr) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	*ms = cleanUpInterfaceMap(result)
 	return nil
+}
+
+func (b *Binary) MarshalYAML() (interface{}, error) {
+	return "base64:" + base64.StdEncoding.EncodeToString(*b), nil
 }
 
 func cleanUpInterfaceArray(in []interface{}) []interface{} {
@@ -49,6 +56,13 @@ func CleanValue(v interface{}) interface{} {
 	case map[string]interface{}:
 		return cleanUpStringMap(v)
 	case string:
+		if strings.HasPrefix(v, "base64:") {
+			if decoded, err := base64.StdEncoding.DecodeString(v[7:]); err == nil {
+				return Binary(decoded)
+			}
+		}
+		return v
+	case Binary:
 		return v
 	case int:
 		return float64(v)

@@ -60,7 +60,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 				port++
 			}
 
-			env := api.NewEnviron(ri.Cwd)
+			env := api.NewEnviron()
 			httpDef, err := api.ConstructHttpEndpoint(env, port, ri.Fqn, ri.Gens, ri.Props)
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}

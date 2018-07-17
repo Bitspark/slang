@@ -32,9 +32,8 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 		var dataOut outJSON
 		var opDefList []operatorDefJSON
 		var err error
-		cwd := r.FormValue("cwd")
 
-		e := api.NewEnviron(cwd)
+		e := api.NewEnviron()
 
 		opNames, err := e.ListOperatorNames()
 
@@ -188,10 +187,9 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 
 			var err error
 			var b []byte
-			cwd := r.FormValue("cwd")
 			opFQName := r.FormValue("fqop")
 
-			e := api.NewEnviron(cwd)
+			e := api.NewEnviron()
 
 			// Find the operator first
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)

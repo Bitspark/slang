@@ -22,45 +22,29 @@ type Environ struct {
 }
 
 func NewEnviron() *Environ {
-	return NewCustomEnviron("")
-}
-
-func NewCustomEnviron(workingDir string) *Environ {
 	// Stores all library paths in the global paths variable
 	// We always look in the local directory first
 	paths := []string{}
-	cwd := ""
+
+	missingEnvVars := map[string]bool{}
+	// "SLANG_DIR" must be always at beginning
+	for _, envName := range []string{"SLANG_DIR", "SLANG_LIB"} {
+		envVal := os.Getenv(envName)
+		if envVal == "" {
+			missingEnvVars[envName] = true
+			continue
+		}
+		paths = append(paths, envVal)
+
+	}
+
+	if len(missingEnvVars) > 0 {
+		panic(fmt.Sprintf("environment variable %v is undefined", funk.Keys(missingEnvVars)))
+	}
 
 	pathSep := string(filepath.Separator)
-	pathListSep := string(filepath.ListSeparator)
-
-	// Read from environment
-	for _, e := range os.Environ() {
-		pair := strings.Split(e, "=")
-		switch pair[0] {
-		case "SLANG_LIB":
-			libPaths := strings.Split(pair[1], pathListSep)
-			for _, libPath := range libPaths {
-				libPath = filepath.Clean(libPath)
-			}
-
-		case "SLANG_DIR":
-			if workingDir == "" {
-				cwd = filepath.Clean(pair[1])
-			}
-		}
-	}
-
-	if cwd == "" {
-		if workingDir == "" {
-			panic("environment variable SLANG_DIR is undefined")
-		}
-		cwd = filepath.Clean(workingDir)
-	}
-
-	paths = append([]string{cwd}, paths...)
-
 	for i, p := range paths {
+		p = filepath.Clean(p)
 		if !strings.HasSuffix(p, pathSep) {
 			p += pathSep
 		}
@@ -68,6 +52,11 @@ func NewCustomEnviron(workingDir string) *Environ {
 	}
 
 	return &Environ{paths}
+}
+
+func NewTestEnvviron(cwd string) *Environ {
+	os.Setenv("SLANG_DIR", cwd)
+	return NewEnviron()
 }
 
 func (e *Environ) WorkingDir() string {

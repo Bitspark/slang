@@ -22,3 +22,4 @@ func validateJSONInstanceDef(jsonDef string) (core.InstanceDef, error) {
 	json.Unmarshal([]byte(jsonDef), &def)
 	return def, def.Validate()
 }
+

@@ -50,6 +50,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 			port := 50000
 			portUsed := true
 			for portUsed {
+				port++
 				portUsed = false
 				for _, ri := range runningInstances {
 					if ri.port == port {
@@ -57,7 +58,6 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 						break
 					}
 				}
-				port++
 			}
 
 			env := api.NewEnviron(ri.Cwd)

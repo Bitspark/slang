@@ -7,6 +7,7 @@ import (
 	"net/mail"
 	"net"
 	"crypto/tls"
+	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var sendEmailOpCfg = &builtinConfig{
@@ -84,7 +85,7 @@ var sendEmailOpCfg = &builtinConfig{
 			from := mail.Address{Name: fromMap["name"].(string), Address: fromMap["address"].(string)}
 			to   := mail.Address{Name: toMap["name"].(string), Address: toMap["address"].(string)}
 			subj := im["subject"].(string)
-			body := im["body"].([]byte)
+			body := im["body"].(utils.Binary)
 
 			// Setup headers
 			headers := make(map[string]string)

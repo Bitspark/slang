@@ -24,7 +24,9 @@ func New(host string, port int) *DaemonServer {
 func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
-		r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Env, w, r) }))
+		(func(endpoint *DaemonEndpoint) {
+			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Env, w, r) }))
+		})(endpoint)
 	}
 }
 

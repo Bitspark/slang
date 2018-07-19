@@ -239,7 +239,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 				}
 			}
 
-			cwd := r.FormValue("cwd")
+			cwd := e.WorkingDir()
 			opFQName := r.FormValue("fqop")
 
 			body, err := ioutil.ReadAll(r.Body)

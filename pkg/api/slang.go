@@ -42,10 +42,6 @@ func NewCustomEnviron(workingDir string) *Environ {
 			libPaths := strings.Split(pair[1], pathListSep)
 			for _, libPath := range libPaths {
 				libPath = filepath.Clean(libPath)
-				if !strings.HasSuffix(libPath, pathSep) {
-					libPath += pathSep
-				}
-				paths = append(paths, libPath)
 			}
 
 		case "SLANG_DIR":
@@ -63,6 +59,13 @@ func NewCustomEnviron(workingDir string) *Environ {
 	}
 
 	paths = append([]string{cwd}, paths...)
+
+	for i, p := range paths {
+		if !strings.HasSuffix(p, pathSep) {
+			p += pathSep
+		}
+		paths[i] = p
+	}
 
 	return &Environ{paths}
 }

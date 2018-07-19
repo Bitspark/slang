@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"github.com/Bitspark/slang/pkg/api"
 )
 
 type DaemonServer struct {
+	Env    *api.Environ
 	Host   string
 	Port   int
 	router *mux.Router
@@ -16,13 +18,13 @@ type DaemonServer struct {
 func New(host string, port int) *DaemonServer {
 	r := mux.NewRouter().Host("localhost").Subrouter()
 	http.Handle("/", r)
-	return &DaemonServer{host, port, r}
+	return &DaemonServer{api.NewEnviron(), host, port, r}
 }
 
 func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
-		r.HandleFunc(path, http.HandlerFunc(endpoint.Handle))
+		r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Env, w, r) }))
 	}
 }
 

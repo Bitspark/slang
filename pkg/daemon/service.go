@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"io"
+	"github.com/Bitspark/slang/pkg/api"
 )
 
 type DaemonService struct {
@@ -11,7 +12,7 @@ type DaemonService struct {
 }
 
 type DaemonEndpoint struct {
-	Handle func(w http.ResponseWriter, r *http.Request)
+	Handle func(e *api.Environ, w http.ResponseWriter, r *http.Request)
 }
 
 func writeJSON(w io.Writer, dat interface{}) error {

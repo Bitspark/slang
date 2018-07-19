@@ -6,7 +6,10 @@ import (
 	"net/http/httptest"
 	"github.com/Bitspark/slang/tests/assertions"
 	"encoding/json"
+	"github.com/Bitspark/slang/pkg/api"
 )
+
+var TEST_ENV = api.NewCustomEnviron("../../tests/test_data/daemon/services/operator")
 
 func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 	t.Parallel()
@@ -14,11 +17,10 @@ func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 
 	r, _ := http.NewRequest("GET", "/", nil)
 	q := r.URL.Query()
-	q.Add("cwd", "../../tests/test_data/daemon/services/operator")
 	r.URL.RawQuery = q.Encode()
 	w := httptest.NewRecorder()
 
-	DefinitionService.Routes["/"].Handle(w, r)
+	DefinitionService.Routes["/"].Handle(TEST_ENV, w, r)
 
 	var outData struct {
 		Objects []interface{} `json:"objects"`

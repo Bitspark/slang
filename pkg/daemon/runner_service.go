@@ -20,10 +20,9 @@ var runningInstances = make(map[int64]struct {
 var rnd = rand.New(rand.NewSource(99))
 
 var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
-	"/": {func(w http.ResponseWriter, r *http.Request) {
+	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
-				Cwd   string          `json:"cwd"`
 				Fqn   string          `json:"fqn"`
 				Props core.Properties `json:"props"`
 				Gens  core.Generics   `json:"gens"`
@@ -60,8 +59,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 				}
 			}
 
-			env := api.NewEnviron(ri.Cwd)
-			httpDef, err := api.ConstructHttpEndpoint(env, port, ri.Fqn, ri.Gens, ri.Props)
+			httpDef, err := api.ConstructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
 				writeJSON(w, &data)
@@ -72,12 +70,12 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 
 			bytes, _ := yaml.Marshal(httpDef)
 			ioutil.WriteFile(
-				filepath.Join(env.WorkingDir(), packagedOperator),
+				filepath.Join(e.WorkingDir(), packagedOperator),
 				bytes,
 				0644,
 			)
 
-			op, err := env.BuildAndCompileOperator(packagedOperator, nil, nil)
+			op, err := e.BuildAndCompileOperator(packagedOperator, nil, nil)
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0003"}}
 				writeJSON(w, &data)

@@ -16,7 +16,7 @@ import (
 )
 
 var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
-	"/": {func(w http.ResponseWriter, r *http.Request) {
+	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
 			Name string           `json:"name"`
 			Def  core.OperatorDef `json:"def"`
@@ -32,9 +32,6 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 		var dataOut outJSON
 		var opDefList []operatorDefJSON
 		var err error
-		cwd := r.FormValue("cwd")
-
-		e := api.NewEnviron(cwd)
 
 		opNames, err := e.ListOperatorNames()
 
@@ -95,7 +92,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 			log.Print(err)
 		}
 	}},
-	"/def/": {func(w http.ResponseWriter, r *http.Request) {
+	"/def/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			dataOut := struct {
 				Status string `json:"status"`
@@ -110,7 +107,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 				}
 			}
 
-			cwd := r.FormValue("cwd")
+			cwd := e.WorkingDir()
 			opFQName := r.FormValue("fqop")
 
 			body, err := ioutil.ReadAll(r.Body)
@@ -170,7 +167,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 			send()
 		}
 	}},
-	"/meta/visual/": {func(w http.ResponseWriter, r *http.Request) {
+	"/meta/visual/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			dataOut := struct {
 				Data   interface{} `json:"data,omitempty"`
@@ -188,10 +185,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 
 			var err error
 			var b []byte
-			cwd := r.FormValue("cwd")
 			opFQName := r.FormValue("fqop")
-
-			e := api.NewEnviron(cwd)
 
 			// Find the operator first
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)

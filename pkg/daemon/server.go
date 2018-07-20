@@ -15,10 +15,10 @@ type DaemonServer struct {
 	router *mux.Router
 }
 
-func New(env *api.Environ, host string, port int) *DaemonServer {
+func New(host string, port int) *DaemonServer {
 	r := mux.NewRouter().Host("localhost").Subrouter()
 	http.Handle("/", r)
-	return &DaemonServer{env, host, port, r}
+	return &DaemonServer{api.NewEnviron(), host, port, r}
 }
 
 func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {

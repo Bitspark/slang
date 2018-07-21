@@ -27,7 +27,7 @@ jobs:
             mkdir ./ci/release
             python3 ./ci/build.py v0.2
       - persist_to_workspace:
-          root: ~/slang
+          root: /go/src/github.com/Bitspark/slang/
           paths:
             - ci/release
   release:
@@ -37,7 +37,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: ~/slang-ui
+          at: /go/src/github.com/Bitspark/slang/
       - run:
           name: Release
           command: ${GOPATH}/bin/ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete v0.2 ./ci/release/

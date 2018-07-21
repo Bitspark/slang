@@ -1,11 +1,67 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
-      - image: circleci/golang:1.8
-
+      - image: bitspark/slang-ci:latest
     working_directory: /go/src/github.com/Bitspark/slang/
     steps:
       - checkout
-      - run: go get -v -t -d ./...
-      - run: go test -v ./...
+      - run:
+          name: Get dependencies
+          command: go get -v -t -d ./...
+      - run:
+          name: Test
+          command: go test -v ./...
+  build:
+    docker:
+      - image: bitspark/slang-ci:latest
+    working_directory: /go/src/github.com/Bitspark/slang/
+    steps:
+      - checkout
+      - run:
+          name: Get dependencies
+          command: go get -v -t -d ./...
+      - run:
+          name: Build
+          command: |
+            mkdir ./ci/release
+            python3 ./ci/build.py
+      - persist_to_workspace:
+          root: ~/slang
+          paths:
+            - ci/release
+  release:
+    docker:
+      - image: bitspark/slang-ci:latest
+    working_directory: /go/src/github.com/Bitspark/slang/
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/slang-ui
+      - run:
+          name: Release
+          command: ${GOPATH}/bin/ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./ci/release/
+workflows:
+  version: 2
+  build-and-release:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /.*/
+      - build:
+          requires:
+            - test
+          filters:
+            branches:
+              only: ci # TODO: Remove after completion
+            tags:
+              only: /^v.*/
+      - release:
+          requires:
+            - build
+          filters:
+            branches:
+              only: ci # TODO: Remove after completion
+            tags:
+              only: /^v.*/

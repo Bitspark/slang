@@ -25,7 +25,7 @@ jobs:
           name: Build
           command: |
             mkdir ./ci/release
-            python3 ./ci/build.py
+            python3 ./ci/build.py ${CIRCLE_TAG}
       - persist_to_workspace:
           root: ~/slang
           paths:

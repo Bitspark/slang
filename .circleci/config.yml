@@ -40,7 +40,7 @@ jobs:
           at: /go/src/github.com/Bitspark/slang/
       - run:
           name: Release
-          command: ${GOPATH}/bin/ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./ci/release/
+          command: ${GOPATH}/bin/ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ./ci/release/
 workflows:
   version: 2
   build-and-release:

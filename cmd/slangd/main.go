@@ -53,7 +53,7 @@ func loadLocalComponents(envPaths *EnvironPaths) {
 			if localVer != "" {
 				log.Printf("Your local %v has version %v but latest is %v.", repoName, localVer, latestVer)
 			}
-			log.Printf("Will download %v latest version (%v).", repoName, latestVer)
+			log.Printf("Downloading %v latest version (%v).", repoName, latestVer)
 
 			if err := dl.Load(); err != nil {
 				log.Fatal(err)

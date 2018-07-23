@@ -49,16 +49,19 @@ func loadLocalComponents(envPaths *EnvironPaths) {
 		if dl.NewerVersionExists() {
 			localVer := dl.GetLocalReleaseVersion()
 			latestVer := dl.GetLatestReleaseVersion()
-
-			if localVer != "" {
-				log.Printf("Your local %v has version %v but latest is %v.", repoName, localVer, latestVer)
+			if localVer != nil {
+				log.Printf("Your local %v has version %v but latest is %v.", repoName, localVer.String(), latestVer.String())
 			}
-			log.Printf("Downloading %v latest version (%v).", repoName, latestVer)
+			log.Printf("Downloading %v latest version (%v).", repoName, latestVer.String())
 
 			if err := dl.Load(); err != nil {
 				log.Fatal(err)
 			}
 			log.Printf("Done.")
+		} else {
+			localVer := dl.GetLocalReleaseVersion()
+			log.Printf("Your local %v is up-to-date (%v).", repoName, localVer.String())
+
 		}
 
 	}

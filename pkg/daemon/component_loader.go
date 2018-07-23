@@ -2,11 +2,14 @@ package daemon
 
 import (
 	"github.com/Bitspark/go-github/github"
+	"github.com/Bitspark/go-version"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"bufio"
+	"strings"
 )
 
 type SlangComponentLoader struct {
@@ -32,7 +35,8 @@ func NewComponentLoader(repo string, path string) *SlangComponentLoader {
 }
 
 func (dl *SlangComponentLoader) NewerVersionExists() bool {
-	return true
+	localVersion := dl.GetLocalReleaseVersion()
+	return localVersion == nil || localVersion.LessThan(dl.GetLatestReleaseVersion())
 }
 
 /*
@@ -67,33 +71,37 @@ func (dl *SlangComponentLoader) fetchLatestRelease() error {
 	return err
 }
 
-func (dl *SlangComponentLoader) GetLatestReleaseVersion() string {
-	return *dl.latestRelease.TagName
+func (dl *SlangComponentLoader) GetLatestReleaseVersion() *version.Version {
+	return toVersion(*dl.latestRelease.TagName)
 }
 
-func (dl *SlangComponentLoader) GetLocalReleaseVersion() string {
+func (dl *SlangComponentLoader) GetLocalReleaseVersion() *version.Version {
 	_, err := os.Stat(dl.path)
 
 	if os.IsNotExist(err) {
-		return ""
+		return nil
 	}
 
 	versionFile, err := os.Open(dl.versionFilePath)
 	defer versionFile.Close()
 
 	if err != nil {
-		return ""
+		return nil
 	}
 
-	currVersion := make([]byte, 10)
-	versionFile.Read(currVersion)
+	versionReader := bufio.NewReader(versionFile)
+	currVersion, _, err := versionReader.ReadLine()
 
-	return string(currVersion)
+	if err != nil {
+		return nil
+	}
+
+	return toVersion(strings.TrimSpace(string(currVersion)))
 }
 
 func (dl *SlangComponentLoader) updateLocalVersionFile() error {
-	version := dl.GetLatestReleaseVersion()
-	err := ioutil.WriteFile(dl.versionFilePath, []byte(version), os.ModePerm)
+	v := dl.GetLatestReleaseVersion()
+	err := ioutil.WriteFile(dl.versionFilePath, []byte(v.String()), os.ModePerm)
 	return err
 }
 

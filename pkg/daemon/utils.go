@@ -7,6 +7,7 @@ import (
 	"io"
 	"archive/zip"
 	"path/filepath"
+	"github.com/Bitspark/go-version"
 )
 
 func EnsureEnvironVar(key string, dfltVal string) string {
@@ -79,6 +80,11 @@ func unzip(srcPath string, dstPath string) ([]string, error) {
 		}
 	}
 	return filePaths, nil
+}
+
+func toVersion(verstr string) *version.Version {
+	v, _ := version.NewVersion(verstr)
+	return v
 }
 
 func moveAll(srcDir string, dstDir string, skipFirstLevel bool) error {

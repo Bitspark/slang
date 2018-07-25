@@ -35,7 +35,6 @@ func NewEnviron() *Environ {
 			continue
 		}
 		paths = append(paths, envVal)
-
 	}
 
 	if len(missingEnvVars) > 0 {

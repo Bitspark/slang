@@ -30,6 +30,11 @@ func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 	}
 }
 
+func (s *DaemonServer) AddStaticServer(pathPrefix string, directory http.Dir) {
+	r := s.router.PathPrefix(pathPrefix)
+	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
+}
+
 func (s *DaemonServer) Run() error {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},

@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
-	"github.com/Bitspark/slang/pkg/daemon"
+	"net/http"
 	"os/user"
 	"path/filepath"
+
+	"github.com/Bitspark/slang/pkg/daemon"
 )
 
 const PORT = 5149 // sla[n]g == 5149
@@ -23,9 +25,9 @@ func main() {
 
 	srv := daemon.New("localhost", PORT)
 
-	loadLocalComponents(envPaths)
-	loadDaemonServices(srv)
-	startDaemonServer(srv)
+	envPaths.loadLocalComponents()
+	envPaths.loadDaemonServices(srv)
+	envPaths.startDaemonServer(srv)
 }
 
 func initEnvironPaths() (*EnvironPaths) {
@@ -43,8 +45,8 @@ func initEnvironPaths() (*EnvironPaths) {
 	}
 }
 
-func loadLocalComponents(envPaths *EnvironPaths) {
-	for repoName, dirPath := range map[string]string{"slang-lib": envPaths.SLANG_LIB, "slang-ui": envPaths.SLANG_UI} {
+func (e *EnvironPaths) loadLocalComponents() {
+	for repoName, dirPath := range map[string]string{"slang-lib": e.SLANG_LIB, "slang-ui": e.SLANG_UI} {
 		dl := daemon.NewComponentLoader(repoName, dirPath)
 		if dl.NewerVersionExists() {
 			localVer := dl.GetLocalReleaseVersion()
@@ -67,12 +69,13 @@ func loadLocalComponents(envPaths *EnvironPaths) {
 	}
 }
 
-func loadDaemonServices(srv *daemon.DaemonServer) {
+func (e *EnvironPaths) loadDaemonServices(srv *daemon.DaemonServer) {
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
+	srv.AddStaticServer("/app", http.Dir(e.SLANG_UI))
 }
 
-func startDaemonServer(srv *daemon.DaemonServer) {
+func (e *EnvironPaths) startDaemonServer(srv *daemon.DaemonServer) {
 	log.Printf("\n\n\tListening on http://%s:%d/\n\n", srv.Host, srv.Port)
 	log.Fatal(srv.Run())
 }

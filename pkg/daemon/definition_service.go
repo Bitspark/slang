@@ -1,18 +1,19 @@
 package daemon
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/builtin"
-	"strings"
-	"path/filepath"
-	"log"
-	"io/ioutil"
-	"encoding/json"
-	"gopkg.in/yaml.v2"
-	"os"
-	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
@@ -139,7 +140,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
 			absPath := filepath.Join(cwd, relPath+".yaml")
-			err = os.MkdirAll(filepath.Dir(absPath), 0644)
+			_, err = EnsureDirExists(filepath.Dir(absPath))
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -155,7 +156,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			err = ioutil.WriteFile(absPath, body, 0644)
+			err = ioutil.WriteFile(absPath, body, os.ModePerm)
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -264,7 +265,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
 			absPath := filepath.Join(cwd, relPath+"_visual.yaml")
-			err = os.MkdirAll(filepath.Dir(absPath), 0644)
+			_, err = EnsureDirExists(filepath.Dir(absPath))
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
@@ -280,7 +281,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			err = ioutil.WriteFile(absPath, body, 0644)
+			err = ioutil.WriteFile(absPath, body, os.ModePerm)
 			if err != nil {
 				dataOut.Status = "error"
 				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}

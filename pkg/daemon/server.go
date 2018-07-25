@@ -1,11 +1,12 @@
 package daemon
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
+
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/Bitspark/slang/pkg/api"
 )
 
 type DaemonServer struct {

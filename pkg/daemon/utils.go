@@ -1,14 +1,20 @@
 package daemon
 
 import (
-	"os"
-	"strings"
-	"net/http"
-	"io"
 	"archive/zip"
+	"io"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
+
 	"github.com/Bitspark/go-version"
 )
+
+func EnsureDirExists(dir string) (string, error) {
+	err := os.MkdirAll(dir, os.ModePerm)
+	return dir, err
+}
 
 func EnsureEnvironVar(key string, dfltVal string) string {
 	if val := os.Getenv(key); strings.Trim(val, " ") != "" {

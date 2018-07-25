@@ -37,12 +37,23 @@ func initEnvironPaths() (*EnvironPaths) {
 	}
 
 	slangPath := filepath.Join(currUser.HomeDir, "slang")
-	return &EnvironPaths{
+
+	e := &EnvironPaths{
 		slangPath,
 		daemon.EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
 		daemon.EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
 		daemon.EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
 	}
+	if _, err = daemon.EnsureDirExists(e.SLANG_DIR); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = daemon.EnsureDirExists(e.SLANG_LIB); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = daemon.EnsureDirExists(e.SLANG_UI); err != nil {
+		log.Fatal(err)
+	}
+	return e
 }
 
 func (e *EnvironPaths) loadLocalComponents() {

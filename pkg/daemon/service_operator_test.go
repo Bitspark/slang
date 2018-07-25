@@ -9,7 +9,7 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 )
 
-var TEST_ENV = api.NewCustomEnviron("../../tests/test_data/daemon/services/operator")
+var TEST_ENV = api.NewTestEnvviron("../../tests/test_data/daemon/services/operator")
 
 func Test_ServiceOperatorDef_Endpoint_GET__SimpleOperator(t *testing.T) {
 	t.Parallel()

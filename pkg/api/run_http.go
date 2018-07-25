@@ -112,7 +112,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 
 	// Const port instance
 	portIns := &core.InstanceDef{
-		Name: "port",
+		Name:     "port",
 		Operator: "slang.const",
 		Generics: core.Generics{
 			"valueType": {
@@ -128,7 +128,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 
 	// HTTP operator instance
 	httpIns := &core.InstanceDef{
-		Name: "httpServer",
+		Name:     "httpServer",
 		Operator: "slang.net.httpServer",
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, httpIns)
@@ -139,9 +139,9 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 
 	// This is the actual operator we want to execute
 	operatorIns := &core.InstanceDef{
-		Name: "operator",
-		Operator: operator,
-		Generics: gens,
+		Name:       "operator",
+		Operator:   operator,
+		Generics:   gens,
 		Properties: props,
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, operatorIns)
@@ -157,7 +157,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to unpack
 		unpackerIns := &core.InstanceDef{
-			Name: "unpacker",
+			Name:     "unpacker",
 			Operator: "slang.encoding.json.read",
 			Generics: core.Generics{
 				"itemType": &inDef,
@@ -175,7 +175,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to pack
 		unpackerIns := &core.InstanceDef{
-			Name: "packer",
+			Name:     "packer",
 			Operator: "slang.encoding.json.write",
 			Generics: core.Generics{
 				"itemType": &outDef,
@@ -189,7 +189,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 
 		// Status code operator
 		statusCodeIns := &core.InstanceDef{
-			Name: "statusCode",
+			Name:     "statusCode",
 			Operator: "slang.const",
 			Generics: core.Generics{
 				"valueType": {
@@ -205,7 +205,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 
 		// Status code operator
 		headersIns := &core.InstanceDef{
-			Name: "headers",
+			Name:     "headers",
 			Operator: "slang.const",
 			Generics: core.Generics{
 				"valueType": {

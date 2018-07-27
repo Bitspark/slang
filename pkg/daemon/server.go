@@ -36,6 +36,11 @@ func (s *DaemonServer) AddStaticServer(pathPrefix string, directory http.Dir) {
 	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
 }
 
+func (s *DaemonServer) AddRedirect(path string, redirectTo string) {
+	r := s.router.Path(path)
+	r.Handler(http.RedirectHandler(redirectTo, http.StatusSeeOther))
+}
+
 func (s *DaemonServer) Run() error {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},

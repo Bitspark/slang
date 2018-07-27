@@ -3,7 +3,7 @@ jobs:
   test:
     docker:
       - image: bitspark/slang-ci:latest
-    working_directory: /go/src/github.com/Bitspark/slang/
+    working_directory: /gopath/src/github.com/Bitspark/slang/
     steps:
       - checkout
       - run:
@@ -15,7 +15,7 @@ jobs:
   build:
     docker:
       - image: bitspark/slang-ci:latest
-    working_directory: /go/src/github.com/Bitspark/slang/
+    working_directory: /gopath/src/github.com/Bitspark/slang/
     steps:
       - checkout
       - run:
@@ -27,17 +27,17 @@ jobs:
             mkdir ./ci/release
             python3 ./ci/build.py ${CIRCLE_TAG}
       - persist_to_workspace:
-          root: /go/src/github.com/Bitspark/slang/
+          root: /gopath/src/github.com/Bitspark/slang/
           paths:
             - ci/release
   release:
     docker:
       - image: bitspark/slang-ci:latest
-    working_directory: /go/src/github.com/Bitspark/slang/
+    working_directory: /gopath/src/github.com/Bitspark/slang/
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/Bitspark/slang/
+          at: /gopath/src/github.com/Bitspark/slang/
       - run:
           name: Release
           command: ${GOPATH}/bin/ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ./ci/release/

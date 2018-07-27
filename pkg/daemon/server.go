@@ -1,11 +1,12 @@
 package daemon
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
+
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/Bitspark/slang/pkg/api"
 )
 
 type DaemonServer struct {
@@ -28,6 +29,16 @@ func (s *DaemonServer) AddService(pathPrefix string, services *DaemonService) {
 			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Env, w, r) }))
 		})(endpoint)
 	}
+}
+
+func (s *DaemonServer) AddStaticServer(pathPrefix string, directory http.Dir) {
+	r := s.router.PathPrefix(pathPrefix)
+	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
+}
+
+func (s *DaemonServer) AddRedirect(path string, redirectTo string) {
+	r := s.router.Path(path)
+	r.Handler(http.RedirectHandler(redirectTo, http.StatusSeeOther))
 }
 
 func (s *DaemonServer) Run() error {

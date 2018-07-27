@@ -6,6 +6,7 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"gopkg.in/yaml.v2"
@@ -72,7 +73,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 			ioutil.WriteFile(
 				filepath.Join(e.WorkingDir(), packagedOperator),
 				bytes,
-				0644,
+				os.ModePerm,
 			)
 
 			op, err := e.BuildAndCompileOperator(packagedOperator, nil, nil)

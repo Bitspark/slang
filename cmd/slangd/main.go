@@ -1,10 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"github.com/Bitspark/slang/pkg/daemon"
+	"net/http"
 	"os/user"
 	"path/filepath"
+
+	"github.com/Bitspark/browser"
+	"github.com/Bitspark/slang/pkg/daemon"
 )
 
 const PORT = 5149 // sla[n]g == 5149
@@ -23,9 +27,9 @@ func main() {
 
 	srv := daemon.New("localhost", PORT)
 
-	loadLocalComponents(envPaths)
-	loadDaemonServices(srv)
-	startDaemonServer(srv)
+	envPaths.loadLocalComponents()
+	envPaths.loadDaemonServices(srv)
+	envPaths.startDaemonServer(srv)
 }
 
 func initEnvironPaths() (*EnvironPaths) {
@@ -35,16 +39,27 @@ func initEnvironPaths() (*EnvironPaths) {
 	}
 
 	slangPath := filepath.Join(currUser.HomeDir, "slang")
-	return &EnvironPaths{
+
+	e := &EnvironPaths{
 		slangPath,
 		daemon.EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
 		daemon.EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
 		daemon.EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
 	}
+	if _, err = daemon.EnsureDirExists(e.SLANG_DIR); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = daemon.EnsureDirExists(e.SLANG_LIB); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = daemon.EnsureDirExists(e.SLANG_UI); err != nil {
+		log.Fatal(err)
+	}
+	return e
 }
 
-func loadLocalComponents(envPaths *EnvironPaths) {
-	for repoName, dirPath := range map[string]string{"slang-lib": envPaths.SLANG_LIB, "slang-ui": envPaths.SLANG_UI} {
+func (e *EnvironPaths) loadLocalComponents() {
+	for repoName, dirPath := range map[string]string{"slang-lib": e.SLANG_LIB, "slang-ui": e.SLANG_UI} {
 		dl := daemon.NewComponentLoader(repoName, dirPath)
 		if dl.NewerVersionExists() {
 			localVer := dl.GetLocalReleaseVersion()
@@ -67,12 +82,16 @@ func loadLocalComponents(envPaths *EnvironPaths) {
 	}
 }
 
-func loadDaemonServices(srv *daemon.DaemonServer) {
+func (e *EnvironPaths) loadDaemonServices(srv *daemon.DaemonServer) {
+	srv.AddRedirect("/", "/app")
+	srv.AddStaticServer("/app", http.Dir(e.SLANG_UI))
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 }
 
-func startDaemonServer(srv *daemon.DaemonServer) {
-	log.Printf("\n\n\tListening on http://%s:%d/\n\n", srv.Host, srv.Port)
+func (e *EnvironPaths) startDaemonServer(srv *daemon.DaemonServer) {
+	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
+	log.Printf("\n\n\tOpen following URL  %s  in your browser.\n\n", url)
+	browser.OpenURL(url)
 	log.Fatal(srv.Run())
 }

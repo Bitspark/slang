@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/builtin"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
-	"strings"
-	"os"
-	"github.com/Bitspark/go-funk"
+	"gopkg.in/yaml.v2"
 )
 
 var FILE_ENDINGS = []string{".yaml", ".json"} // Order of endings matters!
@@ -35,7 +36,6 @@ func NewEnviron() *Environ {
 			continue
 		}
 		paths = append(paths, envVal)
-
 	}
 
 	if len(missingEnvVars) > 0 {
@@ -131,7 +131,6 @@ func (e *Environ) ListOperatorNames() ([]string, error) {
 
 	for i := len(e.paths); i > 0; i-- {
 		currRootDir := e.paths[i-1]
-
 		filepath.Walk(currRootDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				outerErr = err

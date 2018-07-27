@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os/user"
 	"path/filepath"
 
+	"github.com/Bitspark/browser"
 	"github.com/Bitspark/slang/pkg/daemon"
 )
 
@@ -88,6 +90,8 @@ func (e *EnvironPaths) loadDaemonServices(srv *daemon.DaemonServer) {
 }
 
 func (e *EnvironPaths) startDaemonServer(srv *daemon.DaemonServer) {
-	log.Printf("\n\n\tListening on http://%s:%d/\n\n", srv.Host, srv.Port)
+	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
+	log.Printf("\n\n\tOpen following URL  %s  in your browser.\n\n", url)
+	browser.OpenURL(url)
 	log.Fatal(srv.Run())
 }

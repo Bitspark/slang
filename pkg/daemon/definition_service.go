@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/builtin"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -40,11 +40,11 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		opNames, err := e.ListOperatorNames()
 
 		if err == nil {
-			builtinOpNames := builtin.GetBuiltinNames()
+			builtinOpNames := elem.GetBuiltinNames()
 
 			// Gather builtin/elementary opDefs
 			for _, opFQName := range builtinOpNames {
-				opDef, err := builtin.GetOperatorDef(opFQName)
+				opDef, err := elem.GetOperatorDef(opFQName)
 
 				if err != nil {
 					break

@@ -13,84 +13,95 @@ var loopOpCfg = &builtinConfig{
 					Generic: "stateType",
 				},
 				Out: core.TypeDef{
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"result": {
+							Type:    "generic",
+							Generic: "stateType",
+						},
+						"items": {
+							Type: "stream",
+							Stream: &core.TypeDef{
+								Type:    "generic",
+								Generic: "itemType",
+							},
+						},
+					},
+				},
+			},
+		},
+		DelegateDefs: map[string]*core.DelegateDef{
+			"iterator": {
+				In: core.TypeDef{
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"state": {
+							Type:    "generic",
+							Generic: "stateType",
+						},
+						"item": {
+							Type:    "generic",
+							Generic: "itemType",
+						},
+					},
+				},
+				Out: core.TypeDef{
+					Type:    "generic",
+					Generic: "stateType",
+				},
+			},
+			"controller": {
+				In: core.TypeDef{
+					Type: "boolean",
+				},
+				Out: core.TypeDef{
 					Type:    "generic",
 					Generic: "stateType",
 				},
 			},
 		},
-		DelegateDefs: map[string]*core.DelegateDef{
-			"iteration": {
-				In: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "map",
-						Map: map[string]*core.TypeDef{
-							"continue": {
-								Type: "boolean",
-							},
-							"state": {
-								Type:    "generic",
-								Generic: "stateType",
-							},
-						},
-					},
-				},
-				Out: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type:    "generic",
-						Generic: "stateType",
-					},
-				},
-			},
-		},
 	},
 	opFunc: func(op *core.Operator) {
-		iIn := op.Delegate("iteration").In()
-		iOut := op.Delegate("iteration").Out()
+		iterIn := op.Delegate("iterator").In()
+		iterOut := op.Delegate("iterator").Out()
+		ctrlIn := op.Delegate("controller").In()
+		ctrlOut := op.Delegate("controller").Out()
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
-			i := in.Pull()
+			s := in.Pull()
 
 			// Redirect all markers
-			if core.IsMarker(i) {
-				iOut.Push(i)
-				iter := iIn.Stream().Pull()
-
-				if i != iter {
-					panic("should be same marker")
-				}
-
-				out.Push(i)
-
+			if core.IsMarker(s) {
+				out.Push(s)
 				continue
 			}
 
-			iOut.PushBOS()
-			iOut.Stream().Push(i)
-
-			oldState := i
-
-			iIn.PullBOS()
+			out.Map("items").PushBOS()
 
 			for {
-				iter := iIn.Stream().Pull().(map[string]interface{})
-				newState := iter["state"]
-				cont := iter["continue"].(bool)
-
-				if cont {
-					iOut.Push(newState)
-				} else {
-					iOut.PushEOS()
-					iIn.PullEOS()
-					out.Push(oldState)
+				// Ask controller whether to continue
+				ctrlOut.Push(s)
+				cont, _ := ctrlIn.PullBoolean()
+				if !cont {
 					break
 				}
 
-				oldState = newState
+				// Let iterator calculate new state
+				iterOut.Push(s)
+
+				// Retrieve new state from iterator
+				ns := iterIn.Pull().(map[string]interface{})
+
+				// Set state for next iteration
+				s = ns["state"]
+
+				// Emit stream item
+				out.Map("items").Push(ns["item"])
 			}
 
+			out.Map("result").Push(s)
+			out.Map("items").PushEOS()
 		}
 	},
 }

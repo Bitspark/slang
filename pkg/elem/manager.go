@@ -62,6 +62,8 @@ func init() {
 	Register("slang.eval", evalOpCfg)
 
 	Register("slang.control.fork", forkOpCfg)
+	Register("slang.control.loop", loopOpCfg)
+
 	Register("slang.syncFork", syncForkOpCfg)
 	Register("slang.merge", mergeOpCfg)
 	Register("slang.syncMerge", syncMergeOpCfg)
@@ -69,7 +71,6 @@ func init() {
 	Register("slang.take", takeOpCfg)
 	Register("slang.convert", convertOpCfg)
 
-	Register("slang.loop", loopOpCfg)
 	Register("slang.aggregate", aggregateOpCfg)
 	Register("slang.reduce", reduceOpCfg)
 

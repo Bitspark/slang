@@ -1,241 +1,244 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
 	"github.com/stretchr/testify/require"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
-func TestOperatorCreator_Loop_IsRegistered(t *testing.T) {
+// Test if fork operator is registered under the correct name
+func Test_ElemCtrl_Loop_CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocLoop := getBuiltinCfg("slang.loop")
+	ocLoop := getBuiltinCfg("slang.control.loop")
 	a.NotNil(ocLoop)
 }
 
-func TestBuiltin_Loop__Simple(t *testing.T) {
+// Test if the signature is correct
+func Test_ElemCtrl_Loop__Signature(t *testing.T) {
 	a := assertions.New(t)
-	lo, err := buildOperator(
+	r := require.New(t)
+
+	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.loop",
+			Operator: "slang.control.loop",
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
+					Type: "number",
+				},
+				"itemType": {
 					Type: "number",
 				},
 			},
 		},
 	)
-	a.NoError(err)
-	a.NotNil(lo)
 
-	// Condition operator
-	co, _ := core.NewOperator(
-		"cond",
-		func(op *core.Operator) {
-			in := op.Main().In()
-			out := op.Main().Out()
-			for {
-				i := in.Pull()
-				f, ok := i.(float64)
-				if !ok {
-					out.Push(i)
-				} else {
-					out.Push(f < 10.0)
-				}
-			}
-		},
-		nil,
-		nil,
-		nil,
-		core.OperatorDef{
-			ServiceDefs: map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "boolean"}}},
-		},
-	)
+	r.NoError(err)
+	r.NotNil(lop)
 
-	// Double function operator
-	fo, _ := core.NewOperator(
-		"double",
-		func(op *core.Operator) {
-			in := op.Main().In()
-			out := op.Main().Out()
-			for {
-				i := in.Pull()
-				f, ok := i.(float64)
-				if !ok {
-					out.Push(i)
-				} else {
-					out.Push(f * 2.0)
-				}
-			}
-		},
-		nil,
-		nil,
-		nil,
-		core.OperatorDef{
-			ServiceDefs: map[string]*core.ServiceDef{"main": {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}},
-		},
-	)
+	// In port
+	in := lop.Main().In()
+	r.NotNil(in)
 
-	// Connect
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.Main().In()))
-	a.NoError(fo.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
-	a.NoError(co.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
+	// Out port
+	out := lop.Main().Out()
+	r.NotNil(out)
+	r.Equal(core.TYPE_MAP, out.Type())
+	r.NotNil(out.Map("result"))
+	r.NotNil(out.Map("items"))
+	r.Equal(core.TYPE_STREAM, out.Map("items").Type())
 
-	lo.Main().Out().Bufferize()
+	// Iterator delegate
+	dlgIter := lop.Delegate("iterator")
+	r.NotNil(dlgIter)
 
-	lo.Main().In().Push(1.0)
-	lo.Main().In().Push(10.0)
+	// Delegate out port
+	dlgIterOut := dlgIter.Out()
+	r.NotNil(dlgIterOut)
 
-	lo.Start()
-	fo.Start()
-	co.Start()
+	// Delegate in port
+	dlgIterIn := dlgIter.In()
+	r.NotNil(dlgIterIn)
+	r.Equal(core.TYPE_MAP, dlgIterIn.Type())
+	r.NotNil(dlgIterIn.Map("state"))
+	r.NotNil(dlgIterIn.Map("item"))
 
-	a.PortPushesAll([]interface{}{16.0, 10.0}, lo.Main().Out())
+	// Controller delegate
+	dlgCtrl := lop.Delegate("controller")
+	r.NotNil(dlgCtrl)
+
+	// Delegate out port
+	dlgCtrlOut := dlgCtrl.Out()
+	r.NotNil(dlgCtrlOut)
+
+	// Delegate in port
+	dlgCtrlIn := dlgCtrl.In()
+	r.NotNil(dlgCtrlIn)
+	a.Equal(core.TYPE_BOOLEAN, dlgCtrlIn.Type())
 }
 
-func
-TestBuiltin_Loop__Fibo(t *testing.T) {
+// Test if generics are replaced correctly
+func Test_ElemCtrl_Loop__GenericType(t *testing.T) {
 	a := assertions.New(t)
-	stateType := core.TypeDef{
-		Type: "map",
-		Map: map[string]*core.TypeDef{
-			"i":      {Type: "number"},
-			"fib":    {Type: "number"},
-			"oldFib": {Type: "number"},
+	r := require.New(t)
+
+	types := []string{"number", "boolean", "string"}
+	typesInt := []int{core.TYPE_NUMBER, core.TYPE_BOOLEAN, core.TYPE_STRING}
+
+	for i, stateTp := range types {
+		for j, itemTp := range types {
+			stateTpi := typesInt[i]
+			itemTpi := typesInt[j]
+
+			lop, err := buildOperator(
+				core.InstanceDef{
+					Name:     "fork",
+					Operator: "slang.control.loop",
+					Generics: map[string]*core.TypeDef{
+						"stateType": {
+							Type: stateTp,
+						},
+						"itemType": {
+							Type: itemTp,
+						},
+					},
+				},
+			)
+
+			r.NoError(err)
+			r.NotNil(lop)
+
+			// In port
+			in := lop.Main().In()
+			r.NotNil(in)
+			a.Equal(stateTpi, in.Type())
+
+			// Out port
+			out := lop.Main().Out()
+			r.NotNil(out)
+			a.Equal(stateTpi, out.Map("result").Type())
+			a.Equal(itemTpi, out.Map("items").Stream().Type())
+
+			// Iterator delegate
+			dlgIter := lop.Delegate("iterator")
+
+			// Delegate out port
+			dlgIterOut := dlgIter.Out()
+			a.Equal(stateTpi, dlgIterOut.Type())
+
+			// Delegate in port
+			dlgIterIn := dlgIter.In()
+			a.Equal(stateTpi, dlgIterIn.Map("state").Type())
+			a.Equal(itemTpi, dlgIterIn.Map("item").Type())
+
+			// Controller delegate
+			dlgCtrl := lop.Delegate("controller")
+
+			// Delegate out port
+			dlgCtrlOut := dlgCtrl.Out()
+			a.Equal(stateTpi, dlgCtrlOut.Type())
+		}
+	}
+}
+
+// Test if generics are replaced correctly
+func Test_ElemCtrl_Loop__Behavior(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+
+	lop, err := buildOperator(
+		core.InstanceDef{
+			Name:     "loop",
+			Operator: "slang.control.loop",
+			Generics: map[string]*core.TypeDef{
+				"stateType": {
+					Type: "number",
+				},
+				"itemType": {
+					Type: "number",
+				},
+			},
+		},
+	)
+
+	r.NoError(err)
+	r.NotNil(lop)
+
+	dlgIter := lop.Delegate("iterator")
+	dlgCtrl := lop.Delegate("controller")
+
+	// Bufferize
+	lop.Main().Out().Bufferize()
+	dlgIter.Out().Bufferize()
+	dlgCtrl.Out().Bufferize()
+
+	lop.Start()
+
+	// Values we push into the loop at its in port
+	inVals := []interface{}{
+		0.0,
+		10.0,
+		100.0,
+	}
+
+	// Values we push into the loop as controller (indicating when to stop, hence 'false' is always last)
+	ctrlVals := []interface{}{
+		[]interface{}{false},
+		[]interface{}{true, false},
+		[]interface{}{true, true, true, false},
+	}
+
+	// These values are expected to arrive at the iterator's in port
+	// We also push these values as new states to simulate new state calculation of the iterator
+	stateVals := []interface{}{
+		[]interface{}{
+			map[string]interface{}{"state": 0.0, "item": 0.0},
+		},
+		[]interface{}{
+			map[string]interface{}{"state": 10.0, "item": 0.0},
+			map[string]interface{}{"state": 11.0, "item": -11.0},
+		},
+		[]interface{}{
+			map[string]interface{}{"state": 100.0, "item": 0.0},
+			map[string]interface{}{"state": 101.0, "item": -101.0},
+			map[string]interface{}{"state": 102.0, "item": -102.0},
+			map[string]interface{}{"state": 103.0, "item": -103.0},
 		},
 	}
-	lo, err := buildOperator(
-		core.InstanceDef{
-			Operator: "slang.loop",
-			Generics: map[string]*core.TypeDef{
-				"stateType": &stateType,
-			},
-		},
-	)
-	require.NoError(t, err)
-	a.NotNil(lo)
-	require.Equal(t, core.TYPE_MAP, lo.Main().In().Type())
-	require.Equal(t, core.TYPE_NUMBER, lo.Main().In().Map("i").Type())
 
-	// Condition operator
-	co, _ := core.NewOperator(
-		"cond",
-		func(op *core.Operator) {
-			in := op.Main().In()
-			out := op.Main().Out()
-			for {
-				i := in.Pull()
-				fm, ok := i.(map[string]interface{})
-				if !ok {
-					out.Push(i)
-				} else {
-					i := fm["i"].(float64)
-					out.Push(i > 0.0)
-				}
+	// These values are expected to be emitted by the loop
+	expectedVals := []interface{}{
+		map[string]interface{}{
+			"result": 0.0,
+			"items":  []interface{}{},
+		},
+		map[string]interface{}{
+			"result": 11.0,
+			"items":  []interface{}{-11.0},
+		},
+		map[string]interface{}{
+			"result": 103.0,
+			"items":  []interface{}{-101.0, -102.0, -103.0},
+		},
+	}
+
+	for i, in := range inVals {
+		// Push values
+		lop.Main().In().Push(in)
+
+		// Test output behavior
+		for j, ctrlVal := range ctrlVals[i].([]interface{}) {
+			a.Equal(stateVals[i].([]interface{})[j].(map[string]interface{})["state"], dlgCtrl.Out().Pull())
+			dlgCtrl.In().Push(ctrlVal)
+
+			if ctrlVal.(bool) {
+				a.Equal(stateVals[i].([]interface{})[j].(map[string]interface{})["state"], dlgIter.Out().Pull())
+				dlgIter.In().Push(stateVals[i].([]interface{})[j+1])
 			}
-		},
-		nil,
-		nil,
-		nil,
-		core.OperatorDef{
-			ServiceDefs: map[string]*core.ServiceDef{"main": {In: stateType, Out: core.TypeDef{Type: "boolean"}}},
-		},
-	)
+		}
 
-	// Fibonacci function operator
-	fo, _ := core.NewOperator(
-		"fib",
-		func(op *core.Operator) {
-			in := op.Main().In()
-			out := op.Main().Out()
-			for {
-				i := in.Pull()
-				fm, ok := i.(map[string]interface{})
-				if !ok {
-					out.Push(i)
-				} else {
-					i := fm["i"].(float64) - 1
-					oldFib := fm["fib"].(float64)
-					fib := fm["oldFib"].(float64) + oldFib
-					out.Push(map[string]interface{}{"i": i, "fib": fib, "oldFib": oldFib})
-				}
-			}
-		},
-		nil,
-		nil,
-		nil,
-		core.OperatorDef{
-			ServiceDefs: map[string]*core.ServiceDef{"main": {In: stateType, Out: stateType}},
-		},
-	)
-
-	// Connect
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
-	a.NoError(lo.Delegate("iteration").Out().Stream().Connect(co.Main().In()))
-	a.NoError(fo.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("state")))
-	a.NoError(co.Main().Out().Connect(lo.Delegate("iteration").In().Stream().Map("continue")))
-
-	lo.Main().Out().Bufferize()
-
-	lo.Main().In().Push(map[string]interface{}{"i": 10.0, "fib": 1.0, "oldFib": 0.0})
-	lo.Main().In().Push(map[string]interface{}{"i": 20.0, "fib": 1.0, "oldFib": 0.0})
-
-	lo.Start()
-	fo.Start()
-	co.Start()
-
-	a.PortPushesAll([]interface{}{
-		map[string]interface{}{"i": 0.0, "fib": 89.0, "oldFib": 55.0},
-		map[string]interface{}{"i": 0.0, "fib": 10946.0, "oldFib": 6765.0},
-	}, lo.Main().Out())
-}
-
-func
-TestBuiltin_Loop__MarkersPushedCorrectly(t *testing.T) {
-	a := assertions.New(t)
-	lo, err := buildOperator(
-		core.InstanceDef{
-			Operator: "slang.loop",
-			Generics: map[string]*core.TypeDef{
-				"stateType": {
-					Type: "number",
-				},
-			},
-		},
-	)
-	a.NoError(err)
-	a.NotNil(lo)
-
-	lo.Main().Out().Bufferize()
-	lo.Delegate("iteration").Out().Bufferize()
-
-	lo.Start()
-
-	pInit := lo.Main().In()
-	pIteration := lo.Delegate("iteration").In()
-	pState := lo.Delegate("iteration").Out().Stream()
-	pEnd := lo.Main().Out()
-
-	bos := core.BOS{}
-	pInit.Push(bos)
-	a.Nil(pEnd.Poll())
-	a.Equal(bos, pState.Pull())
-
-	pIteration.Push(bos)
-
-	a.Equal(bos, pEnd.Pull())
-	a.Nil(pState.Poll())
-
-	eos := core.BOS{}
-	pInit.Push(eos)
-	a.Nil(pEnd.Poll())
-	a.Equal(eos, pState.Pull())
-
-	pIteration.Push(eos)
-
-	a.Equal(eos, pEnd.Pull())
-	a.Nil(pState.Poll())
+		a.Equal(expectedVals[i], lop.Main().Out().Pull())
+	}
 }

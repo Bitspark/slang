@@ -552,7 +552,7 @@ func (p *Port) Pull() interface{} {
 	panic("unknown type")
 }
 
-// Pull a float and panic if not possible
+// Pull a float
 func (p *Port) PullFloat64() (float64, interface{}) {
 	item := p.Pull()
 	if f, ok := item.(float64); ok {
@@ -564,7 +564,7 @@ func (p *Port) PullFloat64() (float64, interface{}) {
 	return 0, item
 }
 
-// Pull an int and panic if not possible
+// Pull an int
 func (p *Port) PullInt() (int, interface{}) {
 	item := p.Pull()
 	if i, ok := item.(int); ok {
@@ -576,7 +576,7 @@ func (p *Port) PullInt() (int, interface{}) {
 	return 0, item
 }
 
-// Pull a string and panic if not possible
+// Pull a string
 func (p *Port) PullString() (string, interface{}) {
 	item := p.Pull()
 	if s, ok := item.(string); ok {
@@ -585,7 +585,16 @@ func (p *Port) PullString() (string, interface{}) {
 	return "", item
 }
 
-// Pull a binary object and panic if not possible
+// Pull an boolean
+func (p *Port) PullBoolean() (bool, interface{}) {
+	item := p.Pull()
+	if b, ok := item.(bool); ok {
+		return b, nil
+	}
+	return false, item
+}
+
+// Pull a binary object
 func (p *Port) PullBinary() (utils.Binary, interface{}) {
 	item := p.Pull()
 	if b, ok := item.(utils.Binary); ok {

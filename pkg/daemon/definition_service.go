@@ -16,7 +16,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
+var DefinitionService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
 			Name string           `json:"name"`

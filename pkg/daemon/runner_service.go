@@ -20,7 +20,7 @@ var runningInstances = make(map[int64]struct {
 })
 var rnd = rand.New(rand.NewSource(99))
 
-var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
+var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {

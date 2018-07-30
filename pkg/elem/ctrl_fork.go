@@ -45,17 +45,11 @@ var forkOpCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{
 			"controller": {
 				In: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "boolean",
-					},
+					Type: "boolean",
 				},
 				Out: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
+					Type:    "generic",
+					Generic: "itemType",
 				},
 			},
 		},
@@ -74,11 +68,6 @@ var forkOpCfg = &builtinConfig{
 				continue
 			}
 
-			dlgOut.PushBOS()
-			if !dlgIn.OwnBOS(dlgIn.Stream().Pull()) {
-				panic("expected BOS")
-			}
-
 			out.Map("true").PushBOS()
 			out.Map("false").PushBOS()
 			out.Map("control").PushBOS()
@@ -89,8 +78,8 @@ var forkOpCfg = &builtinConfig{
 					break
 				}
 
-				dlgOut.Stream().Push(i)
-				c := dlgIn.Stream().Pull()
+				dlgOut.Push(i)
+				c := dlgIn.Pull()
 
 				cb, ok := c.(bool)
 				if !ok {
@@ -104,11 +93,6 @@ var forkOpCfg = &builtinConfig{
 				} else {
 					out.Map("false").Stream().Push(i)
 				}
-			}
-
-			dlgOut.PushEOS()
-			if !dlgIn.OwnEOS(dlgIn.Stream().Pull()) {
-				panic("expected EOS")
 			}
 
 			out.Map("true").PushEOS()

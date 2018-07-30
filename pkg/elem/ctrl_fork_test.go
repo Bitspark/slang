@@ -42,14 +42,14 @@ func Test_ElemCtrl_Fork__Signature(t *testing.T) {
 	// Out port
 	out := fop.Main().Out()
 	r.NotNil(out)
-	r.Equal(out.Type(), core.TYPE_MAP)
+	r.Equal(core.TYPE_MAP, out.Type())
 	r.NotNil(out.Map("true"))
 	r.NotNil(out.Map("false"))
 	r.NotNil(out.Map("control"))
-	r.Equal(out.Map("true").Type(), core.TYPE_STREAM)
-	r.Equal(out.Map("false").Type(), core.TYPE_STREAM)
-	r.Equal(out.Map("control").Type(), core.TYPE_STREAM)
-	a.Equal(out.Map("control").Stream().Type(), core.TYPE_BOOLEAN)
+	r.Equal(core.TYPE_STREAM, out.Map("true").Type())
+	r.Equal(core.TYPE_STREAM, out.Map("false").Type())
+	r.Equal(core.TYPE_STREAM, out.Map("control").Type())
+	a.Equal(core.TYPE_BOOLEAN, out.Map("control").Stream().Type())
 
 	// Delegate
 	dlg := fop.Delegate("controller")
@@ -57,12 +57,12 @@ func Test_ElemCtrl_Fork__Signature(t *testing.T) {
 
 	// Delegate out port
 	dlgOut := dlg.Out()
-	r.Equal(dlgOut.Type(), core.TYPE_STREAM)
+	r.NotNil(dlgOut)
 
 	// Delegate in port
 	dlgIn := dlg.In()
-	r.Equal(dlgIn.Type(), core.TYPE_STREAM)
-	r.Equal(dlgIn.Stream().Type(), core.TYPE_BOOLEAN)
+	r.NotNil(dlgIn)
+	a.Equal(core.TYPE_BOOLEAN, dlgIn.Type())
 }
 
 // Test if generics are replaced correctly
@@ -92,19 +92,19 @@ func Test_ElemCtrl_Fork__GenericType(t *testing.T) {
 
 		// In port
 		in := fop.Main().In()
-		a.Equal(in.Stream().Type(), tpi)
+		a.Equal(tpi, in.Stream().Type())
 
 		// Out port
 		out := fop.Main().Out()
-		a.Equal(out.Map("true").Stream().Type(), tpi)
-		a.Equal(out.Map("false").Stream().Type(), tpi)
+		a.Equal(tpi, out.Map("true").Stream().Type())
+		a.Equal(tpi, out.Map("false").Stream().Type())
 
 		// Delegate
 		dlg := fop.Delegate("controller")
 
 		// Delegate out port
 		dlgOut := dlg.Out()
-		a.Equal(dlgOut.Stream().Type(), tpi)
+		a.Equal(tpi, dlgOut.Type())
 	}
 }
 
@@ -143,19 +143,11 @@ func Test_ElemCtrl_Fork__Forking(t *testing.T) {
 	control := []interface{}{true, false, false, true, true}
 	fop.Main().In().Push(items)
 
-	bos := dlg.Out().Stream().Pull()
-	r.True(dlg.Out().OwnBOS(bos))
-	dlg.In().Stream().Push(bos)
-
 	for idx, item := range items {
-		i := dlg.Out().Stream().Pull()
+		i := dlg.Out().Pull()
 		a.Equal(item, i)
-		dlg.In().Stream().Push(control[idx])
+		dlg.In().Push(control[idx])
 	}
-
-	eos := dlg.Out().Stream().Pull()
-	r.True(dlg.Out().OwnEOS(eos))
-	dlg.In().Stream().Push(eos)
 
 	trueItems := fop.Main().Out().Map("true").Pull()
 	falseItems := fop.Main().Out().Map("false").Pull()

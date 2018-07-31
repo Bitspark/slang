@@ -12,7 +12,7 @@ var aggregateOpCfg = &builtinConfig{
 				In: core.TypeDef{
 					Type: "map",
 					Map: map[string]*core.TypeDef{
-						"init": {
+						"initial": {
 							Type:    "generic",
 							Generic: "stateType",
 						},
@@ -20,29 +20,50 @@ var aggregateOpCfg = &builtinConfig{
 							Type: "stream",
 							Stream: &core.TypeDef{
 								Type:    "generic",
-								Generic: "itemType",
+								Generic: "inItemType",
 							},
 						},
 					},
 				},
 				Out: core.TypeDef{
-					Type:    "generic",
-					Generic: "stateType",
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"result": {
+							Type:    "generic",
+							Generic: "stateType",
+						},
+						"items": {
+							Type: "stream",
+							Stream: &core.TypeDef{
+								Type:    "generic",
+								Generic: "outItemType",
+							},
+						},
+					},
 				},
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
 			"iterator": {
 				In: core.TypeDef{
-					Type:    "generic",
-					Generic: "stateType",
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"item": {
+							Type:    "generic",
+							Generic: "outItemType",
+						},
+						"state": {
+							Type:    "generic",
+							Generic: "stateType",
+						},
+					},
 				},
 				Out: core.TypeDef{
 					Type: "map",
 					Map: map[string]*core.TypeDef{
 						"item": {
 							Type:    "generic",
-							Generic: "itemType",
+							Generic: "inItemType",
 						},
 						"state": {
 							Type:    "generic",
@@ -59,7 +80,7 @@ var aggregateOpCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
-			state := in.Map("init").Pull()
+			state := in.Map("initial").Pull()
 
 			// Redirect all markers
 			if core.IsMarker(state) {
@@ -67,35 +88,36 @@ var aggregateOpCfg = &builtinConfig{
 					panic("should be marker")
 				}
 				out.Push(state)
-
-				iterOut.Push(state)
-				iterIn.Pull()
-
 				continue
 			}
 
 			in.Map("items").PullBOS()
+			out.Map("items").PushBOS()
 
 			for {
-				item := in.Map("items").Stream().Pull()
-
-				if core.IsMarker(item) {
-					if in.Map("items").OwnEOS(item) {
-						out.Push(state)
+				inItem := in.Map("items").Stream().Pull()
+				if core.IsMarker(inItem) {
+					if in.Map("items").OwnEOS(inItem) {
 						break
-					} else {
-						panic(fmt.Sprintf(op.Name() + ": unknown marker: %#v", item))
 					}
+					panic(fmt.Sprintf(op.Name()+": unknown marker: %#v", inItem))
 				}
 
-				iterOut.Map("item").Push(item)
+				iterOut.Map("item").Push(inItem)
 				iterOut.Map("state").Push(state)
 
-				state = iterIn.Pull()
+				state = iterIn.Map("state").Pull()
+				out.Map("items").Push(iterIn.Map("item").Pull())
 			}
+
+			out.Map("result").Push(state)
+			out.Map("items").PushEOS()
 		}
 	},
 	opConnFunc: func(op *core.Operator, dst, src *core.Port) error {
+		if dst == op.Main().In().Map("items") {
+			op.Main().Out().Map("items").SetStreamSource(src.StreamSource())
+		}
 		return nil
 	},
 }

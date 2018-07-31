@@ -32,27 +32,21 @@ var aggregateOpCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
-			"iteration": {
+			"iterator": {
 				In: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type:    "generic",
-						Generic: "stateType",
-					},
+					Type:    "generic",
+					Generic: "stateType",
 				},
 				Out: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "map",
-						Map: map[string]*core.TypeDef{
-							"item": {
-								Type:    "generic",
-								Generic: "itemType",
-							},
-							"state": {
-								Type:    "generic",
-								Generic: "stateType",
-							},
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"item": {
+							Type:    "generic",
+							Generic: "itemType",
+						},
+						"state": {
+							Type:    "generic",
+							Generic: "stateType",
 						},
 					},
 				},
@@ -60,8 +54,8 @@ var aggregateOpCfg = &builtinConfig{
 		},
 	},
 	opFunc: func(op *core.Operator) {
-		iIn := op.Delegate("iteration").In()
-		iOut := op.Delegate("iteration").Out()
+		iterIn := op.Delegate("iterator").In()
+		iterOut := op.Delegate("iterator").Out()
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
@@ -74,25 +68,19 @@ var aggregateOpCfg = &builtinConfig{
 				}
 				out.Push(state)
 
-				iOut.Push(state)
-				iIn.Pull()
+				iterOut.Push(state)
+				iterIn.Pull()
 
 				continue
 			}
 
 			in.Map("items").PullBOS()
 
-			iOut.PushBOS()
-			iIn.PullBOS()
-
 			for {
 				item := in.Map("items").Stream().Pull()
 
 				if core.IsMarker(item) {
 					if in.Map("items").OwnEOS(item) {
-						iOut.PushEOS()
-						iIn.PullEOS()
-
 						out.Push(state)
 						break
 					} else {
@@ -100,18 +88,14 @@ var aggregateOpCfg = &builtinConfig{
 					}
 				}
 
-				iOut.Stream().Map("item").Push(item)
-				iOut.Stream().Map("state").Push(state)
+				iterOut.Map("item").Push(item)
+				iterOut.Map("state").Push(state)
 
-				state = iIn.Stream().Pull()
+				state = iterIn.Pull()
 			}
 		}
 	},
 	opConnFunc: func(op *core.Operator, dst, src *core.Port) error {
-		if dst == op.Main().In().Map("items") {
-			iOut := op.Delegate("iteration").Out()
-			iOut.SetStreamSource(src.StreamSource())
-		}
 		return nil
 	},
 }

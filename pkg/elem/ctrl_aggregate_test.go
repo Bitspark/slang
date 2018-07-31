@@ -7,19 +7,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOperatorCreator__Aggregate__IsRegistered(t *testing.T) {
+func Test_ElemCtrl_Aggregate__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocAgg := getBuiltinCfg("slang.aggregate")
+	ocAgg := getBuiltinCfg("slang.control.aggregate")
 	a.NotNil(ocAgg)
 }
 
-func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
+func Test_ElemCtrl_Aggregate__PassOtherMarkers(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
 	ao, err := buildOperator(core.InstanceDef{
-		Operator: "slang.aggregate",
+		Operator: "slang.control.aggregate",
 		Generics: map[string]*core.TypeDef{
 			"itemType": {
 				Type: "number",
@@ -59,7 +59,7 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 
 	r.NoError(do.Main().In().Stream().Map("init").Connect(ao.Main().In().Map("init")))
 	r.NoError(do.Main().In().Stream().Map("items").Connect(ao.Main().In().Map("items")))
-	r.NoError(ao.Delegate("iteration").Out().Stream().Map("state").Connect(ao.Delegate("iteration").In().Stream()))
+	r.NoError(ao.Delegate("iterator").Out().Map("state").Connect(ao.Delegate("iterator").In()))
 	r.NoError(ao.Main().Out().Connect(do.Main().Out().Stream()))
 
 	do.Main().Out().Bufferize()
@@ -70,11 +70,11 @@ func TestBuiltinAggregate__PassOtherMarkers(t *testing.T) {
 	a.PortPushesAll([]interface{}{[]interface{}{0.0}}, do.Main().Out())
 }
 
-func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
+func Test_ElemCtrl_Aggregate__SimpleLoop(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.aggregate",
+			Operator: "slang.control.aggregate",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -119,8 +119,8 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	require.NoError(t, err)
 
 	// Connect
-	require.NoError(t, ao.Delegate("iteration").Out().Stream().Connect(fo.Main().In()))
-	require.NoError(t, fo.Main().Out().Connect(ao.Delegate("iteration").In().Stream()))
+	require.NoError(t, ao.Delegate("iterator").Out().Connect(fo.Main().In()))
+	require.NoError(t, fo.Main().Out().Connect(ao.Delegate("iterator").In()))
 
 	ao.Main().Out().Bufferize()
 
@@ -137,65 +137,4 @@ func TestBuiltinAggregate__SimpleLoop(t *testing.T) {
 	fo.Start()
 
 	a.PortPushesAll([]interface{}{6.0, 20.0, 999.0, 10.0}, ao.Main().Out())
-}
-
-func TestBuiltinAggregate__PassMarkers(t *testing.T) {
-	a := assertions.New(t)
-	r := require.New(t)
-
-	o, err := core.NewOperator(
-		"test",
-		func(op *core.Operator) {},
-		nil,
-		nil,
-		nil,
-		core.OperatorDef{
-			ServiceDefs: map[string]*core.ServiceDef{
-				"main": {
-					In: core.TypeDef{Type: "trigger"},
-					Out: core.TypeDef{Type: "map",
-						Map: map[string]*core.TypeDef{
-							"init":  {Type: "number"},
-							"items": {Type: "stream", Stream: &core.TypeDef{Type: "number"}},
-						},
-					},
-				},
-			},
-		},
-	)
-	r.NoError(err)
-	a.NotNil(o)
-
-	ao, err := buildOperator(
-		core.InstanceDef{
-			Name:     "testOp",
-			Operator: "slang.aggregate",
-			Generics: map[string]*core.TypeDef{
-				"itemType": {
-					Type: "number",
-				},
-				"stateType": {
-					Type: "number",
-				},
-			},
-		},
-	)
-	r.NoError(err)
-	a.NotNil(ao)
-
-	err = o.Main().Out().Connect(ao.Main().In())
-	r.NoError(err)
-
-	ao.Main().Out().Bufferize()
-	ao.Delegate("iteration").Out().Bufferize()
-
-	ao.Start()
-
-	a.Equal(o.Main().Out().Map("items"), ao.Delegate("iteration").Out().StreamSource())
-
-	o.Main().Out().Push(map[string]interface{}{"init": 0, "items": []interface{}{1, 2, 3}})
-
-	i := ao.Delegate("iteration").Out().Stream().Map("item").Pull()
-	a.True(ao.Delegate("iteration").Out().OwnBOS(i))
-	a.True(o.Main().Out().Map("items").OwnBOS(i))
 }

@@ -84,8 +84,8 @@ func (e *EnvironPaths) loadLocalComponents() {
 }
 
 func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
-	srv.AddRedirect("/", "/app")
-	srv.AddStaticServer("/app", http.Dir(e.SLANG_UI))
+	srv.AddRedirect("/", "/app/")
+	srv.AddAppServer("/app", http.Dir(e.SLANG_UI))
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 }

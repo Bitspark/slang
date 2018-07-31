@@ -3,6 +3,8 @@ package daemon
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"regexp"
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/gorilla/mux"
@@ -16,6 +18,24 @@ type Server struct {
 	router *mux.Router
 }
 
+type appFileHandler struct {
+	handler http.Handler
+}
+
+func newAppFileHandler(root http.FileSystem) http.Handler {
+	return &appFileHandler{http.FileServer(root)}
+}
+
+func (f *appFileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	upath := r.URL.Path
+
+	if m, err := regexp.Match(`.*?\..{1,4}?$`, []byte(upath)); err == nil && m {
+		f.handler.ServeHTTP(w, r)
+	} else {
+		http.ServeFile(w, r, "./")
+	}
+}
+
 func New(host string, port int) *Server {
 	r := mux.NewRouter().Host("localhost").Subrouter()
 	http.Handle("/", r)
@@ -23,6 +43,7 @@ func New(host string, port int) *Server {
 }
 
 func (s *Server) AddService(pathPrefix string, services *Service) {
+	s.AddRedirect(pathPrefix, pathPrefix+"/")
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
 		(func(endpoint *Endpoint) {
@@ -31,7 +52,23 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 	}
 }
 
+func (s *Server) AddAppServer(pathPrefix string, directory http.Dir) {
+	s.AddRedirect(pathPrefix, pathPrefix+"/")
+	r := s.router.PathPrefix(pathPrefix)
+	r.Handler(http.StripPrefix(pathPrefix,
+		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/" {
+				if m, _ := regexp.Match(`\..{1,4}$`, []byte(r.URL.Path)); m {
+					http.ServeFile(w, r, filepath.Join(string(directory), r.URL.Path))
+					return
+				}
+			}
+			http.ServeFile(w, r, filepath.Join(string(directory), "index.html"))
+		}).GetHandler()))
+}
+
 func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
+	s.AddRedirect(pathPrefix, pathPrefix+"/")
 	r := s.router.PathPrefix(pathPrefix)
 	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
 }

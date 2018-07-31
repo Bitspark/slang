@@ -10,14 +10,14 @@ import (
 func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.merge")
+	ocFork := getBuiltinCfg("slang.control.merge")
 	a.NotNil(ocFork)
 }
 
 func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().In().Map("true").Stream())
@@ -28,7 +28,7 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().Out().Stream())
@@ -37,7 +37,7 @@ func TestBuiltin_Merge__OutPorts(t *testing.T) {
 func TestBuiltin_Merge__Works(t *testing.T) {
 	a := assertions.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
+	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
 	require.NoError(t, err)
 
 	o.Main().Out().Bufferize()
@@ -57,7 +57,7 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 func TestBuiltin_Merge__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 	o, err := buildOperator(core.InstanceDef{
-		Operator: "slang.merge",
+		Operator: "slang.control.merge",
 		Generics: map[string]*core.TypeDef{"itemType": {Type: "map", Map: map[string]*core.TypeDef{"red": {Type: "string"}, "blue": {Type: "string"}}}},
 	})
 	require.NoError(t, err)

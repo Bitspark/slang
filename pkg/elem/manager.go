@@ -62,11 +62,11 @@ func init() {
 	Register("slang.eval", evalOpCfg)
 
 	Register("slang.control.fork", forkOpCfg)
+	Register("slang.control.merge", mergeOpCfg)
 	Register("slang.control.loop", loopOpCfg)
 	Register("slang.control.aggregate", aggregateOpCfg)
 
 	Register("slang.syncFork", syncForkOpCfg)
-	Register("slang.merge", mergeOpCfg)
 	Register("slang.syncMerge", syncMergeOpCfg)
 	Register("slang.switch", switchOpCfg)
 	Register("slang.take", takeOpCfg)

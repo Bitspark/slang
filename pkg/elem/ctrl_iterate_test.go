@@ -7,19 +7,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_ElemCtrl_Aggregate__IsRegistered(t *testing.T) {
+func Test_ElemCtrl_Iterate__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocAgg := getBuiltinCfg("slang.control.aggregate")
+	ocAgg := getBuiltinCfg("slang.stream.Iterate")
 	a.NotNil(ocAgg)
 }
 
-func Test_ElemCtrl_Aggregate__PassOtherMarkers(t *testing.T) {
+func Test_ElemCtrl_Iterate__PassOtherMarkers(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
 	ao, err := buildOperator(core.InstanceDef{
-		Operator: "slang.control.aggregate",
+		Operator: "slang.stream.Iterate",
 		Generics: map[string]*core.TypeDef{
 			"stateType": {
 				Type: "number",
@@ -76,11 +76,11 @@ func Test_ElemCtrl_Aggregate__PassOtherMarkers(t *testing.T) {
 	a.PortPushesAll([]interface{}{[]interface{}{map[string]interface{}{"result": 0.0, "items": []interface{}{}}}}, do.Main().Out())
 }
 
-func Test_ElemCtrl_Aggregate__SimpleAggregation(t *testing.T) {
+func Test_ElemCtrl_Iterate__SimpleAggregation(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.aggregate",
+			Operator: "slang.stream.Iterate",
 			Generics: map[string]*core.TypeDef{
 				"inItemType": {
 					Type: "number",

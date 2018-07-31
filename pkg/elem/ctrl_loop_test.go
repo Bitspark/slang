@@ -11,7 +11,7 @@ import (
 func Test_ElemCtrl_Loop_CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocLoop := getBuiltinCfg("slang.control.loop")
+	ocLoop := getBuiltinCfg("slang.stream.Loop")
 	a.NotNil(ocLoop)
 }
 
@@ -23,7 +23,7 @@ func Test_ElemCtrl_Loop__Signature(t *testing.T) {
 	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.control.loop",
+			Operator: "slang.stream.Loop",
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
@@ -95,7 +95,7 @@ func Test_ElemCtrl_Loop__GenericType(t *testing.T) {
 			lop, err := buildOperator(
 				core.InstanceDef{
 					Name:     "fork",
-					Operator: "slang.control.loop",
+					Operator: "slang.stream.Loop",
 					Generics: map[string]*core.TypeDef{
 						"stateType": {
 							Type: stateTp,
@@ -151,7 +151,7 @@ func Test_ElemCtrl_Loop__Behavior(t *testing.T) {
 	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.control.loop",
+			Operator: "slang.stream.Loop",
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",

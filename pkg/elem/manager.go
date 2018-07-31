@@ -58,21 +58,25 @@ func GetBuiltinNames() []string {
 
 func init() {
 	cfgs = make(map[string]*builtinConfig)
-	Register("slang.const", constOpCfg)
-	Register("slang.eval", evalOpCfg)
 
-	Register("slang.control.fork", forkOpCfg)
-	Register("slang.control.merge", mergeOpCfg)
-	Register("slang.control.loop", loopOpCfg)
-	Register("slang.control.aggregate", aggregateOpCfg)
+	// Data manipulating operators
+	Register("slang.data.Constant", constOpCfg)
+	Register("slang.data.Evaluate", evalOpCfg)
+	Register("slang.data.Convert", convertOpCfg)
 
-	Register("slang.syncFork", syncForkOpCfg)
-	Register("slang.syncMerge", syncMergeOpCfg)
-	Register("slang.switch", switchOpCfg)
-	Register("slang.take", takeOpCfg)
-	Register("slang.convert", convertOpCfg)
+	// Flow control operators
+	Register("slang.control.Split", splitOpCfg)
+	Register("slang.control.Merge", mergeOpCfg)
+	Register("slang.control.Switch", switchOpCfg)
+	Register("slang.control.SingleSplit", singleSplitOpCfg)
+	Register("slang.control.SingleMerge", singleMergeOpCfg)
 
-	Register("slang.reduce", reduceOpCfg)
+	// Stream producing and consuming operators
+	Register("slang.stream.Loop", loopOpCfg)
+	Register("slang.stream.Iterate", iterateOpCfg)
+	Register("slang.stream.Reduce", reduceOpCfg)
+
+	Register("slang.deprecated.take", takeOpCfg) // TODO: Add functionality to Merge operator
 
 	Register("slang.stream.extract", extractOpCfg)
 	Register("slang.stream.concat", concatOpCfg)

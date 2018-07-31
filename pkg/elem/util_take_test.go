@@ -1,13 +1,6 @@
 package elem
 
-import (
-	"testing"
-	"github.com/Bitspark/slang/tests/assertions"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
-)
-
-func TestOperator_Take__IsRegistered(t *testing.T) {
+/*func TestOperator_Take__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
 	ocTake := getBuiltinCfg("slang.take")
@@ -158,3 +151,4 @@ func TestOperator_Take__Simple1(t *testing.T) {
 	i = to.Main().Out().Stream().Pull()
 	a.True(to.Main().Out().OwnEOS(i))
 }
+*/

@@ -4,7 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
-var syncForkOpCfg = &builtinConfig{
+var singleSplitOpCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

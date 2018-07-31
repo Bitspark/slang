@@ -113,7 +113,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	// Const port instance
 	portIns := &core.InstanceDef{
 		Name:     "port",
-		Operator: "slang.const",
+		Operator: "slang.data.Constant",
 		Generics: core.Generics{
 			"valueType": {
 				Type: "number",
@@ -190,7 +190,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// Status code operator
 		statusCodeIns := &core.InstanceDef{
 			Name:     "statusCode",
-			Operator: "slang.const",
+			Operator: "slang.data.Constant",
 			Generics: core.Generics{
 				"valueType": {
 					Type: "number",
@@ -206,7 +206,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// Status code operator
 		headersIns := &core.InstanceDef{
 			Name:     "headers",
-			Operator: "slang.const",
+			Operator: "slang.data.Constant",
 			Generics: core.Generics{
 				"valueType": {
 					Type: "stream",

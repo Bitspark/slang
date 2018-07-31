@@ -243,31 +243,31 @@ func TestFlatMapParameters__ComplexMixed(t *testing.T) {
 
 func TestBuiltin_Eval__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
-	a.True(IsRegistered("slang.eval"))
+	a.True(IsRegistered("slang.data.Evaluate"))
 }
 
 func TestBuiltin_Eval__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval"})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.data.Evaluate"})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": ""}})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.data.Evaluate", Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.eval", Properties: map[string]interface{}{"expression": "+"}})
+	_, err := buildOperator(core.InstanceDef{Operator: "slang.data.Evaluate", Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func TestBuiltin_Eval__Add(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator: "slang.eval",
+		Operator: "slang.data.Evaluate",
 		Properties: map[string]interface{}{
 			"expression": "a+b",
 			"variables":  []interface{}{"a", "b"},
@@ -289,7 +289,7 @@ func TestBuiltin_Eval__Add(t *testing.T) {
 func TestBuiltin_Eval__Floor(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator: "slang.eval",
+		Operator: "slang.data.Evaluate",
 		Properties: map[string]interface{}{
 			"expression": "floor(a)",
 			"variables":  []interface{}{"a"},
@@ -311,7 +311,7 @@ func TestBuiltin_Eval__Floor(t *testing.T) {
 func TestBuiltin_Eval__Ceil(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.eval",
+		Operator:   "slang.data.Evaluate",
 		Properties: map[string]interface{}{
 			"expression": "ceil(a)",
 			"variables": []interface{}{"a"},
@@ -333,7 +333,7 @@ func TestBuiltin_Eval__Ceil(t *testing.T) {
 func TestBuiltin_Eval__IsNull(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.eval",
+		Operator:   "slang.data.Evaluate",
 		Properties: map[string]interface{}{
 			"expression": "isNull(a)",
 			"variables": []interface{}{"a"},
@@ -355,7 +355,7 @@ func TestBuiltin_Eval__IsNull(t *testing.T) {
 func TestBuiltin_Eval__BoolArith(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.eval",
+		Operator:   "slang.data.Evaluate",
 		Properties: map[string]interface{}{
 			"expression": "a && (b != c)",
 			"variables": []interface{}{"a", "b", "c"},
@@ -379,7 +379,7 @@ func TestBuiltin_Eval__BoolArith(t *testing.T) {
 func TestBuiltin_Eval_VectorArith(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.eval",
+		Operator:   "slang.data.Evaluate",
 		Properties: map[string]interface{}{
 			"expression": "vec0.x*vec1.x+vec0.y*vec1.y",
 			"variables": []interface{}{"vec0", "vec1"},

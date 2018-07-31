@@ -4,7 +4,6 @@ services:
   main:
     in:
       type: number
-
     out:
       type: stream
       stream:
@@ -12,7 +11,7 @@ services:
 
 operators:
   loop:
-    operator: slang.control.loop
+    operator: slang.stream.Loop
     generics:
       itemType:
         type: number
@@ -24,14 +23,14 @@ operators:
           send:
             type: boolean
   T:
-    operator: slang.const
+    operator: slang.data.Constant
     generics:
       valueType:
         type: boolean
     properties:
       value: true
   F:
-    operator: slang.const
+    operator: slang.data.Constant
     generics:
       valueType:
         type: boolean

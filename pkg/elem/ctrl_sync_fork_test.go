@@ -10,7 +10,7 @@ import (
 func TestBuiltin_SyncFork__CreatorFuncIsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.syncFork")
+	ocFork := getBuiltinCfg("slang.control.SingleSplit")
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +19,7 @@ func TestBuiltin_SyncFork__InPorts(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.syncFork",
+			Operator: "slang.control.SingleSplit",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
@@ -40,7 +40,7 @@ func TestBuiltin_SyncFork__OutPorts(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.syncFork",
+			Operator: "slang.control.SingleSplit",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
@@ -61,7 +61,7 @@ func TestBuiltin_SyncFork__Correct(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.syncFork",
+			Operator: "slang.control.SingleSplit",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "primitive",
@@ -103,7 +103,7 @@ func TestBuiltin_SyncFork__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.syncFork",
+			Operator: "slang.control.SingleSplit",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "map",

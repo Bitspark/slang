@@ -17,7 +17,7 @@ services:
       type: number
 operators:
   pfunc:
-    operator: slang.eval
+    operator: slang.data.Evaluate
     properties:
       expression: "a*x*x + b*x + c"
       variables: ["a", "b", "c", "x"]

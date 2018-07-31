@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var aggregateOpCfg = &builtinConfig{
+var iterateOpCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

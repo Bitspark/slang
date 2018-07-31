@@ -12,13 +12,25 @@ services:
 
 operators:
   loop:
-    operator: slang.loop
+    operator: slang.control.loop
     generics:
       itemType:
         type: number
       stateType:
-        type: number
-  falsify:
+        type: map
+        map:
+          item:
+            type: number
+          send:
+            type: boolean
+  T:
+    operator: slang.const
+    generics:
+      valueType:
+        type: boolean
+    properties:
+      value: true
+  F:
     operator: slang.const
     generics:
       valueType:
@@ -28,15 +40,22 @@ operators:
 
 connections:
   (:
-  - (loop
+  - item(loop
+  - (T
+  T):
+  - send(loop
 
-  loop.iteration)~:
-  - (falsify
-  - ~.state(loop.iteration
+  loop.controller)send:
+  - (loop.controller
 
-  loop.iteration):
+  loop.iterator)item:
+  - item(loop.iterator
+  - state.item(loop.iterator
+  loop.iterator)send:
+  - (F
+  F):
+  - state.send(loop.iterator
+
+  loop)items:
   - )
-
-  falsify):
-  - ~.continue(loop.iteration
 

@@ -16,7 +16,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
+const SuffixVisual = "_visual"
+
+var DefinitionService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
 			Name string           `json:"name"`
@@ -199,7 +201,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 			}
 
 			// Then find the appropriate visual file and read it
-			absPath, _, err = e.GetFilePathWithFileEnding(relPath+"_visual", p)
+			absPath, _, err = e.GetFilePathWithFileEnding(relPath+SuffixVisual, p)
 			b, err = ioutil.ReadFile(absPath)
 			if err != nil {
 				dataOut.Status = "error"
@@ -264,7 +266,7 @@ var DefinitionService = &DaemonService{map[string]*DaemonEndpoint{
 			}
 
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
-			absPath := filepath.Join(cwd, relPath+"_visual.yaml")
+			absPath := filepath.Join(cwd, relPath+SuffixVisual+".yaml")
 			_, err = EnsureDirExists(filepath.Dir(absPath))
 			if err != nil {
 				dataOut.Status = "error"

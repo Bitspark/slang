@@ -7,11 +7,11 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 )
 
-type DaemonService struct {
-	Routes map[string]*DaemonEndpoint
+type Service struct {
+	Routes map[string]*Endpoint
 }
 
-type DaemonEndpoint struct {
+type Endpoint struct {
 	Handle func(e *api.Environ, w http.ResponseWriter, r *http.Request)
 }
 

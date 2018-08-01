@@ -1,17 +1,18 @@
 package daemon
 
 import (
-	"net/http"
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
+	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
-	"gopkg.in/yaml.v2"
 	"strconv"
-	"math/rand"
+	"strings"
+
+	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
+	"gopkg.in/yaml.v2"
 )
 
 var runningInstances = make(map[int64]struct {
@@ -20,7 +21,9 @@ var runningInstances = make(map[int64]struct {
 })
 var rnd = rand.New(rand.NewSource(99))
 
-var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
+const SuffixPacked = "_packed"
+
+var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
@@ -67,7 +70,7 @@ var RunnerService = &DaemonService{map[string]*DaemonEndpoint{
 				return
 			}
 
-			packagedOperator := strings.Replace(ri.Fqn+"Packed", ".", string(filepath.Separator), -1) + ".yaml"
+			packagedOperator := strings.Replace(ri.Fqn+SuffixPacked, ".", string(filepath.Separator), -1) + ".yaml"
 
 			bytes, _ := yaml.Marshal(httpDef)
 			ioutil.WriteFile(

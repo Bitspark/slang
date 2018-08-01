@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os/user"
 	"path/filepath"
+	"time"
 
 	"github.com/Bitspark/browser"
 	"github.com/Bitspark/slang/pkg/daemon"
@@ -82,16 +83,31 @@ func (e *EnvironPaths) loadLocalComponents() {
 	}
 }
 
-func (e *EnvironPaths) loadDaemonServices(srv *daemon.DaemonServer) {
-	srv.AddRedirect("/", "/app")
-	srv.AddStaticServer("/app", http.Dir(e.SLANG_UI))
+func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
+	srv.AddRedirect("/", "/app/")
+	srv.AddAppServer("/app", http.Dir(e.SLANG_UI))
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 }
 
-func (e *EnvironPaths) startDaemonServer(srv *daemon.DaemonServer) {
+func (e *EnvironPaths) startDaemonServer(srv *daemon.Server) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
-	log.Printf("\n\n\tOpen following URL  %s  in your browser.\n\n", url)
-	browser.OpenURL(url)
-	log.Fatal(srv.Run())
+	errors := make(chan error)
+	go informUser(url, errors)
+	errors <- srv.Run()
+	select {} // prevent immidate exit when srv.Run failes --> informUser coroutine can handle error
+}
+
+func informUser(url string, errors chan error) {
+	select {
+	case err := <-errors:
+		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
+	case <-time.After(500 * time.Millisecond):
+		log.Printf("\n\n\tOpen following URL  %s  in your browser.\n\n", url)
+		browser.OpenURL(url)
+	}
+	select {
+	case err := <-errors:
+		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
+	}
 }

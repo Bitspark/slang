@@ -86,7 +86,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		if err == nil {
 			dataOut = outJSON{Status: "success", Objects: opDefList}
 		} else {
-			dataOut = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
+			dataOut = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 		}
 
 		w.WriteHeader(200)
@@ -96,47 +96,27 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		}
 	}},
 	"/def/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
+		fail := func(err *Error) {
+			sendFailure(w, &responseBad{err})
+		}
+
 		if r.Method == "POST" {
-			dataOut := struct {
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}{}
-
-			send := func() {
-				w.WriteHeader(200)
-				err := writeJSON(w, dataOut)
-				if err != nil {
-					log.Print(err)
-				}
-			}
-
+			/*
+			 * POST OperatorDef
+			 */
 			cwd := e.WorkingDir()
 			opFQName := r.FormValue("fqop")
 
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
-			fileEnding := ""
 			var def core.OperatorDef
 			err = json.Unmarshal(body, &def)
 			if err == nil {
-				fileEnding = "json"
-			}
-
-			err = yaml.Unmarshal(body, &def)
-			if err == nil {
-				fileEnding = "yaml"
-			}
-
-			if fileEnding == "" {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
@@ -144,48 +124,32 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			absPath := filepath.Join(cwd, relPath+".yaml")
 			_, err = EnsureDirExists(filepath.Dir(absPath))
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
 			body, err = yaml.Marshal(&def)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0007"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
 			err = ioutil.WriteFile(absPath, body, os.ModePerm)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
-
-			dataOut.Status = "success"
-			send()
+			sendSuccess(w, nil)
 		}
 	}},
 	"/meta/visual/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
+		fail := func(err *Error) {
+			sendFailure(w, &responseBad{err})
+		}
+		/*
+		 * GET meta/visual
+		 */
 		if r.Method == "GET" {
-			dataOut := struct {
-				Data   interface{} `json:"data,omitempty"`
-				Status string      `json:"status"`
-				Error  *Error      `json:"error,omitempty"`
-			}{}
-
-			send := func() {
-				w.WriteHeader(200)
-				err := writeJSON(w, dataOut)
-				if err != nil {
-					log.Print(err)
-				}
-			}
-
 			var err error
 			var b []byte
 			opFQName := r.FormValue("fqop")
@@ -194,9 +158,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
 			absPath, p, err := e.GetFilePathWithFileEnding(relPath, "")
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
@@ -204,52 +166,35 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			absPath, _, err = e.GetFilePathWithFileEnding(relPath+SuffixVisual, p)
 			b, err = ioutil.ReadFile(absPath)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
 			// Marshal
+			resp := &responseOK{}
 			if utils.IsJSON(absPath) {
-				err = json.Unmarshal(b, &dataOut.Data)
+				err = json.Unmarshal(b, &resp.Data)
 			} else if utils.IsYAML(absPath) {
-				err = yaml.Unmarshal(b, &dataOut.Data)
-				dataOut.Data = utils.CleanValue(dataOut.Data)
+				err = yaml.Unmarshal(b, &resp.Data)
+				resp.Data = utils.CleanValue(resp.Data)
 			}
 
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
-
 			// And send
-			dataOut.Status = "success"
-			send()
+			sendSuccess(w, resp)
 		} else if r.Method == "POST" {
-			dataOut := struct {
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}{}
-
-			send := func() {
-				w.WriteHeader(200)
-				err := writeJSON(w, dataOut)
-				if err != nil {
-					log.Print(err)
-				}
-			}
-
+			/*
+			 * POST meta/visual
+			 */
 			cwd := e.WorkingDir()
 			opFQName := r.FormValue("fqop")
 
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
@@ -259,9 +204,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				err = yaml.Unmarshal(body, &data)
 			}
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
@@ -269,30 +212,22 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			absPath := filepath.Join(cwd, relPath+SuffixVisual+".yaml")
 			_, err = EnsureDirExists(filepath.Dir(absPath))
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
 			body, err = yaml.Marshal(&data)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
 			err = ioutil.WriteFile(absPath, body, os.ModePerm)
 			if err != nil {
-				dataOut.Status = "error"
-				dataOut.Error = &Error{Msg: err.Error(), Code: "E0003"}
-				send()
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
-
-			dataOut.Status = "success"
-			send()
+			sendSuccess(w, nil)
 		}
 	}},
 }}

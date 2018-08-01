@@ -1,9 +1,11 @@
 package daemon
 
 import (
-	"net/http"
 	"encoding/json"
 	"io"
+	"log"
+	"net/http"
+
 	"github.com/Bitspark/slang/pkg/api"
 )
 
@@ -22,4 +24,28 @@ func writeJSON(w io.Writer, dat interface{}) error {
 type Error struct {
 	Msg  string `json:"msg"`
 	Code string `json:"code"`
+}
+
+type responseOK struct {
+	Data interface{} `json:"data,omitempty"`
+}
+
+type responseBad struct {
+	Error *Error `json:"error,omitempty"`
+}
+
+func sendSuccess(w http.ResponseWriter, resp *responseOK) {
+	w.WriteHeader(200)
+	err := writeJSON(w, resp)
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
+}
+
+func sendFailure(w http.ResponseWriter, resp *responseBad) {
+	w.WriteHeader(200) // XXX Use StatusCode 400
+	err := writeJSON(w, resp)
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
 }

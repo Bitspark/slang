@@ -14,6 +14,12 @@ import (
 
 const PORT = 5149 // sla[n]g == 5149
 
+// will be set during build process
+var (
+	Version string
+	BuildTime string
+)
+
 type EnvironPaths struct {
 	SLANG_PATH string
 	SLANG_DIR  string
@@ -22,7 +28,7 @@ type EnvironPaths struct {
 }
 
 func main() {
-	log.Println("Starting slangd...")
+	log.Printf("Starting slangd %s (%s)...\n", Version, BuildTime)
 
 	envPaths := initEnvironPaths()
 

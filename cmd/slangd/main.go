@@ -16,8 +16,8 @@ const PORT = 5149 // sla[n]g == 5149
 
 // will be set during build process
 var (
-	Version string
-	BuildTime string
+	Version   string
+	BuildTime int64
 )
 
 type EnvironPaths struct {
@@ -28,7 +28,8 @@ type EnvironPaths struct {
 }
 
 func main() {
-	log.Printf("Starting slangd %s (%s)...\n", Version, BuildTime)
+	unixTimeUTC := time.Unix(BuildTime, 0)
+	log.Printf("slangd %s built %s...\n", Version, unixTimeUTC.Format(time.RFC3339))
 
 	envPaths := initEnvironPaths()
 

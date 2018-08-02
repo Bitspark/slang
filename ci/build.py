@@ -1,6 +1,6 @@
 import sys
+import time
 from os import system, chdir
-from time import gmtime, strftime
 from utils import execute_commands
 
 OS = ['darwin', 'linux', 'windows']
@@ -13,10 +13,10 @@ if __name__ == '__main__':
 
     version = sys.argv[1]
     versioned_dist = 'slangd-' + version.replace('.', '_')
-    build_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    build_time = int(time.time())
 
-    ldflags = f"-X main.Version=`{version}` "
-    ldflags += f"-X main.BuildTime=`{build_time}` "
+    ldflags = f"-X main.Version={version} "
+    ldflags += f"-X main.BuildTime={build_time} "
 
     for os in OS:
         for arch in ARCHS:
@@ -34,6 +34,6 @@ if __name__ == '__main__':
             chdir("./ci/release/")
             execute_commands([
                 compress_cmd,
-                "rm {filename_with_ending}",
+                f"rm {filename_with_ending}",
             ])
             chdir("../..")

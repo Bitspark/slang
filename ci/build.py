@@ -1,5 +1,5 @@
 import sys
-from os import system
+from os import system, chdir
 from time import gmtime, strftime
 from utils import execute_commands
 
@@ -31,9 +31,9 @@ if __name__ == '__main__':
                 f"env GOOS={os} GOARCH={arch} go build -ldflags \"{ldflags}\" -o ./ci/release/{filename_with_ending} ./cmd/slangd",
             ])
 
-            os.chdir("./ci/release/")
+            chdir("./ci/release/")
             execute_commands([
                 compress_cmd,
                 "rm {filename_with_ending}",
             ])
-            os.chdir("../..")
+            chdir("../..")

@@ -45,7 +45,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			var ri runInstructionJSON
 			err := decoder.Decode(&ri)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
+				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -65,7 +65,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			httpDef, err := api.ConstructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
+				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -81,7 +81,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			op, err := e.BuildAndCompileOperator(packagedOperator, nil, nil)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0003"}}
+				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -118,7 +118,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			var si stopInstructionJSON
 			err := decoder.Decode(&si)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
+				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -126,7 +126,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			handle, _ := strconv.ParseInt(si.Handle, 16, 64)
 
 			if ii, ok := runningInstances[handle]; !ok {
-				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E0002"}}
+				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			} else {

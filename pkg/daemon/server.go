@@ -18,24 +18,6 @@ type Server struct {
 	router *mux.Router
 }
 
-type appFileHandler struct {
-	handler http.Handler
-}
-
-func newAppFileHandler(root http.FileSystem) http.Handler {
-	return &appFileHandler{http.FileServer(root)}
-}
-
-func (f *appFileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	upath := r.URL.Path
-
-	if m, err := regexp.Match(`.*?\..{1,4}?$`, []byte(upath)); err == nil && m {
-		f.handler.ServeHTTP(w, r)
-	} else {
-		http.ServeFile(w, r, "./")
-	}
-}
-
 func New(host string, port int) *Server {
 	r := mux.NewRouter().Host("localhost").Subrouter()
 	http.Handle("/", r)

@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/go-version"
 )
 
@@ -22,6 +24,15 @@ func EnsureEnvironVar(key string, dfltVal string) string {
 	}
 	os.Setenv(key, dfltVal)
 	return dfltVal
+}
+
+func checkOperatorNameIsValid(fullyQualifiedName string) bool {
+	m, _ := regexp.Match(`^[A-Z][A-Za-z0-9]*$`, []byte(getOperatorName(fullyQualifiedName)))
+	return m
+}
+
+func getOperatorName(fullyQualifiedName string) string {
+	return funk.Last(strings.Split(fullyQualifiedName, ".")).(string)
 }
 
 func download(srcUrl string, dstFile *os.File) error {

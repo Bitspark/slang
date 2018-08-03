@@ -20,13 +20,13 @@ operators:
         type: number
   # Sorter
   sorter:
-    operator: slang.take
+    operator: slang.control.Take
     generics:
       itemType:
         type: number
   # Reducer
   reducer:
-    operator: slang.reduce
+    operator: slang.control.Reduce
     generics:
       itemType:
         type: stream
@@ -36,7 +36,7 @@ operators:
       emptyValue: []
   # Comparator
   comparator:
-    operator: slang.eval
+    operator: slang.data.Evaluate
     properties:
       expression: a <= b
       variables: ["a", "b"]

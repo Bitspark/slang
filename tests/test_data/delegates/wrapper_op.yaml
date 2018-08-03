@@ -20,7 +20,7 @@ operators:
     properties:
       val: $val
   cmp:
-    operator: slang.eval
+    operator: slang.data.Evaluate
     properties:
       expression: $expr
       variables: ["a", "b"]

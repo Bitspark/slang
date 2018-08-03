@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/builtin"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -448,9 +448,9 @@ func (e *Environ) GetOperatorPath(operator string, currDir string) (string, erro
 
 // getOperatorDef tries to get the operator definition from the builtin package or the file system.
 func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
-	if builtin.IsRegistered(insDef.Operator) {
+	if elem.IsRegistered(insDef.Operator) {
 		// Case 1: We found it in the builtin package, return
-		return builtin.GetOperatorDef(insDef.Operator)
+		return elem.GetOperatorDef(insDef.Operator)
 	}
 
 	// Case 2: We have to read it from the file system
@@ -480,11 +480,11 @@ func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool
 
 	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.InstanceDefs {
-		if builtinOp, err := builtin.MakeOperator(*childOpInsDef); err == nil {
+		if builtinOp, err := elem.MakeOperator(*childOpInsDef); err == nil {
 			// Builtin operator has been found
 			builtinOp.SetParent(o)
 			continue
-		} else if builtin.IsRegistered(childOpInsDef.Operator) {
+		} else if elem.IsRegistered(childOpInsDef.Operator) {
 			// Builtin operator with that name exists, but still could not create it, so an error must have occurred
 			return nil, err
 		}

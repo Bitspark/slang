@@ -4,7 +4,6 @@ services:
   main:
     in:
       type: number
-
     out:
       type: stream
       stream:
@@ -12,14 +11,26 @@ services:
 
 operators:
   loop:
-    operator: slang.loop
+    operator: slang.control.Loop
     generics:
       itemType:
         type: number
       stateType:
-        type: number
-  falsify:
-    operator: slang.const
+        type: map
+        map:
+          item:
+            type: number
+          send:
+            type: boolean
+  T:
+    operator: slang.data.Constant
+    generics:
+      valueType:
+        type: boolean
+    properties:
+      value: true
+  F:
+    operator: slang.data.Constant
     generics:
       valueType:
         type: boolean
@@ -28,15 +39,22 @@ operators:
 
 connections:
   (:
-  - (loop
+  - item(loop
+  - (T
+  T):
+  - send(loop
 
-  loop.iteration)~:
-  - (falsify
-  - ~.state(loop.iteration
+  loop.controller)send:
+  - (loop.controller
 
-  loop.iteration):
+  loop.iterator)item:
+  - item(loop.iterator
+  - state.item(loop.iterator
+  loop.iterator)send:
+  - (F
+  F):
+  - state.send(loop.iterator
+
+  loop)items:
   - )
-
-  falsify):
-  - ~.continue(loop.iteration
 

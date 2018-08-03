@@ -1,0 +1,117 @@
+package elem
+
+import (
+	"errors"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/go-funk"
+)
+
+type builtinConfig struct {
+	opConnFunc core.CFunc
+	opFunc     core.OFunc
+	opDef      core.OperatorDef
+}
+
+var cfgs map[string]*builtinConfig
+
+func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
+	cfg := getBuiltinCfg(def.Operator)
+
+	if cfg == nil {
+		return nil, errors.New("unknown builtin operator")
+	}
+	
+	if err := def.OperatorDef.GenericsSpecified(); err != nil {
+		return nil, err
+	}
+
+	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.OperatorDef)
+	if err != nil {
+		return nil, err
+	}
+
+	return o, nil
+}
+
+func GetOperatorDef(operator string) (core.OperatorDef, error) {
+	cfg, ok := cfgs[operator]
+	if !ok {
+		return core.OperatorDef{}, errors.New("builtin operator not found")
+	}
+
+	return cfg.opDef.Copy(), nil
+}
+
+func IsRegistered(name string) bool {
+	_, b := cfgs[name]
+	return b
+}
+
+func Register(name string, cfg *builtinConfig) {
+	cfgs[name] = cfg
+	cfg.opDef.Elementary = name
+}
+
+func GetBuiltinNames() []string {
+	return funk.Keys(cfgs).([]string)
+}
+
+func init() {
+	cfgs = make(map[string]*builtinConfig)
+
+	// Data manipulating operators
+	Register("slang.data.Constant", dataConstantCfg)
+	Register("slang.data.Evaluate", dataEvaluateCfg)
+	Register("slang.data.Convert", dataConvertCfg)
+
+	// Flow control operators
+	Register("slang.control.Split", constrolSplitCfg)
+	Register("slang.control.Merge", constrolMergeCfg)
+	Register("slang.control.Switch", constrolSwitchCfg)
+	Register("slang.control.SingleSplit", controlSingleSplitCfg)
+	Register("slang.control.SingleMerge", constrolSingleMergeCfg)
+	Register("slang.control.Take", constrolTakeCfg)
+	Register("slang.control.Loop", constrolLoopCfg)
+	Register("slang.control.Iterate", constrolIterateCfg)
+	Register("slang.control.Reduce", constrolReduceCfg)
+
+	// Stream accessing and processing operators
+	Register("slang.stream.Serialize", streamSerializeCfg)
+	Register("slang.stream.Parallelize", streamParallelizeCfg)
+	Register("slang.stream.Concatenate", streamConcatenateCfg)
+	Register("slang.stream.MapAccess", streamMapAccessCfg)
+	Register("slang.stream.WindowCount", streamWindowCountCfg)
+	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
+
+	// Miscellaneous operators
+	Register("slang.net.HTTPServer", netHTTPServerCfg)
+	Register("slang.net.SendEmail", netSendEmailCfg)
+
+	Register("slang.files.Read", filesReadCfg)
+	Register("slang.files.Write", filesWriteCfg)
+
+	Register("slang.encoding.CSVRead", encodingCSVReadCfg)
+	Register("slang.encoding.JSONRead", encodingJSONReadCfg)
+	Register("slang.encoding.JSONWrite", encodingJSONWriteCfg)
+	Register("slang.encoding.XLSXRead", encodingXLSXReadCfg)
+
+	Register("slang.time.Delay", timeDelayCfg)
+
+	Register("slang.string.Template", stringTemplateCfg)
+}
+
+func getBuiltinCfg(name string) *builtinConfig {
+	c, _ := cfgs[name]
+	return c
+}
+
+// Mainly for testing
+
+func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
+	insDef.OperatorDef, _ = GetOperatorDef(insDef.Operator)
+	err := insDef.OperatorDef.SpecifyOperator(insDef.Generics, insDef.Properties)
+	if err != nil {
+		return nil, err
+	}
+	return MakeOperator(insDef)
+}

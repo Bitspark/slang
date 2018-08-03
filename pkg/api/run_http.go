@@ -113,7 +113,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	// Const port instance
 	portIns := &core.InstanceDef{
 		Name:     "port",
-		Operator: "slang.const",
+		Operator: "slang.data.Constant",
 		Generics: core.Generics{
 			"valueType": {
 				Type: "number",
@@ -129,7 +129,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	// HTTP operator instance
 	httpIns := &core.InstanceDef{
 		Name:     "httpServer",
-		Operator: "slang.net.httpServer",
+		Operator: "slang.net.HTTPServer",
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, httpIns)
 	httpDef.Connections["port)"] = []string{"(httpServer"}
@@ -158,7 +158,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// It contains the JSON we need to unpack
 		unpackerIns := &core.InstanceDef{
 			Name:     "unpacker",
-			Operator: "slang.encoding.json.read",
+			Operator: "slang.encoding.JSONRead",
 			Generics: core.Generics{
 				"itemType": &inDef,
 			},
@@ -176,7 +176,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// It contains the JSON we need to pack
 		unpackerIns := &core.InstanceDef{
 			Name:     "packer",
-			Operator: "slang.encoding.json.write",
+			Operator: "slang.encoding.JSONWrite",
 			Generics: core.Generics{
 				"itemType": &outDef,
 			},
@@ -190,7 +190,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// Status code operator
 		statusCodeIns := &core.InstanceDef{
 			Name:     "statusCode",
-			Operator: "slang.const",
+			Operator: "slang.data.Constant",
 			Generics: core.Generics{
 				"valueType": {
 					Type: "number",
@@ -206,7 +206,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		// Status code operator
 		headersIns := &core.InstanceDef{
 			Name:     "headers",
-			Operator: "slang.const",
+			Operator: "slang.data.Constant",
 			Generics: core.Generics{
 				"valueType": {
 					Type: "stream",

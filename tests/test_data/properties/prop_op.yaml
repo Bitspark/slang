@@ -12,7 +12,7 @@ properties:
 
 operators:
   const:
-    operator: slang.const
+    operator: slang.data.Constant
     generics:
       valueType:
         type: number

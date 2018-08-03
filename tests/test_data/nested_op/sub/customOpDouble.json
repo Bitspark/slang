@@ -11,7 +11,7 @@
   },
   "operators": {
     "doubler": {
-      "operator": "slang.eval",
+      "operator": "slang.data.Evaluate",
       "properties": {
         "expression": "a+a",
         "variables": ["a"]

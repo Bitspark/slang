@@ -17,7 +17,7 @@
   },
   "operators": {
     "passer": {
-      "operator": "slang.eval",
+      "operator": "slang.data.Evaluate",
       "properties": {
         "expression": "a",
         "variables": [

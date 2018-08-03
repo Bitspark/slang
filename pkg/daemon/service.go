@@ -43,7 +43,7 @@ func sendSuccess(w http.ResponseWriter, resp *responseOK) {
 }
 
 func sendFailure(w http.ResponseWriter, resp *responseBad) {
-	w.WriteHeader(200) // XXX Use StatusCode 400
+	w.WriteHeader(400)
 	err := writeJSON(w, resp)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)

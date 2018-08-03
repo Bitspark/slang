@@ -15,7 +15,7 @@ var controlSingleSplitCfg = &builtinConfig{
 							Type:    "generic",
 							Generic: "itemType",
 						},
-						"select": {
+						"control": {
 							Type: "boolean",
 						},
 					},
@@ -47,7 +47,7 @@ var controlSingleSplitCfg = &builtinConfig{
 				continue
 			}
 
-			if m["select"].(bool) {
+			if m["control"].(bool) {
 				out.Map("true").Push(m["item"])
 				out.Map("false").Push(nil)
 			} else {

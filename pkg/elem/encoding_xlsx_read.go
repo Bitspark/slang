@@ -21,7 +21,7 @@ var encodingXLSXReadCfg = &builtinConfig{
 							"name": {
 								Type: "string",
 							},
-							"content": {
+							"table": {
 								Type: "stream",
 								Stream: &core.TypeDef{
 									Type: "stream",
@@ -51,17 +51,18 @@ var encodingXLSXReadCfg = &builtinConfig{
 				panic(err)
 			}
 			out.PushBOS()
+			outTable := out.Stream().Map("table")
 			for _, sheet := range xlsxFile.Sheets {
 				out.Stream().Map("name").Push(sheet.Name)
-				out.Stream().Map("content").PushBOS()
+				outTable.PushBOS()
 				for _, row := range sheet.Rows {
-					out.Stream().Map("content").Stream().PushBOS()
+					outTable.Stream().PushBOS()
 					for _, col := range row.Cells {
-						out.Stream().Map("content").Stream().Stream().Push(col.Value)
+						outTable.Stream().Stream().Push(col.Value)
 					}
-					out.Stream().Map("content").Stream().PushEOS()
+					outTable.Stream().PushEOS()
 				}
-				out.Stream().Map("content").PushEOS()
+				outTable.PushEOS()
 			}
 			out.PushEOS()
 		}

@@ -25,7 +25,7 @@ var constrolMergeCfg = &builtinConfig{
 								Generic: "itemType",
 							},
 						},
-						"select": {
+						"control": {
 							Type: "stream",
 							Stream: &core.TypeDef{
 								Type: "boolean",
@@ -47,11 +47,11 @@ var constrolMergeCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
-			i := in.Map("select").Stream().Pull()
+			i := in.Map("control").Stream().Pull()
 			pTrue := in.Map("true").Stream().Pull()
 			pFalse := in.Map("false").Stream().Pull()
 
-			if !in.Map("select").OwnBOS(i) {
+			if !in.Map("control").OwnBOS(i) {
 				if pTrue == pFalse == i {
 					out.Push(i)
 				} else {
@@ -63,28 +63,28 @@ var constrolMergeCfg = &builtinConfig{
 			if in.Map("true").OwnBOS(pTrue) && in.Map("false").OwnBOS(pFalse) {
 				out.PushBOS()
 			} else {
-				panic("port select received BOS too early")
+				panic("port control received BOS too early")
 			}
 
 			for {
-				i := in.Map("select").Stream().Pull()
+				i := in.Map("control").Stream().Pull()
 
-				if in.Map("select").OwnEOS(i) {
+				if in.Map("control").OwnEOS(i) {
 					pTrue := in.Map("true").Stream().Pull()
 					pFalse := in.Map("false").Stream().Pull()
 
 					if in.Map("true").OwnEOS(pTrue) && in.Map("false").OwnEOS(pFalse) {
 						out.PushEOS()
 					} else {
-						panic("port select received EOS too early")
+						panic("port control received EOS too early")
 					}
 
 					break
 				}
 
-				if pSelect, ok := i.(bool); ok {
+				if pcontrol, ok := i.(bool); ok {
 					var pName string
-					if pSelect {
+					if pcontrol {
 						pName = "true"
 					} else {
 						pName = "false"
@@ -100,7 +100,7 @@ var constrolMergeCfg = &builtinConfig{
 		}
 	},
 	opConnFunc: func(op *core.Operator, dst, src *core.Port) error {
-		if dst == op.Main().In().Map("select") {
+		if dst == op.Main().In().Map("control") {
 			op.Main().Out().SetStreamSource(src.StreamSource())
 		}
 		return nil

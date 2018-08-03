@@ -22,7 +22,7 @@ func Test_CtrlMerge__InPorts(t *testing.T) {
 
 	a.NotNil(o.Main().In().Map("true").Stream())
 	a.NotNil(o.Main().In().Map("false").Stream())
-	a.NotNil(o.Main().In().Map("select").Stream())
+	a.NotNil(o.Main().In().Map("control").Stream())
 }
 
 func Test_CtrlMerge__OutPorts(t *testing.T) {
@@ -45,11 +45,11 @@ func Test_CtrlMerge__Works(t *testing.T) {
 
 	trues := []interface{}{"Roses", "Violets", "are", 1, 2, 4}
 	falses := []interface{}{"are", "red.", "blue.", 3}
-	selects := []interface{}{true, false, false, true, true, false, true, true, false, true}
+	controls := []interface{}{true, false, false, true, true, false, true, true, false, true}
 
 	o.Main().In().Map("true").Push(trues)
 	o.Main().In().Map("false").Push(falses)
-	o.Main().In().Map("select").Push(selects)
+	o.Main().In().Map("control").Push(controls)
 
 	a.PortPushesAll([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
 }
@@ -81,11 +81,11 @@ func Test_CtrlMerge__ComplexItems(t *testing.T) {
 			"blue": "Blues",
 		},
 	}
-	selects := []interface{}{false, true, true}
+	controls := []interface{}{false, true, true}
 
 	o.Main().In().Map("true").Push(trues)
 	o.Main().In().Map("false").Push(falses)
-	o.Main().In().Map("select").Push(selects)
+	o.Main().In().Map("control").Push(controls)
 
 	a.PortPushesAll([]interface{}{[]interface{}{
 		map[string]interface{}{"red": "Red Bull", "blue": "Blues"},

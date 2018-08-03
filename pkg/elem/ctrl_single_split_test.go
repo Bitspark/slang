@@ -30,9 +30,9 @@ func Test_CtrlSingleSplit__InPorts(t *testing.T) {
 	require.NoError(t, err)
 
 	a.NotNil(o.Main().In().Map("item"))
-	a.NotNil(o.Main().In().Map("select"))
+	a.NotNil(o.Main().In().Map("control"))
 	a.Equal(core.TYPE_PRIMITIVE, o.Main().In().Map("item").Type())
-	a.Equal(core.TYPE_BOOLEAN, o.Main().In().Map("select").Type())
+	a.Equal(core.TYPE_BOOLEAN, o.Main().In().Map("control").Type())
 }
 
 func Test_CtrlSingleSplit__OutPorts(t *testing.T) {
@@ -77,22 +77,22 @@ func Test_CtrlSingleSplit__Correct(t *testing.T) {
 	o.Main().In().Push(
 		map[string]interface{}{
 			"item":   "hallo",
-			"select": true,
+			"control": true,
 		})
 	o.Main().In().Push(
 		map[string]interface{}{
 			"item":   "welt",
-			"select": false,
+			"control": false,
 		})
 	o.Main().In().Push(
 		map[string]interface{}{
 			"item":   100,
-			"select": true,
+			"control": true,
 		})
 	o.Main().In().Push(
 		map[string]interface{}{
 			"item":   101,
-			"select": false,
+			"control": false,
 		})
 
 	a.PortPushesAll([]interface{}{"hallo", nil, 100, nil}, o.Main().Out().Map("true"))
@@ -123,12 +123,12 @@ func Test_CtrlSingleSplit__ComplexItems(t *testing.T) {
 	o.Main().In().Push(
 		map[string]interface{}{
 			"item":   map[string]interface{}{"a": "1", "b": "hallo"},
-			"select": true,
+			"control": true,
 		})
 	o.Main().In().Push(
 		map[string]interface{}{
 			"item":   map[string]interface{}{"a": "2", "b": "slang"},
-			"select": false,
+			"control": false,
 		})
 
 	a.PortPushesAll([]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}, map[string]interface{}{"a": nil, "b": nil}}, o.Main().Out().Map("true"))

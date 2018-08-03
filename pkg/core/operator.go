@@ -25,6 +25,7 @@ type Operator struct {
 	connectFunc CFunc
 	elementary  string
 	stopChannel chan bool
+	stopped     bool
 }
 
 type Delegate struct {
@@ -133,6 +134,7 @@ func (o *Operator) Child(name string) *Operator {
 
 func (o *Operator) Start() {
 	o.stopChannel = make(chan bool, 1)
+	o.stopped = false
 
 	for _, srv := range o.services {
 		srv.outPort.Open()
@@ -142,7 +144,7 @@ func (o *Operator) Start() {
 	}
 
 	if o.function != nil {
-		go func () {
+		go func() {
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("%s panicked: %s", o.Name(), r)
@@ -159,7 +161,12 @@ func (o *Operator) Start() {
 }
 
 func (o *Operator) Stop() {
+	if o.stopped {
+		return
+	}
+
 	o.stopChannel <- true
+	o.stopped = true
 
 	for _, srv := range o.services {
 		srv.outPort.Close()
@@ -170,6 +177,10 @@ func (o *Operator) Stop() {
 
 	for _, c := range o.children {
 		c.Stop()
+	}
+
+	if o.parent != nil {
+		o.parent.Stop()
 	}
 }
 

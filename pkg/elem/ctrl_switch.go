@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var switchOpCfg = &builtinConfig{
+var constrolSwitchCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

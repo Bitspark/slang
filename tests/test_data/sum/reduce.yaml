@@ -15,7 +15,7 @@ operators:
       expression: "a+b"
       variables: ["a", "b"]
   reducer:
-    operator: slang.stream.Reduce
+    operator: slang.control.Reduce
     generics:
       itemType:
         type: number

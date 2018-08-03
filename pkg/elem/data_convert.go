@@ -8,7 +8,7 @@ import (
 	"github.com/Bitspark/slang/pkg/utils"
 )
 
-var convertOpCfg = &builtinConfig{
+var dataConvertCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -49,6 +49,14 @@ var convertOpCfg = &builtinConfig{
 			}
 
 			switch in.Type() {
+			case core.TYPE_NUMBER:
+				item := i.(float64)
+				switch out.Type() {
+				case core.TYPE_STRING:
+					out.Push(strconv.FormatFloat(item, 'f', -1, 64))
+				default:
+					panic("not supported yet")
+				}
 			case core.TYPE_BOOLEAN:
 				item := i.(bool)
 				switch out.Type() {

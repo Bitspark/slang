@@ -11,7 +11,7 @@ services:
 
 operators:
   loop:
-    operator: slang.stream.Loop
+    operator: slang.control.Loop
     generics:
       itemType:
         type: number

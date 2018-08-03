@@ -8,22 +8,22 @@ import (
 )
 
 // Test if fork operator is registered under the correct name
-func Test_ElemCtrl_Loop_CreatorFuncIsRegistered(t *testing.T) {
+func Test_CtrlLoop__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocLoop := getBuiltinCfg("slang.stream.Loop")
+	ocLoop := getBuiltinCfg("slang.control.Loop")
 	a.NotNil(ocLoop)
 }
 
 // Test if the signature is correct
-func Test_ElemCtrl_Loop__Signature(t *testing.T) {
+func Test_CtrlLoop__Signature(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
 	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.stream.Loop",
+			Operator: "slang.control.Loop",
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
@@ -80,7 +80,7 @@ func Test_ElemCtrl_Loop__Signature(t *testing.T) {
 }
 
 // Test if generics are replaced correctly
-func Test_ElemCtrl_Loop__GenericType(t *testing.T) {
+func Test_CtrlLoop__GenericType(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
@@ -95,7 +95,7 @@ func Test_ElemCtrl_Loop__GenericType(t *testing.T) {
 			lop, err := buildOperator(
 				core.InstanceDef{
 					Name:     "fork",
-					Operator: "slang.stream.Loop",
+					Operator: "slang.control.Loop",
 					Generics: map[string]*core.TypeDef{
 						"stateType": {
 							Type: stateTp,
@@ -144,14 +144,14 @@ func Test_ElemCtrl_Loop__GenericType(t *testing.T) {
 }
 
 // Test if generics are replaced correctly
-func Test_ElemCtrl_Loop__Behavior(t *testing.T) {
+func Test_CtrlLoop__Behavior(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
 	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.stream.Loop",
+			Operator: "slang.control.Loop",
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",

@@ -60,48 +60,44 @@ func init() {
 	cfgs = make(map[string]*builtinConfig)
 
 	// Data manipulating operators
-	Register("slang.data.Constant", constOpCfg)
-	Register("slang.data.Evaluate", evalOpCfg)
-	Register("slang.data.Convert", convertOpCfg)
+	Register("slang.data.Constant", dataConstantCfg)
+	Register("slang.data.Evaluate", dataEvaluateCfg)
+	Register("slang.data.Convert", dataConvertCfg)
 
 	// Flow control operators
-	Register("slang.control.Split", splitOpCfg)
-	Register("slang.control.Merge", mergeOpCfg)
-	Register("slang.control.Switch", switchOpCfg)
-	Register("slang.control.SingleSplit", singleSplitOpCfg)
-	Register("slang.control.SingleMerge", singleMergeOpCfg)
+	Register("slang.control.Split", constrolSplitCfg)
+	Register("slang.control.Merge", constrolMergeCfg)
+	Register("slang.control.Switch", constrolSwitchCfg)
+	Register("slang.control.SingleSplit", controlSingleSplitCfg)
+	Register("slang.control.SingleMerge", constrolSingleMergeCfg)
+	Register("slang.control.Take", constrolTakeCfg)
+	Register("slang.control.Loop", constrolLoopCfg)
+	Register("slang.control.Iterate", constrolIterateCfg)
+	Register("slang.control.Reduce", constrolReduceCfg)
 
-	// Stream producing and consuming operators
-	Register("slang.stream.Loop", loopOpCfg)
-	Register("slang.stream.Iterate", iterateOpCfg)
-	Register("slang.stream.Reduce", reduceOpCfg)
+	// Stream accessing and processing operators
+	Register("slang.stream.Serialize", streamSerializeCfg)
+	Register("slang.stream.Parallelize", streamParallelizeCfg)
+	Register("slang.stream.Concatenate", streamConcatenateCfg)
+	Register("slang.stream.MapAccess", streamMapAccessCfg)
+	Register("slang.stream.WindowCount", streamWindowCountCfg)
+	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
 
-	Register("slang.deprecated.take", takeOpCfg) // TODO: Add functionality to Merge operator
+	// Miscellaneous operators
+	Register("slang.net.HTTPServer", netHTTPServerCfg)
+	Register("slang.net.SendEmail", netSendEmailCfg)
 
-	Register("slang.stream.extract", extractOpCfg)
-	Register("slang.stream.concat", concatOpCfg)
-	Register("slang.stream.serialize", serializeOpCfg)
-	Register("slang.stream.mapAccess", mapAccessOpCfg)
+	Register("slang.files.Read", filesReadCfg)
+	Register("slang.files.Write", filesWriteCfg)
 
-	Register("slang.window.count", windowCountOpCfg)
-	Register("slang.window.triggered", windowTriggeredOpCfg)
+	Register("slang.encoding.CSVRead", encodingCSVReadCfg)
+	Register("slang.encoding.JSONRead", encodingJSONReadCfg)
+	Register("slang.encoding.JSONWrite", encodingJSONWriteCfg)
+	Register("slang.encoding.XLSXRead", encodingXLSXReadCfg)
 
-	Register("slang.net.httpServer", httpServerOpCfg)
-	Register("slang.net.sendEmail", sendEmailOpCfg)
+	Register("slang.time.Delay", timeDelayCfg)
 
-	Register("slang.files.read", fileReadOpCfg)
-	Register("slang.files.write", fileWriteOpCfg)
-
-	Register("slang.encoding.csv.read", csvReadOpCfg)
-
-	Register("slang.encoding.json.write", jsonWriteOpCfg)
-	Register("slang.encoding.json.read", jsonReadOpCfg)
-
-	Register("slang.encoding.xlsx.read", xlsxReadOpCfg)
-
-	Register("slang.time.delay", delayOpCfg)
-
-	Register("slang.template.format", templateFormatOpCfg)
+	Register("slang.string.Template", stringTemplateCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

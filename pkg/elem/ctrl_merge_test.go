@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-func TestBuiltin_Merge__CreatorFuncIsRegistered(t *testing.T) {
+func Test_CtrlMerge__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
 	ocFork := getBuiltinCfg("slang.control.Merge")
 	a.NotNil(ocFork)
 }
 
-func TestBuiltin_Merge__InPorts(t *testing.T) {
+func Test_CtrlMerge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
@@ -25,7 +25,7 @@ func TestBuiltin_Merge__InPorts(t *testing.T) {
 	a.NotNil(o.Main().In().Map("select").Stream())
 }
 
-func TestBuiltin_Merge__OutPorts(t *testing.T) {
+func Test_CtrlMerge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
@@ -34,7 +34,7 @@ func TestBuiltin_Merge__OutPorts(t *testing.T) {
 	a.NotNil(o.Main().Out().Stream())
 }
 
-func TestBuiltin_Merge__Works(t *testing.T) {
+func Test_CtrlMerge__Works(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Merge", Generics: map[string]*core.TypeDef{"itemType": {Type: "primitive"}}})
@@ -54,7 +54,7 @@ func TestBuiltin_Merge__Works(t *testing.T) {
 	a.PortPushesAll([]interface{}{[]interface{}{"Roses", "are", "red.", "Violets", "are", "blue.", 1, 2, 3, 4}}, o.Main().Out())
 }
 
-func TestBuiltin_Merge__ComplexItems(t *testing.T) {
+func Test_CtrlMerge__ComplexItems(t *testing.T) {
 	a := assertions.New(t)
 	o, err := buildOperator(core.InstanceDef{
 		Operator: "slang.control.Merge",

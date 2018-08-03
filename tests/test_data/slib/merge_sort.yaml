@@ -20,13 +20,13 @@ operators:
         type: number
   # Sorter
   sorter:
-    operator: slang.deprecated.take
+    operator: slang.control.Take
     generics:
       itemType:
         type: number
   # Reducer
   reducer:
-    operator: slang.stream.Reduce
+    operator: slang.control.Reduce
     generics:
       itemType:
         type: stream

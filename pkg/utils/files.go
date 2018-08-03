@@ -24,7 +24,7 @@ func FileWithFileEnding(filename string, fileEndings []string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("%s: no appropriate file found", filename)
+	return "", fmt.Errorf("%s: no appropriate YAML or JSON file for given basename found", filename)
 }
 
 func IsJSON(opDefFilePath string) bool {

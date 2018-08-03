@@ -110,6 +110,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 
 			if !checkOperatorNameIsValid(opFQName) {
 				fail(&Error{Msg: fmt.Sprintf("operator must start with capital letter and may only contain alphanumerics"), Code: "E000X"})
+				return
 			}
 
 			body, err := ioutil.ReadAll(r.Body)

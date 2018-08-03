@@ -10,9 +10,16 @@ import (
 
 	"github.com/Bitspark/browser"
 	"github.com/Bitspark/slang/pkg/daemon"
+	"strconv"
 )
 
 const PORT = 5149 // sla[n]g == 5149
+
+// will be set during build process
+var (
+	Version   string
+	BuildTime string
+)
 
 type EnvironPaths struct {
 	SLANG_PATH string
@@ -22,7 +29,8 @@ type EnvironPaths struct {
 }
 
 func main() {
-	log.Println("Starting slangd...")
+	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
+	log.Printf("Starting slangd %s built %s...\n", Version, time.Unix(buildTime, 0).Format(time.RFC3339))
 
 	envPaths := initEnvironPaths()
 

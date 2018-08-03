@@ -130,7 +130,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				writeJSON(w, &data)
 				return
 			} else {
-				ii.op.Stop()
+				go ii.op.Stop()
 				delete(runningInstances, handle)
 
 				data.Status = "success"

@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"log"
 )
 
 type OFunc func(op *Operator)
@@ -141,7 +142,15 @@ func (o *Operator) Start() {
 	}
 
 	if o.function != nil {
-		go o.function(o)
+		go func () {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("%s panicked: %s", o.Name(), r)
+					o.Stop()
+				}
+			}()
+			o.function(o)
+		}()
 	} else {
 		for _, c := range o.children {
 			c.Start()

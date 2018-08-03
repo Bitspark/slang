@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -107,6 +108,10 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			cwd := e.WorkingDir()
 			opFQName := r.FormValue("fqop")
 
+			if !checkOperatorNameIsValid(opFQName) {
+				fail(&Error{Msg: fmt.Sprintf("operator must start with capital letter and may only contain alphanumerics"), Code: "E000X"})
+			}
+
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})
@@ -115,7 +120,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 
 			var def core.OperatorDef
 			err = json.Unmarshal(body, &def)
-			if err == nil {
+			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}

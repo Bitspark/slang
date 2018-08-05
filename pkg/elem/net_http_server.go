@@ -91,77 +91,71 @@ var netHTTPServerCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{
 			"handler": {
 				In: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "map",
-						Map: map[string]*core.TypeDef{
-							"status": {
-								Type: "number",
-							},
-							"headers": {
-								Type: "stream",
-								Stream: &core.TypeDef{
-									Type: "map",
-									Map: map[string]*core.TypeDef{
-										"key": {
-											Type: "string",
-										},
-										"value": {
-											Type: "string",
-										},
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"status": {
+							Type: "number",
+						},
+						"headers": {
+							Type: "stream",
+							Stream: &core.TypeDef{
+								Type: "map",
+								Map: map[string]*core.TypeDef{
+									"key": {
+										Type: "string",
+									},
+									"value": {
+										Type: "string",
 									},
 								},
 							},
-							"body": {
-								Type: "binary",
-							},
+						},
+						"body": {
+							Type: "binary",
 						},
 					},
 				},
 				Out: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "map",
-						Map: map[string]*core.TypeDef{
-							"method": {
-								Type: "string",
-							},
-							"path": {
-								Type: "string",
-							},
-							"protocol": {
-								Type: "string",
-							},
-							"headers": {
-								Type: "stream",
-								Stream: &core.TypeDef{
-									Type: "map",
-									Map: map[string]*core.TypeDef{
-										"key": {
-											Type: "string",
-										},
-										"value": {
-											Type: "string",
-										},
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"method": {
+							Type: "string",
+						},
+						"path": {
+							Type: "string",
+						},
+						"protocol": {
+							Type: "string",
+						},
+						"headers": {
+							Type: "stream",
+							Stream: &core.TypeDef{
+								Type: "map",
+								Map: map[string]*core.TypeDef{
+									"key": {
+										Type: "string",
+									},
+									"value": {
+										Type: "string",
 									},
 								},
 							},
-							"body": {
-								Type: "binary",
-							},
-							"params": {
-								Type: "stream",
-								Stream: &core.TypeDef{
-									Type: "map",
-									Map: map[string]*core.TypeDef{
-										"key": {
+						},
+						"body": {
+							Type: "binary",
+						},
+						"params": {
+							Type: "stream",
+							Stream: &core.TypeDef{
+								Type: "map",
+								Map: map[string]*core.TypeDef{
+									"key": {
+										Type: "string",
+									},
+									"values": {
+										Type: "stream",
+										Stream: &core.TypeDef{
 											Type: "string",
-										},
-										"values": {
-											Type: "stream",
-											Stream: &core.TypeDef{
-												Type: "string",
-											},
 										},
 									},
 								},
@@ -178,8 +172,8 @@ var netHTTPServerCfg = &builtinConfig{
 		slangHandler := op.Delegate("handler")
 		sync := &core.Synchronizer{}
 		sync.Init(
-			slangHandler.In().Stream(),
-			slangHandler.Out().Stream())
+			slangHandler.In(),
+			slangHandler.Out())
 		go sync.Worker()
 
 		for !op.CheckStop() {
@@ -188,10 +182,6 @@ var netHTTPServerCfg = &builtinConfig{
 				out.Push(marker)
 				continue
 			}
-
-			// Once we receive the port, we signal start of request processing by pushing a BOS
-			slangHandler.Out().PushBOS()
-			slangHandler.In().PullBOS()
 
 			s := &http.Server{
 				Addr:           ":" + strconv.Itoa(port),
@@ -208,10 +198,6 @@ var netHTTPServerCfg = &builtinConfig{
 
 			err := s.ListenAndServe()
 			out.Push(err.Error())
-
-			// Once we terminate, we signal end of request processing by pushing an EOS
-			slangHandler.Out().PushEOS()
-			slangHandler.In().PullEOS()
 		}
 	},
 }

@@ -152,7 +152,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 
 	if inDef.Equals(HTTP_REQUEST_DEF) {
 		// If the operator can handle HTTP requests itself, just pass them
-		httpDef.Connections["httpServer.handler)~"] = []string{"(operator"}
+		httpDef.Connections["httpServer.handler)"] = []string{"(operator"}
 	} else {
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to unpack
@@ -164,13 +164,13 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 			},
 		}
 		httpDef.InstanceDefs = append(httpDef.InstanceDefs, unpackerIns)
-		httpDef.Connections["httpServer.handler)~.body"] = []string{"(unpacker"}
+		httpDef.Connections["httpServer.handler)body"] = []string{"(unpacker"}
 		httpDef.Connections["unpacker)"] = []string{"(operator"}
 	}
 
 	if outDef.Equals(HTTP_RESPONSE_DEF) {
 		// If the operator produces HTTP responses itself, just pass them
-		httpDef.Connections["operator)"] = []string{"~(httpServer.handler"}
+		httpDef.Connections["operator)"] = []string{"(httpServer.handler"}
 	} else {
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to pack
@@ -230,9 +230,9 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		httpDef.InstanceDefs = append(httpDef.InstanceDefs, headersIns)
 		// We connect it later
 
-		httpDef.Connections["packer)"] = []string{"~.body(httpServer.handler", "(statusCode", "(headers"}
-		httpDef.Connections["statusCode)"] = []string{"~.status(httpServer.handler"}
-		httpDef.Connections["headers)"] = []string{"~.headers(httpServer.handler"}
+		httpDef.Connections["packer)"] = []string{"body(httpServer.handler", "(statusCode", "(headers"}
+		httpDef.Connections["statusCode)"] = []string{"status(httpServer.handler"}
+		httpDef.Connections["headers)"] = []string{"headers(httpServer.handler"}
 	}
 
 	return httpDef, nil

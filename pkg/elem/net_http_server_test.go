@@ -59,30 +59,27 @@ func Test_HTTP__Delegates(t *testing.T) {
 	dlg := o.Delegate("handler")
 	a.NotNil(dlg)
 
-	a.Equal(core.TYPE_STREAM, dlg.In().Type())
-	a.Equal(core.TYPE_STREAM, dlg.Out().Type())
+	a.Equal(core.TYPE_MAP, dlg.In().Type())
+	a.Equal(core.TYPE_MAP, dlg.Out().Type())
 
-	a.Equal(core.TYPE_MAP, dlg.In().Stream().Type())
-	a.Equal(core.TYPE_MAP, dlg.Out().Stream().Type())
+	a.Equal(core.TYPE_BINARY, dlg.In().Map("body").Type())
+	a.Equal(core.TYPE_NUMBER, dlg.In().Map("status").Type())
+	a.Equal(core.TYPE_STREAM, dlg.In().Map("headers").Type())
+	a.Equal(core.TYPE_MAP, dlg.In().Map("headers").Stream().Type())
+	a.Equal(core.TYPE_STRING, dlg.In().Map("headers").Stream().Map("key").Type())
+	a.Equal(core.TYPE_STRING, dlg.In().Map("headers").Stream().Map("value").Type())
 
-	a.Equal(core.TYPE_BINARY, dlg.In().Stream().Map("body").Type())
-	a.Equal(core.TYPE_NUMBER, dlg.In().Stream().Map("status").Type())
-	a.Equal(core.TYPE_STREAM, dlg.In().Stream().Map("headers").Type())
-	a.Equal(core.TYPE_MAP, dlg.In().Stream().Map("headers").Stream().Type())
-	a.Equal(core.TYPE_STRING, dlg.In().Stream().Map("headers").Stream().Map("key").Type())
-	a.Equal(core.TYPE_STRING, dlg.In().Stream().Map("headers").Stream().Map("value").Type())
-
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("method").Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("path").Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("protocol").Type())
-	a.Equal(core.TYPE_STREAM, dlg.Out().Stream().Map("headers").Type())
-	a.Equal(core.TYPE_MAP, dlg.Out().Stream().Map("headers").Stream().Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("headers").Stream().Map("key").Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("headers").Stream().Map("value").Type())
-	a.Equal(core.TYPE_MAP, dlg.Out().Stream().Map("params").Stream().Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("params").Stream().Map("key").Type())
-	a.Equal(core.TYPE_STREAM, dlg.Out().Stream().Map("params").Stream().Map("values").Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Stream().Map("params").Stream().Map("values").Stream().Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("method").Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("path").Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("protocol").Type())
+	a.Equal(core.TYPE_STREAM, dlg.Out().Map("headers").Type())
+	a.Equal(core.TYPE_MAP, dlg.Out().Map("headers").Stream().Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("headers").Stream().Map("key").Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("headers").Stream().Map("value").Type())
+	a.Equal(core.TYPE_MAP, dlg.Out().Map("params").Stream().Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("params").Stream().Map("key").Type())
+	a.Equal(core.TYPE_STREAM, dlg.Out().Map("params").Stream().Map("values").Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("params").Stream().Map("values").Stream().Type())
 }
 
 func Test_HTTP__Request(t *testing.T) {
@@ -101,8 +98,6 @@ func Test_HTTP__Request(t *testing.T) {
 
 	o.Start()
 	o.Main().In().Push(9438)
-	a.True(handler.Out().PullBOS())
-	handler.In().PushBOS()
 
 	done := false
 
@@ -116,9 +111,9 @@ func Test_HTTP__Request(t *testing.T) {
 		}
 	}()
 
-	a.Equal("GET", handler.Out().Stream().Map("method").Pull())
-	a.Equal("/test123", handler.Out().Stream().Map("path").Pull())
-	a.Equal([]interface{}{map[string]interface{}{"key": "a", "values": []interface{}{"1"}}}, handler.Out().Stream().Map("params").Pull())
+	a.Equal("GET", handler.Out().Map("method").Pull())
+	a.Equal("/test123", handler.Out().Map("path").Pull())
+	a.Equal([]interface{}{map[string]interface{}{"key": "a", "values": []interface{}{"1"}}}, handler.Out().Map("params").Pull())
 	done = true
 }
 
@@ -138,9 +133,7 @@ func Test_HTTP__Response200(t *testing.T) {
 
 	o.Start()
 	o.Main().In().Push(9439)
-	a.True(handler.Out().PullBOS())
-	handler.In().PushBOS()
-	handler.In().Stream().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": utils.Binary("hallo slang!")})
+	handler.In().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": utils.Binary("hallo slang!")})
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9439/test789")
@@ -173,9 +166,7 @@ func Test_HTTP__Response404(t *testing.T) {
 
 	o.Start()
 	o.Main().In().Push(9440)
-	a.True(handler.Out().PullBOS())
-	handler.In().PushBOS()
-	handler.In().Stream().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": utils.Binary("bye slang!")})
+	handler.In().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": utils.Binary("bye slang!")})
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9440/test789")

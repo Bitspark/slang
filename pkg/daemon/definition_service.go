@@ -70,7 +70,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 						continue
 					}
 
-					opType := "lib"
+					opType := "library"
 					if e.IsLocalOperator(opFQName) {
 						opType = "local"
 					}

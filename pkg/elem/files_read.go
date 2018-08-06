@@ -38,7 +38,7 @@ var filesReadCfg = &builtinConfig{
 				continue
 			}
 
-			content, err := ioutil.ReadFile(filepath.Join(core.WORKING_DIR, file))
+			content, err := ioutil.ReadFile(filepath.Clean(file))
 			if err != nil {
 				out.Map("content").Push(nil)
 				out.Map("error").Push(err.Error())

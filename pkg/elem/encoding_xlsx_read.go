@@ -46,7 +46,7 @@ var encodingXLSXReadCfg = &builtinConfig{
 				out.Push(i)
 				continue
 			}
-			xlsxFile, err := xlsx.OpenFile(filepath.Join(core.WORKING_DIR, filename))
+			xlsxFile, err := xlsx.OpenFile(filepath.Clean(filename))
 			if err != nil {
 				panic(err)
 			}

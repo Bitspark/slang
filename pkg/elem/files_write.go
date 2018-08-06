@@ -48,7 +48,7 @@ var filesWriteCfg = &builtinConfig{
 			}
 			filename := data["filename"].(string)
 
-			err := ioutil.WriteFile(filepath.Join(core.WORKING_DIR, filename), content, os.ModePerm)
+			err := ioutil.WriteFile(filepath.Clean(filename), content, os.ModePerm)
 
 			if err == nil {
 				out.Push(nil)

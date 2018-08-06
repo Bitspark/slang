@@ -3,7 +3,6 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/tealeg/xlsx"
-	"path/filepath"
 )
 
 var encodingXLSXReadCfg = &builtinConfig{
@@ -11,7 +10,7 @@ var encodingXLSXReadCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "string",
+					Type: "binary",
 				},
 				Out: core.TypeDef{
 					Type: "stream",
@@ -41,12 +40,12 @@ var encodingXLSXReadCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
-			filename, i := in.PullString()
+			b, i := in.PullBinary()
 			if i != nil {
 				out.Push(i)
 				continue
 			}
-			xlsxFile, err := xlsx.OpenFile(filepath.Join(core.WORKING_DIR, filename))
+			xlsxFile, err := xlsx.OpenBinary(b)
 			if err != nil {
 				panic(err)
 			}

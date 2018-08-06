@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var constrolSwitchCfg = &builtinConfig{
+var controlSwitchCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -39,6 +39,16 @@ var constrolSwitchCfg = &builtinConfig{
 					Generic: "inType",
 				},
 			},
+			"default": {
+				In: core.TypeDef{
+					Type:    "generic",
+					Generic: "outType",
+				},
+				Out: core.TypeDef{
+					Type:    "generic",
+					Generic: "inType",
+				},
+			},
 		},
 		PropertyDefs: map[string]*core.TypeDef{
 			"cases": {
@@ -54,6 +64,7 @@ var constrolSwitchCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		cases := make(map[string]*core.Delegate)
+		dflt := op.Delegate("default")
 		casesProp := op.Property("cases").([]interface{})
 		for _, c := range casesProp {
 			cs := fmt.Sprintf("%v", c)
@@ -63,21 +74,17 @@ var constrolSwitchCfg = &builtinConfig{
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)
-
-				for _, dlg := range cases {
-					dlg.Out().Push(i)
-				}
-				for _, dlg := range cases {
-					dlg.In().Pull()
-				}
-
 				continue
 			}
 
 			im := i.(map[string]interface{})
 			c := fmt.Sprintf("%v", im["select"])
-			cases[c].Out().Push(im["item"])
-			out.Push(cases[c].In().Pull())
+			cs, ok := cases[c]
+			if !ok {
+				cs = dflt
+			}
+			cs.Out().Push(im["item"])
+			out.Push(cs.In().Pull())
 		}
 	},
 }

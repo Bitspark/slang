@@ -60,20 +60,20 @@ func init() {
 	cfgs = make(map[string]*builtinConfig)
 
 	// Data manipulating operators
-	Register("slang.data.Constant", dataConstantCfg)
+	Register("slang.data.Value", dataValueCfg)
 	Register("slang.data.Evaluate", dataEvaluateCfg)
 	Register("slang.data.Convert", dataConvertCfg)
 
 	// Flow control operators
-	Register("slang.control.Split", constrolSplitCfg)
-	Register("slang.control.Merge", constrolMergeCfg)
-	Register("slang.control.Switch", constrolSwitchCfg)
-	Register("slang.control.SingleSplit", controlSingleSplitCfg)
-	Register("slang.control.SingleMerge", constrolSingleMergeCfg)
-	Register("slang.control.Take", constrolTakeCfg)
-	Register("slang.control.Loop", constrolLoopCfg)
-	Register("slang.control.Iterate", constrolIterateCfg)
-	Register("slang.control.Reduce", constrolReduceCfg)
+	Register("slang.control.Split", controlSplitCfg)
+	Register("slang.control.Merge", controlMergeCfg)
+	Register("slang.control.Switch", controlSwitchCfg)
+	// Register("slang.control.SingleSplit", controlSingleSplitCfg)
+	Register("slang.control.Choose", controlChooseCfg)
+	Register("slang.control.Take", controlTakeCfg)
+	Register("slang.control.Loop", controlLoopCfg)
+	Register("slang.control.Iterate", controlIterateCfg)
+	Register("slang.control.Reduce", controlReduceCfg)
 
 	// Stream accessing and processing operators
 	Register("slang.stream.Serialize", streamSerializeCfg)

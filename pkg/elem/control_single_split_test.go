@@ -1,6 +1,6 @@
 package elem
 
-import (
+/*import (
 	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
@@ -134,3 +134,4 @@ func Test_CtrlSingleSplit__ComplexItems(t *testing.T) {
 	a.PortPushesAll([]interface{}{map[string]interface{}{"a": "1", "b": "hallo"}, map[string]interface{}{"a": nil, "b": nil}}, o.Main().Out().Map("true"))
 	a.PortPushesAll([]interface{}{map[string]interface{}{"a": nil, "b": nil}, map[string]interface{}{"a": "2", "b": "slang"}}, o.Main().Out().Map("false"))
 }
+*/

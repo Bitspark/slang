@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var constrolIterateCfg = &builtinConfig{
+var controlIterateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

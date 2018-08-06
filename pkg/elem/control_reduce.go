@@ -4,7 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
-var constrolReduceCfg = &builtinConfig{
+var controlReduceCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

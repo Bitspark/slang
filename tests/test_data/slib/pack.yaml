@@ -23,14 +23,14 @@ operators:
           send:
             type: boolean
   T:
-    operator: slang.data.Constant
+    operator: slang.data.Value
     generics:
       valueType:
         type: boolean
     properties:
       value: true
   F:
-    operator: slang.data.Constant
+    operator: slang.data.Value
     generics:
       valueType:
         type: boolean

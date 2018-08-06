@@ -33,7 +33,7 @@ operators:
         type: generic
         generic: gen
   const:
-    operator: slang.data.Constant
+    operator: slang.data.Value
     generics:
       valueType:
         type: generic

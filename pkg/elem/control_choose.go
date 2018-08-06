@@ -4,7 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
-var constrolSingleMergeCfg = &builtinConfig{
+var controlChooseCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -19,9 +19,6 @@ var constrolSingleMergeCfg = &builtinConfig{
 							Type:    "generic",
 							Generic: "itemType",
 						},
-						"select": {
-							Type: "boolean",
-						},
 					},
 				},
 				Out: core.TypeDef{
@@ -30,10 +27,31 @@ var constrolSingleMergeCfg = &builtinConfig{
 				},
 			},
 		},
+		DelegateDefs: map[string]*core.DelegateDef{
+			"chooser": {
+				Out: core.TypeDef{
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"true": {
+							Type:    "generic",
+							Generic: "itemType",
+						},
+						"false": {
+							Type:    "generic",
+							Generic: "itemType",
+						},
+					},
+				},
+				In: core.TypeDef{
+					Type: "boolean",
+				},
+			},
+		},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
+		ch := op.Delegate("chooser")
 		for !op.CheckStop() {
 			item := in.Pull()
 			m, ok := item.(map[string]interface{})
@@ -42,7 +60,10 @@ var constrolSingleMergeCfg = &builtinConfig{
 				continue
 			}
 
-			if m["select"].(bool) {
+			ch.Out().Push(item)
+			sel, _ := ch.In().PullBoolean()
+
+			if sel {
 				out.Push(m["true"])
 			} else {
 				out.Push(m["false"])

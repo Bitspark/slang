@@ -85,6 +85,7 @@ func init() {
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)
+	Register("slang.net.HTTPClient", netHTTPClientCfg)
 	Register("slang.net.SendEmail", netSendEmailCfg)
 
 	Register("slang.files.Read", filesReadCfg)

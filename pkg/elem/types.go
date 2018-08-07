@@ -12,6 +12,9 @@ var HTTP_REQUEST_DEF = core.TypeDef{
 		"path": {
 			Type: "string",
 		},
+		"query": {
+			Type: "string",
+		},
 		"params": {
 			Type: "stream",
 			Stream: &core.TypeDef{

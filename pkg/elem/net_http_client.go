@@ -16,6 +16,7 @@ var netHTTPClientCfg = &builtinConfig{
 					req := HTTP_REQUEST_DEF.Copy()
 					delete(req.Map, "params")
 					delete(req.Map, "path")
+					delete(req.Map, "query")
 					req.Map["url"] = &core.TypeDef{Type: "string"}
 					return req
 				}(),

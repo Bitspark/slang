@@ -32,6 +32,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 		// Push out all request information
 		out.Map("method").Push(req.Method)
 		out.Map("path").Push(req.URL.Path)
+		out.Map("query").Push(req.URL.RawQuery)
 
 		out.Map("headers").PushBOS()
 		headersOut := out.Map("headers").Stream()

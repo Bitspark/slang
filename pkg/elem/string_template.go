@@ -4,7 +4,6 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"strings"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var stringTemplateCfg = &builtinConfig{
@@ -15,7 +14,7 @@ var stringTemplateCfg = &builtinConfig{
 					Type: "map",
 					Map: map[string]*core.TypeDef{
 						"content": {
-							Type: "binary",
+							Type: "string",
 						},
 						"{variables}": {
 							Type: "primitive",
@@ -23,7 +22,7 @@ var stringTemplateCfg = &builtinConfig{
 					},
 				},
 				Out: core.TypeDef{
-					Type: "binary",
+					Type: "string",
 				},
 			},
 		},
@@ -49,14 +48,14 @@ var stringTemplateCfg = &builtinConfig{
 			}
 
 			data := i.(map[string]interface{})
-			content := string(data["content"].(utils.Binary))
+			content := data["content"].(string)
 			for _, v := range vars {
 				val := data[v.(string)]
 				valStr := fmt.Sprintf("%v", val)
 				content = strings.Replace(content, "{" + v.(string) + "}", valStr, -1)
 			}
 
-			out.Push(utils.Binary(content))
+			out.Push(content)
 		}
 	},
 }

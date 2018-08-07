@@ -531,7 +531,7 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 		// Start with operator o
 		for _, pDst := range pDsts {
 			if err := pSrc.Connect(pDst); err != nil {
-				return err
+				return fmt.Errorf("%s -> %s: %s", pSrc.Name(), pDst.Name(), err)
 			}
 			ops = append(ops, pDst.Operator())
 		}

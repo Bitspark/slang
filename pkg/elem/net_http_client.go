@@ -40,7 +40,11 @@ var netHTTPClientCfg = &builtinConfig{
 			body := req["body"].(utils.Binary)
 			headers := req["headers"].([]interface{})
 
-			r, _ := http.NewRequest(method, url, bytes.NewReader(body))
+			r, err := http.NewRequest(method, url, bytes.NewReader(body))
+			if err != nil {
+				out.Push(nil)
+				continue
+			}
 			for _, header := range headers {
 				entry := header.(map[string]interface{})
 				if entry["value"] == nil {

@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"strconv"
+
 	"github.com/Bitspark/browser"
 	"github.com/Bitspark/slang/pkg/daemon"
-	"strconv"
 )
 
 const PORT = 5149 // sla[n]g == 5149
@@ -73,7 +74,7 @@ func initEnvironPaths() (*EnvironPaths) {
 
 func (e *EnvironPaths) loadLocalComponents() {
 	for repoName, dirPath := range map[string]string{"slang-lib": e.SLANG_LIB, "slang-ui": e.SLANG_UI} {
-		dl := daemon.NewComponentLoader(repoName, dirPath)
+		dl := daemon.NewComponentLoaderLatestRelease(repoName, dirPath)
 		if dl.NewerVersionExists() {
 			localVer := dl.GetLocalReleaseVersion()
 			latestVer := dl.GetLatestReleaseVersion()
@@ -89,10 +90,19 @@ func (e *EnvironPaths) loadLocalComponents() {
 		} else {
 			localVer := dl.GetLocalReleaseVersion()
 			log.Printf("Your local %v is up-to-date (%v).", repoName, localVer.String())
-
 		}
-
 	}
+
+	// Load slang examples only when slang is started the first time
+	if daemon.IsDirEmpty(e.SLANG_DIR) {
+		dl := daemon.NewComponentLoaderLatestMaster("slang-examples", e.SLANG_DIR)
+		log.Println("Downloading example operators.")
+		if err := dl.Load(); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Done.")
+	}
+
 }
 
 func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {

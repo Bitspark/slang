@@ -1,15 +1,16 @@
 package daemon
 
 import (
-	"github.com/Bitspark/go-github/github"
-	"github.com/Bitspark/go-version"
+	"bufio"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"bufio"
 	"strings"
+
+	"github.com/Bitspark/go-github/github"
+	"github.com/Bitspark/go-version"
 )
 
 type SlangComponentLoader struct {
@@ -18,19 +19,33 @@ type SlangComponentLoader struct {
 	owner           string
 	repo            string
 	path            string
+	latest          string
 	versionFilePath string
 }
 
-func NewComponentLoader(repo string, path string) *SlangComponentLoader {
+func NewComponentLoaderLatestRelease(repo string, path string) *SlangComponentLoader {
+	return newComponentLoader(repo, path, "release")
+
+}
+
+func NewComponentLoaderLatestMaster(repo string, path string) *SlangComponentLoader {
+	return newComponentLoader(repo, path, "master")
+
+}
+
+func newComponentLoader(repo string, path string, latest string) *SlangComponentLoader {
 	dl := &SlangComponentLoader{
 		github.NewClient(nil),
 		nil,
 		"Bitspark",
 		repo,
 		path,
+		latest,
 		filepath.Join(path, ".VERSION"),
 	}
-	dl.fetchLatestRelease()
+	if latest == "release" {
+		dl.fetchLatestRelease()
+	}
 	return dl
 }
 
@@ -43,31 +58,104 @@ func (dl *SlangComponentLoader) NewerVersionExists() bool {
  * Downloads & unpacks latest version of a component.
  */
 func (dl *SlangComponentLoader) Load() error {
-	release := dl.latestRelease
+	if dl.latest == "release" {
+		release := dl.latestRelease
 
-	if len(release.Assets) == 0 {
-		return fmt.Errorf("release '%v' needs at least 1 asset which can be downloaded", release.Name)
-	}
+		if len(release.Assets) == 0 {
+			return fmt.Errorf("release '%v' needs at least 1 asset which can be downloaded", release.Name)
+		}
 
-	asset := release.Assets[0]
-
-	compDir, err := dl.downloadArchive(*asset.BrowserDownloadURL)
-	if err != nil {
-		return err
+		asset := release.Assets[0]
+		if err := dl.downloadArchiveAndUnpack(*asset.BrowserDownloadURL); err != nil {
+			return err
+		}
+		if err := dl.updateLocalVersionFile(); err != nil {
+			return err
+		}
+	} else {
+		// Just download project as archive from master
+		archiveURL := dl.getLatestArchiveURL()
+		if err := dl.downloadArchiveAndUnpack(archiveURL); err != nil {
+			return err
+		}
 	}
-	if err = dl.replaceDirContentBy(compDir); err != nil {
-		return err
-	}
-	if err = dl.updateLocalVersionFile(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (dl *SlangComponentLoader) fetchLatestRelease() error {
 	release, _, err := dl.github.Repositories.GetLatestRelease(context.Background(), dl.owner, dl.repo)
 	dl.latestRelease = release
+	return err
+}
+
+func (dl *SlangComponentLoader) getLatestArchiveURL() string {
+	return fmt.Sprintf("https://api.github.com/repos/%v/%v/zipball/master", dl.owner, dl.repo)
+}
+
+func (dl *SlangComponentLoader) updateLocalVersionFile() error {
+	v := dl.GetLatestReleaseVersion()
+	err := ioutil.WriteFile(dl.versionFilePath, []byte(v.String()), os.ModePerm)
+	return err
+}
+
+func (dl *SlangComponentLoader) downloadArchiveAndUnpack(archiveURL string) error {
+	archiveFilePath, err := dl.download(archiveURL)
+	// Unpack archive into directory
+	tmpDstDir, err := ioutil.TempDir("", dl.repo)
+	if err != nil {
+		return err
+	}
+	if _, err := unzip(archiveFilePath, tmpDstDir); err != nil {
+		return err
+	}
+	defer os.Remove(archiveFilePath)
+	defer os.RemoveAll(tmpDstDir)
+
+	if err != nil {
+		return err
+	}
+	if err = dl.replaceDirContentBy(tmpDstDir); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dl *SlangComponentLoader) download(url string) (string, error) {
+	// Download archive file
+	tmpDstFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return "", err
+	}
+	defer tmpDstFile.Close()
+
+	if err := download(url, tmpDstFile); err != nil {
+		return "", err
+	}
+	return tmpDstFile.Name(), nil
+}
+
+func (dl *SlangComponentLoader) replaceDirContentBy(newDirPath string) error {
+	if _, err := os.Stat(newDirPath); err != nil {
+		return err
+	}
+
+	_, err := os.Stat(dl.path)
+	if !(err == nil || os.IsNotExist(err)) {
+		return err
+	}
+
+	if os.IsExist(err) {
+		os.RemoveAll(dl.path)
+	}
+
+	if err = os.MkdirAll(dl.path, os.ModePerm); err != nil {
+		return err
+	}
+
+	if err = moveAll(newDirPath, dl.path, true); err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -97,61 +185,4 @@ func (dl *SlangComponentLoader) GetLocalReleaseVersion() *version.Version {
 	}
 
 	return toVersion(strings.TrimSpace(string(currVersion)))
-}
-
-func (dl *SlangComponentLoader) updateLocalVersionFile() error {
-	v := dl.GetLatestReleaseVersion()
-	err := ioutil.WriteFile(dl.versionFilePath, []byte(v.String()), os.ModePerm)
-	return err
-}
-
-func (dl *SlangComponentLoader) downloadArchive(url string) (string, error) {
-	// Download archive file
-	tmpArchiveFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(tmpArchiveFile.Name())
-
-	if err := download(url, tmpArchiveFile); err != nil {
-		return "", err
-	}
-	tmpArchiveFile.Close()
-
-	// Unpack archive into directory
-	tmpDstDir, err := ioutil.TempDir("", dl.repo)
-	if err != nil {
-		return "", err
-	}
-
-	if _, err := unzip(tmpArchiveFile.Name(), tmpDstDir); err != nil {
-		return "", err
-	}
-
-	return tmpDstDir, nil
-}
-
-func (dl *SlangComponentLoader) replaceDirContentBy(newDirPath string) error {
-	if _, err := os.Stat(newDirPath); err != nil {
-		return err
-	}
-
-	_, err := os.Stat(dl.path);
-	if !(err == nil || os.IsNotExist(err)) {
-		return err
-	}
-
-	if os.IsExist(err) {
-		os.RemoveAll(dl.path)
-	}
-
-	if err = os.MkdirAll(dl.path, os.ModePerm); err != nil {
-		return err
-	}
-
-	if err = moveAll(newDirPath, dl.path, true); err != nil {
-		return err
-	}
-
-	return err
 }

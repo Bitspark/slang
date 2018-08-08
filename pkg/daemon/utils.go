@@ -3,6 +3,7 @@ package daemon
 import (
 	"archive/zip"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,6 +13,14 @@ import (
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/go-version"
 )
+
+func IsDirEmpty(dir string) bool {
+	entries, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	return len(entries) == 0
+}
 
 func EnsureDirExists(dir string) (string, error) {
 	err := os.MkdirAll(dir, os.ModePerm)

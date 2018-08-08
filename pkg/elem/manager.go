@@ -99,6 +99,7 @@ func init() {
 	Register("slang.time.Delay", timeDelayCfg)
 
 	Register("slang.string.Template", stringTemplateCfg)
+	Register("slang.string.Format", stringFormatCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

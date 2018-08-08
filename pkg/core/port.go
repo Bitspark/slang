@@ -167,7 +167,13 @@ func (p *Port) Stream() *Port {
 }
 
 // Connects this port with port p.
-func (p *Port) Connect(q *Port) error {
+func (p *Port) Connect(q *Port) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			err = errors.New(fmt.Sprintf("%s", e))
+		}
+	}()
+
 	if q.src != nil {
 		if q.src == p {
 			return nil
@@ -841,7 +847,10 @@ func (p *Port) connect(q *Port, original bool) error {
 					p.parStr.connect(q.parStr, false)
 				}
 			} else if p.operator.basePort != nil {
-				p.operator.basePort.connect(q.parStr, false)
+				if q.parStr != nil {
+					// TODO: See above
+					p.operator.basePort.connect(q.parStr, false)
+				}
 			}
 		}
 	}

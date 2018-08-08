@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"github.com/Bitspark/slang/pkg/utils"
+	"strings"
+	"os/user"
 )
 
 var filesReadCfg = &builtinConfig{
@@ -38,7 +40,13 @@ var filesReadCfg = &builtinConfig{
 				continue
 			}
 
-			content, err := ioutil.ReadFile(filepath.Clean(file))
+			path := filepath.Clean(file)
+			if strings.HasPrefix(path, "~") {
+				usr, _ := user.Current()
+				dir := usr.HomeDir
+				path = filepath.Join(dir,path[1:])
+			}
+			content, err := ioutil.ReadFile(path)
 			if err != nil {
 				out.Map("content").Push(nil)
 				out.Map("error").Push(err.Error())

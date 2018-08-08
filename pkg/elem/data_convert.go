@@ -35,16 +35,7 @@ var dataConvertCfg = &builtinConfig{
 			}
 
 			if i == nil {
-				switch out.Type() {
-				case core.TYPE_STRING:
-					out.Push("")
-				case core.TYPE_BINARY:
-					out.Push(utils.Binary{})
-				case core.TYPE_NUMBER:
-					out.Push(0.0)
-				default:
-					panic("not supported yet")
-				}
+				out.Push(nil)
 				continue
 			}
 

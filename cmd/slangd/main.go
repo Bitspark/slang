@@ -30,7 +30,11 @@ type EnvironPaths struct {
 
 func main() {
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
-	log.Printf("Starting slangd %s built %s...\n", Version, time.Unix(buildTime, 0).Format(time.RFC3339))
+	if buildTime != 0 {
+		log.Printf("Starting slangd %s built %s...\n", Version, time.Unix(buildTime, 0).Format(time.RFC3339))
+	} else {
+		log.Println("Starting slangd (local build)...")
+	}
 
 	envPaths := initEnvironPaths()
 

@@ -32,13 +32,16 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 		// Push out all request information
 		out.Map("method").Push(req.Method)
 		out.Map("path").Push(req.URL.Path)
-		out.Map("protocol").Push(req.Proto)
+		out.Map("query").Push(req.URL.RawQuery)
 
 		out.Map("headers").PushBOS()
 		headersOut := out.Map("headers").Stream()
-		for key, val := range req.Header {
+		for key, vals := range req.Header {
 			headersOut.Map("key").Push(key)
-			headersOut.Map("value").Push(val)
+			valuesOut := headersOut.Map("values").Stream()
+			for _, val := range vals {
+				valuesOut.Push(val)
+			}
 		}
 		out.Map("headers").PushEOS()
 
@@ -90,79 +93,8 @@ var netHTTPServerCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
 			"handler": {
-				In: core.TypeDef{
-					Type: "map",
-					Map: map[string]*core.TypeDef{
-						"status": {
-							Type: "number",
-						},
-						"headers": {
-							Type: "stream",
-							Stream: &core.TypeDef{
-								Type: "map",
-								Map: map[string]*core.TypeDef{
-									"key": {
-										Type: "string",
-									},
-									"value": {
-										Type: "string",
-									},
-								},
-							},
-						},
-						"body": {
-							Type: "binary",
-						},
-					},
-				},
-				Out: core.TypeDef{
-					Type: "map",
-					Map: map[string]*core.TypeDef{
-						"method": {
-							Type: "string",
-						},
-						"path": {
-							Type: "string",
-						},
-						"protocol": {
-							Type: "string",
-						},
-						"headers": {
-							Type: "stream",
-							Stream: &core.TypeDef{
-								Type: "map",
-								Map: map[string]*core.TypeDef{
-									"key": {
-										Type: "string",
-									},
-									"value": {
-										Type: "string",
-									},
-								},
-							},
-						},
-						"body": {
-							Type: "binary",
-						},
-						"params": {
-							Type: "stream",
-							Stream: &core.TypeDef{
-								Type: "map",
-								Map: map[string]*core.TypeDef{
-									"key": {
-										Type: "string",
-									},
-									"values": {
-										Type: "stream",
-										Stream: &core.TypeDef{
-											Type: "string",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				In: HTTP_RESPONSE_DEF.Copy(),
+				Out: HTTP_REQUEST_DEF.Copy(),
 			},
 		},
 	},

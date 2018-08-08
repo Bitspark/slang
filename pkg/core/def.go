@@ -510,7 +510,7 @@ func (d TypeDef) GenericsSpecified() error {
 func (d TypeDef) VerifyData(data interface{}) error {
 	switch v := data.(type) {
 	case nil:
-		if d.Type == "stream" || d.Type == "primitive" || d.Type == "trigger" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" {
+		if d.Type == "stream" || d.Type == "primitive" || d.Type == "trigger" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "map" {
 			return nil
 		}
 	case string:

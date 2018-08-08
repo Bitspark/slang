@@ -2,24 +2,21 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"github.com/Bitspark/slang/pkg/utils"
+	"fmt"
 )
 
-var filesWriteCfg = &builtinConfig{
+var stringFormatCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "map",
 					Map: map[string]*core.TypeDef{
-						"content": {
-							Type: "binary",
-						},
-						"filename": {
+						"format": {
 							Type: "string",
+						},
+						"{variables}": {
+							Type: "primitive",
 						},
 					},
 				},
@@ -28,10 +25,20 @@ var filesWriteCfg = &builtinConfig{
 				},
 			},
 		},
+		DelegateDefs: map[string]*core.DelegateDef{},
+		PropertyDefs: map[string]*core.TypeDef{
+			"variables": {
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "string",
+				},
+			},
+		},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
+		vars := op.Property("variables").([]interface{})
 		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
@@ -40,22 +47,14 @@ var filesWriteCfg = &builtinConfig{
 			}
 
 			data := i.(map[string]interface{})
-			var content []byte
-			if b, ok := data["content"].(utils.Binary); ok {
-				content = b
+			format := data["format"].(string)
+			var vals []interface{}
+			for _, v := range vars {
+				val := data[v.(string)]
+				vals = append(vals, val)
 			}
-			if s, ok := data["content"].(string); ok {
-				content = []byte(s)
-			}
-			filename := data["filename"].(string)
 
-			err := ioutil.WriteFile(filepath.Clean(filename), content, os.ModePerm)
-
-			if err == nil {
-				out.Push(nil)
-			} else {
-				out.Push(err.Error())
-			}
+			out.Push(fmt.Sprintf(format, vals...))
 		}
 	},
 }

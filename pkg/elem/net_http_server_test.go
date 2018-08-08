@@ -71,11 +71,11 @@ func Test_HTTP__Delegates(t *testing.T) {
 
 	a.Equal(core.TYPE_STRING, dlg.Out().Map("method").Type())
 	a.Equal(core.TYPE_STRING, dlg.Out().Map("path").Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Map("protocol").Type())
 	a.Equal(core.TYPE_STREAM, dlg.Out().Map("headers").Type())
 	a.Equal(core.TYPE_MAP, dlg.Out().Map("headers").Stream().Type())
 	a.Equal(core.TYPE_STRING, dlg.Out().Map("headers").Stream().Map("key").Type())
-	a.Equal(core.TYPE_STRING, dlg.Out().Map("headers").Stream().Map("value").Type())
+	a.Equal(core.TYPE_STREAM, dlg.Out().Map("headers").Stream().Map("values").Type())
+	a.Equal(core.TYPE_STRING, dlg.Out().Map("headers").Stream().Map("values").Stream().Type())
 	a.Equal(core.TYPE_MAP, dlg.Out().Map("params").Stream().Type())
 	a.Equal(core.TYPE_STRING, dlg.Out().Map("params").Stream().Map("key").Type())
 	a.Equal(core.TYPE_STREAM, dlg.Out().Map("params").Stream().Map("values").Type())

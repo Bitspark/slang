@@ -85,6 +85,7 @@ func init() {
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)
+	Register("slang.net.HTTPClient", netHTTPClientCfg)
 	Register("slang.net.SendEmail", netSendEmailCfg)
 
 	Register("slang.files.Read", filesReadCfg)
@@ -98,6 +99,7 @@ func init() {
 	Register("slang.time.Delay", timeDelayCfg)
 
 	Register("slang.string.Template", stringTemplateCfg)
+	Register("slang.string.Format", stringFormatCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -1,85 +1,9 @@
 package api
 
-import "github.com/Bitspark/slang/pkg/core"
-
-// This file contains functions and structs needed for constructing operator execution surroundings for http endpoints
-
-// HttpRequest Slang type
-var HTTP_REQUEST_DEF = core.TypeDef{
-	Type: "map",
-	Map: map[string]*core.TypeDef{
-		"protocol": {
-			Type: "string",
-		},
-		"method": {
-			Type: "string",
-		},
-		"path": {
-			Type: "string",
-		},
-		"params": {
-			Type: "stream",
-			Stream: &core.TypeDef{
-				Type: "map",
-				Map: map[string]*core.TypeDef{
-					"key": {
-						Type: "string",
-					},
-					"values": {
-						Type: "stream",
-						Stream: &core.TypeDef{
-							Type: "string",
-						},
-					},
-				},
-			},
-		},
-		"headers": {
-			Type: "stream",
-			Stream: &core.TypeDef{
-				Type: "map",
-				Map: map[string]*core.TypeDef{
-					"key": {
-						Type: "string",
-					},
-					"value": {
-						Type: "string",
-					},
-				},
-			},
-		},
-		"body": {
-			Type: "binary",
-		},
-	},
-}
-
-// HttpResponse Slang type
-var HTTP_RESPONSE_DEF = core.TypeDef{
-	Type: "map",
-	Map: map[string]*core.TypeDef{
-		"status": {
-			Type: "number",
-		},
-		"headers": {
-			Type: "stream",
-			Stream: &core.TypeDef{
-				Type: "map",
-				Map: map[string]*core.TypeDef{
-					"key": {
-						Type: "string",
-					},
-					"value": {
-						Type: "string",
-					},
-				},
-			},
-		},
-		"body": {
-			Type: "binary",
-		},
-	},
-}
+import (
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
+)
 
 // Constructs an executable operator
 // TODO: Make safer (maybe require an API key?)
@@ -150,7 +74,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	inDef := op.Main().In().Define()
 	outDef := op.Main().Out().Define()
 
-	if inDef.Equals(HTTP_REQUEST_DEF) {
+	if inDef.Equals(elem.HTTP_REQUEST_DEF) {
 		// If the operator can handle HTTP requests itself, just pass them
 		httpDef.Connections["httpServer.handler)"] = []string{"(operator"}
 	} else {
@@ -168,7 +92,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		httpDef.Connections["unpacker)"] = []string{"(operator"}
 	}
 
-	if outDef.Equals(HTTP_RESPONSE_DEF) {
+	if outDef.Equals(elem.HTTP_RESPONSE_DEF) {
 		// If the operator produces HTTP responses itself, just pass them
 		httpDef.Connections["operator)"] = []string{"(httpServer.handler"}
 	} else {

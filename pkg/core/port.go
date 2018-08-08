@@ -444,7 +444,9 @@ func (p *Port) Push(item interface{}) {
 		}
 
 		for k, i := range m {
-			p.subs[k].Push(i)
+			if sub, ok := p.subs[k]; ok {
+				sub.Push(i)
+			}
 		}
 		return
 	}

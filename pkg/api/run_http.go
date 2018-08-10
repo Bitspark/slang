@@ -89,7 +89,7 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 		}
 		httpDef.InstanceDefs = append(httpDef.InstanceDefs, unpackerIns)
 		httpDef.Connections["httpServer.handler)body"] = []string{"(unpacker"}
-		httpDef.Connections["unpacker)"] = []string{"(operator"}
+		httpDef.Connections["unpacker)item"] = []string{"(operator"}
 	}
 
 	if outDef.Equals(elem.HTTP_RESPONSE_DEF) {

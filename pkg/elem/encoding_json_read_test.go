@@ -33,7 +33,39 @@ func Test_JsonRead__String(t *testing.T) {
 	o.Main().Out().Bufferize()
 	o.Start()
 	o.Main().In().Push(utils.Binary("\"test\""))
-	a.PortPushes("test", o.Main().Out())
+	a.PortPushes("test", o.Main().Out().Map("item"))
+	a.PortPushes(true, o.Main().Out().Map("valid"))
+}
+
+func Test_JsonRead__Invalid(t *testing.T) {
+	a := assertions.New(t)
+
+	o, err := buildOperator(
+		core.InstanceDef{
+			Operator: "slang.encoding.JSONRead",
+			Generics: map[string]*core.TypeDef{
+				"itemType": {
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"a": {
+							Type: "number",
+						},
+						"b": {
+							Type: "boolean",
+						},
+					},
+				},
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	o.Main().Out().Bufferize()
+	o.Start()
+	o.Main().In().Push(utils.Binary("\"test\""))
+	a.PortPushes(nil, o.Main().Out().Map("item").Map("a"))
+	a.PortPushes(nil, o.Main().Out().Map("item").Map("b"))
+	a.PortPushes(false, o.Main().Out().Map("valid"))
 }
 
 func Test_JsonRead__Complex(t *testing.T) {
@@ -65,5 +97,6 @@ func Test_JsonRead__Complex(t *testing.T) {
 	o.Main().Out().Bufferize()
 	o.Start()
 	o.Main().In().Push(utils.Binary("{\"a\":[1,2,3],\"b\":true}"))
-	a.PortPushes(map[string]interface{}{"a": []interface{}{1.0, 2.0, 3.0}, "b": true}, o.Main().Out())
+	a.PortPushes(map[string]interface{}{"a": []interface{}{1.0, 2.0, 3.0}, "b": true}, o.Main().Out().Map("item"))
+	a.PortPushes(true, o.Main().Out().Map("valid"))
 }

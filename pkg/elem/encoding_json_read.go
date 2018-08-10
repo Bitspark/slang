@@ -14,8 +14,16 @@ var encodingJSONReadCfg = &builtinConfig{
 					Type: "binary",
 				},
 				Out: core.TypeDef{
-					Type:    "generic",
-					Generic: "itemType",
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"valid": {
+							Type: "boolean",
+						},
+						"item": {
+							Type: "generic",
+							Generic: "itemType",
+						},
+					},
 				},
 			},
 		},
@@ -24,6 +32,8 @@ var encodingJSONReadCfg = &builtinConfig{
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
+		def, _ := op.Define()
+		itemDef := def.ServiceDefs[core.MAIN_SERVICE].Out.Map["item"]
 		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
@@ -33,11 +43,19 @@ var encodingJSONReadCfg = &builtinConfig{
 			var obj interface{}
 			err := json.Unmarshal([]byte(i.(utils.Binary)), &obj)
 			if err != nil {
-				out.Push(nil)
+				out.Map("item").Push(nil)
+				out.Map("valid").Push(false)
 				continue
 			}
 			obj = utils.CleanValue(obj)
-			out.Push(obj) // TODO: Make this safer
+			err = itemDef.VerifyData(obj)
+			if err == nil {
+				out.Map("item").Push(obj)
+				out.Map("valid").Push(true)
+			} else {
+				out.Map("item").Push(nil)
+				out.Map("valid").Push(false)
+			}
 		}
 	},
 }

@@ -95,6 +95,7 @@ func init() {
 	Register("slang.encoding.JSONRead", encodingJSONReadCfg)
 	Register("slang.encoding.JSONWrite", encodingJSONWriteCfg)
 	Register("slang.encoding.XLSXRead", encodingXLSXReadCfg)
+	Register("slang.encoding.URLWrite", encodingURLWriteCfg)
 
 	Register("slang.time.Delay", timeDelayCfg)
 

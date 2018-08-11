@@ -92,11 +92,11 @@ var imageEncodeCfg = &builtinConfig{
 					idx := y * int(width) + x
 					pixel := pixels[idx].(map[string]interface{})
 					img.Set(x, y,
-						color.RGBA{
-							R: uint8(pixel["red"].(float64)),
-							G: uint8(pixel["green"].(float64)),
-							B: uint8(pixel["blue"].(float64)),
-							A: uint8(pixel["alpha"].(float64)),
+						color.RGBA64{
+							R: uint16(pixel["red"].(float64)),
+							G: uint16(pixel["green"].(float64)),
+							B: uint16(pixel["blue"].(float64)),
+							A: uint16(pixel["alpha"].(float64)),
 						},
 					)
 				}

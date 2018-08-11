@@ -90,6 +90,8 @@ func init() {
 
 	Register("slang.files.Read", filesReadCfg)
 	Register("slang.files.Write", filesWriteCfg)
+	Register("slang.files.ZIPPack", filesZIPPackCfg)
+	Register("slang.files.ZIPUnpack", filesZIPUnpackCfg)
 
 	Register("slang.encoding.CSVRead", encodingCSVReadCfg)
 	Register("slang.encoding.JSONRead", encodingJSONReadCfg)

@@ -104,6 +104,9 @@ func init() {
 
 	Register("slang.database.Query", databaseQueryCfg)
 	Register("slang.database.Execute", databaseExecuteCfg)
+
+	Register("slang.image.Decode", imageDecodeCfg)
+	Register("slang.image.Encode", imageEncodeCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

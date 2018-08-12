@@ -103,6 +103,7 @@ func init() {
 
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)
+	Register("slang.string.Split", stringSplitCfg)
 
 	Register("slang.database.Query", databaseQueryCfg)
 	Register("slang.database.Execute", databaseExecuteCfg)

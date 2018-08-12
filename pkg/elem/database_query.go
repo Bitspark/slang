@@ -4,7 +4,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"fmt"
+	"reflect"
 )
 
 var databaseQueryCfg = &builtinConfig{
@@ -124,36 +124,24 @@ var databaseQueryCfg = &builtinConfig{
 				row := make(map[string]interface{})
 				row["trigger"] = nil
 				dests := []interface{}{}
-				for i, col := range rowColumns {
+				for i := range rowColumns {
 					colType := colTypes[i]
 					var colPtr interface{}
 					typeName := colType.DatabaseTypeName()
-					fmt.Println(typeName)
 					switch typeName {
-						// MYSQL
-					case "VARCHAR":
-					case "TEXT":
-					case "LONGTEXT":
+					case "VARCHAR", "TEXT", "LONGTEXT":
 						colPtr = new(string)
-
-						// MYSQL
-					case "TINYINT":
-					case "SMALLINT":
-					case "MEDIUMINT":
-					case "INT":
-					case "BIGINT":
-					case "DECIMAL":
-					case "FLOAT":
-					case "DOUBLE":
+					case "TINYINT", "SMALLINT", "MEDIUMINT", "INT", "BIGINT", "DECIMAL", "FLOAT", "DOUBLE":
 						colPtr = new(float64)
-
 					default:
 						colPtr = new(string)
 					}
-					row[col] = colPtr
 					dests = append(dests, colPtr)
 				}
 				rows.Scan(dests...)
+				for i, col := range rowColumns {
+					row[col] = reflect.ValueOf(dests[i]).Elem().Interface()
+				}
 				out.Stream().Push(row)
 			}
 			out.PushEOS()

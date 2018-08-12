@@ -29,13 +29,8 @@ var dataConvertCfg = &builtinConfig{
 		out := op.Main().Out()
 		for !op.CheckStop() {
 			i := in.Pull()
-			if core.IsMarker(i) {
+			if core.IsMarker(i) || i == nil {
 				out.Push(i)
-				continue
-			}
-
-			if i == nil {
-				out.Push(nil)
 				continue
 			}
 

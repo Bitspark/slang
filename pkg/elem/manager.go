@@ -90,6 +90,8 @@ func init() {
 
 	Register("slang.files.Read", filesReadCfg)
 	Register("slang.files.Write", filesWriteCfg)
+	Register("slang.files.ZIPPack", filesZIPPackCfg)
+	Register("slang.files.ZIPUnpack", filesZIPUnpackCfg)
 
 	Register("slang.encoding.CSVRead", encodingCSVReadCfg)
 	Register("slang.encoding.JSONRead", encodingJSONReadCfg)
@@ -101,6 +103,13 @@ func init() {
 
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)
+	Register("slang.string.Split", stringSplitCfg)
+
+	Register("slang.database.Query", databaseQueryCfg)
+	Register("slang.database.Execute", databaseExecuteCfg)
+
+	Register("slang.image.Decode", imageDecodeCfg)
+	Register("slang.image.Encode", imageEncodeCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -2,6 +2,7 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"sync"
 )
 
 var controlReduceCfg = &builtinConfig{
@@ -22,27 +23,21 @@ var controlReduceCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
-			"selection": {
+			"reducer": {
 				In: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type:    "generic",
-						Generic: "itemType",
-					},
+					Type:    "generic",
+					Generic: "itemType",
 				},
 				Out: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "map",
-						Map: map[string]*core.TypeDef{
-							"a": {
-								Type:    "generic",
-								Generic: "itemType",
-							},
-							"b": {
-								Type:    "generic",
-								Generic: "itemType",
-							},
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"a": {
+							Type:    "generic",
+							Generic: "itemType",
+						},
+						"b": {
+							Type:    "generic",
+							Generic: "itemType",
 						},
 					},
 				},
@@ -50,7 +45,7 @@ var controlReduceCfg = &builtinConfig{
 		},
 		PropertyDefs: map[string]*core.TypeDef{
 			"emptyValue": {
-				Type: "generic",
+				Type:    "generic",
 				Generic: "itemType",
 			},
 		},
@@ -58,91 +53,70 @@ var controlReduceCfg = &builtinConfig{
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		sIn := op.Delegate("selection").In()
-		sOut := op.Delegate("selection").Out()
+		sIn := op.Delegate("reducer").In()
+		sOut := op.Delegate("reducer").Out()
 		nullValue := op.Property("emptyValue")
 		for !op.CheckStop() {
-			i := in.Pull()
+			i := in.Stream().Pull()
 
-			if core.IsMarker(i) {
-				sOut.Push(i)
-				sel := sIn.Pull()
-
-				if sel != i {
-					panic("expected different marker")
-				}
-
+			if !in.OwnBOS(i) {
 				out.Push(i)
-
 				continue
 			}
 
-			items, ok := i.([]interface{})
-			if !ok {
-				panic("expected stream")
-			}
+			mutex := &sync.Mutex{}
+			pool := []interface{}{}
+			done := false
+			doneChan := make(chan bool)
 
-			if len(items) == 0 {
-				out.Push(nullValue)
-				continue
-			}
+			// Reducer
+			go func() {
+				for {
+					mutex.Lock()
+					if done && len(pool) < 2 {
+						doneChan <- true
+						break
+					}
+					mutex.Unlock()
 
-			if len(items) == 1 {
-				out.Push(items[0])
-				continue
-			}
+					mutex.Lock()
+					if len(pool) > 1 {
+						sOut.Push(map[string]interface{}{"a": pool[0], "b": pool[1]})
+						pool = pool[2:]
+					} else {
+						mutex.Unlock()
+						continue
+					}
+					mutex.Unlock()
 
-			sOut.PushBOS()
-			j := 0
-			for j+1 < len(items) {
-				sOut.Stream().Map("a").Push(items[j])
-				sOut.Stream().Map("b").Push(items[j+1])
-				j += 2
-			}
-			sOut.PushEOS()
+					i := sIn.Pull()
 
-			var leftover interface{}
-			if j != len(items) {
-				leftover = items[len(items)-1]
-			}
-
-			// POOL
+					mutex.Lock()
+					pool = append(pool, i)
+					mutex.Unlock()
+				}
+			}()
 
 			for {
-				p := sIn.Pull()
+				// Stream items
 
-				items, ok := p.([]interface{})
-				if !ok {
-					panic("expected stream")
-				}
-
-				if leftover != nil {
-					items = append([]interface{}{leftover}, items...)
-				}
-
-				if len(items) == 0 {
-					panic("empty pool")
-				}
-
-				if len(items) == 1 {
-					out.Push(items[0])
+				i = in.Stream().Pull()
+				if in.OwnEOS(i) {
+					done = true
 					break
 				}
 
-				sOut.PushBOS()
-				j := 0
-				for j+1 < len(items) {
-					sOut.Stream().Map("a").Push(items[j])
-					sOut.Stream().Map("b").Push(items[j+1])
-					j += 2
-				}
-				sOut.PushEOS()
+				mutex.Lock()
+				pool = append(pool, i)
+				mutex.Unlock()
+			}
 
-				if j != len(items) {
-					leftover = items[len(items)-1]
-				} else {
-					leftover = nil
-				}
+			<-doneChan
+
+			if len(pool) == 1 {
+				out.Push(pool[0])
+			} else {
+				out.Push(nullValue)
 			}
 		}
 	},

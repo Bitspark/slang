@@ -46,9 +46,9 @@ connections:
     - (packer
   packer):
     - ~(reducer
-  reducer.selection)~.a:
+  reducer.reducer)a:
     - true(sorter
-  reducer.selection)~.b:
+  reducer.reducer)b:
     - false(sorter
   sorter.compare)~.true:
     - a(comparator
@@ -57,6 +57,6 @@ connections:
   comparator):
     - ~(sorter.compare
   sorter):
-    - ~(reducer.selection
+    - (reducer.reducer
   reducer):
     - )

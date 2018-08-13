@@ -28,13 +28,10 @@ func Test_CtrlReduce__InPorts(t *testing.T) {
 	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
-	a.Equal(core.TYPE_STREAM, o.Main().In().Type())
-	a.Equal(core.TYPE_STREAM, o.Delegate("selection").In().Type())
-
 	// Item type
 	itemType := core.TYPE_NUMBER
 	a.Equal(itemType, o.Main().In().Stream().Type())
-	a.Equal(itemType, o.Delegate("selection").In().Stream().Type())
+	a.Equal(itemType, o.Delegate("reducer").In().Type())
 
 	o, err = buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
 	r.NoError(err)
@@ -42,7 +39,7 @@ func Test_CtrlReduce__InPorts(t *testing.T) {
 	// Item type
 	itemType = core.TYPE_STRING
 	a.Equal(itemType, o.Main().In().Stream().Type())
-	a.Equal(itemType, o.Delegate("selection").In().Stream().Type())
+	a.Equal(itemType, o.Delegate("reducer").In().Type())
 	r.NoError(err)
 }
 
@@ -54,21 +51,20 @@ func Test_CtrlReduce__OutPorts(t *testing.T) {
 	r.NoError(err)
 
 	a.Equal(core.TYPE_NUMBER, o.Main().Out().Type())
-	a.Equal(core.TYPE_STREAM, o.Delegate("selection").Out().Type())
-	a.Equal(core.TYPE_MAP, o.Delegate("selection").Out().Stream().Type())
+	a.Equal(core.TYPE_MAP, o.Delegate("reducer").Out().Type())
 
 	// Item type
 	itemType := core.TYPE_NUMBER
-	a.Equal(itemType, o.Delegate("selection").Out().Stream().Map("a").Type())
-	a.Equal(itemType, o.Delegate("selection").Out().Stream().Map("b").Type())
+	a.Equal(itemType, o.Delegate("reducer").Out().Map("a").Type())
+	a.Equal(itemType, o.Delegate("reducer").Out().Map("b").Type())
 
 	o, err = buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
 	r.NoError(err)
 
 	// Item type
 	itemType = core.TYPE_STRING
-	a.Equal(itemType, o.Delegate("selection").Out().Stream().Map("a").Type())
-	a.Equal(itemType, o.Delegate("selection").Out().Stream().Map("b").Type())
+	a.Equal(itemType, o.Delegate("reducer").Out().Map("a").Type())
+	a.Equal(itemType, o.Delegate("reducer").Out().Map("b").Type())
 }
 
 func Test_CtrlReduce__PassMarkers(t *testing.T) {
@@ -79,15 +75,13 @@ func Test_CtrlReduce__PassMarkers(t *testing.T) {
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Bufferize()
+	o.Delegate("reducer").Out().Bufferize()
 	o.Start()
 
 	bos := core.BOS{}
 	eos := core.BOS{}
 	o.Main().In().Stream().Push(bos)
 	o.Main().In().Stream().Push(eos)
-	o.Delegate("selection").In().Stream().Push(bos)
-	o.Delegate("selection").In().Stream().Push(eos)
 
 	a.PortPushesAll([]interface{}{bos, eos}, o.Main().Out())
 }
@@ -104,8 +98,7 @@ func Test_CtrlReduce__SelectionFromItemsEmpty(t *testing.T) {
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
+	o.Delegate("reducer").Out().Bufferize()
 	o.Start()
 
 	o.Main().In().Push([]interface{}{})
@@ -122,8 +115,7 @@ func Test_CtrlReduce__SelectionFromItemsSingle(t *testing.T) {
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
+	o.Delegate("reducer").Out().Bufferize()
 	o.Start()
 
 	o.Main().In().Push([]interface{}{123.0})
@@ -140,15 +132,14 @@ func Test_CtrlReduce__SelectionFromItemsMultiple(t *testing.T) {
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
+	o.Delegate("reducer").Out().Bufferize()
 	o.Start()
 
 	o.Main().In().Push([]interface{}{1.0, 2.0})
-	o.Delegate("selection").In().Push([]interface{}{3.0})
+	o.Delegate("reducer").In().Push(3.0)
 
-	i := o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{map[string]interface{}{"a": 1.0, "b": 2.0}}, i)
+	i := o.Delegate("reducer").Out().Pull()
+	a.Equal(map[string]interface{}{"a": 1.0, "b": 2.0}, i)
 
 	i = o.Main().Out().Pull()
 	a.Equal(3.0, i)
@@ -162,99 +153,18 @@ func Test_CtrlReduce__SelectionFromPool(t *testing.T) {
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
+	o.Delegate("reducer").Out().Bufferize()
 	o.Start()
 
-	o.Main().In().Push([]interface{}{1.0, 2.0})
-	o.Delegate("selection").In().Push([]interface{}{3.0, 4.0, 5.0, 6.0})
+	o.Main().In().Push([]interface{}{1.0, 1.0, 1.0, 1.0})
+	o.Delegate("reducer").In().Push(2.0)
+	o.Delegate("reducer").In().Push(2.0)
+	o.Delegate("reducer").In().Push(4.0)
 
-	i := o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{map[string]interface{}{"a": 1.0, "b": 2.0}}, i)
-
-	i = o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{
-		map[string]interface{}{"a": 3.0, "b": 4.0},
-		map[string]interface{}{"a": 5.0, "b": 6.0},
-	}, i)
-}
-
-func Test_CtrlReduce__MixedSelection1(t *testing.T) {
-	a := assertions.New(t)
-	r := require.New(t)
-
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
-	r.NoError(err)
-
-	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
-	o.Start()
-
-	o.Main().In().Push([]interface{}{1.0, 2.0, 3.0})
-	o.Delegate("selection").In().Push([]interface{}{4.0})
-
-	i := o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{map[string]interface{}{"a": 1.0, "b": 2.0}}, i)
-	i = o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{map[string]interface{}{"a": 3.0, "b": 4.0}}, i)
-}
-
-func Test_CtrlReduce__MixedSelection2(t *testing.T) {
-	a := assertions.New(t)
-	r := require.New(t)
-
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
-	r.NoError(err)
-
-	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
-	o.Start()
-
-	o.Main().In().Push([]interface{}{1.0, 2.0, 3.0})
-	o.Delegate("selection").In().Push([]interface{}{4.0, 5.0, 6.0})
-	o.Delegate("selection").In().Push([]interface{}{7.0, 8.0, 9.0})
-	o.Delegate("selection").In().Push([]interface{}{10.0})
-	o.Delegate("selection").In().Push([]interface{}{11.0})
-
-	i := o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{map[string]interface{}{"a": 1.0, "b": 2.0}}, i)
-
-	i = o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{
-		map[string]interface{}{"a": 3.0, "b": 4.0},
-		map[string]interface{}{"a": 5.0, "b": 6.0},
-	}, i)
-
-	i = o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{
-		map[string]interface{}{"a": 7.0, "b": 8.0},
-	}, i)
-
-	i = o.Delegate("selection").Out().Pull()
-	a.Equal([]interface{}{
-		map[string]interface{}{"a": 9.0, "b": 10.0},
-	}, i)
-
-	i = o.Main().Out().Pull()
-	a.Equal(11.0, i)
-}
-
-func Test_CtrlReduce__MixedSelection3(t *testing.T) {
-	a := assertions.New(t)
-	r := require.New(t)
-
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
-	r.NoError(err)
-
-	o.Main().Out().Bufferize()
-	o.Delegate("selection").Out().Stream().Map("a").Bufferize()
-	o.Delegate("selection").Out().Stream().Map("b").Bufferize()
-	o.Start()
-
-	o.Main().In().Push([]interface{}{1.0, 2.0})
-	o.Delegate("selection").In().Push([]interface{}{3.0})
-
-	a.PortPushesAll([]interface{}{3.0}, o.Main().Out())
+	i := o.Delegate("reducer").Out().Pull()
+	a.Equal(map[string]interface{}{"a": 1.0, "b": 1.0}, i)
+	i = o.Delegate("reducer").Out().Pull()
+	a.Equal(map[string]interface{}{"a": 1.0, "b": 1.0}, i)
+	i = o.Delegate("reducer").Out().Pull()
+	a.Equal(map[string]interface{}{"a": 2.0, "b": 2.0}, i)
 }

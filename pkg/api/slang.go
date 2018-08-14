@@ -54,7 +54,7 @@ func NewEnviron() *Environ {
 	return &Environ{paths}
 }
 
-func NewTestEnvviron(cwd string) *Environ {
+func NewTestEnviron(cwd string) *Environ {
 	os.Setenv("SLANG_LIB", cwd)
 	os.Setenv("SLANG_DIR", cwd)
 	return NewEnviron()

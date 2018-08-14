@@ -8,7 +8,7 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 )
 
-var e = api.NewTestEnvviron("./")
+var e = api.NewTestEnviron("./")
 
 func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	a := assertions.New(t)

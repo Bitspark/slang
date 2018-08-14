@@ -12,6 +12,8 @@ import (
 
 	"github.com/Bitspark/browser"
 	"github.com/Bitspark/slang/pkg/daemon"
+	"github.com/Bitspark/slang/pkg/utils"
+	"os"
 )
 
 const PORT = 5149 // sla[n]g == 5149
@@ -33,6 +35,7 @@ func main() {
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
 	if buildTime != 0 {
 		log.Printf("Starting slangd %s built %s...\n", Version, time.Unix(buildTime, 0).Format(time.RFC3339))
+		checkNewestVersion()
 	} else {
 		log.Println("Starting slangd (local build)...")
 	}
@@ -70,6 +73,27 @@ func initEnvironPaths() (*EnvironPaths) {
 		log.Fatal(err)
 	}
 	return e
+}
+
+func checkNewestVersion() {
+	isNewest, newestVer, err := daemon.IsNewestSlangVersion(Version)
+	if err != nil {
+		log.Printf("Could not check newest Slang version (%s)\n", err.Error())
+		return
+	}
+	if isNewest {
+		log.Printf("Your local Slang is up-to-date (%s)\n", newestVer)
+		return
+	}
+	log.Printf("Your local Slang has version %v but latest is %v.", Version, newestVer)
+	log.Printf("It is highly recommended to download the latest version.")
+	log.Printf("Older versions might not be compatible with the newest UI and standard library.")
+	log.Printf("Do you want to download the newest Slang version?")
+	openBrowser := utils.AskForConfirmation("Invalid input")
+	if openBrowser {
+		browser.OpenURL("https://tryslang.com/#download")
+		os.Exit(0)
+	}
 }
 
 func (e *EnvironPaths) loadLocalComponents() {
@@ -117,7 +141,7 @@ func (e *EnvironPaths) startDaemonServer(srv *daemon.Server) {
 	errors := make(chan error)
 	go informUser(url, errors)
 	errors <- srv.Run()
-	select {} // prevent immidate exit when srv.Run failes --> informUser coroutine can handle error
+	select {} // prevent immediate exit when srv.Run fails --> informUser goroutine can handle error
 }
 
 func informUser(url string, errors chan error) {

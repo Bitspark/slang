@@ -186,3 +186,16 @@ func (dl *SlangComponentLoader) GetLocalReleaseVersion() *version.Version {
 
 	return toVersion(strings.TrimSpace(string(currVersion)))
 }
+
+func IsNewestSlangVersion(myVerStr string) (bool, string, error) {
+	myVer := toVersion(myVerStr)
+	release, _, err := github.NewClient(nil).Repositories.GetLatestRelease(context.Background(), "Bitspark", "slang")
+	if err != nil {
+		return false, "", err
+	}
+	currVer := toVersion(*release.TagName)
+	if myVer.LessThan(currVer) {
+		return false, *release.TagName, nil
+	}
+	return true, *release.TagName, nil
+}

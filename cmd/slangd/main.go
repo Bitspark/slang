@@ -78,17 +78,17 @@ func initEnvironPaths() (*EnvironPaths) {
 func checkNewestVersion() {
 	isNewest, newestVer, err := daemon.IsNewestSlangVersion(Version)
 	if err != nil {
-		log.Printf("Could not check newest Slang version (%s)\n", err.Error())
+		log.Printf("Could not check newest slang version (%s)\n", err.Error())
 		return
 	}
 	if isNewest {
-		log.Printf("Your local Slang is up-to-date (%s)\n", newestVer)
+		log.Printf("Your local slang is up-to-date (%s)\n", newestVer)
 		return
 	}
-	log.Printf("Your local Slang has version %v but latest is %v.", Version, newestVer)
+	log.Printf("Your local slang has version %v but latest is %v.", Version, newestVer)
 	log.Printf("It is highly recommended to download the latest version.")
-	log.Printf("Older versions might not be compatible with the newest UI and standard library.")
-	log.Printf("Do you want to download the newest Slang version?")
+	log.Printf("Older versions might not be compatible with the newest slang-ui and slang-lib.")
+	log.Printf("Do you want to download the newest slang version?")
 	openBrowser := utils.AskForConfirmation("Invalid input")
 	if openBrowser {
 		browser.OpenURL("https://tryslang.com/#download")

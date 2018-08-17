@@ -64,33 +64,31 @@ var imageEncodeCfg = &builtinConfig{
 		out := op.Main().Out()
 		formats := []string{"jpeg", "png"}
 		for !op.CheckStop() {
-			i := in.Pull()
-			if core.IsMarker(i) {
+			i := in.Map("height").Pull()
+			if core.IsMarker(i) || i == nil {
+				in.Map("width").Pull()
+				in.Map("format").Pull()
+				in.Map("pixels").Pull()
 				out.Push(i)
 				continue
 			}
 
-			if i == nil {
-				out.Push(nil)
-				continue
-			}
-
-			im := i.(map[string]interface{})
-			width := im["width"].(float64)
-			height := im["height"].(float64)
-			format := im["format"].(string)
+			height := i.(float64)
+			width := in.Map("width").Pull().(float64)
+			format := in.Map("format").Pull().(string)
 
 			if !funk.Contains(formats, format) {
+				in.Map("pixels").Pull()
 				out.Push(nil)
 				continue
 			}
 
+			in.Map("pixels").PullBOS()
+			pixelStream := in.Map("pixels").Stream()
 			img := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
-			pixels := im["pixels"].([]interface{})
 			for y := 0; y < int(height); y++ {
 				for x := 0; x < int(width); x++ {
-					idx := y * int(width) + x
-					pixel := pixels[idx].(map[string]interface{})
+					pixel := pixelStream.Pull().(map[string]interface{})
 					img.Set(x, y,
 						color.RGBA64{
 							R: uint16(pixel["red"].(float64)),
@@ -101,6 +99,7 @@ var imageEncodeCfg = &builtinConfig{
 					)
 				}
 			}
+			in.Map("pixels").PullEOS()
 
 			var b bytes.Buffer
 			writer := bufio.NewWriter(&b)

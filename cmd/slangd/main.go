@@ -149,7 +149,7 @@ func informUser(url string, errors chan error) {
 	case err := <-errors:
 		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
 	case <-time.After(500 * time.Millisecond):
-		log.Printf("\n\n\tOpen following URL  %s  in your browser.\n\n", url)
+		log.Printf("\n\n\tOpen  %s  in your browser.\n\n", url)
 		browser.OpenURL(url)
 	}
 	select {

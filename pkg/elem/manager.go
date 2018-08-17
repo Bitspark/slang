@@ -110,6 +110,8 @@ func init() {
 
 	Register("slang.image.Decode", imageDecodeCfg)
 	Register("slang.image.Encode", imageEncodeCfg)
+
+	Register("slang.system.Execute", systemExecuteCfg)
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

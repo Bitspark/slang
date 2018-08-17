@@ -51,7 +51,11 @@ func newComponentLoader(repo string, path string, latest string) *SlangComponent
 
 func (dl *SlangComponentLoader) NewerVersionExists() bool {
 	localVersion := dl.GetLocalReleaseVersion()
-	return localVersion == nil || localVersion.LessThan(dl.GetLatestReleaseVersion())
+	latestVersion := dl.GetLatestReleaseVersion()
+	if latestVersion == nil {
+		return false
+	}
+	return localVersion == nil || localVersion.LessThan(latestVersion)
 }
 
 /*
@@ -160,6 +164,9 @@ func (dl *SlangComponentLoader) replaceDirContentBy(newDirPath string) error {
 }
 
 func (dl *SlangComponentLoader) GetLatestReleaseVersion() *version.Version {
+	if dl.latestRelease == nil {
+		return nil
+	}
 	return toVersion(*dl.latestRelease.TagName)
 }
 

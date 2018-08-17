@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"log"
 	"github.com/Bitspark/go-funk"
 )
 
@@ -10,7 +9,8 @@ func AskForConfirmation(question string) bool {
 	var response string
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("%s [y/n]\n", question)
+		return AskForConfirmation(question)
 	}
 	okayResponses := []string{"y", "Y", "yes", "Yes", "YES"}
 	nokayResponses := []string{"n", "N", "no", "No", "NO"}

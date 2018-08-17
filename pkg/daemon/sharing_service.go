@@ -12,6 +12,9 @@ import (
 	"github.com/Bitspark/slang/pkg/elem"
 	"gopkg.in/yaml.v2"
 	"time"
+	"io"
+	"github.com/Bitspark/go-version"
+	"os"
 )
 
 type manifest struct {
@@ -127,6 +130,65 @@ var SharingService = &Service{map[string]*Endpoint{
 		}
 	}},
 	"/import": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
+		fail := func(err *Error) {
+			sendFailure(w, &responseBad{err})
+		}
+		/*
+		 * GET
+		 */
+		if r.Method == "POST" {
+			var buf bytes.Buffer
+			file, header, err := r.FormFile("file")
+			if err != nil {
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
+				return
+			}
+			defer file.Close()
 
+			io.Copy(&buf, file)
+
+			zipReader, err := zip.NewReader(file, header.Size)
+			if err != nil {
+				fail(&Error{Msg: err.Error(), Code: "E000X"})
+				return
+			}
+
+			manifest := manifest{}
+			for _, file := range zipReader.File {
+				if file.Name == "manifest.yaml" {
+					fileReader, _ := file.Open()
+					buf := new(bytes.Buffer)
+					buf.ReadFrom(fileReader)
+					yaml.Unmarshal(buf.Bytes(), &manifest)
+					fileReader.Close()
+				}
+			}
+
+			myVersion, err := version.NewVersion(SlangVersion)
+			if err == nil {
+				manifestVersion, err := version.NewVersion(manifest.SlangVersion)
+				if err == nil {
+					if myVersion.LessThan(manifestVersion) {
+						fail(&Error{Msg: "Please upgrade your slang version", Code: "E000X"})
+						return
+					}
+				}
+			}
+
+			baseDir := e.WorkingDir()
+			for _, file := range zipReader.File {
+				if file.Name == "manifest.yaml" {
+					continue
+				}
+
+				fileReader, _ := file.Open()
+				buf := new(bytes.Buffer)
+				buf.ReadFrom(fileReader)
+				ioutil.WriteFile(filepath.Join(baseDir, file.Name), buf.Bytes(), os.ModePerm)
+				fileReader.Close()
+			}
+
+			writeJSON(w, &struct{ Success bool `json:"success"` }{true})
+		}
 	}},
 }}

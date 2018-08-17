@@ -11,6 +11,8 @@ import (
 	"github.com/rs/cors"
 )
 
+var SlangVersion string
+
 type Server struct {
 	Env    *api.Environ
 	Host   string

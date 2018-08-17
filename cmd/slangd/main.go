@@ -40,6 +40,8 @@ func main() {
 		log.Println("Starting slangd (local build)...")
 	}
 
+	daemon.SlangVersion = Version
+
 	envPaths := initEnvironPaths()
 
 	srv := daemon.New("localhost", PORT)

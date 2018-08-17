@@ -10,7 +10,14 @@ import (
 	"archive/zip"
 	"io/ioutil"
 	"github.com/Bitspark/slang/pkg/elem"
+	"gopkg.in/yaml.v2"
+	"time"
 )
+
+type manifest struct {
+	SlangVersion string `yaml:slangVersion`
+	TimeUnix     int64  `yaml:timeUnix`
+}
 
 var suffixes = []string{"_visual.yaml"}
 
@@ -91,6 +98,13 @@ var SharingService = &Service{map[string]*Endpoint{
 			buf := new(bytes.Buffer)
 			zipWriter := zip.NewWriter(buf)
 
+			fileWriter, _ := zipWriter.Create("manifest.yaml")
+			manifestBytes, _ := yaml.Marshal(&manifest{
+				SlangVersion: SlangVersion,
+				TimeUnix:     time.Now().Unix(),
+			})
+			fileWriter.Write(manifestBytes)
+
 			read := make(map[string]bool)
 			err := packOperator(e, zipWriter, opFQName, read)
 			if err != nil {
@@ -104,7 +118,7 @@ var SharingService = &Service{map[string]*Endpoint{
 			w.Header().Set("Expires", "0")
 			w.Header().Set("Cache-Control", "must-revalidate, post-check=0, pre-check=0")
 			w.Header().Set("Cache-Control", "public")
-			w.Header().Set("Content-Description", "File Transfe")
+			w.Header().Set("Content-Description", "File Transfer")
 			w.Header().Set("Content-Type", "application/octet-stream")
 			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", opFQName))
 			w.Header().Set("Content-Transfer-Encoding", "binary")

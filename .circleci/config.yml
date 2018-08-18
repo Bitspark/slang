@@ -25,7 +25,7 @@ jobs:
           name: Build
           command: |
             mkdir ./ci/release
-            python3 ./ci/build.py ${CIRCLE_TAG}
+            python3 ./ci/build.py ${CIRCLE_TAG} ${B6K_CS_PW}
       - persist_to_workspace:
           root: /gopath/src/github.com/Bitspark/slang/
           paths:

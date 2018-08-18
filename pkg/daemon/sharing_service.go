@@ -35,7 +35,7 @@ func packOperator(e *api.Environ, zipWriter *zip.Writer, fqop string, read map[s
 		return err
 	}
 
-	fileWriter, _ := zipWriter.Create(absPath[len(p):])
+	fileWriter, _ := zipWriter.Create(filepath.ToSlash(absPath[len(p):]))
 	fileContents, err := ioutil.ReadFile(absPath)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func packOperator(e *api.Environ, zipWriter *zip.Writer, fqop string, read map[s
 		if err != nil {
 			continue
 		}
-		fileWriter, _ := zipWriter.Create(absBasePath[len(p):] + suffix)
+		fileWriter, _ := zipWriter.Create(filepath.ToSlash(absBasePath[len(p):] + suffix))
 		fileWriter.Write(fileContents)
 	}
 
@@ -184,7 +184,9 @@ var SharingService = &Service{map[string]*Endpoint{
 				fileReader, _ := file.Open()
 				buf := new(bytes.Buffer)
 				buf.ReadFrom(fileReader)
-				ioutil.WriteFile(filepath.Join(baseDir, file.Name), buf.Bytes(), os.ModePerm)
+				fpath := filepath.Join(baseDir, filepath.FromSlash(file.Name))
+				os.MkdirAll(filepath.Dir(fpath), os.ModePerm)
+				ioutil.WriteFile(fpath, buf.Bytes(), os.ModePerm)
 				fileReader.Close()
 			}
 

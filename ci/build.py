@@ -7,11 +7,12 @@ OS = ['darwin', 'linux', 'windows']
 ARCHS = ['386', 'amd64']
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Usage: python3 build.py vx.y.z')
+    if len(sys.argv) < 2:
+        print('Usage: python3 build.py vx.y.z [b6k_cs_pw]')
         exit(-1)
 
     version = sys.argv[1]
+    b6k_cs_pw = sys.argv[2] if len(sys.argv) > 2 else None
     versioned_dist = 'slangd-' + version.replace('.', '_')
     build_time = int(time.time())
 
@@ -30,6 +31,15 @@ if __name__ == '__main__':
             execute_commands([
                 f"env GOOS={os} GOARCH={arch} go build -ldflags \"{ldflags}\" -o ./ci/release/{filename_with_ending} ./cmd/slangd",
             ])
+
+            if os == 'windows' and b6k_cs_pw:
+                execute_commands([
+                    f"osslsigncode sign -pkcs12 ./ci/b6k_csc.p12 -pass {b6k_cs_pw} -in ./ci/release/{filename_with_ending} -out ./ci/release/signed_{filename_with_ending}",
+                ], True, False)
+                execute_commands([
+                    f"rm ./ci/release/{filename_with_ending}",
+                    f"mv ./ci/release/signed_{filename_with_ending} ./ci/release/{filename_with_ending}",
+                ])
 
             chdir("./ci/release/")
             execute_commands([

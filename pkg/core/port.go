@@ -37,6 +37,9 @@ type EOS struct {
 	src *Port
 }
 
+var PlaceholderMarker = struct{}{}
+var UnfinishedMarker = struct{}{}
+
 type Port struct {
 	operator  *Operator
 	service   *Service
@@ -118,7 +121,7 @@ func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	}
 
-	if p.primitive() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
+	if p.Primitive() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	}
 
@@ -161,6 +164,15 @@ func (p *Port) MapSize() interface{} {
 	return len(p.subs)
 }
 
+// Returns all map entry names of this port
+func (p *Port) MapEntries() []string {
+	entries := []string{}
+	for entry := range p.subs {
+		entries = append(entries, entry)
+	}
+	return entries
+}
+
 // Returns the substream port of this port. Port must be of type stream.
 func (p *Port) Stream() *Port {
 	return p.sub
@@ -195,11 +207,11 @@ func (p *Port) Connect(q *Port) (err error) {
 		return p.connect(q, true)
 	}
 
-	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.primitive() {
+	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.Primitive() {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.primitive() {
+	if p.Primitive() {
 		return p.connect(q, true)
 	}
 
@@ -352,7 +364,7 @@ func (p *Port) DirectlyConnected() error {
 		return errors.New("can only check in ports")
 	}
 
-	if p.primitive() {
+	if p.Primitive() {
 		if p.src == nil {
 			return errors.New(p.Name() + " not connected")
 		}
@@ -424,12 +436,12 @@ func (p *Port) Push(item interface{}) {
 	}
 
 	for dest := range p.dests {
-		if dest.Type() == TYPE_TRIGGER || p.primitive() {
+		if dest.Type() == TYPE_TRIGGER || p.Primitive() {
 			dest.Push(item)
 		}
 	}
 
-	if p.primitive() {
+	if p.Primitive() {
 		return
 	}
 
@@ -509,7 +521,7 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
-	if p.primitive() {
+	if p.Primitive() {
 		panic("no buffer")
 	}
 
@@ -754,7 +766,7 @@ func (p *Port) Bufferize() {
 		return
 	}
 
-	if p.primitive() {
+	if p.Primitive() {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {
@@ -860,7 +872,7 @@ func (p *Port) connect(q *Port, original bool) error {
 	return nil
 }
 
-func (p *Port) primitive() bool {
+func (p *Port) Primitive() bool {
 	return p.itemType == TYPE_PRIMITIVE ||
 		p.itemType == TYPE_TRIGGER ||
 		p.itemType == TYPE_NUMBER ||

@@ -4,22 +4,110 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
-// attachStore attaches an interface array to the port and starts one or multiple go routine for this port which listen
+type storePipe struct {
+	index int
+	items []interface{}
+}
+
+type store map[string]*storePipe
+
+// attachPort attaches an interface array to the port and starts one or multiple go routine for this port which listen
 // at the port
-func attachStore(p *core.Port, key string, store map[string][]interface{}) {
+func (s store) attachPort(p *core.Port, key string) {
 	if p.Primitive() {
-		store[key] = make([]interface{}, 0)
+		s[key] = &storePipe{
+			index: 0,
+			items: []interface{}{},
+		}
 		go func() {
 			for !p.Operator().Stopped() {
-				store[key] = append(store[key], p.Pull())
+				s[key].items = append(s[key].items, p.Pull())
 			}
 		}()
 	} else if p.Type() == core.TYPE_MAP {
 		for _, sub := range p.MapEntries() {
-			attachStore(p.Map(sub), key + "." + sub, store)
+			s.attachPort(p.Map(sub), key+"."+sub)
 		}
 	} else if p.Type() == core.TYPE_STREAM {
-		attachStore(p.Stream(), key, store)
+		s.attachPort(p.Stream(), key)
+	}
+}
+
+func (p *storePipe) pull() interface{} {
+	if p.index >= len(p.items) {
+		return core.UnfinishedMarker
+	}
+	index := p.index
+	p.index++
+	return p.items[index]
+}
+
+func (s store) pull(p *core.Port, key string) interface{} {
+	if p.Primitive() {
+		return s[key].pull()
+	} else if p.Type() == core.TYPE_MAP {
+		obj := make(map[string]interface{})
+		for _, sub := range p.MapEntries() {
+			obj[sub] = s.pull(p.Map(sub), key+"."+sub)
+		}
+		newObj := false
+		var marker interface{} = nil
+		for sub := range obj {
+			if obj[sub] != core.UnfinishedMarker && !core.IsMarker(obj[sub]) {
+				if marker != nil {
+					panic("markers not matching 1")
+				}
+				newObj = true
+				continue
+			}
+			if obj[sub] == core.UnfinishedMarker {
+				obj[sub] = core.PlaceholderMarker
+				continue
+			}
+			if core.IsMarker(obj[sub]) {
+				if marker != nil && marker != obj[sub] {
+					panic("markers not matching 2")
+				}
+				marker = obj[sub]
+				continue
+			} else if marker != nil {
+				panic("markers not matching 3")
+			}
+		}
+		if marker != nil {
+			return marker
+		}
+		if newObj {
+			return obj
+		} else {
+			return core.UnfinishedMarker
+		}
+	} else if p.Type() == core.TYPE_STREAM {
+		bos := s.pull(p.Stream(), key)
+		if bos == core.UnfinishedMarker || !p.OwnBOS(bos) {
+			return bos
+		}
+		obj := []interface{}{}
+		for {
+			el := s.pull(p.Stream(), key)
+			if el == core.UnfinishedMarker {
+				obj = append(obj, core.UnfinishedMarker)
+				break
+			}
+			if p.OwnEOS(el) {
+				break
+			}
+			obj = append(obj, el)
+		}
+		return obj
+	}
+
+	return core.UnfinishedMarker
+}
+
+func (s store) resetIndexes() {
+	for pipe := range s {
+		s[pipe].index = 0
 	}
 }
 
@@ -28,7 +116,7 @@ var metaStoreCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "generic",
+					Type:    "generic",
 					Generic: "examineType",
 				},
 				Out: core.TypeDef{
@@ -40,26 +128,37 @@ var metaStoreCfg = &builtinConfig{
 					Type: "trigger",
 				},
 				Out: core.TypeDef{
-					Type: "generic",
-					Generic: "examineType",
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type:    "generic",
+						Generic: "examineType",
+					},
 				},
 			},
 		},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
-		out := op.Main().Out()
+		//out := op.Main().Out()
 		querySrv := op.Service("query")
 		queryIn := querySrv.In()
 		queryOut := querySrv.Out()
 
-		store := make(map[string][]interface{})
-		// starts listening go routines
-		attachStore(in, "in", store)
+		store := make(store)
+		store.attachPort(in, "in")
 
 		for !op.CheckStop() {
 			queryIn.Pull()
-			queryOut.Push()
+			store.resetIndexes()
+			obj := []interface{}{}
+			for {
+				el := store.pull(in, "in")
+				if el == core.UnfinishedMarker {
+					break
+				}
+				obj = append(obj, el)
+			}
+			queryOut.Push(obj)
 		}
 	},
 }

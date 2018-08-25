@@ -15,7 +15,7 @@ func Test_MetaStore__IsRegistered(t *testing.T) {
 	a.NotNil(ocMetaStore)
 }
 
-func Test_MetaStore__String(t *testing.T) {
+func Test_MetaStore__Single(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -29,6 +29,7 @@ func Test_MetaStore__String(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	o.Start()
 
 	querySrv := o.Service("query")
 
@@ -71,6 +72,7 @@ func Test_MetaStore__Stream(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	o.Start()
 
 	querySrv := o.Service("query")
 
@@ -128,6 +130,7 @@ func Test_MetaStore__Map(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	o.Start()
 
 	querySrv := o.Service("query")
 
@@ -158,7 +161,6 @@ func Test_MetaStore__Map(t *testing.T) {
 
 	o.Main().In().Map("a").Push("test2")
 	o.Main().In().Map("b").Push(false)
-	o.Main().In().PushEOS()
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
 	a.Equal([]interface{}{
@@ -204,6 +206,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	o.Start()
 
 	querySrv := o.Service("query")
 
@@ -212,7 +215,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 	querySrv.In().Push(nil)
 	a.Equal([]interface{}{}, querySrv.Out().Pull())
 
-	o.Main().In().Stream().Map("a").Push(core.BOS{o.Main().In()})
+	o.Main().In().Stream().Map("a").Push(o.Main().In().NewBOS())
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
 	a.Equal([]interface{}{[]interface{}{core.UnfinishedMarker}}, querySrv.Out().Pull())
@@ -226,9 +229,10 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 			"b": core.PlaceholderMarker,
 			"c": core.PlaceholderMarker,
 		},
+		core.UnfinishedMarker,
 	}}, querySrv.Out().Pull())
 
-	o.Main().In().Stream().Map("b").Push(core.BOS{o.Main().In()})
+	o.Main().In().Stream().Map("b").Push(o.Main().In().NewBOS())
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
 	a.Equal([]interface{}{[]interface{}{
@@ -237,10 +241,11 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 			"b": core.PlaceholderMarker,
 			"c": core.PlaceholderMarker,
 		},
+		core.UnfinishedMarker,
 	}}, querySrv.Out().Pull())
 
-	o.Main().In().Stream().Map("c").Push(core.BOS{o.Main().In()})
-	o.Main().In().Stream().Map("c").Push(core.BOS{o.Main().In().Stream().Map("c")})
+	o.Main().In().Stream().Map("c").Push(o.Main().In().NewBOS())
+	o.Main().In().Stream().Map("c").Push(o.Main().In().Stream().Map("c").NewBOS())
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
 	a.Equal([]interface{}{[]interface{}{
@@ -249,6 +254,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 			"b": core.PlaceholderMarker,
 			"c": []interface{}{core.UnfinishedMarker},
 		},
+		core.UnfinishedMarker,
 	}}, querySrv.Out().Pull())
 }
 
@@ -291,6 +297,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	o.Start()
 
 	querySrv := o.Service("query")
 
@@ -308,7 +315,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": []interface{}{core.UnfinishedMarker},
 			"c": map[string]interface{}{
 				"a": core.PlaceholderMarker,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 	}, querySrv.Out().Pull())
@@ -322,7 +329,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": []interface{}{true, core.UnfinishedMarker},
 			"c": map[string]interface{}{
 				"a": core.PlaceholderMarker,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 	}, querySrv.Out().Pull())
@@ -336,7 +343,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": []interface{}{true, core.UnfinishedMarker},
 			"c": map[string]interface{}{
 				"a": nil,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 	}, querySrv.Out().Pull())
@@ -351,7 +358,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": []interface{}{true},
 			"c": map[string]interface{}{
 				"a": nil,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 		map[string]interface{}{
@@ -359,7 +366,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": core.PlaceholderMarker,
 			"c": map[string]interface{}{
 				"a": nil,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 	}, querySrv.Out().Pull())
@@ -373,7 +380,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": []interface{}{true},
 			"c": map[string]interface{}{
 				"a": nil,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 		map[string]interface{}{
@@ -381,7 +388,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 			"b": []interface{}{core.UnfinishedMarker},
 			"c": map[string]interface{}{
 				"a": nil,
-				"b": core.PlaceholderMarker,
+				"d": core.PlaceholderMarker,
 			},
 		},
 	}, querySrv.Out().Pull())

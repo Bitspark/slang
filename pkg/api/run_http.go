@@ -98,14 +98,14 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	} else {
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to pack
-		unpackerIns := &core.InstanceDef{
+		packerIns := &core.InstanceDef{
 			Name:     "packer",
 			Operator: "slang.encoding.JSONWrite",
 			Generics: core.Generics{
 				"itemType": &outDef,
 			},
 		}
-		httpDef.InstanceDefs = append(httpDef.InstanceDefs, unpackerIns)
+		httpDef.InstanceDefs = append(httpDef.InstanceDefs, packerIns)
 		httpDef.Connections["operator)"] = []string{"(packer"}
 		// We connect unpacker output later
 

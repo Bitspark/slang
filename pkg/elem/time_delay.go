@@ -22,10 +22,10 @@ var timeDelayCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
-			i, err := in.PullInt()
-			if err != nil {
-				if !core.IsMarker(i) {
-					out.Push(i)
+			i, m := in.PullInt()
+			if m != nil {
+				if core.IsMarker(m) {
+					out.Push(m)
 					continue
 				}
 				panic("expected number")

@@ -42,7 +42,7 @@ type PH struct {
 }
 
 var PHSingle = &PH{"..."}
-var PHStream = &PH{"[...]"}
+var PHMultiple = &PH{"[...]"}
 
 type Port struct {
 	operator  *Operator
@@ -536,8 +536,8 @@ func (p *Port) Pull() interface{} {
 		for k, sub := range p.subs {
 			i := sub.Pull()
 
-			if i == PHStream {
-				mi = PHStream
+			if i == PHMultiple {
+				mi = PHMultiple
 				continue
 			}
 			if bos, ok := i.(BOS); ok {

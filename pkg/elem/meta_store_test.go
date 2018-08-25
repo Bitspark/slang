@@ -84,12 +84,12 @@ func Test_MetaStore__Stream(t *testing.T) {
 	o.Main().In().PushBOS()
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
-	a.Equal([]interface{}{[]interface{}{core.PHStream}}, querySrv.Out().Pull())
+	a.Equal([]interface{}{[]interface{}{core.PHMultiple}}, querySrv.Out().Pull())
 
 	o.Main().In().Stream().Push(1.0)
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
-	a.Equal([]interface{}{[]interface{}{1.0, core.PHStream}}, querySrv.Out().Pull())
+	a.Equal([]interface{}{[]interface{}{1.0, core.PHMultiple}}, querySrv.Out().Pull())
 
 	o.Main().In().Stream().Push(2.0)
 	o.Main().In().PushEOS()
@@ -100,7 +100,7 @@ func Test_MetaStore__Stream(t *testing.T) {
 	o.Main().In().PushBOS()
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
-	a.Equal([]interface{}{[]interface{}{1.0, 2.0}, []interface{}{core.PHStream}}, querySrv.Out().Pull())
+	a.Equal([]interface{}{[]interface{}{1.0, 2.0}, []interface{}{core.PHMultiple}}, querySrv.Out().Pull())
 
 	o.Main().In().PushEOS()
 	time.Sleep(20 * time.Millisecond)
@@ -218,7 +218,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 	o.Main().In().Stream().Map("a").Push(o.Main().In().NewBOS())
 	time.Sleep(20 * time.Millisecond)
 	querySrv.In().Push(nil)
-	a.Equal([]interface{}{[]interface{}{core.PHStream}}, querySrv.Out().Pull())
+	a.Equal([]interface{}{[]interface{}{core.PHMultiple}}, querySrv.Out().Pull())
 
 	o.Main().In().Stream().Map("a").Push("test1")
 	time.Sleep(20 * time.Millisecond)
@@ -229,7 +229,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 			"b": core.PHSingle,
 			"c": core.PHSingle,
 		},
-		core.PHStream,
+		core.PHMultiple,
 	}}, querySrv.Out().Pull())
 
 	o.Main().In().Stream().Map("b").Push(o.Main().In().NewBOS())
@@ -241,7 +241,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 			"b": core.PHSingle,
 			"c": core.PHSingle,
 		},
-		core.PHStream,
+		core.PHMultiple,
 	}}, querySrv.Out().Pull())
 
 	o.Main().In().Stream().Map("c").Push(o.Main().In().NewBOS())
@@ -252,9 +252,9 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 		map[string]interface{}{
 			"a": "test1",
 			"b": core.PHSingle,
-			"c": []interface{}{core.PHStream},
+			"c": []interface{}{core.PHMultiple},
 		},
-		core.PHStream,
+		core.PHMultiple,
 	}}, querySrv.Out().Pull())
 }
 
@@ -312,7 +312,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 	a.Equal([]interface{}{
 		map[string]interface{}{
 			"a": core.PHSingle,
-			"b": []interface{}{core.PHStream},
+			"b": []interface{}{core.PHMultiple},
 			"c": map[string]interface{}{
 				"a": core.PHSingle,
 				"d": core.PHSingle,
@@ -326,7 +326,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 	a.Equal([]interface{}{
 		map[string]interface{}{
 			"a": core.PHSingle,
-			"b": []interface{}{true, core.PHStream},
+			"b": []interface{}{true, core.PHMultiple},
 			"c": map[string]interface{}{
 				"a": core.PHSingle,
 				"d": core.PHSingle,
@@ -340,7 +340,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 	a.Equal([]interface{}{
 		map[string]interface{}{
 			"a": core.PHSingle,
-			"b": []interface{}{true, core.PHStream},
+			"b": []interface{}{true, core.PHMultiple},
 			"c": map[string]interface{}{
 				"a": nil,
 				"d": core.PHSingle,
@@ -385,7 +385,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 		},
 		map[string]interface{}{
 			"a": core.PHSingle,
-			"b": []interface{}{core.PHStream},
+			"b": []interface{}{core.PHMultiple},
 			"c": map[string]interface{}{
 				"a": nil,
 				"d": core.PHSingle,

@@ -37,8 +37,12 @@ type EOS struct {
 	src *Port
 }
 
-var PHSingle = &struct{ psSingle string}{"."}
-var PHStream = &struct{ phStream string}{".*"}
+type PH struct {
+	t string
+}
+
+var PHSingle = &PH{"..."}
+var PHStream = &PH{"[...]"}
 
 type Port struct {
 	operator  *Operator
@@ -988,4 +992,8 @@ func (p *Port) defineConnections(def *OperatorDef) {
 	for _, sub := range p.subs {
 		sub.defineConnections(def)
 	}
+}
+
+func (ph *PH) MarshalJSON() ([]byte, error) {
+	return []byte("\"@PH " + ph.t + "\""), nil
 }

@@ -35,7 +35,7 @@ func (s store) attachPort(p *core.Port, key string) {
 
 func (p *storePipe) pull() interface{} {
 	if p.index >= len(p.items) {
-		return core.UnfinishedMarker
+		return core.PHStream
 	}
 	index := p.index
 	p.index++
@@ -53,15 +53,15 @@ func (s store) pull(p *core.Port, key string) interface{} {
 		newObj := false
 		var marker interface{} = nil
 		for sub := range obj {
-			if obj[sub] != core.UnfinishedMarker && !core.IsMarker(obj[sub]) {
+			if obj[sub] != core.PHStream && !core.IsMarker(obj[sub]) {
 				if marker != nil {
 					panic("markers not matching 1")
 				}
 				newObj = true
 				continue
 			}
-			if obj[sub] == core.UnfinishedMarker {
-				obj[sub] = core.PlaceholderMarker
+			if obj[sub] == core.PHStream {
+				obj[sub] = core.PHSingle
 				continue
 			}
 			if core.IsMarker(obj[sub]) {
@@ -80,18 +80,18 @@ func (s store) pull(p *core.Port, key string) interface{} {
 		if newObj {
 			return obj
 		} else {
-			return core.UnfinishedMarker
+			return core.PHStream
 		}
 	} else if p.Type() == core.TYPE_STREAM {
 		bos := s.pull(p.Stream(), key)
-		if bos == core.UnfinishedMarker || !p.OwnBOS(bos) {
+		if bos == core.PHStream || !p.OwnBOS(bos) {
 			return bos
 		}
 		obj := []interface{}{}
 		for {
 			el := s.pull(p.Stream(), key)
-			if el == core.UnfinishedMarker {
-				obj = append(obj, core.UnfinishedMarker)
+			if el == core.PHStream {
+				obj = append(obj, core.PHStream)
 				break
 			}
 			if p.OwnEOS(el) {
@@ -102,7 +102,7 @@ func (s store) pull(p *core.Port, key string) interface{} {
 		return obj
 	}
 
-	return core.UnfinishedMarker
+	return core.PHStream
 }
 
 func (s store) resetIndexes() {
@@ -153,7 +153,7 @@ var metaStoreCfg = &builtinConfig{
 			obj := []interface{}{}
 			for {
 				el := store.pull(in, "in")
-				if el == core.UnfinishedMarker {
+				if el == core.PHStream {
 					break
 				}
 				obj = append(obj, el)

@@ -37,8 +37,8 @@ type EOS struct {
 	src *Port
 }
 
-var PlaceholderMarker = &struct{placeholder string}{""}
-var UnfinishedMarker = &struct{unfinished string}{""}
+var PHSingle = &struct{ psSingle string}{"."}
+var PHStream = &struct{ phStream string}{".*"}
 
 type Port struct {
 	operator  *Operator
@@ -532,8 +532,8 @@ func (p *Port) Pull() interface{} {
 		for k, sub := range p.subs {
 			i := sub.Pull()
 
-			if i == UnfinishedMarker {
-				mi = UnfinishedMarker
+			if i == PHStream {
+				mi = PHStream
 				continue
 			}
 			if bos, ok := i.(BOS); ok {

@@ -121,6 +121,9 @@ func (dl *SlangComponentLoader) downloadArchiveAndUnpack(archiveURL string) erro
 	if err = dl.replaceDirContentBy(tmpDstDir); err != nil {
 		return err
 	}
+	if err = os.RemoveAll(tmpDstDir); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -156,7 +159,7 @@ func (dl *SlangComponentLoader) replaceDirContentBy(newDirPath string) error {
 		return err
 	}
 
-	if err = moveAll(newDirPath, dl.path, true); err != nil {
+	if err = copyAll(newDirPath, dl.path, true); err != nil {
 		return err
 	}
 

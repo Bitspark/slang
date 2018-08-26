@@ -152,10 +152,6 @@ func (dl *SlangComponentLoader) replaceDirContentBy(newDirPath string) error {
 		os.RemoveAll(dl.path)
 	}
 
-	if err = os.MkdirAll(dl.path, os.ModePerm); err != nil {
-		return err
-	}
-
 	if err = copyAll(newDirPath, dl.path, true); err != nil {
 		return err
 	}

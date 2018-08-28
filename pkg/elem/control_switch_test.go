@@ -59,6 +59,7 @@ func Test_CtrlSwitch__Delegates_Bool(t *testing.T) {
 	r.NoError(err)
 	r.NotNil(o)
 
+	a.NotNil(o.Delegate("default"))
 	a.NotNil(o.Delegate("true"))
 	a.NotNil(o.Delegate("false"))
 }
@@ -83,6 +84,7 @@ func Test_CtrlSwitch__Delegates_String(t *testing.T) {
 	r.NoError(err)
 	r.NotNil(o)
 
+	a.NotNil(o.Delegate("default"))
 	a.NotNil(o.Delegate("test1"))
 	a.NotNil(o.Delegate("test2"))
 	a.NotNil(o.Delegate("test3"))
@@ -108,6 +110,7 @@ func Test_CtrlSwitch__Redirect_Number(t *testing.T) {
 	r.NoError(err)
 	r.NotNil(o)
 
+	a.NotNil(o.Delegate("default"))
 	a.NotNil(o.Delegate("1"))
 	a.NotNil(o.Delegate("5"))
 	a.NotNil(o.Delegate("12"))

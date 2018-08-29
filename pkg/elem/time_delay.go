@@ -40,7 +40,7 @@ var timeDelayCfg = &builtinConfig{
 
 			im := i.(map[string]interface{})
 			delay := im["delay"].(float64)
-			item := im["item"].(float64)
+			item := im["item"]
 
 			<-time.After(time.Millisecond * time.Duration(delay))
 			out.Push(item)

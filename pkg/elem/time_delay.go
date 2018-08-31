@@ -10,10 +10,20 @@ var timeDelayCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "number",
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"item": {
+							Type: "generic",
+							Generic: "itemType",
+						},
+						"delay": {
+							Type: "number",
+						},
+					},
 				},
 				Out: core.TypeDef{
-					Type: "trigger",
+					Type: "generic",
+					Generic: "itemType",
 				},
 			},
 		},
@@ -22,17 +32,18 @@ var timeDelayCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
-			i, err := in.PullInt()
-			if err != nil {
-				if !core.IsMarker(i) {
-					out.Push(i)
-					continue
-				}
-				panic("expected number")
+			i := in.Pull()
+			if core.IsMarker(i) {
+				out.Push(i)
+				continue
 			}
 
-			<-time.After(time.Millisecond * time.Duration(i))
-			out.Push(nil)
+			im := i.(map[string]interface{})
+			delay := im["delay"].(float64)
+			item := im["item"]
+
+			<-time.After(time.Millisecond * time.Duration(delay))
+			out.Push(item)
 		}
 	},
 	opConnFunc: func(op *core.Operator, dst, src *core.Port) error {

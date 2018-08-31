@@ -1,13 +1,14 @@
-package api
+package daemon
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/api"
 )
 
 // Constructs an executable operator
 // TODO: Make safer (maybe require an API key?)
-func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
+func constructHttpEndpoint(env *api.Environ, port int, operator string, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
 	httpDef := &core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -98,14 +99,14 @@ func ConstructHttpEndpoint(env *Environ, port int, operator string, gens core.Ge
 	} else {
 		// In this case we are not interested in anything but the body
 		// It contains the JSON we need to pack
-		unpackerIns := &core.InstanceDef{
+		packerIns := &core.InstanceDef{
 			Name:     "packer",
 			Operator: "slang.encoding.JSONWrite",
 			Generics: core.Generics{
 				"itemType": &outDef,
 			},
 		}
-		httpDef.InstanceDefs = append(httpDef.InstanceDefs, unpackerIns)
+		httpDef.InstanceDefs = append(httpDef.InstanceDefs, packerIns)
 		httpDef.Connections["operator)"] = []string{"(packer"}
 		// We connect unpacker output later
 

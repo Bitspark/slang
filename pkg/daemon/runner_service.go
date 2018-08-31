@@ -27,9 +27,10 @@ var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
-				Fqn   string          `json:"fqn"`
-				Props core.Properties `json:"props"`
-				Gens  core.Generics   `json:"gens"`
+				Fqn    string          `json:"fqn"`
+				Props  core.Properties `json:"props"`
+				Gens   core.Generics   `json:"gens"`
+				Stream bool            `json:"stream"`
 			}
 
 			type outJSON struct {
@@ -63,7 +64,12 @@ var RunnerService = &Service{map[string]*Endpoint{
 				}
 			}
 
-			httpDef, err := api.ConstructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+			var httpDef *core.OperatorDef
+			if ri.Stream {
+				httpDef, err = constructHttpStreamEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+			} else {
+				httpDef, err = constructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+			}
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)

@@ -30,7 +30,10 @@ var encodingJSONWriteCfg = &builtinConfig{
 				out.Push(i)
 				continue
 			}
-			b, _ := json.Marshal(&i)
+			b, err := json.Marshal(&i)
+			if err != nil {
+				panic(err)
+			}
 			out.Push(utils.Binary(b))
 		}
 	},

@@ -197,6 +197,10 @@ func (o *Operator) CheckStop() bool {
 	}
 }
 
+func (o *Operator) Stopped() bool {
+	return o.stopped
+}
+
 func (o *Operator) Builtin() bool {
 	return o.function != nil
 }

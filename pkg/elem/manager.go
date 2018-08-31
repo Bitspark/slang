@@ -59,6 +59,8 @@ func GetBuiltinNames() []string {
 func init() {
 	cfgs = make(map[string]*builtinConfig)
 
+	Register("slang.meta.Store", metaStoreCfg)
+
 	// Data manipulating operators
 	Register("slang.data.Value", dataValueCfg)
 	Register("slang.data.Evaluate", dataEvaluateCfg)

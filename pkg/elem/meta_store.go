@@ -9,31 +9,31 @@ type storePipe struct {
 	items []interface{}
 }
 
-type store map[string]*storePipe
+type store map[*core.Port]*storePipe
 
 // attachPort attaches an interface array to the port and starts one or multiple go routine for this port which listen
 // at the port
-func (s store) attachPort(p *core.Port, key string) {
+func (s store) attachPort(p *core.Port) {
 	if p.Primitive() {
-		s[key] = &storePipe{
+		s[p] = &storePipe{
 			index: 0,
 			items: []interface{}{},
 		}
 		go func() {
 			for !p.Operator().Stopped() {
-				s[key].items = append(s[key].items, p.Pull())
+				s[p].items = append(s[p].items, p.Pull())
 			}
 		}()
 	} else if p.Type() == core.TYPE_MAP {
 		for _, sub := range p.MapEntries() {
-			s.attachPort(p.Map(sub), key+"."+sub)
+			s.attachPort(p.Map(sub))
 		}
 	} else if p.Type() == core.TYPE_STREAM {
-		s.attachPort(p.Stream(), key)
+		s.attachPort(p.Stream())
 	}
 }
 
-func (p *storePipe) pull() interface{} {
+func (p *storePipe) next() interface{} {
 	if p.index >= len(p.items) {
 		return core.PHMultiple
 	}
@@ -42,13 +42,13 @@ func (p *storePipe) pull() interface{} {
 	return p.items[index]
 }
 
-func (s store) pull(p *core.Port, key string) interface{} {
+func (s store) pull(p *core.Port) interface{} {
 	if p.Primitive() {
-		return s[key].pull()
+		return s[p].next()
 	} else if p.Type() == core.TYPE_MAP {
 		obj := make(map[string]interface{})
 		for _, sub := range p.MapEntries() {
-			obj[sub] = s.pull(p.Map(sub), key+"."+sub)
+			obj[sub] = s.pull(p.Map(sub))
 		}
 		newObj := false
 		var marker interface{} = nil
@@ -83,13 +83,13 @@ func (s store) pull(p *core.Port, key string) interface{} {
 			return core.PHMultiple
 		}
 	} else if p.Type() == core.TYPE_STREAM {
-		bos := s.pull(p.Stream(), key)
+		bos := s.pull(p.Stream())
 		if bos == core.PHMultiple || !p.OwnBOS(bos) {
 			return bos
 		}
 		obj := []interface{}{}
 		for {
-			el := s.pull(p.Stream(), key)
+			el := s.pull(p.Stream())
 			if el == core.PHMultiple {
 				obj = append(obj, core.PHMultiple)
 				break
@@ -145,14 +145,14 @@ var metaStoreCfg = &builtinConfig{
 		queryOut := querySrv.Out()
 
 		store := make(store)
-		store.attachPort(in, "in")
+		store.attachPort(in)
 
 		for !op.CheckStop() {
 			queryIn.Pull()
 			store.resetIndexes()
 			obj := []interface{}{}
 			for {
-				el := store.pull(in, "in")
+				el := store.pull(in)
 				if el == core.PHMultiple {
 					break
 				}

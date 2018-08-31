@@ -66,9 +66,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			var httpDef *core.OperatorDef
 			if ri.Stream {
-				httpDef, err = api.ConstructHttpStreamEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+				httpDef, err = constructHttpStreamEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
 			} else {
-				httpDef, err = api.ConstructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+				httpDef, err = constructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
 			}
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}

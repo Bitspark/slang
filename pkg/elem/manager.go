@@ -89,6 +89,8 @@ func init() {
 	Register("slang.net.HTTPServer", netHTTPServerCfg)
 	Register("slang.net.HTTPClient", netHTTPClientCfg)
 	Register("slang.net.SendEmail", netSendEmailCfg)
+	Register("slang.net.MQTTPublish", netMQTTPublishCfg)
+	Register("slang.net.MQTTSubscribe", netMQTTSubscribeCfg)
 
 	Register("slang.files.Read", filesReadCfg)
 	Register("slang.files.Write", filesWriteCfg)

@@ -71,7 +71,6 @@ func init() {
 	Register("slang.control.Merge", controlMergeCfg)
 	Register("slang.control.Switch", controlSwitchCfg)
 	// Register("slang.control.SingleSplit", controlSingleSplitCfg)
-	Register("slang.control.Choose", controlChooseCfg)
 	Register("slang.control.Take", controlTakeCfg)
 	Register("slang.control.Loop", controlLoopCfg)
 	Register("slang.control.Iterate", controlIterateCfg)

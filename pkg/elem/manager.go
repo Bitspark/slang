@@ -86,6 +86,7 @@ func init() {
 
 	// Bridge operators
 	Register("slang.bridge.Python", bridgePythonCfg)
+	Register("slang.bridge.JavaScript", bridgeJavaScriptCfg)
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)

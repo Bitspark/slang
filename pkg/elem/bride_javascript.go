@@ -14,49 +14,44 @@ import (
 	"strings"
 )
 
-func createPythonEnv(prefix, dir, source, method string) (*exec.Cmd, error) {
+func createJavaScriptEnv(prefix, dir, source, method string) (*exec.Cmd, error) {
 	os.MkdirAll(dir, os.ModePerm)
 
-	err := ioutil.WriteFile(filepath.Join(dir, prefix+"_operator.py"), []byte(source), os.ModePerm)
+	err := ioutil.WriteFile(filepath.Join(dir, prefix+"-operator.js"), []byte(source), os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(dir, prefix+"_server.py"), []byte(
-		`import json, sys
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from `+prefix+`_operator import `+method+`
+	err = ioutil.WriteFile(filepath.Join(dir, prefix+"-server.js"), []byte(
+		`var http = require('http');
+var op = require('./`+prefix+`-operator.js');
 
-class OperatorServer(BaseHTTPRequestHandler):
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/json')
-        self.end_headers()
-
-    def do_POST(self):
-        request_body = self.rfile.read(int(self.headers.getheader('Content-Length')))
-        response_body = json.dumps(`+method+`(json.loads(request_body)))
-
-        self._set_headers()
-        self.wfile.write(response_body)
-
-if __name__ == '__main__':
-    httpd = HTTPServer(("", 0), OperatorServer)
-    port = httpd.socket.getsockname()[1]
-    print "http://{}:{}".format("localhost", port)
-    sys.stdout.flush()
-    httpd.serve_forever()
-`), os.ModePerm)
+var server  = http.createServer(function (req, res) {
+    var requestBody = '';
+  	req.on('data', function (data) {
+        requestBody += data;
+    });
+    req.on('end', function () {
+        res.writeHead(200, {'Content-Type': 'text/json'});
+        var responseBody = JSON.stringify(op.`+method+`(JSON.parse(requestBody)));
+        res.write(responseBody);
+        res.end();
+    });
+})
+server.listen(0)
+server.on('listening', function() {
+  console.log('http://localhost:' + server.address().port)
+})`), os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command("python", filepath.Join(dir, prefix+"_server.py"))
+	cmd := exec.Command("node", filepath.Join(dir, prefix+"-server.js"))
 
 	return cmd, nil
 }
 
-var bridgePythonCfg = &builtinConfig{
+var bridgeJavaScriptCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -84,9 +79,9 @@ var bridgePythonCfg = &builtinConfig{
 		source := op.Property("source").(string)
 		method := op.Property("method").(string)
 
-		cmd, err := createPythonEnv(
-			strings.Replace(strings.ToLower(op.Name()), "#", "_", -1),
-			"./python_scripts/",
+		cmd, err := createJavaScriptEnv(
+			strings.Replace(strings.ToLower(op.Name()), "#", "-", -1),
+			"./javascript_scripts/",
 			source, method)
 		if err != nil {
 			panic(err)

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"io/ioutil"
@@ -136,9 +135,6 @@ var bridgePythonCfg = &builtinConfig{
 				panic(err)
 			}
 
-			fmt.Println("response Status:", resp.Status)
-			fmt.Println("response Headers:", resp.Header)
-
 			responseBody, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				resp.Body.Close()
@@ -146,13 +142,9 @@ var bridgePythonCfg = &builtinConfig{
 			}
 			resp.Body.Close()
 
-			fmt.Println("response Body:", string(responseBody))
-
 			var result interface{}
 			json.Unmarshal(responseBody, &result)
 			result = utils.CleanValue(result)
-
-			fmt.Println("Python responded: ", result)
 
 			out.Push(result)
 		}

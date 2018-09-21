@@ -84,6 +84,9 @@ func init() {
 	Register("slang.stream.WindowCount", streamWindowCountCfg)
 	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
 
+	// Bridge operators
+	Register("slang.bridge.Python", bridgePythonCfg)
+
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)
 	Register("slang.net.HTTPClient", netHTTPClientCfg)

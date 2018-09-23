@@ -85,8 +85,14 @@ func init() {
 	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
 
 	// Bridge operators
-	Register("slang.bridge.Python", bridgePythonCfg)
-	Register("slang.bridge.JavaScript", bridgeJavaScriptCfg)
+	Register("slang.bridge.Python",
+		createBridgeCfg(bridgeCfg{"python", "py", "_", false, "python", []string{}}))
+	Register("slang.bridge.JavaScript",
+		createBridgeCfg(bridgeCfg{"javascript", "js", "-", false, "node", []string{}}))
+	Register("slang.bridge.Ruby",
+		createBridgeCfg(bridgeCfg{"ruby", "rb", "_", false, "ruby", []string{}}))
+	Register("slang.bridge.Go",
+		createBridgeCfg(bridgeCfg{"golang", "go", "_", true, "go", []string{"run", "."}}))
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)

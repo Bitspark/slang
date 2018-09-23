@@ -26,7 +26,7 @@ const (
 	DIRECTION_OUT = iota
 )
 
-var CHANNEL_SIZE = 1 << 15
+var CHANNEL_SIZE = 1 << 20
 var CHANNEL_DYNAMIC = false
 
 type BOS struct {

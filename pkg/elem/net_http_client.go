@@ -47,10 +47,9 @@ var netHTTPClientCfg = &builtinConfig{
 			}
 			for _, header := range headers {
 				entry := header.(map[string]interface{})
-				if entry["value"] == nil {
-					continue
+				for _, value := range entry["values"].([]interface{}) {
+					r.Header.Set(entry["key"].(string), value.(string))
 				}
-				r.Header.Set(entry["key"].(string), entry["value"].(string))
 			}
 
 			resp, err := http.DefaultClient.Do(r)

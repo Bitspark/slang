@@ -83,6 +83,8 @@ func init() {
 	Register("slang.stream.MapAccess", streamMapAccessCfg)
 	Register("slang.stream.WindowCount", streamWindowCountCfg)
 	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
+	Register("slang.stream.MapToStream", streamMapToStreamCfg)
+	Register("slang.stream.StreamToMap", streamStreamToMapCfg)
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)

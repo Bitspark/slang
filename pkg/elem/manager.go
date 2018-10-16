@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/go-funk"
+	"sync"
 )
 
 type builtinConfig struct {
@@ -81,8 +82,8 @@ func init() {
 	Register("slang.stream.Parallelize", streamParallelizeCfg)
 	Register("slang.stream.Concatenate", streamConcatenateCfg)
 	Register("slang.stream.MapAccess", streamMapAccessCfg)
-	Register("slang.stream.WindowCount", streamWindowCountCfg)
-	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
+	Register("slang.stream.WindowCollector", streamWindowCollectorCfg)
+	Register("slang.stream.WindowRelease", streamWindowReleaseCfg)
 	Register("slang.stream.MapToStream", streamMapToStreamCfg)
 	Register("slang.stream.StreamToMap", streamStreamToMapCfg)
 
@@ -117,6 +118,9 @@ func init() {
 	Register("slang.image.Encode", imageEncodeCfg)
 
 	Register("slang.system.Execute", systemExecuteCfg)
+
+	windowStores = make(map[string]*windowStore)
+	windowMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

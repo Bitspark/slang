@@ -63,6 +63,12 @@ func evalFunctions() map[string]govaluate.ExpressionFunction {
 			}
 			return args[0] == nil, nil
 		},
+		"len": func(args ...interface{}) (interface{}, error) {
+			if len(args) == 0 {
+				return true, nil
+			}
+			return float64(len(args[0].(string))), nil
+		},
 	}
 	return functions
 }

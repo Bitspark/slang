@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,10 +11,11 @@ import (
 
 	"strconv"
 
+	"os"
+
 	"github.com/Bitspark/browser"
 	"github.com/Bitspark/slang/pkg/daemon"
 	"github.com/Bitspark/slang/pkg/utils"
-	"os"
 )
 
 const PORT = 5149 // sla[n]g == 5149
@@ -31,7 +33,12 @@ type EnvironPaths struct {
 	SLANG_UI   string
 }
 
+var onlyDaemon bool;
+
 func main() {
+	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Prevent from automatically opening slang ui")
+	flag.Parse()
+
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
 	if buildTime != 0 {
 		log.Printf("Starting slangd %s built %s...\n", Version, time.Unix(buildTime, 0).Format(time.RFC3339))
@@ -153,7 +160,9 @@ func informUser(url string, errors chan error) {
 		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
 	case <-time.After(500 * time.Millisecond):
 		log.Printf("\n\n\tOpen  %s  in your browser.\n\n", url)
-		browser.OpenURL(url)
+		if !onlyDaemon {
+			browser.OpenURL(url)
+		}
 	}
 	select {
 	case err := <-errors:

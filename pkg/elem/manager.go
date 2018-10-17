@@ -21,7 +21,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	if cfg == nil {
 		return nil, errors.New("unknown builtin operator")
 	}
-	
+
 	if err := def.OperatorDef.GenericsSpecified(); err != nil {
 		return nil, err
 	}
@@ -110,6 +110,9 @@ func init() {
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)
 	Register("slang.string.Split", stringSplitCfg)
+	Register("slang.string.StartsWith", stringBeginswithCfg)
+	Register("slang.string.Contains", stringContainsCfg)
+	Register("slang.string.Endswith", stringEndswithCfg)
 
 	Register("slang.database.Query", databaseQueryCfg)
 	Register("slang.database.Execute", databaseExecuteCfg)

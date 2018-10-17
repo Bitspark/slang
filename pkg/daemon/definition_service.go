@@ -67,7 +67,6 @@ var DefinitionService = &Service{map[string]*Endpoint{
 					}
 
 					opDef, err := e.ReadOperatorDef(opDefFilePath, nil)
-					fmt.Println(">>>", opFQName, err)
 					if err != nil {
 						continue
 					}

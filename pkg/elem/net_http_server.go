@@ -38,10 +38,12 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 		headersOut := out.Map("headers").Stream()
 		for key, vals := range req.Header {
 			headersOut.Map("key").Push(key)
+			headersOut.Map("values").PushBOS()
 			valuesOut := headersOut.Map("values").Stream()
 			for _, val := range vals {
 				valuesOut.Push(val)
 			}
+			headersOut.Map("values").PushEOS()
 		}
 		out.Map("headers").PushEOS()
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/go-funk"
+	"sync"
 )
 
 type builtinConfig struct {
@@ -20,7 +21,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	if cfg == nil {
 		return nil, errors.New("unknown builtin operator")
 	}
-	
+
 	if err := def.OperatorDef.GenericsSpecified(); err != nil {
 		return nil, err
 	}
@@ -81,8 +82,10 @@ func init() {
 	Register("slang.stream.Parallelize", streamParallelizeCfg)
 	Register("slang.stream.Concatenate", streamConcatenateCfg)
 	Register("slang.stream.MapAccess", streamMapAccessCfg)
-	Register("slang.stream.WindowCount", streamWindowCountCfg)
-	Register("slang.stream.WindowTriggered", streamWindowTriggeredCfg)
+	Register("slang.stream.WindowCollect", streamWindowCollectCfg)
+	Register("slang.stream.WindowRelease", streamWindowReleaseCfg)
+	Register("slang.stream.MapToStream", streamMapToStreamCfg)
+	Register("slang.stream.StreamToMap", streamStreamToMapCfg)
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)
@@ -107,6 +110,9 @@ func init() {
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)
 	Register("slang.string.Split", stringSplitCfg)
+	Register("slang.string.StartsWith", stringBeginswithCfg)
+	Register("slang.string.Contains", stringContainsCfg)
+	Register("slang.string.Endswith", stringEndswithCfg)
 
 	Register("slang.database.Query", databaseQueryCfg)
 	Register("slang.database.Execute", databaseExecuteCfg)
@@ -115,6 +121,9 @@ func init() {
 	Register("slang.image.Encode", imageEncodeCfg)
 
 	Register("slang.system.Execute", systemExecuteCfg)
+
+	windowStores = make(map[string]*windowStore)
+	windowMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

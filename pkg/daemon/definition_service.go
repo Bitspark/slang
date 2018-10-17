@@ -61,11 +61,13 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				// Gather opDefs from local & lib
 				for _, opFQName := range opNames {
 					opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(opFQName, ".", string(filepath.Separator), -1), "")
+
 					if err != nil {
 						continue
 					}
 
 					opDef, err := e.ReadOperatorDef(opDefFilePath, nil)
+					fmt.Println(">>>", opFQName, err)
 					if err != nil {
 						continue
 					}

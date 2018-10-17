@@ -26,7 +26,7 @@ func getWindowStore(store string) *windowStore {
 	return ws
 }
 
-var streamWindowCollectorCfg = &builtinConfig{
+var streamWindowCollectCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

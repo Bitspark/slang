@@ -28,6 +28,6 @@ ENV SLANG_PATH "/root/slang/"
 COPY --from=0 /go/src/slang/slangd .
 
 EXPOSE 5149
-EXPOSE 50001
+EXPOSE 50001-50099
 
 ENTRYPOINT ["/root/slang/slangd", "--only-daemon"]

@@ -34,9 +34,11 @@ type EnvironPaths struct {
 }
 
 var onlyDaemon bool
+var skipChecks bool
 
 func main() {
-	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Prevent from automatically opening slang ui")
+	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Don't automatically open UI")
+	flag.BoolVar(&skipChecks, "skip-checks", false, "Skip checking and updating UI and Lib")
 	flag.Parse()
 
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
@@ -53,7 +55,9 @@ func main() {
 
 	srv := daemon.New("localhost", PORT)
 
-	envPaths.loadLocalComponents()
+	if !skipChecks {
+		envPaths.loadLocalComponents()
+	}
 	envPaths.loadDaemonServices(srv)
 	envPaths.startDaemonServer(srv)
 }

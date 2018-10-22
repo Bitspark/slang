@@ -144,7 +144,7 @@ func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 	srv.AddService("/share", daemon.SharingService)
-	srv.AddOperatorProxy("/op")
+	srv.AddOperatorProxy("/instance")
 }
 
 func (e *EnvironPaths) startDaemonServer(srv *daemon.Server) {

@@ -172,7 +172,6 @@ func (dl *SlangComponentLoader) GetLocalReleaseVersion() *version.Version {
 	if os.IsNotExist(err) {
 		return nil
 	}
-
 	versionFile, err := os.Open(dl.versionFilePath)
 	defer versionFile.Close()
 

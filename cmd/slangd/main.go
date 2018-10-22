@@ -33,7 +33,7 @@ type EnvironPaths struct {
 	SLANG_UI   string
 }
 
-var onlyDaemon bool;
+var onlyDaemon bool
 
 func main() {
 	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Prevent from automatically opening slang ui")
@@ -144,6 +144,7 @@ func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 	srv.AddService("/share", daemon.SharingService)
+	srv.AddOperatorProxy("/op")
 }
 
 func (e *EnvironPaths) startDaemonServer(srv *daemon.Server) {

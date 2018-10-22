@@ -22,6 +22,7 @@ var runningInstances = make(map[int64]struct {
 var rnd = rand.New(rand.NewSource(99))
 
 const SuffixPacked = "_packed"
+const PORT = 5149
 
 var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
@@ -103,9 +104,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			data.Status = "success"
 			data.Handle = strconv.FormatInt(handle, 16)
-			data.URL = "http://localhost:" + strconv.Itoa(port)
-
-			port++
+			// data.URL = "http://localhost:" + strconv.Itoa(port)
+			data.URL = "http://localhost:" + strconv.Itoa(PORT) + "/op/" + strconv.FormatInt(handle, 10)
 
 			writeJSON(w, &data)
 		} else if r.Method == "DELETE" {

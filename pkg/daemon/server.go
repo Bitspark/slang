@@ -51,6 +51,14 @@ func (s *Server) AddAppServer(pathPrefix string, directory http.Dir) {
 		}).GetHandler()))
 }
 
+func (s *Server) AddOperatorProxy(pathPrefix string) {
+	r := s.router.PathPrefix(pathPrefix)
+	r.Handler(http.StripPrefix(pathPrefix,
+		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			proxyRequestToOperator(w, r)
+		}).GetHandler()))
+}
+
 func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
 	s.AddRedirect(pathPrefix, pathPrefix+"/")
 	r := s.router.PathPrefix(pathPrefix)

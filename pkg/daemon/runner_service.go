@@ -103,9 +103,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			data.Status = "success"
 			data.Handle = strconv.FormatInt(handle, 16)
-			data.URL = "http://localhost:" + strconv.Itoa(port)
-
-			port++
+			data.URL = "/instance/" + strconv.FormatInt(handle, 16)
 
 			writeJSON(w, &data)
 		} else if r.Method == "DELETE" {

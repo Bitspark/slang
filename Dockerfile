@@ -24,8 +24,10 @@ FROM alpine
 RUN apk --no-cache add ca-certificates
 WORKDIR "/root/slang/"
 ENV USER root
-ENV SLANG_DIR "/root/slang/"
+ENV SLANG_PATH "/root/slang/"
 COPY --from=0 /go/src/slang/slangd .
+
 EXPOSE 5149
+EXPOSE 50001
 
 ENTRYPOINT ["/root/slang/slangd", "--only-daemon"]

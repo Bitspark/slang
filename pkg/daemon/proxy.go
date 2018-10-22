@@ -56,6 +56,10 @@ func proxyRequestToOperator(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for key := range r.Header {
+		req.Header.Set(key, r.Header.Get(key))
+	}
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -70,11 +74,8 @@ func proxyRequestToOperator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for key, values := range resp.Header {
-		w.Header().Del(key)
-		for _, value := range values {
-			w.Header().Add(key, value)
-		}
+	for key := range resp.Header {
+		w.Header().Set(key, resp.Header.Get(key))
 	}
 
 	w.WriteHeader(resp.StatusCode)

@@ -1,8 +1,8 @@
 package daemon
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 // Constructs an executable operator
@@ -63,7 +63,7 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 
 	// We need a switch to determine if a new value is pushed or a value request is made
 	switchIns := &core.InstanceDef{
-		Name: "switch",
+		Name:     "switch",
 		Operator: "slang.control.Switch",
 		Generics: map[string]*core.TypeDef{
 			"inType": {
@@ -121,7 +121,10 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 			},
 		},
 		Properties: core.Properties{
-			"value": []interface{}{map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"}},
+			"value": []interface{}{
+				map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"},
+				map[string]string{"key": "Content-Type", "value": "application/json"},
+			},
 		},
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, headersIns)
@@ -148,9 +151,9 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 
 	// This is the store holding all data
 	storeIns := &core.InstanceDef{
-		Name:       "store",
-		Operator:   "slang.meta.Store",
-		Generics:   map[string]*core.TypeDef{
+		Name:     "store",
+		Operator: "slang.meta.Store",
+		Generics: map[string]*core.TypeDef{
 			"examineType": &outDef,
 		},
 		Properties: props,
@@ -178,7 +181,7 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 		Operator: "slang.encoding.JSONWrite",
 		Generics: core.Generics{
 			"itemType": &core.TypeDef{
-				Type: "stream",
+				Type:   "stream",
 				Stream: &outDef,
 			},
 		},

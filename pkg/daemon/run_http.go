@@ -1,9 +1,9 @@
 package daemon
 
 import (
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
-	"github.com/Bitspark/slang/pkg/api"
 )
 
 // Constructs an executable operator
@@ -149,7 +149,10 @@ func constructHttpEndpoint(env *api.Environ, port int, operator string, gens cor
 				},
 			},
 			Properties: core.Properties{
-				"value": []interface{}{map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"}},
+				"value": []interface{}{
+					map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"},
+					map[string]string{"key": "Content-Type", "value": "application/json"},
+				},
 			},
 		}
 		httpDef.InstanceDefs = append(httpDef.InstanceDefs, headersIns)

@@ -3,7 +3,9 @@ package daemon
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -56,11 +58,11 @@ var RunnerService = &Service{map[string]*Endpoint{
 			for portUsed {
 				port++
 				portUsed = false
-				for _, ri := range runningInstances {
-					if ri.port == port {
-						portUsed = true
-						break
-					}
+				ln, err := net.Listen("tcp", ":" + strconv.Itoa(port))
+				if err != nil {
+					portUsed = true
+				} else {
+					ln.Close()
 				}
 			}
 
@@ -98,7 +100,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 				op   *core.Operator
 			}{port, op}
 
+			op.Main().Out().Bufferize()
 			op.Start()
+			log.Printf("operator %s (port: %d, id: %s) started", packagedOperator, port, strconv.FormatInt(handle, 16))
 			op.Main().In().Push(nil) // Start server
 
 			data.Status = "success"
@@ -106,6 +110,11 @@ var RunnerService = &Service{map[string]*Endpoint{
 			data.URL = "/instance/" + strconv.FormatInt(handle, 16)
 
 			writeJSON(w, &data)
+
+			go func() {
+				oprlt := op.Main().Out().Pull()
+				log.Printf("operator %s (port: %d, id: %s) terminated: %v", packagedOperator, port, strconv.FormatInt(handle, 16), oprlt)
+			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
 				Handle string `json:"handle"`

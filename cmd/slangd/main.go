@@ -145,6 +145,7 @@ func (e *EnvironPaths) loadLocalComponents() {
 func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
 	srv.AddRedirect("/", "/app/")
 	srv.AddAppServer("/app", http.Dir(e.SLANG_UI))
+	srv.AddAppServer("/studio", http.Dir(filepath.Join(filepath.Dir(e.SLANG_UI), "studio")))
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 	srv.AddService("/share", daemon.SharingService)

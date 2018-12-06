@@ -25,7 +25,7 @@ var encodingXLSXReadCfg = &builtinConfig{
 								Stream: &core.TypeDef{
 									Type: "stream",
 									Stream: &core.TypeDef{
-										Type: "string",
+										Type: "primitive",
 									},
 								},
 							},

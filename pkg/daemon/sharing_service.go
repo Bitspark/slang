@@ -18,8 +18,8 @@ import (
 )
 
 type manifest struct {
-	SlangVersion string `yaml:slangVersion`
-	TimeUnix     int64  `yaml:timeUnix`
+	SlangVersion string `yaml:"slangVersion"`
+	TimeUnix     int64  `yaml:"timeUnix"`
 }
 
 var suffixes = []string{"_visual.yaml"}

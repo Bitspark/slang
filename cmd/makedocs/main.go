@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
@@ -15,28 +14,30 @@ import (
 )
 
 type operatorEntry struct {
-	Name        string
-	FQName      string
-	Path        string
-	Def         core.OperatorDef
-	Type        string
-	IconClass   string
-	PackageHTML string
+	Name             string
+	DisplayName      string
+	FQName           string
+	Path             string
+	Def              core.OperatorDef
+	Type             string
+	IconClass        string
+	PackageHTML      string
+	ShortDescription string
+	Description      string
 }
 
 func main() {
-	tplOperatorPath := "C:/Users/julia_000/Desktop/slang-docs/operator.html"
-	tplIndexPath := "C:/Users/julia_000/Desktop/slang-docs/index.html"
-	docDir := "C:/Users/julia_000/Desktop/slang-docs/docs/"
-	docOperatorDir := "C:/Users/julia_000/Desktop/slang-docs/docs/operator/"
+	tplOperatorPath := "C:/Bitspark/bitspark-www/html/pages/slang/doc-templates/operator.html"
+	tplPackagePath := "C:/Bitspark/bitspark-www/html/pages/slang/doc-templates/package.html"
 
-	err := os.RemoveAll(docDir)
+	docDir := "C:/Bitspark/bitspark-www/html/pages/slang/docs/"
+
+	err := os.RemoveAll(docDir + "slang")
 	if err != nil {
 		panic(err)
 	}
 
 	os.MkdirAll(docDir, os.ModeDir)
-	os.MkdirAll(docOperatorDir, os.ModeDir)
 
 	bytesOperator, err := ioutil.ReadFile(tplOperatorPath)
 	if err != nil {
@@ -47,17 +48,16 @@ func main() {
 		panic(err)
 	}
 
-	bytesIndex, err := ioutil.ReadFile(tplIndexPath)
+	bytesPackage, err := ioutil.ReadFile(tplPackagePath)
 	if err != nil {
 		panic(err)
 	}
-	tmplIndex, err := template.New("Index").Delims("[[", "]]").Parse(string(bytesIndex))
+	tmplPackage, err := template.New("Index").Delims("[[", "]]").Parse(string(bytesPackage))
 	if err != nil {
 		panic(err)
 	}
 
 	e := api.NewEnviron()
-	fmt.Println(e)
 
 	operators, err := e.ListOperatorNames()
 	if err != nil {
@@ -72,7 +72,6 @@ func main() {
 
 		opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(fqname, ".", string(filepath.Separator), -1), "")
 		if err != nil {
-			fmt.Println("elementary:", fqname)
 			continue
 		}
 
@@ -82,8 +81,26 @@ func main() {
 		}
 
 		p := strings.Replace(fqname, ".", "/", -1) + ".html"
-		entry := operatorEntry{getName(fqname), fqname, p, def, "library", "fa-box-open", buildPackageLine(fqname)}
-		writeOperatorDocFile(docOperatorDir, tmplOperator, entry)
+		entry := operatorEntry{
+			def.Name,
+			def.DisplayName,
+			fqname,
+			p,
+			def,
+			"library",
+			"fas fa-" + def.Icon,
+			buildPackageLine(fqname),
+			def.ShortDescription,
+			def.Description,
+		}
+		if entry.Name == "" {
+			entry.Name = getName(entry.FQName)
+			entry.DisplayName = getName(entry.FQName)
+		}
+		if def.Icon == "" {
+			entry.IconClass = "fas fa-box-open"
+		}
+		writeOperatorDocFile(docDir, tmplOperator, entry)
 		libraryOperators = append(libraryOperators, entry)
 	}
 
@@ -95,8 +112,26 @@ func main() {
 		}
 
 		p := strings.Replace(fqname, ".", "/", -1) + ".html"
-		entry := operatorEntry{getName(fqname), fqname, p, def, "elementary", "fa-box", buildPackageLine(fqname)}
-		writeOperatorDocFile(docOperatorDir, tmplOperator, entry)
+		entry := operatorEntry{
+			def.Name,
+			def.DisplayName,
+			fqname,
+			p,
+			def,
+			"elementary",
+			"fas fa-" + def.Icon,
+			buildPackageLine(fqname),
+			def.ShortDescription,
+			def.Description,
+		}
+		if entry.Name == "" {
+			entry.Name = getName(entry.FQName)
+			entry.DisplayName = getName(entry.FQName)
+		}
+		if def.Icon == "" {
+			entry.IconClass = "fas fa-box"
+		}
+		writeOperatorDocFile(docDir, tmplOperator, entry)
 		elementaryOperators = append(elementaryOperators, entry)
 	}
 
@@ -104,7 +139,13 @@ func main() {
 		return strings.Compare(libraryOperators[i].Name, libraryOperators[j].Name) == -1
 	})
 
-	writeIndexDocFile(docDir, tmplIndex, buildIndex("", "", append(elementaryOperators, libraryOperators...)))
+	allOperators := append(elementaryOperators, libraryOperators...)
+
+	// createPackagePages(docDir, tmplPackage)
+
+	// makePackageFiles(docDir + "slang/", tmplPackage, buildIndex("", "", allOperators))
+
+	buildPackageFiles(e, docDir, tmplPackage, "slang", "slang", allOperators)
 }
 
 func getName(fqname string) string {
@@ -113,7 +154,7 @@ func getName(fqname string) string {
 }
 
 func writeOperatorDocFile(docDir string, tmpl *template.Template, entry operatorEntry) {
-	os.MkdirAll(path.Dir(docDir + entry.Path), os.ModeDir)
+	os.MkdirAll(path.Dir(docDir+entry.Path), os.ModeDir)
 
 	file, err := os.Create(docDir + entry.Path)
 	if err != nil {
@@ -124,15 +165,33 @@ func writeOperatorDocFile(docDir string, tmpl *template.Template, entry operator
 	file.Close()
 }
 
-func writeIndexDocFile(docDir string, tmpl *template.Template, index string) {
+func getPackageDef(e *api.Environ, pkg string) core.PackageDef {
+	pkgDefPath, _, err := e.GetFilePathWithFileEnding(strings.Replace(pkg, ".", "/", -1)+"/_package", "")
+	if err != nil {
+		panic(err)
+	}
+
+	pkgDef, err := e.ReadPackageDef(pkgDefPath)
+	if err != nil {
+		panic(err)
+	}
+
+	return pkgDef
+}
+
+func createPackageFile(e *api.Environ, docDir string, tmpl *template.Template, pkg string, ops []operatorEntry) {
 	file, err := os.Create(docDir + "index.html")
 	if err != nil {
 		panic(err)
 	}
 
+	pkgDef := getPackageDef(e, pkg)
+
 	tmpl.Execute(file, struct {
-		Index string
-	}{index})
+		DisplayName      string
+		ShortDescription string
+		Index            string
+	}{pkgDef.DisplayName, pkgDef.ShortDescription, buildIndex(e, pkg, ops)})
 	file.Close()
 }
 
@@ -149,14 +208,9 @@ func buildPackageLine(fqname string) string {
 	return line
 }
 
-func buildIndex(pkg string, name string, ops []operatorEntry) string {
-	index := ""
-	if pkg != "" {
-		index += "<a href=\"#\" class=\"toggle\"><i class=\"fas fa-minus-square\"></i></a> "
-		index += name
-	}
+func buildPackageFiles(e *api.Environ, docDir string, tmpl *template.Template, pkg string, name string, ops []operatorEntry) {
+	createPackageFile(e, docDir+strings.Replace(pkg, ".", "/", -1)+"/", tmpl, pkg, ops)
 
-	index += "<ul>"
 	subsHandled := make(map[string]bool)
 	for _, op := range ops {
 		if pkg != "" && !strings.HasPrefix(op.FQName, pkg+".") {
@@ -169,24 +223,60 @@ func buildIndex(pkg string, name string, ops []operatorEntry) string {
 		}
 		remainderSplit := strings.Split(remainder, ".")
 
-		fmt.Println(remainderSplit)
+		if len(remainderSplit) > 1 {
+			if _, ok := subsHandled[remainderSplit[0]]; !ok {
+				subsHandled[remainderSplit[0]] = true
+			} else {
+				if pkg == "" {
+					buildPackageFiles(e, docDir, tmpl, remainderSplit[0], remainderSplit[0], ops)
+				} else {
+					buildPackageFiles(e, docDir, tmpl, pkg+"."+remainderSplit[0], remainderSplit[0], ops)
+				}
+			}
+		}
+	}
+}
+
+func buildIndex(e *api.Environ, pkg string, ops []operatorEntry) string {
+	pkgDef := getPackageDef(e, pkg)
+
+	index := ""
+	if pkg != "" {
+		index += "<button class=\"toggle\"><i class=\"fas fa-minus-square\"></i></button> "
+		index += "<a href=\"{{root}}slang/docs/" + strings.Replace(pkg, ".", "/", -1) + "/\">"
+		index += pkgDef.DisplayName
+		index += "</a>"
+	}
+
+	index += "<ul class=\"expanded\">"
+	subsHandled := make(map[string]bool)
+	for _, op := range ops {
+		if pkg != "" && !strings.HasPrefix(op.FQName, pkg+".") {
+			continue
+		}
+
+		remainder := op.FQName
+		if pkg != "" {
+			remainder = remainder[len(pkg)+1:]
+		}
+		remainderSplit := strings.Split(remainder, ".")
 
 		if len(remainderSplit) > 1 {
 			if _, ok := subsHandled[remainderSplit[0]]; !ok {
 				subsHandled[remainderSplit[0]] = true
 				index += "<li class=\"package\">"
 				if pkg == "" {
-					index += buildIndex(remainderSplit[0], remainderSplit[0], ops)
+					index += buildIndex(e, remainderSplit[0], ops)
 				} else {
-					index += buildIndex(pkg+"."+remainderSplit[0], remainderSplit[0], ops)
+					index += buildIndex(e, pkg+"."+remainderSplit[0], ops)
 				}
 				index += "</li>"
 			}
 		} else {
 			index += "<li class=\"operator\">"
-			index += "<a href=\"operator/" + op.Path + "\">"
-			index += "<i class=\"fas " + op.IconClass + "\"></i> "
-			index += remainder
+			index += "<a href=\"{{root}}slang/docs/" + op.Path + "\">"
+			index += "<i class=\"" + op.IconClass + "\"></i> "
+			index += op.DisplayName
 			index += "</a>"
 			index += "</li>"
 		}

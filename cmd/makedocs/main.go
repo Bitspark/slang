@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,7 +16,13 @@ import (
 	"unicode"
 )
 
-type operatorEntry struct {
+type OperatorYAML struct {
+	Name string
+	Type string
+	YAML string
+}
+
+type OperatorEntry struct {
 	Name             string
 	DisplayName      string
 	FQName           string
@@ -26,6 +34,27 @@ type operatorEntry struct {
 	ShortDescription string
 	Description      string
 	Index            string
+	OperatorYAMLs    []OperatorYAML
+}
+
+type Operator struct {
+	Name      string `yaml:"name" json:"name"`
+	IconClass string `yaml:"iconClass" json:"iconClass"`
+	Path      string `yaml:"path" json:"path"`
+	Opened    bool   `yaml:"opened" json:"opened"`
+
+	Type string `yaml:"type" json:"type"`
+}
+
+type Package struct {
+	Name      string `yaml:"name" json:"name"`
+	IconClass string `yaml:"iconClass" json:"iconClass"`
+	Path      string `yaml:"path" json:"path"`
+	Expanded  bool   `yaml:"expanded" json:"expanded"`
+	Opened    bool   `yaml:"opened" json:"opened"`
+
+	SubPackages []*Package  `yaml:"subPackages" json:"subPackages"`
+	Operators   []*Operator `yaml:"operators" json:"operators"`
 }
 
 func main() {
@@ -107,13 +136,21 @@ func main() {
 		}{fqname, def, "Elementary"})
 	}
 
-	var opEntries []operatorEntry
+	var opEntries []OperatorEntry
 	for _, op := range ops {
 		fqname := op.FQName
 		def := op.Def
 
+		operatorYAML := make(map[string]OperatorYAML)
+		packOperatorIntoYAML(e, fqname, operatorYAML, "local")
+
+		var operatorYAMLs []OperatorYAML
+		for _, o := range operatorYAML {
+			operatorYAMLs = append(operatorYAMLs, o)
+		}
+
 		p := strings.Replace(fqname, ".", "/", -1) + ".html"
-		entry := operatorEntry{
+		entry := OperatorEntry{
 			def.Name,
 			def.DisplayName,
 			fqname,
@@ -125,6 +162,7 @@ func main() {
 			def.ShortDescription,
 			def.Description,
 			"",
+			operatorYAMLs,
 		}
 		if entry.Name == "" {
 			entry.Name = getName(entry.FQName)
@@ -137,7 +175,7 @@ func main() {
 	}
 
 	for i := range opEntries {
-		opEntries[i].Index = buildIndex(e, opEntries[i].FQName, "slang", opEntries)
+		opEntries[i].Index = packageToString(buildIndex(e, opEntries[i].FQName, "slang", opEntries))
 	}
 
 	for _, entry := range opEntries {
@@ -149,6 +187,14 @@ func main() {
 	})
 
 	buildPackageFiles(e, docDir, tmplPackage, "slang", "slang", opEntries)
+}
+
+func packageToString(pkgPtr *Package) string {
+	pkgYaml, err := json.Marshal(pkgPtr)
+	if err != nil {
+		panic(err)
+	}
+	return string(pkgYaml)
 }
 
 func getPath(fqname string) string {
@@ -168,7 +214,7 @@ func getName(fqname string) string {
 	return fqnameSplit[len(fqnameSplit)-1]
 }
 
-func writeOperatorDocFile(docDir string, tmpl *template.Template, entry operatorEntry) {
+func writeOperatorDocFile(docDir string, tmpl *template.Template, entry OperatorEntry) {
 	os.MkdirAll(path.Dir(docDir+entry.Path), os.ModeDir)
 
 	file, err := os.Create(docDir + entry.Path)
@@ -194,7 +240,7 @@ func getPackageDef(e *api.Environ, pkg string) core.PackageDef {
 	return pkgDef
 }
 
-func buildPackageFile(e *api.Environ, docDir string, tmpl *template.Template, pkg string, ops []operatorEntry) {
+func buildPackageFile(e *api.Environ, docDir string, tmpl *template.Template, pkg string, ops []OperatorEntry) {
 	file, err := os.Create(docDir + "index.html")
 	if err != nil {
 		panic(err)
@@ -208,26 +254,34 @@ func buildPackageFile(e *api.Environ, docDir string, tmpl *template.Template, pk
 		Description      string
 		ShortDescription string
 		Index            string
-	}{pkgDef.Name, pkgDef.DisplayName, pkgDef.Description, pkgDef.ShortDescription, buildIndex(e, pkg, "slang", ops)})
+	}{pkgDef.Name, pkgDef.DisplayName, pkgDef.Description, pkgDef.ShortDescription, packageToString(buildIndex(e, pkg, "slang", ops))})
 	file.Close()
 }
 
 func buildPackageList(fqname string) string {
+	type entry struct {
+		Name string `json:"name"`
+		Path string `json:"path"`
+	}
+
+	var packageList []entry
+
 	fqnameSplit := strings.Split(fqname, ".")
 	pstr := ""
-	line := ""
 	if len(fqnameSplit) > 1 {
 		for _, p := range fqnameSplit[0 : len(fqnameSplit)-1] {
 			pstr += p + "/"
-
-			line += "  - name: " + p + "\n"
-			line += "    path: " + pstr + "\n"
+			packageList = append(packageList, entry{p, pstr})
 		}
 	}
-	return line[:len(line)-1]
+	packageListJson, err := json.Marshal(&packageList)
+	if err != nil {
+		panic(err)
+	}
+	return string(packageListJson)
 }
 
-func buildPackageFiles(e *api.Environ, docDir string, tmpl *template.Template, pkg string, name string, ops []operatorEntry) {
+func buildPackageFiles(e *api.Environ, docDir string, tmpl *template.Template, pkg string, name string, ops []OperatorEntry) {
 	buildPackageFile(e, docDir+strings.Replace(pkg, ".", "/", -1)+"/", tmpl, pkg, ops)
 
 	subsHandled := make(map[string]bool)
@@ -255,39 +309,19 @@ func buildPackageFiles(e *api.Environ, docDir string, tmpl *template.Template, p
 	}
 }
 
-func buildIndex(e *api.Environ, self, pkg string, ops []operatorEntry) string {
+func buildIndex(e *api.Environ, self, pkg string, ops []OperatorEntry) *Package {
+	pkgPtr := new(Package)
 	pkgDef := getPackageDef(e, pkg)
 
 	dpkg := getPath(self)
+	pkgPtr.Expanded = strings.HasPrefix(dpkg, pkg)
 
-	class := ""
-	icon := ""
-	if strings.HasPrefix(dpkg, pkg) {
-		class = "expanded"
-		icon = "fa-minus-square"
-	} else {
-		class = "collapsed"
-		icon = "fa-plus-square"
-	}
-
-	index := ""
 	if pkg != "" {
-		index += "<button class=\"toggle\"><i class=\"fas " + icon + "\"></i></button> "
-
-		if pkg == self {
-			index += "<span class=\"package-header selected\"> "
-			index += pkgDef.DisplayName
-			index += "</span>"
-		} else {
-			index += "<span class=\"package-header\"> "
-			index += "<a href=\"{{root}}slang/docs/" + strings.Replace(pkg, ".", "/", -1) + "/\">"
-			index += pkgDef.DisplayName
-			index += "</a>"
-			index += "</span>"
-		}
+		pkgPtr.Name = pkgDef.DisplayName
+		pkgPtr.Opened = pkg == self
+		pkgPtr.Path = strings.Replace(pkg, ".", "/", -1)
 	}
 
-	index += "<ul class=\"" + class + "\">"
 	subsHandled := make(map[string]bool)
 	for _, op := range ops {
 		if pkg != "" && !strings.HasPrefix(op.FQName, pkg+".") {
@@ -303,34 +337,88 @@ func buildIndex(e *api.Environ, self, pkg string, ops []operatorEntry) string {
 		if len(remainderSplit) > 1 {
 			if _, ok := subsHandled[remainderSplit[0]]; !ok {
 				subsHandled[remainderSplit[0]] = true
-				index += "<li class=\"package\">"
+				subPkgName := ""
 				if pkg == "" {
-					index += buildIndex(e, self, remainderSplit[0], ops)
+					subPkgName = remainderSplit[0]
 				} else {
-					index += buildIndex(e, self, pkg+"."+remainderSplit[0], ops)
+					subPkgName = pkg + "." + remainderSplit[0]
 				}
-				index += "</li>"
+				subPkgPtr := buildIndex(e, self, subPkgName, ops)
+				pkgPtr.SubPackages = append(pkgPtr.SubPackages, subPkgPtr)
 			}
 		} else {
-			if op.FQName == self {
-				index += "<li class=\"operator\">"
-				index += "<span class=\"operator-header selected\"> "
-				index += "<i class=\"" + op.IconClass + "\"></i> "
-				index += op.DisplayName
-				index += "</span> "
-				index += "</li>"
+			opPtr := new(Operator)
+			opPtr.Name = op.DisplayName
+			opPtr.Path = op.Path
+			opPtr.Opened = op.FQName == self
+
+			pkgPtr.Operators = append(pkgPtr.Operators, opPtr)
+		}
+	}
+
+	return pkgPtr
+}
+
+func packOperatorIntoYAML(e *api.Environ, fqop string, read map[string]OperatorYAML, tp string) error {
+	if _, ok := read[fqop]; ok {
+		return nil
+	}
+
+	relPath := strings.Replace(fqop, ".", string(filepath.Separator), -1)
+	absPath, _, err := e.GetFilePathWithFileEnding(relPath, "")
+	if err != nil {
+		return err
+	}
+
+	fileContents, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		return err
+	}
+	read[fqop] = OperatorYAML{
+		fqop,
+		tp,
+		string(fileContents),
+	}
+
+	def, err := e.ReadOperatorDef(absPath, nil)
+	if err != nil {
+		return err
+	}
+
+	var baseFqop string
+	dotIdx := strings.LastIndex(fqop, ".")
+	if dotIdx != -1 {
+		baseFqop = fqop[:dotIdx+1]
+	}
+	for _, ins := range def.InstanceDefs {
+		if elem.IsRegistered(ins.Operator) {
+			def, err := elem.GetOperatorDef(ins.Operator)
+			if err != nil {
+				return err
+			}
+			defYAML, err := yaml.Marshal(def)
+			if err != nil {
+				return err
+			}
+			read[ins.Operator] = OperatorYAML{
+				ins.Operator,
+				"elementary",
+				string(defYAML),
+			}
+		} else {
+			tp := ""
+			if strings.HasPrefix(ins.Operator, "slang.") {
+				tp = "library"
 			} else {
-				index += "<li class=\"operator\">"
-				index += "<span class=\"operator-header\"> "
-				index += "<a href=\"{{root}}slang/docs/" + op.Path + "\">"
-				index += "<i class=\"" + op.IconClass + "\"></i> "
-				index += op.DisplayName
-				index += "</a>"
-				index += "</span> "
-				index += "</li>"
+				tp = "local"
+			}
+			if !strings.HasPrefix(ins.Operator, ".") {
+				packOperatorIntoYAML(e, ins.Operator, read, tp)
+			} else {
+				packOperatorIntoYAML(e, baseFqop+ins.Operator[1:], read, tp)
 			}
 		}
 	}
-	index += "</ul>"
-	return index
+
+	return nil
 }

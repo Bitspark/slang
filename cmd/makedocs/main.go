@@ -142,7 +142,7 @@ func main() {
 		def := op.Def
 
 		operatorYAML := make(map[string]OperatorYAML)
-		packOperatorIntoYAML(e, fqname, operatorYAML, "local")
+		packOperatorIntoYAML(e, fqname, operatorYAML)
 
 		var operatorYAMLs []OperatorYAML
 		for _, o := range operatorYAML {
@@ -359,63 +359,64 @@ func buildIndex(e *api.Environ, self, pkg string, ops []OperatorEntry) *Package 
 	return pkgPtr
 }
 
-func packOperatorIntoYAML(e *api.Environ, fqop string, read map[string]OperatorYAML, tp string) error {
+func packOperatorIntoYAML(e *api.Environ, fqop string, read map[string]OperatorYAML) error {
 	if _, ok := read[fqop]; ok {
 		return nil
 	}
 
-	relPath := strings.Replace(fqop, ".", string(filepath.Separator), -1)
-	absPath, _, err := e.GetFilePathWithFileEnding(relPath, "")
-	if err != nil {
-		return err
-	}
-
-	fileContents, err := ioutil.ReadFile(absPath)
-	if err != nil {
-		return err
-	}
-	read[fqop] = OperatorYAML{
-		fqop,
-		tp,
-		string(fileContents),
-	}
-
-	def, err := e.ReadOperatorDef(absPath, nil)
-	if err != nil {
-		return err
-	}
-
-	var baseFqop string
-	dotIdx := strings.LastIndex(fqop, ".")
-	if dotIdx != -1 {
-		baseFqop = fqop[:dotIdx+1]
-	}
-	for _, ins := range def.InstanceDefs {
-		if elem.IsRegistered(ins.Operator) {
-			def, err := elem.GetOperatorDef(ins.Operator)
-			if err != nil {
-				return err
-			}
-			defYAML, err := yaml.Marshal(def)
-			if err != nil {
-				return err
-			}
-			read[ins.Operator] = OperatorYAML{
-				ins.Operator,
-				"elementary",
-				string(defYAML),
-			}
+	if elem.IsRegistered(fqop) {
+		def, err := elem.GetOperatorDef(fqop)
+		if err != nil {
+			return err
+		}
+		defYAML, err := yaml.Marshal(def)
+		if err != nil {
+			return err
+		}
+		read[fqop] = OperatorYAML{
+			fqop,
+			"elementary",
+			string(defYAML),
+		}
+	} else {
+		tp := ""
+		if strings.HasPrefix(fqop, "slang.") {
+			tp = "library"
 		} else {
-			tp := ""
-			if strings.HasPrefix(ins.Operator, "slang.") {
-				tp = "library"
-			} else {
-				tp = "local"
-			}
+			tp = "local"
+		}
+
+		relPath := strings.Replace(fqop, ".", string(filepath.Separator), -1)
+		absPath, _, err := e.GetFilePathWithFileEnding(relPath, "")
+		if err != nil {
+			return err
+		}
+
+		fileContents, err := ioutil.ReadFile(absPath)
+		if err != nil {
+			return err
+		}
+		read[fqop] = OperatorYAML{
+			fqop,
+			tp,
+			string(fileContents),
+		}
+
+		def, err := e.ReadOperatorDef(absPath, nil)
+		if err != nil {
+			return err
+		}
+
+		var baseFqop string
+		dotIdx := strings.LastIndex(fqop, ".")
+		if dotIdx != -1 {
+			baseFqop = fqop[:dotIdx+1]
+		}
+		for _, ins := range def.InstanceDefs {
 			if !strings.HasPrefix(ins.Operator, ".") {
-				packOperatorIntoYAML(e, ins.Operator, read, tp)
+				packOperatorIntoYAML(e, ins.Operator, read)
 			} else {
-				packOperatorIntoYAML(e, baseFqop+ins.Operator[1:], read, tp)
+				packOperatorIntoYAML(e, baseFqop+ins.Operator[1:], read)
 			}
 		}
 	}

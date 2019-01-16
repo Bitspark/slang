@@ -109,6 +109,7 @@ func init() {
 	Register("slang.encoding.URLWrite", encodingURLWriteCfg)
 
 	Register("slang.time.Delay", timeDelayCfg)
+	Register("slang.time.Crontab", timeCrontabCfg)
 
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)

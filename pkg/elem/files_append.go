@@ -54,14 +54,16 @@ var filesAppendCfg = &builtinConfig{
 			}
 			filename := data["filename"].(string)
 
-			f, err := os.OpenFile(filepath.Clean(filename), os.O_APPEND|os.O_WRONLY, 0644)
+			f, err := os.OpenFile(filepath.Clean(filename), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 			if err != nil {
+				f.Close()
 				out.Push(err.Error())
 				continue
 			}
 
 			_, err = f.Write(content)
 			if err != nil {
+				f.Close()
 				out.Push(err.Error())
 				continue
 			}
@@ -69,11 +71,13 @@ var filesAppendCfg = &builtinConfig{
 			if newLine {
 				_, err = f.Write([]byte("\n"))
 				if err != nil {
+					f.Close()
 					out.Push(err.Error())
 					continue
 				}
 			}
 
+			f.Close()
 			out.Push(nil)
 		}
 	},

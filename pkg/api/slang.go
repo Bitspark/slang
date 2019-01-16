@@ -209,6 +209,12 @@ func ParseYAMLOperatorDef(defStr string) (core.OperatorDef, error) {
 	return def, err
 }
 
+func ParseYAMLPackageDef(defStr string) (core.PackageDef, error) {
+	def := core.PackageDef{}
+	err := yaml.Unmarshal([]byte(defStr), &def)
+	return def, err
+}
+
 func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
 	if par == nil {
 		return nil, errors.New("operator must not be nil")
@@ -568,4 +574,28 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 		}
 	}
 	return nil
+}
+
+// READ PACKAGE DEFINITION
+
+// ReadOperatorDef reads the operator definition for the given file.
+func (e *Environ) ReadPackageDef(pkgDefFilePath string) (core.PackageDef, error) {
+	var def core.PackageDef
+
+	b, err := ioutil.ReadFile(pkgDefFilePath)
+	if err != nil {
+		return def, errors.New("could not read operator file " + pkgDefFilePath)
+	}
+
+	// Parse the file, just read it in
+	if utils.IsYAML(pkgDefFilePath) {
+		def, err = ParseYAMLPackageDef(string(b))
+	} else {
+		err = errors.New("unsupported file ending")
+	}
+	if err != nil {
+		return def, err
+	}
+
+	return def, nil
 }

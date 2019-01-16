@@ -43,6 +43,7 @@ var filesReadLinesCfg = &builtinConfig{
 
 			f, err := os.Open(filepath.Clean(filename))
 			if err != nil {
+				f.Close()
 				out.Push(err.Error())
 				continue
 			}
@@ -54,6 +55,8 @@ var filesReadLinesCfg = &builtinConfig{
 				out.Stream().Push(string(line))
 			}
 			out.PushEOS()
+
+			f.Close()
 		}
 	},
 }

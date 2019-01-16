@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Bitspark/slang/pkg/utils"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 type InstanceDefList []*InstanceDef
@@ -25,6 +25,12 @@ type InstanceDef struct {
 }
 
 type OperatorDef struct {
+	Name             string `json:"name" yaml:"name"`
+	DisplayName      string `json:"displayName" yaml:"displayName"`
+	Icon             string `json:"icon" yaml:"icon"`
+	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
+	Description      string `json:"description" yaml:"description"`
+
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
 	InstanceDefs InstanceDefList         `json:"operators,omitempty" yaml:"operators,omitempty"`
@@ -57,6 +63,13 @@ type TypeDef struct {
 	Generic string              `json:"generic,omitempty" yaml:"generic,omitempty"`
 
 	valid bool
+}
+
+type PackageDef struct {
+	Name             string `json:"name" yaml:"name"`
+	DisplayName      string `json:"displayName" yaml:"displayName"`
+	Description      string `json:"description" yaml:"description"`
+	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
 }
 
 // INSTANCE DEFINITION

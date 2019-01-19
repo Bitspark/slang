@@ -97,6 +97,8 @@ func init() {
 
 	Register("slang.files.Read", filesReadCfg)
 	Register("slang.files.Write", filesWriteCfg)
+	Register("slang.files.Append", filesAppendCfg)
+	Register("slang.files.ReadLines", filesReadLinesCfg)
 	Register("slang.files.ZIPPack", filesZIPPackCfg)
 	Register("slang.files.ZIPUnpack", filesZIPUnpackCfg)
 
@@ -107,6 +109,7 @@ func init() {
 	Register("slang.encoding.URLWrite", encodingURLWriteCfg)
 
 	Register("slang.time.Delay", timeDelayCfg)
+	Register("slang.time.Crontab", timeCrontabCfg)
 
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)

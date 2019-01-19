@@ -3,9 +3,9 @@ package core
 import (
 	"errors"
 	"fmt"
-	"time"
-	"sync"
 	"github.com/Bitspark/slang/pkg/utils"
+	"sync"
+	"time"
 )
 
 const (
@@ -164,7 +164,7 @@ func (p *Port) Map(name string) *Port {
 }
 
 // Returns the length of the map ports
-func (p *Port) MapSize() interface{} {
+func (p *Port) MapSize() int {
 	return len(p.subs)
 }
 

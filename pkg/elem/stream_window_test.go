@@ -28,6 +28,7 @@ func Test_StreamWindow__Sliding1(t *testing.T) {
 			Properties: map[string]interface{}{
 				"size":   3,
 				"stride": 1,
+				"fill":   false,
 			},
 		},
 	)
@@ -38,6 +39,8 @@ func Test_StreamWindow__Sliding1(t *testing.T) {
 
 	o.Main().In().Push([]interface{}{"a", "b", "c", "d", "e"})
 	a.PortPushes([]interface{}{
+		[]interface{}{"a"},
+		[]interface{}{"a", "b"},
 		[]interface{}{"a", "b", "c"},
 		[]interface{}{"b", "c", "d"},
 		[]interface{}{"c", "d", "e"},
@@ -58,6 +61,7 @@ func Test_StreamWindow__Sliding2(t *testing.T) {
 			Properties: map[string]interface{}{
 				"size":   3,
 				"stride": 2,
+				"fill":   true,
 			},
 		},
 	)
@@ -87,6 +91,7 @@ func Test_StreamWindow__Sliding3(t *testing.T) {
 			Properties: map[string]interface{}{
 				"size":   3,
 				"stride": 3,
+				"fill":   true,
 			},
 		},
 	)
@@ -116,6 +121,7 @@ func Test_StreamWindow__Jumping1(t *testing.T) {
 			Properties: map[string]interface{}{
 				"size":   2,
 				"stride": 3,
+				"fill":   true,
 			},
 		},
 	)

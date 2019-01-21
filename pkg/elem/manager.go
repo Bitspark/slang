@@ -82,6 +82,7 @@ func init() {
 	Register("slang.stream.Parallelize", streamParallelizeCfg)
 	Register("slang.stream.Concatenate", streamConcatenateCfg)
 	Register("slang.stream.MapAccess", streamMapAccessCfg)
+	Register("slang.stream.Window", streamWindowCfg)
 	Register("slang.stream.WindowCollect", streamWindowCollectCfg)
 	Register("slang.stream.WindowRelease", streamWindowReleaseCfg)
 	Register("slang.stream.MapToStream", streamMapToStreamCfg)

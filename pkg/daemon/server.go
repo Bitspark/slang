@@ -2,13 +2,13 @@ package daemon
 
 import (
 	"fmt"
+	"github.com/rs/cors"
 	"net/http"
 	"path/filepath"
 	"regexp"
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 )
 
 var SlangVersion string
@@ -21,7 +21,7 @@ type Server struct {
 }
 
 func New(host string, port int) *Server {
-	r := mux.NewRouter().Host("localhost").Subrouter()
+	r := mux.NewRouter()
 	http.Handle("/", r)
 	return &Server{api.NewEnviron(), host, port, r}
 }

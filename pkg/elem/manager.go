@@ -2,8 +2,8 @@ package elem
 
 import (
 	"errors"
-	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
 	"sync"
 )
 
@@ -82,11 +82,13 @@ func init() {
 	Register("slang.stream.Parallelize", streamParallelizeCfg)
 	Register("slang.stream.Concatenate", streamConcatenateCfg)
 	Register("slang.stream.MapAccess", streamMapAccessCfg)
+	Register("slang.stream.Window", streamWindowCfg)
 	Register("slang.stream.WindowCollect", streamWindowCollectCfg)
 	Register("slang.stream.WindowRelease", streamWindowReleaseCfg)
 	Register("slang.stream.MapToStream", streamMapToStreamCfg)
 	Register("slang.stream.StreamToMap", streamStreamToMapCfg)
 	Register("slang.stream.Slice", streamSliceCfg)
+	Register("slang.stream.Transform", streamTransformCfg)
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)
@@ -110,6 +112,8 @@ func init() {
 
 	Register("slang.time.Delay", timeDelayCfg)
 	Register("slang.time.Crontab", timeCrontabCfg)
+	Register("slang.time.ParseDate", timeParseDateCfg)
+	Register("slang.time.Now", timeDateNowCfg)
 
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)

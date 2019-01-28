@@ -15,13 +15,21 @@ type Properties utils.MapStr
 type Generics map[string]*TypeDef
 
 type InstanceDef struct {
-	Name       string     `json:"-" yaml:"-"`
-	Operator   string     `json:"operator" yaml:"operator"`
-	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
-	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+	Name       string       `json:"-" yaml:"-"`
+	Operator   string       `json:"operator" yaml:"operator"`
+	Geometry   *GeometryDef `json:"geometry,omitempty" yaml:"geometry,omitempty"`
+	Properties Properties   `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Generics   Generics     `json:"generics,omitempty" yaml:"generics,omitempty"`
 
 	valid       bool
 	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
+}
+
+type GeometryDef struct {
+	Position struct {
+		X float32 `json:"x" yaml:"x"`
+		Y float32 `json:"y" yaml:"y"`
+	} `json:"position" yaml:"position"`
 }
 
 type OperatorDef struct {

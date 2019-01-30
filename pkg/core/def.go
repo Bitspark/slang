@@ -15,13 +15,28 @@ type Properties utils.MapStr
 type Generics map[string]*TypeDef
 
 type InstanceDef struct {
-	Name       string     `json:"-" yaml:"-"`
-	Operator   string     `json:"operator" yaml:"operator"`
+	Name     string `json:"-" yaml:"-"`
+	Operator string `json:"operator" yaml:"operator"`
+	Geometry *struct {
+		Position struct {
+			X float32 `json:"x" yaml:"x"`
+			Y float32 `json:"y" yaml:"y"`
+		} `json:"position" yaml:"position"`
+	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
 
 	valid       bool
 	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
+}
+
+type PortGeometryDef struct {
+	In struct {
+		Position float32 `json:"position" yaml:"position"`
+	} `json:"in" yaml:"in"`
+	Out struct {
+		Position float32 `json:"position" yaml:"position"`
+	} `json:"out" yaml:"out"`
 }
 
 type OperatorDef struct {
@@ -38,6 +53,13 @@ type OperatorDef struct {
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
+	Geometry *struct {
+		Size struct {
+			Width  float32 `json:"width" yaml:"width"`
+			Height float32 `json:"height" yaml:"height"`
+		} `json:"size" yaml:"size"`
+	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
+
 	valid bool
 }
 
@@ -45,12 +67,16 @@ type DelegateDef struct {
 	In  TypeDef `json:"in" yaml:"in"`
 	Out TypeDef `json:"out" yaml:"out"`
 
+	Geometry *PortGeometryDef `json:"geometry,omitempty" yaml:"geometry,omitempty"`
+
 	valid bool
 }
 
 type ServiceDef struct {
 	In  TypeDef `json:"in" yaml:"in"`
 	Out TypeDef `json:"out" yaml:"out"`
+
+	Geometry *PortGeometryDef `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 
 	valid bool
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/google/uuid"
 	"regexp"
 	"strings"
 )
@@ -40,8 +41,8 @@ type PortGeometryDef struct {
 }
 
 type OperatorDef struct {
+	Id               string `json:"id" yaml:"id"`
 	Name             string `json:"name" yaml:"name"`
-	DisplayName      string `json:"displayName" yaml:"displayName"`
 	Icon             string `json:"icon" yaml:"icon"`
 	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
 	Description      string `json:"description" yaml:"description"`
@@ -119,6 +120,10 @@ func (d *InstanceDef) Validate() error {
 
 	if strings.Contains(d.Operator, " ") {
 		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
+	}
+
+	if _, err := uuid.Parse(d.Operator); err != nil {
+		return fmt.Errorf(`operator id is not valid UUID v4: "%s" --> "%s"`, d.Operator, err)
 	}
 
 	d.valid = true

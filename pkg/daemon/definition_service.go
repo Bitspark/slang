@@ -3,6 +3,7 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,18 +12,20 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
 
 const SuffixVisual = "_visual"
 
+var uuidMap map[uuid.UUID]string
+
 var DefinitionService = &Service{map[string]*Endpoint{
 	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
-			Name string           `json:"name"`
+			Id   string           `json:"id"`
 			Def  core.OperatorDef `json:"def"`
 			Type string           `json:"type"`
 		}
@@ -37,21 +40,26 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		var opDefList []operatorDefJSON
 		var err error
 
-		opNames, err := e.ListOperatorNames()
+		opIds, err := e.ListOperatorNames()
+
+		if uuidMap == nil {
+			uuidMap = make(map[uuid.UUID]string)
+		}
 
 		if err == nil {
-			builtinOpNames := elem.GetBuiltinNames()
+			builtinOpIds := elem.GetBuiltinIds()
 
 			// Gather builtin/elementary opDefs
-			for _, opFQName := range builtinOpNames {
-				opDef, err := elem.GetOperatorDef(opFQName)
+			for _, opId := range builtinOpIds {
+				opDef, err := elem.GetOperatorDef(opId)
 
 				if err != nil {
+					fmt.Println("[ERROR1]", err)
 					break
 				}
 
 				opDefList = append(opDefList, operatorDefJSON{
-					Name: opFQName,
+					Id:   opId,
 					Type: "elementary",
 					Def:  opDef,
 				})
@@ -59,25 +67,27 @@ var DefinitionService = &Service{map[string]*Endpoint{
 
 			if err == nil {
 				// Gather opDefs from local & lib
-				for _, opFQName := range opNames {
-					opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(opFQName, ".", string(filepath.Separator), -1), "")
+				for _, opId := range opIds {
+					opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(opId, ".", string(filepath.Separator), -1), "")
 
 					if err != nil {
+						fmt.Println("[ERROR2]", err)
 						continue
 					}
 
 					opDef, err := e.ReadOperatorDef(opDefFilePath, nil)
 					if err != nil {
+						fmt.Println("[ERROR2]", err)
 						continue
 					}
 
 					opType := "library"
-					if e.IsLocalOperator(opFQName) {
+					if e.IsLocalOperator(opId) {
 						opType = "local"
 					}
 
 					opDefList = append(opDefList, operatorDefJSON{
-						Name: opFQName,
+						Id:   opId,
 						Type: opType,
 						Def:  opDef,
 					})
@@ -107,12 +117,14 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			 * POST OperatorDef
 			 */
 			cwd := e.WorkingDir()
-			opFQName := r.FormValue("fqop")
+			opId := r.FormValue("id")
 
-			if !checkOperatorNameIsValid(opFQName) {
+			/* CHECK UUID is valid
+			if !checkOperatorNameIsValid(opId) {
 				fail(&Error{Msg: fmt.Sprintf("operator must start with capital letter and may only contain alphanumerics"), Code: "E000X"})
 				return
 			}
+			*/
 
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
@@ -127,7 +139,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
+			relPath := strings.Replace(opId, ".", string(filepath.Separator), -1)
 			absPath := filepath.Join(cwd, relPath+".yaml")
 			_, err = EnsureDirExists(filepath.Dir(absPath))
 			if err != nil {

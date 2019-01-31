@@ -113,7 +113,7 @@ func toVersion(verstr string) *version.Version {
 	return v
 }
 
-func copy(srcPath string, dstPath string) (error) {
+func copy(srcPath string, dstPath string) error {
 	srcFile, err := os.OpenFile(srcPath, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return err
@@ -131,10 +131,8 @@ func copy(srcPath string, dstPath string) (error) {
 }
 
 func copyAll(srcDir string, dstDir string, skipFirstLevel bool) error {
-	var outerErr error
-	filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	outerErr := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			outerErr = err
 			return err
 		}
 
@@ -146,7 +144,6 @@ func copyAll(srcDir string, dstDir string, skipFirstLevel bool) error {
 		// skip directory level: /root/dir0/file1  ==> /root/file1
 		relFilePath, err := filepath.Rel(srcDir, path)
 		if err != nil {
-			outerErr = err
 			return err
 		}
 		if skipFirstLevel {
@@ -161,12 +158,10 @@ func copyAll(srcDir string, dstDir string, skipFirstLevel bool) error {
 		dstFilePath = filepath.Join(dstDir, relFilePath)
 
 		if err = os.MkdirAll(filepath.Dir(dstFilePath), os.ModePerm); err != nil {
-			outerErr = err
 			return err
 		}
 
 		if err = copy(path, dstFilePath); err != nil {
-			outerErr = err
 			return err
 		}
 

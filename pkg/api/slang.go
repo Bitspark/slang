@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -460,7 +460,6 @@ func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, paths
 	}
 
 	// Case 2: We have to read it from the file system
-
 	var def core.OperatorDef
 	var err error
 	var opDefFilePath string

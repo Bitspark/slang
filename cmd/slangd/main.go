@@ -53,7 +53,7 @@ func main() {
 
 	envPaths := initEnvironPaths()
 
-	srv := daemon.New("localhost", PORT)
+	srv := daemon.New(NewFileSystemStorage(), "localhost", PORT)
 
 	if !skipChecks {
 		envPaths.loadLocalComponents()
@@ -62,7 +62,7 @@ func main() {
 	envPaths.startDaemonServer(srv)
 }
 
-func initEnvironPaths() (*EnvironPaths) {
+func initEnvironPaths() *EnvironPaths {
 	currUser, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -72,17 +72,17 @@ func initEnvironPaths() (*EnvironPaths) {
 
 	e := &EnvironPaths{
 		slangPath,
-		daemon.EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
-		daemon.EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
-		daemon.EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
+		EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
+		EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
+		EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
 	}
-	if _, err = daemon.EnsureDirExists(e.SLANG_DIR); err != nil {
+	if _, err = EnsureDirExists(e.SLANG_DIR); err != nil {
 		log.Fatal(err)
 	}
-	if _, err = daemon.EnsureDirExists(e.SLANG_LIB); err != nil {
+	if _, err = EnsureDirExists(e.SLANG_LIB); err != nil {
 		log.Fatal(err)
 	}
-	if _, err = daemon.EnsureDirExists(e.SLANG_UI); err != nil {
+	if _, err = EnsureDirExists(e.SLANG_UI); err != nil {
 		log.Fatal(err)
 	}
 	return e

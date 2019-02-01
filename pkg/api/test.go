@@ -77,6 +77,11 @@ func NewTestStorage(dir string) *TestStorage {
 	return &TestStorage{storage}
 }
 
+func GetOperatorName(dir string, path string) string {
+	relPath := strings.TrimSuffix(strings.TrimPrefix(path, dir), filepath.Ext(path))
+	return strings.Replace(relPath, string(filepath.Separator), ".", -1)
+}
+
 func readAllFiles(dir string) ([]core.OperatorDef, error) {
 	var opDefList []core.OperatorDef
 	outerErr := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -108,8 +113,7 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 			return err
 		}
 
-		relPath := strings.TrimSuffix(strings.TrimPrefix(path, dir), filepath.Ext(path))
-		opDef.Name = strings.Replace(relPath, string(filepath.Separator), ".", -1)
+		opDef.Name = GetOperatorName(dir, path)
 		opDefList = append(opDefList, opDef)
 
 		return nil
@@ -136,17 +140,19 @@ func (s *TestStorage) List() ([]uuid.UUID, error) {
 }
 
 func (s *TestStorage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-
-	if opDef, ok := s.storage[opId.String()]; ok {
-		return &opDef, nil
-	}
-
-	return nil, fmt.Errorf("unknown operator for given id: %s", opId.String())
+	return s.LoadByName(opId.String())
 }
 
 func (s *TestStorage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
 	panic("Not implemted")
 	return uuid.UUID{}, nil
+}
+
+func (s *TestStorage) LoadByName(opName string) (*core.OperatorDef, error) {
+	if opDef, ok := s.storage[opName]; ok {
+		return &opDef, nil
+	}
+	return nil, fmt.Errorf("unknown operator id or name: %s", opName)
 }
 
 // TestOperator reads a file with test data and its corresponding operator and performs the tests.

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Bitspark/go-version"
-	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -27,7 +26,7 @@ type manifest struct {
 var suffixes = []string{"_visual.yaml"}
 
 var SharingService = &Service{map[string]*Endpoint{
-	"/export": {func(e *storage.Environ, w http.ResponseWriter, r *http.Request) {
+	"/export": {func(st Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}
@@ -53,12 +52,14 @@ var SharingService = &Service{map[string]*Endpoint{
 
 			fileWriter.Write(manifestBytes)
 
+			/* TODO
 			read := make(map[uuid.UUID]bool)
-			err = e.PackOperator(zipWriter, opId, read)
+			err = st.PackOperator(zipWriter, opId, read)
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
+			*/
 
 			zipWriter.Close()
 
@@ -74,7 +75,7 @@ var SharingService = &Service{map[string]*Endpoint{
 			w.Write(buf.Bytes())
 		}
 	}},
-	"/import": {func(e *storage.Environ, w http.ResponseWriter, r *http.Request) {
+	"/import": {func(st Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}
@@ -123,7 +124,7 @@ var SharingService = &Service{map[string]*Endpoint{
 			fail(&Error{Msg: "not implemented yet", Code: "E000X"})
 			return
 
-			baseDir := "" //e.WorkingDir()
+			baseDir := "" //st.WorkingDir()
 			for _, file := range zipReader.File {
 				if file.Name == "manifest.yaml" {
 					continue

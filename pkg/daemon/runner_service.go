@@ -3,7 +3,6 @@ package daemon
 import (
 	"encoding/json"
 	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"log"
 	"math/rand"
@@ -25,7 +24,7 @@ var rnd = rand.New(rand.NewSource(99))
 const SuffixPacked = "_packed"
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(e *storage.Environ, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st Storage, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
 				Id     string          `json:"fqn"`
@@ -75,9 +74,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			var httpDef *core.OperatorDef
 			if ri.Stream {
-				httpDef, err = constructHttpStreamEndpoint(e, port, opId, ri.Gens, ri.Props)
+				httpDef, err = constructHttpStreamEndpoint(st, port, opId, ri.Gens, ri.Props)
 			} else {
-				httpDef, err = constructHttpEndpoint(e, port, opId, ri.Gens, ri.Props)
+				httpDef, err = constructHttpEndpoint(st, port, opId, ri.Gens, ri.Props)
 			}
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
@@ -90,7 +89,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			/* TODO
 			bytes, _ := yaml.Marshal(httpDef)
 			ioutil.WriteFile(
-				filepath.Join(e.WorkingDir(), packagedOperator),
+				filepath.Join(st.WorkingDir(), packagedOperator),
 				bytes,
 				os.ModePerm,
 			)

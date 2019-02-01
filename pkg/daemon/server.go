@@ -2,7 +2,8 @@ package daemon
 
 import (
 	"fmt"
-	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 	"github.com/rs/cors"
 	"net/http"
 	"path/filepath"
@@ -13,17 +14,25 @@ import (
 
 var SlangVersion string
 
-type Server struct {
-	Env    *storage.Environ
-	Host   string
-	Port   int
-	router *mux.Router
+type Storage interface {
+	IsLibrary(opID uuid.UUID) bool
+	List() ([]uuid.UUID, error)
+
+	Load(opId uuid.UUID) (*core.OperatorDef, error)
+	Store(opDef core.OperatorDef) (uuid.UUID, error)
 }
 
-func New(host string, port int) *Server {
+type Server struct {
+	Storage Storage
+	Host    string
+	Port    int
+	router  *mux.Router
+}
+
+func New(s Storage, host string, port int) *Server {
 	r := mux.NewRouter()
 	http.Handle("/", r)
-	return &Server{storage.NewEnviron(), host, port, r}
+	return &Server{s, host, port, r}
 }
 
 func (s *Server) AddService(pathPrefix string, services *Service) {
@@ -31,7 +40,7 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
 		(func(endpoint *Endpoint) {
-			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Env, w, r) }))
+			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Storage, w, r) }))
 		})(endpoint)
 	}
 }

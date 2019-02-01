@@ -7,10 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/go-version"
 )
 
@@ -20,28 +18,6 @@ func IsDirEmpty(dir string) bool {
 		return false
 	}
 	return len(entries) == 0
-}
-
-func EnsureDirExists(dir string) (string, error) {
-	err := os.MkdirAll(dir, os.ModePerm)
-	return dir, err
-}
-
-func EnsureEnvironVar(key string, dfltVal string) string {
-	if val := os.Getenv(key); strings.Trim(val, " ") != "" {
-		return val
-	}
-	os.Setenv(key, dfltVal)
-	return dfltVal
-}
-
-func checkOperatorNameIsValid(fullyQualifiedName string) bool {
-	m, _ := regexp.Match(`^[A-Z][A-Za-z0-9]*$`, []byte(getOperatorName(fullyQualifiedName)))
-	return m
-}
-
-func getOperatorName(fullyQualifiedName string) string {
-	return funk.Last(strings.Split(fullyQualifiedName, ".")).(string)
 }
 
 func download(srcUrl string, dstFile *os.File) error {

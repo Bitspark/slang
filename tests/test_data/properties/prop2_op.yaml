@@ -16,14 +16,14 @@ properties:
 
 operators:
   p1:
-    operator: .prop_op
+    operator: test_data.properties.prop_op
     properties:
       val: $v
     generics:
       valueType:
         type: primitive
   p2:
-    operator: .prop_op
+    operator: test_data.properties.prop_op
     properties:
       val: 3
     generics:

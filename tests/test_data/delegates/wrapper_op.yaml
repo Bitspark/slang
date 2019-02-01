@@ -13,7 +13,7 @@ properties:
 
 operators:
   del2:
-    operator: .del2_op
+    operator: test_data.delegates.del2_op
     generics:
       gen:
         type: number

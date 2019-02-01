@@ -130,6 +130,29 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
+func (d InstanceDef) Copy() InstanceDef {
+	cpy := d
+	cpy.Properties = nil
+	cpy.Generics = nil
+	cpy.OperatorDef = d.OperatorDef.Copy()
+
+	if d.Properties != nil {
+		cpy.Properties = Properties{}
+		for k, v := range d.Properties {
+			cpy.Properties[k] = v
+		}
+	}
+
+	if d.Generics != nil {
+		cpy.Generics = Generics{}
+		for k, v := range d.Generics {
+			cpy.Generics[k] = v
+		}
+	}
+
+	return cpy
+}
+
 // OPERATOR DEFINITION
 
 func (d OperatorDef) Valid() bool {
@@ -137,9 +160,8 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-
 	if d.Name == "" {
-		return fmt.Errorf(`name may not be empty`)
+		return fmt.Errorf(`operator name may not be empty`)
 	}
 
 	if _, err := uuid.Parse(d.Id); err != nil {
@@ -261,6 +283,25 @@ func (d OperatorDef) Copy() OperatorDef {
 	for k, v := range d.PropertyDefs {
 		c := v.Copy()
 		cpy.PropertyDefs[k] = &c
+	}
+
+	if d.Elementary != "" {
+		return cpy
+	}
+
+	cpy.Connections = make(map[string][]string)
+	for k, v := range d.Connections {
+		c := make([]string, 0)
+		for _, vi := range v {
+			c = append(c, vi)
+		}
+		cpy.Connections[k] = c
+	}
+
+	cpy.InstanceDefs = InstanceDefList{}
+	for _, v := range d.InstanceDefs {
+		insCpy := v.Copy()
+		cpy.InstanceDefs = append(cpy.InstanceDefs, &insCpy)
 	}
 
 	return cpy

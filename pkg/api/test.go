@@ -38,6 +38,7 @@ type TestDef struct {
 
 type TestStorage struct {
 	// makes OperatorDef accessible by operator ID or operator Name
+	dir     string
 	storage map[string]core.OperatorDef
 }
 
@@ -47,8 +48,15 @@ func NewTestStorage(dir string) *TestStorage {
 	if !strings.HasSuffix(dir, pathSep) {
 		dir += pathSep
 	}
-	storage := make(map[string]core.OperatorDef)
-	opDefList, err := readAllFiles(dir)
+
+	s := &TestStorage{dir, make(map[string]core.OperatorDef)}
+	s.Reload()
+	return s
+}
+
+func (s *TestStorage) Reload() {
+	s.storage = make(map[string]core.OperatorDef)
+	opDefList, err := readAllFiles(s.dir)
 
 	if err != nil {
 		panic(err)
@@ -57,24 +65,9 @@ func NewTestStorage(dir string) *TestStorage {
 	for _, opDef := range opDefList {
 		opId := uuid.New()
 		opDef.Id = opId.String()
-		storage[opDef.Id] = opDef
-		storage[opDef.Name] = opDef
+		s.storage[opDef.Id] = opDef
+		s.storage[opDef.Name] = opDef
 	}
-
-	for _, opDef := range opDefList {
-		for _, childInsDef := range opDef.InstanceDefs {
-			var childOpId string
-			if childOpDef, ok := storage[childInsDef.Operator]; ok {
-				childOpId = childOpDef.Id
-			} else if elemOpDef, err := elem.GetOperatorDef(childInsDef.Operator); err == nil {
-				childOpId = elemOpDef.Id
-			}
-
-			childInsDef.Operator = childOpId
-		}
-	}
-
-	return &TestStorage{storage}
 }
 
 func GetOperatorName(dir string, path string) string {
@@ -91,7 +84,7 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 
 		if info.IsDir() ||
 			strings.HasPrefix(info.Name(), ".") ||
-			!(strings.HasSuffix(info.Name(), ".yaml") || strings.HasSuffix(info.Name(), ".json")) {
+			!(utils.IsYAML(path) || utils.IsJSON(path)) {
 			return nil
 		}
 
@@ -149,9 +142,43 @@ func (s *TestStorage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
 }
 
 func (s *TestStorage) LoadByName(opName string) (*core.OperatorDef, error) {
+	opDef, err := s.load(opName, []string{})
+	if err != nil {
+		return nil, err
+	}
+	cpyOpDef := opDef.Copy()
+	return &cpyOpDef, nil
+}
+
+func (s *TestStorage) load(opName string, dependenyChain []string) (*core.OperatorDef, error) {
 	if opDef, ok := s.storage[opName]; ok {
+		dependenyChain = append(dependenyChain, opName)
+		for _, childInsDef := range opDef.InstanceDefs {
+			if childInsDef.OperatorDef.Id != "" {
+				continue
+			}
+
+			if funk.ContainsString(dependenyChain, childInsDef.Operator) {
+				return nil, fmt.Errorf("recursion in %s", opName)
+			}
+
+			childOpDef, err := s.load(childInsDef.Operator, dependenyChain)
+
+			if err != nil {
+				continue
+			}
+
+			childInsDef.Operator = childOpDef.Id
+			childInsDef.OperatorDef = *childOpDef
+		}
+
 		return &opDef, nil
 	}
+
+	if opDef, err := elem.GetOperatorDef(opName); err == nil {
+		return opDef, nil
+	}
+
 	return nil, fmt.Errorf("unknown operator id or name: %s", opName)
 }
 
@@ -166,9 +193,9 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	}
 
 	test := TestDef{}
-	if strings.HasSuffix(testDataFilePath, ".yaml") || strings.HasSuffix(testDataFilePath, ".yml") {
+	if utils.IsYAML(testDataFilePath) {
 		err = yaml.Unmarshal(b, &test)
-	} else if strings.HasSuffix(testDataFilePath, ".json") {
+	} else if utils.IsJSON(testDataFilePath) {
 		err = json.Unmarshal(b, &test)
 	} else {
 		err = errors.New("unsupported file ending")
@@ -177,6 +204,12 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		return 0, 0, err
 	}
 
+	st := NewTestStorage("./")
+	opDef, err := st.LoadByName(test.Operator)
+	// TODO this will only work for running local tests
+	opName := test.Operator
+	test.Operator = opDef.Id
+
 	if !test.Valid() {
 		err := test.Validate()
 		if err != nil {
@@ -184,15 +217,11 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		}
 	}
 
-	opId, _ := uuid.Parse(test.Operator)
-
 	succs := 0
 	fails := 0
 
-	st := NewTestStorage("./")
-
 	for i, tc := range test.TestCases {
-		opDef, err := st.Load(opId)
+		opDef, err := st.LoadByName(opName)
 
 		if err != nil {
 			return 0, 0, err
@@ -208,6 +237,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err
 		}
+
 		o.Main().Out().Bufferize()
 		o.Start()
 

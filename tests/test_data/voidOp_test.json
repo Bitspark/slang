@@ -1,5 +1,5 @@
 {
-  "operatorFile": "voidOp.json",
+  "operator": "test_data.voidOp",
   "description": "Trivial tests for voidOp",
   "testCases": [
     {

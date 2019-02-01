@@ -1,6 +1,6 @@
 # Main test
 ---
-operatorFile: prop2_op.yaml
+operator: test_data.properties.prop2_op
 testCases:
 - name: Value 1
   properties:

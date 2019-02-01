@@ -1,5 +1,5 @@
 {
-  "operatorFile": "usingSubCustomOpDouble.json",
+  "operator": "test_data.nested_op.usingSubCustomOpDouble",
   "description": "Test cases for usingSubCustomOpDouble",
   "testCases": [
     {

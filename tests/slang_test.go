@@ -1,18 +1,30 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/require"
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 	"testing"
-	"github.com/Bitspark/slang/pkg/api"
 )
 
-var e = api.NewTestEnviron("./")
+const testdir = "./"
+
+var st = api.NewTestStorage(testdir)
+
+func compileFile(opFile string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
+	opName := api.GetOperatorName(testdir, opFile)
+	if opDef, err := st.LoadByName(opName); err == nil {
+		return api.BuildAndCompile(*opDef, gens, props)
+	} else {
+		return nil, err
+	}
+}
 
 func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	a := assertions.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/voidOp.json", nil, nil)
+	o, err := compileFile("test_data/voidOp.json", nil, nil)
+
 	a.NoError(err)
 	a.True(o.Main().In().Connected(o.Main().Out()))
 
@@ -24,15 +36,14 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 
 func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
 	a := assertions.New(t)
-	_, err := e.BuildAndCompileOperator(`test_data/unknownOp.json`, nil, nil)
+	_, err := compileFile(`test_data/unknownOp.json`, nil, nil)
 	a.Error(err)
 }
 
 func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 	a := assertions.New(t)
-	r := require.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/usingBuiltinOp.json", nil, nil)
-	r.NoError(err)
+	o, err := compileFile("test_data/usingBuiltinOp.json", nil, nil)
+	a.NoError(err)
 
 	oPasser := o.Child("passer")
 	a.NotNil(oPasser)
@@ -49,9 +60,8 @@ func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 	a := assertions.New(t)
-	r := require.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/nested_op/usingCustomOp1.json", nil, nil)
-	r.NoError(err)
+	o, err := compileFile("test_data/nested_op/usingCustomOp1.json", nil, nil)
+	a.NoError(err)
 
 	o.Main().Out().Bufferize()
 	o.Main().In().Push("hallo")
@@ -63,7 +73,7 @@ func TestOperator_ReadOperator_NestedOperator_1_Child(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 	a := assertions.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/nested_op/usingCustomOpN.json", nil, nil)
+	o, err := compileFile("test_data/nested_op/usingCustomOpN.json", nil, nil)
 	a.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -76,7 +86,7 @@ func TestOperator_ReadOperator_NestedOperator_N_Child(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 	a := assertions.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/nested_op/usingSubCustomOpDouble.json", nil, nil)
+	o, err := compileFile("test_data/nested_op/usingSubCustomOpDouble.json", nil, nil)
 	a.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -90,7 +100,7 @@ func TestOperator_ReadOperator_NestedOperator_SubChild(t *testing.T) {
 
 func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 	a := assertions.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/cwdOp.json", nil, nil)
+	o, err := compileFile("test_data/cwdOp.json", nil, nil)
 	a.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -104,14 +114,14 @@ func TestOperator_ReadOperator_NestedOperator_Cwd(t *testing.T) {
 
 func TestOperator_ReadOperator__Recursion(t *testing.T) {
 	a := assertions.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/recOp1.json", nil, nil)
+	o, err := compileFile("test_data/recOp1.json", nil, nil)
 	a.Error(err)
 	a.Nil(o)
 }
 
 func TestOperator_ReadOperator_NestedGeneric(t *testing.T) {
 	a := assertions.New(t)
-	o, err := e.BuildAndCompileOperator("test_data/nested_generic/main.json", nil, nil)
+	o, err := compileFile("test_data/nested_generic/main.json", nil, nil)
 	require.NoError(t, err)
 
 	o.Main().Out().Bufferize()
@@ -351,8 +361,7 @@ func TestParsePortReference__Delegates_SingleIn(t *testing.T) {
 	a.Equal(o2.Delegate("test").In(), p, "wrong port")
 }
 
-func
-TestParsePortReference__Delegates_SingleOut(t *testing.T) {
+func TestParsePortReference__Delegates_SingleOut(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator(
 		"o1",
@@ -390,8 +399,7 @@ TestParsePortReference__Delegates_SingleOut(t *testing.T) {
 	a.Equal(o2.Delegate("test").Out(), p, "wrong port")
 }
 
-func
-TestParsePortReference__Delegates_Map(t *testing.T) {
+func TestParsePortReference__Delegates_Map(t *testing.T) {
 	a := assertions.New(t)
 	o1, _ := core.NewOperator(
 		"o1", nil, nil, nil, nil,
@@ -427,8 +435,7 @@ TestParsePortReference__Delegates_Map(t *testing.T) {
 	a.Equal(o2.Delegate("test").In().Map("a"), p, "wrong port")
 }
 
-func
-TestParsePortReference__Services_In(t *testing.T) {
+func TestParsePortReference__Services_In(t *testing.T) {
 	a := assertions.New(t)
 	o, _ := core.NewOperator(
 		"o1",

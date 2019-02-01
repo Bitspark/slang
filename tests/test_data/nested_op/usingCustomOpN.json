@@ -11,13 +11,13 @@
   },
   "operators": {
     "left": {
-      "operator": ".customPasser"
+      "operator": "test_data.nested_op.customPasser"
     },
     "middle": {
-      "operator": ".customPasser"
+      "operator": "test_data.nested_op.customPasser"
     },
     "right": {
-      "operator": ".customPasser"
+      "operator": "test_data.nested_op.customPasser"
     }
   },
   "connections": {

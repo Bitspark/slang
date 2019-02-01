@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-var FILE_ENDINGS = []string{".yaml", ".json"} // Order of endings matters!
+var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matters!
 
 func EnsureDirExists(dir string) (string, error) {
 	err := os.MkdirAll(dir, os.ModePerm)
@@ -153,28 +153,6 @@ func (e *Environ) Store(opDef core.OperatorDef) (uuid.UUID, error) {
 	}
 
 	return opId, nil
-}
-
-func (e *Environ) Build(opId uuid.UUID, gens map[string]*core.TypeDef, props map[string]interface{}, compile bool) (*core.Operator, error) {
-	opDef, err := e.Load(opId)
-	if err != nil {
-		return nil, err
-	}
-
-	// Recursively replace generics by their actual types and propagate properties
-	err = opDef.SpecifyOperator(gens, props)
-	if err != nil {
-		return nil, err
-	}
-
-	insName := ""
-	// Create and connect the operator
-	op, err := api.CreateAndConnectOperator(insName, *opDef, false)
-	if err != nil {
-		return nil, err
-	}
-
-	return op, nil
 }
 
 func (e *Environ) workingDir() string {

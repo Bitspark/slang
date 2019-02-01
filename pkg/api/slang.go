@@ -271,6 +271,14 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 	return nil
 }
 
+func BuildAndCompile(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
+	if op, err := Build(opDef, gens, props); err == nil {
+		return Compile(op)
+	} else {
+		return op, err
+	}
+}
+
 func Build(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
 	// Recursively replace generics by their actual types and propagate properties
 	err := opDef.SpecifyOperator(gens, props)

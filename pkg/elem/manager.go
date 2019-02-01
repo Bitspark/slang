@@ -34,8 +34,8 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetOperatorDef(operatorId string) (*core.OperatorDef, error) {
-	cfg, ok := cfgs[operatorId]
+func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
+	cfg, ok := cfgs[idOrName]
 	if !ok {
 		return nil, errors.New("builtin operator not found")
 	}
@@ -49,10 +49,11 @@ func IsRegistered(id string) bool {
 }
 
 func Register(id string, name string, cfg *builtinConfig) {
-	cfgs[id] = cfg
 	cfg.opDef.Id = id
 	cfg.opDef.Name = name
 	cfg.opDef.Elementary = id
+	cfgs[id] = cfg
+	cfgs[name] = cfg
 }
 
 func GetBuiltinIds() []string {

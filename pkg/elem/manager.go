@@ -34,13 +34,13 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetOperatorDef(operatorId string) (core.OperatorDef, error) {
+func GetOperatorDef(operatorId string) (*core.OperatorDef, error) {
 	cfg, ok := cfgs[operatorId]
 	if !ok {
-		return core.OperatorDef{}, errors.New("builtin operator not found")
+		return nil, errors.New("builtin operator not found")
 	}
-
-	return cfg.opDef.Copy(), nil
+	opDef := cfg.opDef.Copy()
+	return &opDef, nil
 }
 
 func IsRegistered(id string) bool {
@@ -143,10 +143,17 @@ func getBuiltinCfg(id string) *builtinConfig {
 // Mainly for testing
 
 func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
-	insDef.OperatorDef, _ = GetOperatorDef(insDef.Operator)
-	err := insDef.OperatorDef.SpecifyOperator(insDef.Generics, insDef.Properties)
+	opDef, err := GetOperatorDef(insDef.Operator)
+
 	if err != nil {
 		return nil, err
 	}
+
+	if err = opDef.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
+		return nil, err
+	}
+
+	insDef.OperatorDef = *opDef
+
 	return MakeOperator(insDef)
 }

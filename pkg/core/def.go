@@ -123,7 +123,7 @@ func (d *InstanceDef) Validate() error {
 	}
 
 	if _, err := uuid.Parse(d.Operator); err != nil {
-		return fmt.Errorf(`operator id is not valid UUID v4: "%s" --> "%s"`, d.Operator, err)
+		return fmt.Errorf(`operator id is not a valid UUID v4: "%s" --> "%s"`, d.Operator, err)
 	}
 
 	d.valid = true
@@ -137,6 +137,15 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
+
+	if d.Name == "" {
+		return fmt.Errorf(`name may not be empty`)
+	}
+
+	if _, err := uuid.Parse(d.Id); err != nil {
+		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
+	}
+
 	for _, srv := range d.ServiceDefs {
 		if err := srv.Validate(); err != nil {
 			return err

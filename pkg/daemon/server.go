@@ -2,19 +2,19 @@ package daemon
 
 import (
 	"fmt"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/rs/cors"
 	"net/http"
 	"path/filepath"
 	"regexp"
 
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/gorilla/mux"
 )
 
 var SlangVersion string
 
 type Server struct {
-	Env    *api.Environ
+	Env    *storage.Environ
 	Host   string
 	Port   int
 	router *mux.Router
@@ -23,7 +23,7 @@ type Server struct {
 func New(host string, port int) *Server {
 	r := mux.NewRouter()
 	http.Handle("/", r)
-	return &Server{api.NewEnviron(), host, port, r}
+	return &Server{storage.NewEnviron(), host, port, r}
 }
 
 func (s *Server) AddService(pathPrefix string, services *Service) {

@@ -4,11 +4,13 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
 )
 
 // Constructs an executable operator
 // TODO: Make safer (maybe require an API key?)
-func constructHttpEndpoint(env *api.Environ, port int, operator string, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
+func constructHttpEndpoint(env *storage.Environ, port int, opId uuid.UUID, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
 	httpDef := &core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -23,14 +25,12 @@ func constructHttpEndpoint(env *api.Environ, port int, operator string, gens cor
 		Connections: make(map[string][]string),
 	}
 
-	path, err := env.GetOperatorPath(operator, "")
+	opDef, err := env.Load(opId)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build operator to get interface and see if it is free from errors
-	// It will be compiled a second time later
-	op, err := env.BuildAndCompileOperator(path, gens, props)
+	op, err := api.Build(*opDef, gens, props)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func constructHttpEndpoint(env *api.Environ, port int, operator string, gens cor
 	// This is the actual operator we want to execute
 	operatorIns := &core.InstanceDef{
 		Name:       "operator",
-		Operator:   operator,
+		Operator:   opId.String(),
 		Generics:   gens,
 		Properties: props,
 	}

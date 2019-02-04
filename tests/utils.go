@@ -2,8 +2,8 @@ package tests
 
 import (
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 func parseJSON(str string) interface{} {
@@ -22,4 +22,3 @@ func validateJSONInstanceDef(jsonDef string) (core.InstanceDef, error) {
 	json.Unmarshal([]byte(jsonDef), &def)
 	return def, def.Validate()
 }
-

@@ -10,11 +10,14 @@ import (
 
 const testdir = "./"
 
-var st = api.NewTestStorage(testdir)
-
 func compileFile(opFile string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
+	tl := api.NewTestLoader(testdir)
+	st := api.NewStorage(nil).AddLoader(tl)
+
 	opName := api.GetOperatorName(testdir, opFile)
-	if opDef, err := st.LoadByName(opName); err == nil {
+	opId, _ := tl.GetUUId(opName)
+
+	if opDef, err := st.Load(opId); err == nil {
 		return api.BuildAndCompile(*opDef, gens, props)
 	} else {
 		return nil, err

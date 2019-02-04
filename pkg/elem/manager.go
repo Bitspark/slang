@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 	"sync"
 )
 
@@ -13,7 +14,8 @@ type builtinConfig struct {
 	opDef      core.OperatorDef
 }
 
-var cfgs map[string]*builtinConfig
+var cfgs map[uuid.UUID]*builtinConfig
+var name2Id map[string]uuid.UUID
 
 func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	cfg := getBuiltinCfg(def.Operator)
@@ -34,34 +36,47 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
+func getId(idOrName string) uuid.UUID {
+	if id, ok := name2Id[idOrName]; ok {
+		return id
+	}
+	id, _ := uuid.Parse(idOrName)
+	return id
+}
+
 func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
-	cfg, ok := cfgs[idOrName]
+	cfg, ok := cfgs[getId(idOrName)]
+
 	if !ok {
 		return nil, errors.New("builtin operator not found")
 	}
+
 	opDef := cfg.opDef.Copy()
 	return &opDef, nil
 }
 
-func IsRegistered(id string) bool {
-	_, b := cfgs[id]
+func IsRegistered(idOrName string) bool {
+	_, b := cfgs[getId(idOrName)]
 	return b
 }
 
-func Register(id string, name string, cfg *builtinConfig) {
-	cfg.opDef.Id = id
+func Register(idstr string, name string, cfg *builtinConfig) {
+	cfg.opDef.Id = idstr
 	cfg.opDef.Name = name
-	cfg.opDef.Elementary = id
+	cfg.opDef.Elementary = idstr
+
+	id := getId(idstr)
 	cfgs[id] = cfg
-	cfgs[name] = cfg
+	name2Id[name] = id
 }
 
-func GetBuiltinIds() []string {
-	return funk.Keys(cfgs).([]string)
+func GetBuiltinIds() []uuid.UUID {
+	return funk.Keys(cfgs).([]uuid.UUID)
 }
 
 func init() {
-	cfgs = make(map[string]*builtinConfig)
+	cfgs = make(map[uuid.UUID]*builtinConfig)
+	name2Id = make(map[string]uuid.UUID)
 
 	Register("cf20bcec-2028-45b4-a00c-0ce348c381c4", "slang.meta.Store", metaStoreCfg)
 
@@ -137,7 +152,7 @@ func init() {
 }
 
 func getBuiltinCfg(id string) *builtinConfig {
-	c, _ := cfgs[id]
+	c, _ := cfgs[getId(id)]
 	return c
 }
 

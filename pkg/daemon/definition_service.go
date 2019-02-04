@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/json"
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"io/ioutil"
@@ -10,7 +11,7 @@ import (
 )
 
 var DefinitionService = &Service{map[string]*Endpoint{
-	"/": {func(st Storage, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st api.Storage, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
 			Def  core.OperatorDef `json:"def"`
 			Type string           `json:"type"`
@@ -33,7 +34,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 
 			// Gather builtin/elementary opDefs
 			for _, opId := range builtinOpIds {
-				opDef, err := elem.GetOperatorDef(opId)
+				opDef, err := elem.GetOperatorDef(opId.String())
 
 				if err != nil {
 					break
@@ -53,9 +54,9 @@ var DefinitionService = &Service{map[string]*Endpoint{
 						continue
 					}
 
-					opType := "local"
-					if st.IsLibrary(opId) {
-						opType = "library"
+					opType := "library"
+					if st.IsDumpable(opId) {
+						opType = "local"
 					}
 
 					opDefList = append(opDefList, operatorDefJSON{
@@ -78,7 +79,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			log.Print(err)
 		}
 	}},
-	"/def/": {func(e Storage, w http.ResponseWriter, r *http.Request) {
+	"/def/": {func(e api.Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}

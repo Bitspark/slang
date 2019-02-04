@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/Bitspark/slang/pkg/api"
 	"log"
 	"net/http"
 	"os/user"
@@ -53,7 +54,8 @@ func main() {
 
 	envPaths := initEnvironPaths()
 
-	srv := daemon.New(NewFileSystemStorage(), "localhost", PORT)
+	fs := NewFileSystemDumperLoader()
+	srv := daemon.New(*api.NewStorage(fs).AddLoader(fs), "localhost", PORT)
 
 	if !skipChecks {
 		envPaths.loadLocalComponents()

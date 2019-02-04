@@ -36,27 +36,27 @@ type TestDef struct {
 	valid       bool
 }
 
-type TestStorage struct {
+type TestLoader struct {
 	// makes OperatorDef accessible by operator ID or operator Name
 	dir     string
 	storage map[string]core.OperatorDef
 }
 
-func NewTestStorage(dir string) *TestStorage {
+func NewTestLoader(dir string) *TestLoader {
 	dir = filepath.Clean(dir)
 	pathSep := string(filepath.Separator)
 	if !strings.HasSuffix(dir, pathSep) {
 		dir += pathSep
 	}
 
-	s := &TestStorage{dir, make(map[string]core.OperatorDef)}
+	s := &TestLoader{dir, make(map[string]core.OperatorDef)}
 	s.Reload()
 	return s
 }
 
-func (s *TestStorage) Reload() {
-	s.storage = make(map[string]core.OperatorDef)
-	opDefList, err := readAllFiles(s.dir)
+func (tl *TestLoader) Reload() {
+	tl.storage = make(map[string]core.OperatorDef)
+	opDefList, err := readAllFiles(tl.dir)
 
 	if err != nil {
 		panic(err)
@@ -65,8 +65,32 @@ func (s *TestStorage) Reload() {
 	for _, opDef := range opDefList {
 		opId := uuid.New()
 		opDef.Id = opId.String()
-		s.storage[opDef.Id] = opDef
-		s.storage[opDef.Name] = opDef
+		tl.storage[opDef.Id] = opDef
+		tl.storage[opDef.Name] = opDef
+	}
+
+	// Replace instance operator names by ids
+	for _, opDef := range opDefList {
+		for _, childInsDef := range opDef.InstanceDefs {
+			insOpId, err := uuid.Parse(childInsDef.Operator)
+
+			if err == nil {
+				childInsDef.Operator = insOpId.String()
+				continue
+			}
+
+			insOpDef, ok := tl.storage[childInsDef.Operator]
+
+			if ok {
+				childInsDef.Operator = insOpDef.Id
+				continue
+			}
+
+			if elemOpDef, err := elem.GetOperatorDef(childInsDef.Operator); err == nil {
+				childInsDef.Operator = elemOpDef.Id
+				continue
+			}
+		}
 	}
 }
 
@@ -115,15 +139,21 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 	return opDefList, outerErr
 }
 
-func (s *TestStorage) IsLibrary(opId uuid.UUID) bool {
-	_, ok := s.storage[opId.String()]
-	return !ok
+func (tl *TestLoader) GetUUId(opName string) (uuid.UUID, bool) {
+	opDef, ok := tl.storage[opName]
+	id, _ := uuid.Parse(opDef.Id)
+	return id, ok
 }
 
-func (s *TestStorage) List() ([]uuid.UUID, error) {
+func (tl *TestLoader) Has(opId uuid.UUID) bool {
+	_, ok := tl.storage[opId.String()]
+	return ok
+}
+
+func (tl *TestLoader) List() ([]uuid.UUID, error) {
 	var uuidList []uuid.UUID
 
-	for _, idOrName := range funk.Keys(s.storage).([]string) {
+	for _, idOrName := range funk.Keys(tl.storage).([]string) {
 		if id, err := uuid.Parse(idOrName); err == nil {
 			uuidList = append(uuidList, id)
 		}
@@ -132,16 +162,15 @@ func (s *TestStorage) List() ([]uuid.UUID, error) {
 	return uuidList, nil
 }
 
-func (s *TestStorage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	return s.LoadByName(opId.String())
+func (tl *TestLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+	if opDef, ok := tl.storage[opId.String()]; ok {
+		return &opDef, nil
+	}
+	return nil, fmt.Errorf("unknown operator")
 }
 
-func (s *TestStorage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
-	panic("Not implemted")
-	return uuid.UUID{}, nil
-}
-
-func (s *TestStorage) LoadByName(opName string) (*core.OperatorDef, error) {
+/*
+func (s *TestLoader) LoadByName(opName string) (*core.OperatorDef, error) {
 	opDef, err := s.load(opName, []string{})
 	if err != nil {
 		return nil, err
@@ -149,8 +178,10 @@ func (s *TestStorage) LoadByName(opName string) (*core.OperatorDef, error) {
 	cpyOpDef := opDef.Copy()
 	return &cpyOpDef, nil
 }
+*/
 
-func (s *TestStorage) load(opName string, dependenyChain []string) (*core.OperatorDef, error) {
+/*
+func (s *TestLoader) load(opName string, dependenyChain []string) (*core.OperatorDef, error) {
 	if opDef, ok := s.storage[opName]; ok {
 		dependenyChain = append(dependenyChain, opName)
 		for _, childInsDef := range opDef.InstanceDefs {
@@ -181,6 +212,7 @@ func (s *TestStorage) load(opName string, dependenyChain []string) (*core.Operat
 
 	return nil, fmt.Errorf("unknown operator id or name: %s", opName)
 }
+*/
 
 // TestOperator reads a file with test data and its corresponding operator and performs the tests.
 // It returns the number of failed and succeeded tests and and error in case something went wrong.
@@ -204,10 +236,16 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		return 0, 0, err
 	}
 
-	st := NewTestStorage("./")
-	opDef, err := st.LoadByName(test.Operator)
+	st := NewStorage(nil)
+	tl := NewTestLoader("./")
+	st.AddLoader(tl)
+
+	opId, ok := tl.GetUUId(test.Operator)
+	if !ok {
+		return 0, 0, fmt.Errorf("unknown test operator")
+	}
+	opDef, err := tl.Load(opId)
 	// TODO this will only work for running local tests
-	opName := test.Operator
 	test.Operator = opDef.Id
 
 	if !test.Valid() {
@@ -221,7 +259,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fails := 0
 
 	for i, tc := range test.TestCases {
-		opDef, err := st.LoadByName(opName)
+		opDef, err := st.Load(opId)
 
 		if err != nil {
 			return 0, 0, err

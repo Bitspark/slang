@@ -32,11 +32,11 @@ func EnsureDirExists(dir string) (string, error) {
 	return dir, err
 }
 
-type FilesystemStorage struct {
+type FileSystemDumperLoader struct {
 	paths []string
 }
 
-func NewFileSystemStorage() *FilesystemStorage {
+func NewFileSystemDumperLoader() *FileSystemDumperLoader {
 	// Stores all library paths in the global paths variable
 	// We always look in the local directory first
 	paths := []string{}
@@ -65,21 +65,21 @@ func NewFileSystemStorage() *FilesystemStorage {
 		paths[i] = p
 	}
 
-	return &FilesystemStorage{paths}
+	return &FileSystemDumperLoader{paths}
 }
 
-func (e *FilesystemStorage) IsLibrary(opId uuid.UUID) bool {
-	_, _, err := e.getFilePathWithFileEnding(strings.Replace(opId.String(), ".", string(filepath.Separator), -1), e.paths[0])
-	return err != nil
+func (fs *FileSystemDumperLoader) Has(opId uuid.UUID) bool {
+	all, err := fs.List()
+	return err == nil && funk.Contains(all, opId)
 }
 
-func (e *FilesystemStorage) List() ([]uuid.UUID, error) {
+func (fs *FileSystemDumperLoader) List() ([]uuid.UUID, error) {
 	var outerErr error
 
 	opsFilePathSet := make(map[uuid.UUID]bool)
 
-	for i := len(e.paths); i > 0; i-- {
-		currRootDir := e.paths[i-1]
+	for i := len(fs.paths); i > 0; i-- {
+		currRootDir := fs.paths[i-1]
 		outerErr = filepath.Walk(currRootDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -88,11 +88,11 @@ func (e *FilesystemStorage) List() ([]uuid.UUID, error) {
 			if info.IsDir() ||
 				strings.HasPrefix(info.Name(), ".") ||
 				strings.Contains(info.Name(), "_") ||
-				!e.hasSupportedSuffix(info.Name()) {
+				!fs.hasSupportedSuffix(info.Name()) {
 				return nil
 			}
 
-			opDef, err := e.readOperatorDef(path, nil)
+			opDef, err := fs.readOperatorDef(path, nil)
 
 			if err != nil {
 				return err
@@ -116,24 +116,24 @@ func (e *FilesystemStorage) List() ([]uuid.UUID, error) {
 	}
 }
 
-func (e *FilesystemStorage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	opDefFilePath, _, err := e.getFilePathWithFileEnding(strings.Replace(opId.String(), ".", string(filepath.Separator), -1), "")
+func (fs *FileSystemDumperLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+	opDefFilePath, _, err := fs.getFilePathWithFileEnding(strings.Replace(opId.String(), ".", string(filepath.Separator), -1), "")
 
 	if err != nil {
 		return nil, err
 	}
 
-	return e.readOperatorDef(opDefFilePath, nil)
+	return fs.readOperatorDef(opDefFilePath, nil)
 }
 
-func (e *FilesystemStorage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
+func (fs *FileSystemDumperLoader) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
 	opId, err := uuid.Parse(opDef.Id)
 
 	if err != nil {
 		return opId, fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, opDef.Id, err)
 	}
 
-	cwd := e.workingDir()
+	cwd := fs.workingDir()
 
 	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
 	absPath := filepath.Join(cwd, relPath+".yaml")
@@ -157,25 +157,25 @@ func (e *FilesystemStorage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
 	return opId, nil
 }
 
-func (e *FilesystemStorage) workingDir() string {
-	return e.paths[0]
+func (fs *FileSystemDumperLoader) workingDir() string {
+	return fs.paths[0]
 }
 
-func (e *FilesystemStorage) hasSupportedSuffix(filePath string) bool {
+func (fs *FileSystemDumperLoader) hasSupportedSuffix(filePath string) bool {
 	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
 }
 
-func (e *FilesystemStorage) getInstanceName(opDefFilePath string) string {
+func (fs *FileSystemDumperLoader) getInstanceName(opDefFilePath string) string {
 	return strings.TrimSuffix(filepath.Base(opDefFilePath), filepath.Ext(opDefFilePath))
 }
 
-func (e *FilesystemStorage) getFullyQualifiedName(opDefFilePath string) string {
+func (fs *FileSystemDumperLoader) getFullyQualifiedName(opDefFilePath string) string {
 	return strings.TrimSuffix(filepath.Base(opDefFilePath), filepath.Ext(opDefFilePath))
 }
 
-func (e *FilesystemStorage) getFilePathWithFileEnding(relFilePath string, enforcedPath string) (string, string, error) {
+func (fs *FileSystemDumperLoader) getFilePathWithFileEnding(relFilePath string, enforcedPath string) (string, string, error) {
 	var err error
-	relevantPaths := e.paths
+	relevantPaths := fs.paths
 	if enforcedPath != "" {
 		relevantPaths = []string{enforcedPath}
 	}
@@ -197,7 +197,7 @@ func (e *FilesystemStorage) getFilePathWithFileEnding(relFilePath string, enforc
 }
 
 // readOperatorDef reads the operator definition for the given file.
-func (e *FilesystemStorage) readOperatorDef(opDefFilePath string, pathsRead []string) (*core.OperatorDef, error) {
+func (fs *FileSystemDumperLoader) readOperatorDef(opDefFilePath string, pathsRead []string) (*core.OperatorDef, error) {
 
 	b, err := ioutil.ReadFile(opDefFilePath)
 	if err != nil {
@@ -242,7 +242,7 @@ func (e *FilesystemStorage) readOperatorDef(opDefFilePath string, pathsRead []st
 
 	// Descend to child operators
 	for _, childOpInsDef := range def.InstanceDefs {
-		childDef, err := e.getOperatorDef(childOpInsDef, currDir, pathsRead)
+		childDef, err := fs.getOperatorDef(childOpInsDef, currDir, pathsRead)
 		if err != nil {
 			return &def, err
 		}
@@ -253,7 +253,7 @@ func (e *FilesystemStorage) readOperatorDef(opDefFilePath string, pathsRead []st
 	return &def, nil
 }
 
-func (e *FilesystemStorage) getOperatorPath(operator string, currDir string) (string, error) {
+func (fs *FileSystemDumperLoader) getOperatorPath(operator string, currDir string) (string, error) {
 	relFilePath := strings.Replace(operator, ".", string(filepath.Separator), -1)
 	enforcedPath := "" // when != "" --> only search for operatorDef in path *enforcedPath*
 	// Check if it is a local operator which has to be found relative to the current operator
@@ -265,7 +265,7 @@ func (e *FilesystemStorage) getOperatorPath(operator string, currDir string) (st
 	var opDefFilePath string
 
 	// Iterate through the paths and take the first operator we find
-	if opDefFilePath, _, err = e.getFilePathWithFileEnding(relFilePath, enforcedPath); err == nil {
+	if opDefFilePath, _, err = fs.getFilePathWithFileEnding(relFilePath, enforcedPath); err == nil {
 		return opDefFilePath, nil
 	}
 
@@ -273,7 +273,7 @@ func (e *FilesystemStorage) getOperatorPath(operator string, currDir string) (st
 }
 
 // getOperatorDef tries to get the operator definition from the builtin package or the file system.
-func (e *FilesystemStorage) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (*core.OperatorDef, error) {
+func (fs *FileSystemDumperLoader) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (*core.OperatorDef, error) {
 	if elem.IsRegistered(insDef.Operator) {
 		// Case 1: We found it in the builtin package, return
 		return elem.GetOperatorDef(insDef.Operator)
@@ -284,8 +284,8 @@ func (e *FilesystemStorage) getOperatorDef(insDef *core.InstanceDef, currDir str
 	var err error
 	var opDefFilePath string
 
-	if opDefFilePath, err = e.getOperatorPath(insDef.Operator, currDir); err == nil {
-		if def, err = e.readOperatorDef(opDefFilePath, pathsRead); err == nil {
+	if opDefFilePath, err = fs.getOperatorPath(insDef.Operator, currDir); err == nil {
+		if def, err = fs.readOperatorDef(opDefFilePath, pathsRead); err == nil {
 			return def, nil
 		}
 	}
@@ -294,7 +294,7 @@ func (e *FilesystemStorage) getOperatorDef(insDef *core.InstanceDef, currDir str
 	return def, err
 }
 
-func (e *FilesystemStorage) PackOperator(zipWriter *zip.Writer, opId uuid.UUID, read map[uuid.UUID]bool) error {
+func (fs *FileSystemDumperLoader) PackOperator(zipWriter *zip.Writer, opId uuid.UUID, read map[uuid.UUID]bool) error {
 	// opId already packed
 	if r, ok := read[opId]; ok && r {
 		return nil
@@ -303,7 +303,7 @@ func (e *FilesystemStorage) PackOperator(zipWriter *zip.Writer, opId uuid.UUID, 
 	return fmt.Errorf("not implemeted")
 
 	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
-	absPath, p, err := e.getFilePathWithFileEnding(relPath, "")
+	absPath, p, err := fs.getFilePathWithFileEnding(relPath, "")
 	if err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func (e *FilesystemStorage) PackOperator(zipWriter *zip.Writer, opId uuid.UUID, 
 	* /
 
 	/*
-	def, err := e.readOperatorDef(absPath, nil)
+	def, err := fs.readOperatorDef(absPath, nil)
 	if err != nil {
 		return err
 	}
@@ -354,9 +354,9 @@ func (e *FilesystemStorage) PackOperator(zipWriter *zip.Writer, opId uuid.UUID, 
 			continue
 		}
 		if !strings.HasPrefix(ins.Operator, ".") {
-			e.packOperator(zipWriter, ins.Operator, read)
+			fs.packOperator(zipWriter, ins.Operator, read)
 		} else {
-			e.packOperator(zipWriter, baseFqop+ins.Operator[1:], read)
+			fs.packOperator(zipWriter, baseFqop+ins.Operator[1:], read)
 		}
 	}
 	*/
@@ -366,7 +366,7 @@ func (e *FilesystemStorage) PackOperator(zipWriter *zip.Writer, opId uuid.UUID, 
 
 /*
 // readOperatorDef reads the operator definition for the given file.
-func (e *FilesystemStorage) ReadPackageDef(pkgDefFilePath string) (core.PackageDef, error) {
+func (e *FileSystemDumperLoader) ReadPackageDef(pkgDefFilePath string) (core.PackageDef, error) {
 	var def core.PackageDef
 
 	b, err := ioutil.ReadFile(pkgDefFilePath)

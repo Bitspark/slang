@@ -2,8 +2,7 @@ package daemon
 
 import (
 	"fmt"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/google/uuid"
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/rs/cors"
 	"net/http"
 	"path/filepath"
@@ -14,22 +13,14 @@ import (
 
 var SlangVersion string
 
-type Storage interface {
-	IsLibrary(opID uuid.UUID) bool
-	List() ([]uuid.UUID, error)
-
-	Load(opId uuid.UUID) (*core.OperatorDef, error)
-	Store(opDef core.OperatorDef) (uuid.UUID, error)
-}
-
 type Server struct {
-	Storage Storage
+	Storage api.Storage
 	Host    string
 	Port    int
 	router  *mux.Router
 }
 
-func New(s Storage, host string, port int) *Server {
+func New(s api.Storage, host string, port int) *Server {
 	r := mux.NewRouter()
 	http.Handle("/", r)
 	return &Server{s, host, port, r}

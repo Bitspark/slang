@@ -24,7 +24,7 @@ var rnd = rand.New(rand.NewSource(99))
 const SuffixPacked = "_packed"
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(st Storage, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st api.Storage, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
 				Id     string          `json:"fqn"`

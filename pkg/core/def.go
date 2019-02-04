@@ -421,7 +421,7 @@ func (d *ServiceDef) Validate() error {
 }
 
 func (d ServiceDef) Copy() ServiceDef {
-	cpy := ServiceDef{}
+	cpy := d
 
 	cpy.In = d.In.Copy()
 	cpy.Out = d.Out.Copy()
@@ -449,7 +449,7 @@ func (d *DelegateDef) Validate() error {
 }
 
 func (d DelegateDef) Copy() DelegateDef {
-	cpy := DelegateDef{}
+	cpy := d
 
 	cpy.In = d.In.Copy()
 	cpy.Out = d.Out.Copy()

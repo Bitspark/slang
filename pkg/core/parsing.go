@@ -27,8 +27,15 @@ func ParseYAMLOperatorDef(defStr string) (OperatorDef, error) {
 	for _, id := range def.InstanceDefs {
 		id.Properties.Clean()
 	}
-	return def, err
-}
+
+	for _, tc := range def.TestCases {
+		for i, v := range tc.Data.In {
+			tc.Data.In[i] = CleanValue(v)
+		}
+		for i, v := range tc.Data.Out {
+			tc.Data.Out[i] = CleanValue(v)
+		}
+	}
 
 	return def, err
 }

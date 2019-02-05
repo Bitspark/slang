@@ -45,8 +45,8 @@ type TestCaseDef struct {
 	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
 
-	Generics   map[string]*TypeDef    `json:"generics" yaml:"generics"`
-	Properties map[string]interface{} `json:"properties" yaml:"properties"`
+	Generics   Generics   `json:"generics" yaml:"generics"`
+	Properties Properties `json:"properties" yaml:"properties"`
 
 	Data struct {
 		In  []interface{} `json:"in" yaml:"in"`

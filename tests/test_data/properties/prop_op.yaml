@@ -1,3 +1,43 @@
+testCases:
+  - name: Value 1
+    properties:
+      val: 1
+    generics:
+      valueType:
+        type: number
+    data:
+      in:
+        - true
+        - false
+      out:
+        - 1
+        - 1
+  - name: Value 2
+    properties:
+      val: 2
+    generics:
+      valueType:
+        type: number
+    data:
+      in:
+        - "test"
+        - 3
+      out:
+        - 2
+        - 2
+  - name: Value 3
+    properties:
+      val: 3
+    generics:
+      valueType:
+        type: number
+    data:
+      in:
+        - {"a":5,"b":"test"}
+        - []
+      out:
+        - 3
+        - 3
 services:
   main:
     in:

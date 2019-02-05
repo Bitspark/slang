@@ -116,6 +116,7 @@ func BuildAndCompile(opDef core.OperatorDef, gens map[string]*core.TypeDef, prop
 func Build(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
 	// Recursively replace generics by their actual types and propagate properties
 	// TODO SpecifyOperator should instantiate and return an Operator
+	opDef = opDef.Copy()
 	err := opDef.SpecifyOperator(gens, props)
 	if err != nil {
 		return nil, err

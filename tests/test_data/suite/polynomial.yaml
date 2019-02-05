@@ -1,5 +1,15 @@
 # Polynomial operator
 ---
+testCases:
+  - name: ItemPass
+    data:
+      in:
+        - a: 1
+          b: 1
+          c: 1
+          x: 1
+      out:
+        - 3
 services:
   main:
     in:

@@ -1,6 +1,19 @@
 {
-  "operator": "test_data.voidOp",
-  "description": "A test which will fail",
+  "services": {
+    "main": {
+      "in": {
+        "type": "number"
+      },
+      "out": {
+        "type": "number"
+      }
+    }
+  },
+  "connections": {
+    "(": [
+      ")"
+    ]
+  },
   "testCases": [
     {
       "name": "ItemPassFail",

@@ -114,13 +114,6 @@ type TypeDef struct {
 	valid bool
 }
 
-type PackageDef struct {
-	Name             string `json:"name" yaml:"name"`
-	DisplayName      string `json:"displayName" yaml:"displayName"`
-	Description      string `json:"description" yaml:"description"`
-	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-}
-
 // INSTANCE DEFINITION
 
 func (d InstanceDef) Valid() bool {

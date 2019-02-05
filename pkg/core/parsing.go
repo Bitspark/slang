@@ -23,15 +23,13 @@ func ParseJSONOperatorDef(defStr string) (OperatorDef, error) {
 func ParseYAMLOperatorDef(defStr string) (OperatorDef, error) {
 	def := OperatorDef{}
 	err := yaml.Unmarshal([]byte(defStr), &def)
+
 	for _, id := range def.InstanceDefs {
 		id.Properties.Clean()
 	}
 	return def, err
 }
 
-func ParseYAMLPackageDef(defStr string) (PackageDef, error) {
-	def := PackageDef{}
-	err := yaml.Unmarshal([]byte(defStr), &def)
 	return def, err
 }
 

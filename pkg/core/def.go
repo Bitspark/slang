@@ -17,14 +17,16 @@ type Generics map[string]*TypeDef
 type InstanceDef struct {
 	Name     string `json:"-" yaml:"-"`
 	Operator string `json:"operator" yaml:"operator"`
+
+	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+
 	Geometry *struct {
 		Position struct {
 			X float32 `json:"x" yaml:"x"`
 			Y float32 `json:"y" yaml:"y"`
 		} `json:"position" yaml:"position"`
 	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
-	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
-	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
 
 	valid       bool
 	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
@@ -39,6 +41,21 @@ type PortGeometryDef struct {
 	} `json:"out" yaml:"out"`
 }
 
+type TestCaseDef struct {
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
+
+	Generics   map[string]*TypeDef    `json:"generics" yaml:"generics"`
+	Properties map[string]interface{} `json:"properties" yaml:"properties"`
+
+	Data struct {
+		In  []interface{} `json:"in" yaml:"in"`
+		Out []interface{} `json:"out" yaml:"out"`
+	}
+
+	valid bool
+}
+
 type OperatorDef struct {
 	Id   string `json:"id" yaml:"id"`
 	Name string `json:"name" yaml:"name"`
@@ -50,11 +67,13 @@ type OperatorDef struct {
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
+	TestCases []TestCaseDef `json:"testCases,omitempty" yaml:"testCases,omitempty"`
+
 	Meta *struct {
 		Icon             string `json:"icon" yaml:"icon"`
 		ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
 		Description      string `json:"description" yaml:"description"`
-	}
+	} `json:"meta,omitempty" yaml:"meta,omitempty"`
 
 	Geometry *struct {
 		Size struct {
@@ -151,9 +170,9 @@ func (d InstanceDef) Copy() InstanceDef {
 	cpy := InstanceDef{
 		d.Name,
 		d.Operator,
-		d.Geometry,
 		properties,
 		generics,
+		d.Geometry,
 		d.valid,
 		d.OperatorDef.Copy(),
 	}
@@ -183,6 +202,12 @@ func (d *OperatorDef) Validate() error {
 
 	for _, del := range d.DelegateDefs {
 		if err := del.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, tc := range d.TestCases {
+		if err := tc.Validate(); err != nil {
 			return err
 		}
 	}
@@ -317,6 +342,7 @@ func (d OperatorDef) Copy() OperatorDef {
 		propDefs,
 		connDefs,
 		d.Elementary,
+		d.TestCases,
 		d.Meta,
 		d.Geometry,
 		d.valid,
@@ -575,6 +601,20 @@ func (d TypeDef) Copy() TypeDef {
 		d.Generic,
 		d.valid,
 	}
+}
+
+// TESTCASE DEFINITION
+
+func (tc *TestCaseDef) Validate() error {
+	if len(tc.Data.In) != len(tc.Data.Out) {
+		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
+	}
+	tc.valid = true
+	return nil
+}
+
+func (tc TestCaseDef) Valid() bool {
+	return tc.valid
 }
 
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.

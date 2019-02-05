@@ -3,6 +3,7 @@ package daemon
 import (
 	"encoding/json"
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"log"
 	"math/rand"
@@ -24,7 +25,7 @@ var rnd = rand.New(rand.NewSource(99))
 const SuffixPacked = "_packed"
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(st api.Storage, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
 				Id     string          `json:"fqn"`

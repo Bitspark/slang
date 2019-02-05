@@ -2,10 +2,9 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"testing"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
-	"github.com/Bitspark/slang/pkg/utils"
+	"testing"
 )
 
 func Test_FileRead__IsRegistered(t *testing.T) {
@@ -59,7 +58,7 @@ func Test_FileRead__Simple(t *testing.T) {
 	o.Start()
 
 	o.Main().In().Push("../../tests/test_data/hello.txt")
-	a.Equal(utils.Binary("hello slang"), o.Main().Out().Map("content").Pull())
+	a.Equal(core.Binary("hello slang"), o.Main().Out().Map("content").Pull())
 	a.Nil(o.Main().Out().Map("error").Pull())
 }
 

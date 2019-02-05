@@ -1,9 +1,8 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var encodingJSONWriteCfg = &builtinConfig{
@@ -34,7 +33,7 @@ var encodingJSONWriteCfg = &builtinConfig{
 			if err != nil {
 				panic(err)
 			}
-			out.Push(utils.Binary(b))
+			out.Push(core.Binary(b))
 		}
 	},
 }

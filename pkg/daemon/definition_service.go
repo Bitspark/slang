@@ -2,16 +2,16 @@ package daemon
 
 import (
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
 	"io/ioutil"
 	"log"
 	"net/http"
 )
 
 var DefinitionService = &Service{map[string]*Endpoint{
-	"/": {func(st api.Storage, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
 			Def  core.OperatorDef `json:"def"`
 			Type string           `json:"type"`
@@ -79,7 +79,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			log.Print(err)
 		}
 	}},
-	"/def/": {func(e api.Storage, w http.ResponseWriter, r *http.Request) {
+	"/def/": {func(e storage.Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}

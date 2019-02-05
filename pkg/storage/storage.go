@@ -1,4 +1,4 @@
-package api
+package storage
 
 import (
 	"fmt"
@@ -14,18 +14,27 @@ type Loader interface {
 	Load(opId uuid.UUID) (*core.OperatorDef, error)
 }
 
-type Dumper interface {
-	Has(opId uuid.UUID) bool
+type LoaderDumper interface {
+	List() ([]uuid.UUID, error)
+	Load(opId uuid.UUID) (*core.OperatorDef, error)
 	Dump(opDef core.OperatorDef) (uuid.UUID, error)
+	Has(opId uuid.UUID) bool
 }
 
 type Storage struct {
 	loader []Loader
-	dumper Dumper
+	dumper LoaderDumper
 }
 
-func NewStorage(dumper Dumper) *Storage {
-	return &Storage{make([]Loader, 0), dumper}
+func NewStorage(ld LoaderDumper) *Storage {
+	st := &Storage{make([]Loader, 0), nil}
+
+	if ld != nil {
+		st.dumper = ld
+		st.AddLoader(ld)
+	}
+
+	return st
 }
 
 func (s *Storage) AddLoader(loader Loader) *Storage {

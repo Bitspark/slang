@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/google/uuid"
 	"regexp"
 	"strings"
@@ -12,7 +11,7 @@ import (
 
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
-type Properties utils.MapStr
+type Properties MapStr
 type Generics map[string]*TypeDef
 
 type InstanceDef struct {
@@ -611,7 +610,7 @@ func (d TypeDef) VerifyData(data interface{}) error {
 		if d.Type == "string" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
-	case utils.Binary:
+	case Binary:
 		if d.Type == "binary" {
 			return nil
 		}
@@ -785,7 +784,7 @@ func (ol InstanceDefList) MarshalJSON() ([]byte, error) {
 
 func (p Properties) Clean() {
 	for k, v := range p {
-		p[k] = utils.CleanValue(v)
+		p[k] = CleanValue(v)
 	}
 }
 

@@ -2,7 +2,7 @@ package daemon
 
 import (
 	"fmt"
-	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/rs/cors"
 	"net/http"
 	"path/filepath"
@@ -14,13 +14,13 @@ import (
 var SlangVersion string
 
 type Server struct {
-	Storage api.Storage
+	Storage storage.Storage
 	Host    string
 	Port    int
 	router  *mux.Router
 }
 
-func New(s api.Storage, host string, port int) *Server {
+func New(s storage.Storage, host string, port int) *Server {
 	r := mux.NewRouter()
 	http.Handle("/", r)
 	return &Server{s, host, port, r}

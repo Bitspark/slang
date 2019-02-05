@@ -1,8 +1,8 @@
-package utils
+package core
 
 import (
-	"fmt"
 	"encoding/base64"
+	"fmt"
 	"strings"
 )
 

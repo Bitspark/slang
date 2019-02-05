@@ -2,7 +2,6 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
 	"os"
 	"path/filepath"
 )
@@ -46,7 +45,7 @@ var filesAppendCfg = &builtinConfig{
 
 			data := i.(map[string]interface{})
 			var content []byte
-			if b, ok := data["content"].(utils.Binary); ok {
+			if b, ok := data["content"].(core.Binary); ok {
 				content = b
 			}
 			if s, ok := data["content"].(string); ok {

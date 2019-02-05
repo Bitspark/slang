@@ -1,14 +1,13 @@
 package tests
 
 import (
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
-	defPort := api.ParseTypeDef(`{"type":"number"}`)
+	defPort := core.ParseTypeDef(`{"type":"number"}`)
 	oParent, _ := core.NewOperator("parent", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1, _ := core.NewOperator("child1", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1.SetParent(oParent)

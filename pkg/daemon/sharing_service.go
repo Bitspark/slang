@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Bitspark/go-version"
-	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -27,7 +27,7 @@ type manifest struct {
 var suffixes = []string{"_visual.yaml"}
 
 var SharingService = &Service{map[string]*Endpoint{
-	"/export": {func(st api.Storage, w http.ResponseWriter, r *http.Request) {
+	"/export": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}
@@ -76,7 +76,7 @@ var SharingService = &Service{map[string]*Endpoint{
 			w.Write(buf.Bytes())
 		}
 	}},
-	"/import": {func(st api.Storage, w http.ResponseWriter, r *http.Request) {
+	"/import": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}

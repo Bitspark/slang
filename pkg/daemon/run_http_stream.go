@@ -3,12 +3,13 @@ package daemon
 import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
 
 // Constructs an executable operator
 // TODO: Make safer (maybe require an API key?)
-func constructHttpStreamEndpoint(st api.Storage, port int, opId uuid.UUID, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
+func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
 	httpDef := &core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

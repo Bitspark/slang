@@ -1,4 +1,4 @@
-package utils
+package core
 
 import (
 	"encoding/base64"
@@ -12,7 +12,7 @@ func (b *Binary) UnmarshalJSON(bytes []byte) error {
 		return errors.New("wrongly encoded base64")
 	}
 
-	binary, err := base64.StdEncoding.DecodeString(string(bytes)[8:len(bytes)-1])
+	binary, err := base64.StdEncoding.DecodeString(string(bytes)[8 : len(bytes)-1])
 	if err != nil {
 		*b = Binary(binary)
 	}

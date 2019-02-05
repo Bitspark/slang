@@ -2,7 +2,6 @@ package tests
 
 import (
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 )
 
@@ -13,7 +12,7 @@ func parseJSON(str string) interface{} {
 }
 
 func validateJSONOperatorDef(jsonDef string) (core.OperatorDef, error) {
-	def, _ := api.ParseJSONOperatorDef(jsonDef)
+	def, _ := core.ParseJSONOperatorDef(jsonDef)
 	return def, def.Validate()
 }
 

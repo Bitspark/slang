@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"strings"
-	"os"
 	"fmt"
+	"os"
+	"strings"
 )
 
 func FileWithFileEnding(filename string, fileEndings []string) (string, error) {

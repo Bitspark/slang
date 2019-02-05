@@ -107,7 +107,7 @@ func init() {
 	Register("2471a7aa-c5b9-4392-b23f-d0c7bcdb3f39", "slang.stream.Slice", streamSliceCfg)
 	Register("dce082cb-7272-4e85-b4fa-740778e8ba8d", "slang.stream.Transform", streamTransformCfg)
 
-	// Miscelaneous operators
+	// Miscellaneous operators
 	Register("241cc7ef-c6d6-49c1-8729-c5e3c0be8188", "slang.net.HTTPServer", netHTTPServerCfg)
 	Register("f7f5907d-758b-4892-8a3e-ae86b877b869", "slang.net.HTTPClient", netHTTPClientCfg)
 	Register("741b8a21-0b6d-40e5-a281-b179a49e9030", "slang.net.SendEmail", netSendEmailCfg)

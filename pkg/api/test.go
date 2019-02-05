@@ -6,6 +6,7 @@ import (
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"io"
+	"log"
 	"reflect"
 )
 
@@ -28,7 +29,8 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 	}
 
 	if len(opDef.TestCases) == 0 {
-		return 0, 0, fmt.Errorf("no testcases for operator %s", opId)
+		log.Println("no test cases found")
+		return 0, 0, nil
 	}
 
 	succs := 0

@@ -1,6 +1,6 @@
 # Main test
 ---
-operatorFile: reduce.yaml
+operator: test_data.sum.reduce
 testCases:
 - name: Empty
   data:

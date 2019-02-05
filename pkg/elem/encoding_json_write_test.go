@@ -1,11 +1,10 @@
 package elem
 
 import (
-	"testing"
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
-	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func Test_JsonWrite__IsRegistered(t *testing.T) {
@@ -33,5 +32,5 @@ func Test_JsonWrite__String(t *testing.T) {
 	o.Main().Out().Bufferize()
 	o.Start()
 	o.Main().In().Push("test")
-	a.PortPushes(utils.Binary("\"test\""), o.Main().Out())
+	a.PortPushes(core.Binary("\"test\""), o.Main().Out())
 }

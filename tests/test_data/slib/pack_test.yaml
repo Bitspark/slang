@@ -1,6 +1,6 @@
 # Polynomial tests
 ---
-operatorFile: pack.yaml
+operator: test_data.slib.pack
 testCases:
 - name: PackItems
   data:

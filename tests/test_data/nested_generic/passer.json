@@ -22,7 +22,7 @@
   },
   "operators": {
     "dupl1": {
-      "operator": ".duplicator",
+      "operator": "test_data.nested_generic.duplicator",
       "generics": {
         "itemType": {
           "type": "generic",

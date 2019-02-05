@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/Bitspark/slang/pkg/storage"
 	"log"
 	"net/http"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"strconv"
@@ -33,6 +35,14 @@ type EnvironPaths struct {
 	SLANG_UI   string
 }
 
+func EnsureEnvironVar(key string, dfltVal string) string {
+	if val := os.Getenv(key); strings.Trim(val, " ") != "" {
+		return val
+	}
+	os.Setenv(key, dfltVal)
+	return dfltVal
+}
+
 var onlyDaemon bool
 var skipChecks bool
 
@@ -53,7 +63,10 @@ func main() {
 
 	envPaths := initEnvironPaths()
 
-	srv := daemon.New("localhost", PORT)
+	st := storage.
+		NewStorage(storage.NewFileSystemLoaderDumper(envPaths.SLANG_DIR)).
+		AddLoader(storage.NewFileSystemLoaderDumper(envPaths.SLANG_LIB))
+	srv := daemon.New(*st, "localhost", PORT)
 
 	if !skipChecks {
 		envPaths.loadLocalComponents()
@@ -62,7 +75,7 @@ func main() {
 	envPaths.startDaemonServer(srv)
 }
 
-func initEnvironPaths() (*EnvironPaths) {
+func initEnvironPaths() *EnvironPaths {
 	currUser, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -72,19 +85,21 @@ func initEnvironPaths() (*EnvironPaths) {
 
 	e := &EnvironPaths{
 		slangPath,
-		daemon.EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
-		daemon.EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
-		daemon.EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
+		EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
+		EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
+		EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
 	}
-	if _, err = daemon.EnsureDirExists(e.SLANG_DIR); err != nil {
+	/* TODO
+	if _, err = EnsureDirExists(e.SLANG_DIR); err != nil {
 		log.Fatal(err)
 	}
-	if _, err = daemon.EnsureDirExists(e.SLANG_LIB); err != nil {
+	if _, err = EnsureDirExists(e.SLANG_LIB); err != nil {
 		log.Fatal(err)
 	}
-	if _, err = daemon.EnsureDirExists(e.SLANG_UI); err != nil {
+	if _, err = EnsureDirExists(e.SLANG_UI); err != nil {
 		log.Fatal(err)
 	}
+	*/
 	return e
 }
 

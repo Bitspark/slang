@@ -1,11 +1,10 @@
 package elem
 
 import (
+	"fmt"
 	"github.com/Bitspark/slang/pkg/core"
 	"strconv"
-	"fmt"
 	"strings"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var dataConvertCfg = &builtinConfig{
@@ -49,7 +48,7 @@ var dataConvertCfg = &builtinConfig{
 				case core.TYPE_STRING:
 					out.Push(fmt.Sprintf("%v", item))
 				case core.TYPE_BINARY:
-					out.Push(utils.Binary(fmt.Sprintf("%v", item)))
+					out.Push(core.Binary(fmt.Sprintf("%v", item)))
 				default:
 					panic("not supported yet")
 				}
@@ -59,7 +58,7 @@ var dataConvertCfg = &builtinConfig{
 				case core.TYPE_STRING:
 					out.Push(item)
 				case core.TYPE_BINARY:
-					out.Push(utils.Binary(item))
+					out.Push(core.Binary(item))
 				case core.TYPE_NUMBER:
 					item = strings.Trim(item, " ")
 					floatItem := 0.0
@@ -79,7 +78,7 @@ var dataConvertCfg = &builtinConfig{
 					panic("not supported yet")
 				}
 			case core.TYPE_BINARY:
-				item := i.(utils.Binary)
+				item := i.(core.Binary)
 				switch out.Type() {
 				case core.TYPE_STRING:
 					out.Push(string(item))
@@ -94,7 +93,7 @@ var dataConvertCfg = &builtinConfig{
 				case core.TYPE_STRING:
 					out.Push(fmt.Sprintf("%v", item))
 				case core.TYPE_BINARY:
-					out.Push(utils.Binary(fmt.Sprintf("%v", item)))
+					out.Push(core.Binary(fmt.Sprintf("%v", item)))
 				default:
 					panic("not supported yet")
 				}

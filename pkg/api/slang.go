@@ -1,481 +1,10 @@
 package api
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"gopkg.in/yaml.v2"
+	"github.com/Bitspark/slang/pkg/elem"
 )
-
-var FILE_ENDINGS = []string{".yaml", ".json"} // Order of endings matters!
-
-type Environ struct {
-	paths []string
-}
-
-func NewEnviron() *Environ {
-	// Stores all library paths in the global paths variable
-	// We always look in the local directory first
-	paths := []string{}
-
-	missingEnvVars := map[string]bool{}
-	// "SLANG_DIR" must be always at beginning
-	for _, envName := range []string{"SLANG_DIR", "SLANG_LIB"} {
-		envVal := os.Getenv(envName)
-		if envVal == "" {
-			missingEnvVars[envName] = true
-			continue
-		}
-		paths = append(paths, envVal)
-	}
-
-	if len(missingEnvVars) > 0 {
-		panic(fmt.Sprintf("environment variable %v is undefined", funk.Keys(missingEnvVars)))
-	}
-
-	pathSep := string(filepath.Separator)
-	for i, p := range paths {
-		p = filepath.Clean(p)
-		if !strings.HasSuffix(p, pathSep) {
-			p += pathSep
-		}
-		paths[i] = p
-	}
-
-	return &Environ{paths}
-}
-
-func NewTestEnviron(cwd string) *Environ {
-	os.Setenv("SLANG_LIB", cwd)
-	os.Setenv("SLANG_DIR", cwd)
-	return NewEnviron()
-}
-
-func (e *Environ) WorkingDir() string {
-	return e.paths[0]
-}
-
-func (e *Environ) BuildAndCompileOperator(opFilePath string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
-	if !filepath.IsAbs(opFilePath) {
-		opFilePath = filepath.Join(e.WorkingDir(), opFilePath)
-	}
-
-	insName := ""
-
-	// Find correct file
-	opDefFilePath, err := utils.FileWithFileEnding(opFilePath, FILE_ENDINGS)
-	if err != nil {
-		return nil, err
-	}
-
-	// Recursively read operator definitions and perform recursion detection
-	def, err := e.ReadOperatorDef(opDefFilePath, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Recursively replace generics by their actual types and propagate properties
-	err = def.SpecifyOperator(gens, props)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create and connect the operator
-	op, err := CreateAndConnectOperator(insName, def, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// Compile
-	op.Compile()
-
-	// Connect
-	flatDef, err := op.Define()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create and connect the flat operator
-	flatOp, err := CreateAndConnectOperator(insName, flatDef, true)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if all in ports are connected
-	err = flatOp.CorrectlyCompiled()
-	if err != nil {
-		return nil, err
-	}
-
-	return flatOp, nil
-}
-
-func (e *Environ) IsLocalOperator(operator string) bool {
-	_, _, err := e.GetFilePathWithFileEnding(strings.Replace(operator, ".", string(filepath.Separator), -1), e.paths[0])
-	return err == nil
-}
-
-func (e *Environ) ListOperatorNames() ([]string, error) {
-	var outerErr error
-
-	opsFilePathSet := make(map[string]bool)
-
-	for i := len(e.paths); i > 0; i-- {
-		currRootDir := e.paths[i-1]
-		filepath.Walk(currRootDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				outerErr = err
-				return err
-			}
-
-			if info.IsDir() ||
-				strings.HasPrefix(info.Name(), ".") ||
-				strings.Contains(info.Name(), "_") ||
-				!e.hasSupportedSuffix(info.Name()) {
-				return nil
-			}
-
-			fullyQualiName := e.getFullyQualifiedName(path)
-			if fullyQualiName != "" {
-				opsFilePathSet[fullyQualiName] = true
-			}
-			return nil
-		})
-	}
-
-	if outerErr != nil {
-		return nil, outerErr
-	} else if len(opsFilePathSet) == 0 {
-		return nil, fmt.Errorf("no operator files found")
-	} else {
-		return funk.Keys(opsFilePathSet).([]string), nil
-	}
-}
-
-func (e *Environ) hasSupportedSuffix(filePath string) bool {
-	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
-}
-
-func (e *Environ) getInstanceName(opDefFilePath string) string {
-	return strings.TrimSuffix(filepath.Base(opDefFilePath), filepath.Ext(opDefFilePath))
-}
-
-func (e *Environ) getFullyQualifiedName(opDefFilePath string) string {
-	var relFilePath string
-
-	if filepath.IsAbs(opDefFilePath) {
-		for _, p := range e.paths {
-			if !strings.HasSuffix(p, string(filepath.Separator)) {
-				p += string(filepath.Separator)
-			}
-			if strings.HasPrefix(opDefFilePath, p) {
-				relFilePath = strings.TrimSuffix(strings.TrimPrefix(opDefFilePath, p), filepath.Ext(opDefFilePath))
-				break
-			}
-		}
-	} else {
-		relFilePath = opDefFilePath
-	}
-	return strings.Replace(relFilePath, string(filepath.Separator), ".", -1)
-}
-
-func ParseTypeDef(defStr string) core.TypeDef {
-	def := core.TypeDef{}
-	json.Unmarshal([]byte(defStr), &def)
-	return def
-}
-
-func ParseJSONOperatorDef(defStr string) (core.OperatorDef, error) {
-	def := core.OperatorDef{}
-	err := json.Unmarshal([]byte(defStr), &def)
-	return def, err
-}
-
-func ParseYAMLOperatorDef(defStr string) (core.OperatorDef, error) {
-	def := core.OperatorDef{}
-	err := yaml.Unmarshal([]byte(defStr), &def)
-	for _, id := range def.InstanceDefs {
-		id.Properties.Clean()
-	}
-	return def, err
-}
-
-func ParseYAMLPackageDef(defStr string) (core.PackageDef, error) {
-	def := core.PackageDef{}
-	err := yaml.Unmarshal([]byte(defStr), &def)
-	return def, err
-}
-
-func ParsePortReference(refStr string, par *core.Operator) (*core.Port, error) {
-	if par == nil {
-		return nil, errors.New("operator must not be nil")
-	}
-	if len(refStr) == 0 {
-		return nil, errors.New("empty connection string")
-	}
-
-	var in bool
-	sep := ""
-	opIdx := 0
-	portIdx := 0
-	if strings.Contains(refStr, "(") {
-		in = true
-		sep = "("
-		opIdx = 1
-		portIdx = 0
-	} else if strings.Contains(refStr, ")") {
-		in = false
-		sep = ")"
-		opIdx = 0
-		portIdx = 1
-	} else {
-		return nil, errors.New("cannot derive direction")
-	}
-
-	refSplit := strings.Split(refStr, sep)
-	if len(refSplit) != 2 {
-		return nil, fmt.Errorf(`connection string malformed (1): "%s"`, refStr)
-	}
-	opPart := refSplit[opIdx]
-	portPart := refSplit[portIdx]
-
-	var o *core.Operator
-	var p *core.Port
-	if opPart == "" {
-		o = par
-		if in {
-			p = o.Main().In()
-		} else {
-			p = o.Main().Out()
-		}
-	} else {
-		if strings.Contains(opPart, ".") && strings.Contains(opPart, "@") {
-			return nil, fmt.Errorf(`cannot reference both service and delegate: "%s"`, refStr)
-		}
-		if strings.Contains(opPart, ".") {
-			opSplit := strings.Split(opPart, ".")
-			if len(opSplit) != 2 {
-				return nil, fmt.Errorf(`connection string malformed (2): "%s"`, refStr)
-			}
-			opName := opSplit[0]
-			dlgName := opSplit[1]
-			if opName == "" {
-				o = par
-			} else {
-				o = par.Child(opName)
-				if o == nil {
-					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
-				}
-			}
-			if dlg := o.Delegate(dlgName); dlg != nil {
-				if in {
-					p = dlg.In()
-				} else {
-					p = dlg.Out()
-				}
-			} else {
-				return nil, fmt.Errorf(`operator "%s" has no delegate "%s"`, o.Name(), dlgName)
-			}
-		} else if strings.Contains(opPart, "@") {
-			opSplit := strings.Split(opPart, "@")
-			if len(opSplit) != 2 {
-				return nil, fmt.Errorf(`connection string malformed (3): "%s"`, refStr)
-			}
-			opName := opSplit[1]
-			srvName := opSplit[0]
-			if opName == "" {
-				o = par
-			} else {
-				o = par.Child(opName)
-				if o == nil {
-					return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), opName)
-				}
-			}
-			if srv := o.Service(srvName); srv != nil {
-				if in {
-					p = srv.In()
-				} else {
-					p = srv.Out()
-				}
-			} else {
-				return nil, fmt.Errorf(`operator "%s" has no service "%s"`, o.Name(), srvName)
-			}
-		} else {
-			o = par.Child(opPart)
-			if o == nil {
-				return nil, fmt.Errorf(`operator "%s" has no child "%s"`, par.Name(), refSplit[0])
-			}
-			if in {
-				p = o.Main().In()
-			} else {
-				p = o.Main().Out()
-			}
-		}
-	}
-
-	pathSplit := strings.Split(portPart, ".")
-	if len(pathSplit) == 1 && pathSplit[0] == "" {
-		return p, nil
-	}
-
-	for i := 0; i < len(pathSplit); i++ {
-		if pathSplit[i] == "~" {
-			p = p.Stream()
-			if p == nil {
-				return nil, errors.New("descending too deep (stream)")
-			}
-			continue
-		}
-
-		if p.Type() != core.TYPE_MAP {
-			return nil, errors.New("descending too deep (map)")
-		}
-
-		k := pathSplit[i]
-		p = p.Map(k)
-		if p == nil {
-			return nil, fmt.Errorf("unknown port: %s", k)
-		}
-	}
-
-	return p, nil
-}
-
-func (e *Environ) GetFilePathWithFileEnding(relFilePath string, enforcedPath string) (string, string, error) {
-	var err error
-	relevantPaths := e.paths
-	if enforcedPath != "" {
-		relevantPaths = []string{enforcedPath}
-	}
-
-	for _, p := range relevantPaths {
-		defFilePath := filepath.Join(p, relFilePath)
-		// Find correct file
-		var opDefFilePath string
-
-		opDefFilePath, err = utils.FileWithFileEnding(defFilePath, FILE_ENDINGS)
-		if err != nil {
-			continue
-		}
-
-		return opDefFilePath, p, nil
-	}
-
-	return "", "", err
-}
-
-// READ OPERATOR DEFINITION
-
-// ReadOperatorDef reads the operator definition for the given file.
-func (e *Environ) ReadOperatorDef(opDefFilePath string, pathsRead []string) (core.OperatorDef, error) {
-	var def core.OperatorDef
-
-	b, err := ioutil.ReadFile(opDefFilePath)
-	if err != nil {
-		return def, errors.New("could not read operator file " + opDefFilePath)
-	}
-
-	// Recursion detection: chick if absolute path is contained in pathsRead
-	if absPath, err := filepath.Abs(opDefFilePath); err == nil {
-		for _, p := range pathsRead {
-			if p == absPath {
-				return def, fmt.Errorf("recursion in %s", absPath)
-			}
-		}
-
-		pathsRead = append(pathsRead, absPath)
-	} else {
-		return def, err
-	}
-
-	// Parse the file, just read it in
-	if utils.IsYAML(opDefFilePath) {
-		def, err = ParseYAMLOperatorDef(string(b))
-	} else if utils.IsJSON(opDefFilePath) {
-		def, err = ParseJSONOperatorDef(string(b))
-	} else {
-		err = errors.New("unsupported file ending")
-	}
-	if err != nil {
-		return def, err
-	}
-
-	// Validate the file
-	if !def.Valid() {
-		err := def.Validate()
-		if err != nil {
-			return def, err
-		}
-	}
-
-	currDir := filepath.Dir(opDefFilePath)
-
-	// Descend to child operators
-	for _, childOpInsDef := range def.InstanceDefs {
-		childDef, err := e.getOperatorDef(childOpInsDef, currDir, pathsRead)
-		if err != nil {
-			return def, err
-		}
-
-		// Save the definition in the instance for the next build step: creating operators and connecting
-		childOpInsDef.OperatorDef = childDef
-	}
-
-	return def, nil
-}
-
-func (e *Environ) GetOperatorPath(operator string, currDir string) (string, error) {
-	relFilePath := strings.Replace(operator, ".", string(filepath.Separator), -1)
-	enforcedPath := "" // when != "" --> only search for operatorDef in path *enforcedPath*
-	// Check if it is a local operator which has to be found relative to the current operator
-	if strings.HasPrefix(operator, ".") {
-		enforcedPath = currDir
-	}
-
-	var err error
-	var opDefFilePath string
-
-	// Iterate through the paths and take the first operator we find
-	if opDefFilePath, _, err = e.GetFilePathWithFileEnding(relFilePath, enforcedPath); err == nil {
-		return opDefFilePath, nil
-	}
-
-	return "", err
-}
-
-// getOperatorDef tries to get the operator definition from the builtin package or the file system.
-func (e *Environ) getOperatorDef(insDef *core.InstanceDef, currDir string, pathsRead []string) (core.OperatorDef, error) {
-	if elem.IsRegistered(insDef.Operator) {
-		// Case 1: We found it in the builtin package, return
-		return elem.GetOperatorDef(insDef.Operator)
-	}
-
-	// Case 2: We have to read it from the file system
-
-	var def core.OperatorDef
-	var err error
-	var opDefFilePath string
-
-	if opDefFilePath, err = e.GetOperatorPath(insDef.Operator, currDir); err == nil {
-		if def, err = e.ReadOperatorDef(opDefFilePath, pathsRead); err == nil {
-			return def, nil
-		}
-	}
-
-	// We haven't found an operator, return error
-	return def, err
-}
-
-// MAKE OPERATORS, PORTS AND CONNECTIONS
 
 func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
@@ -506,10 +35,10 @@ func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool
 	// Parse all connections before starting to connect
 	parsedConns := make(map[*core.Port][]*core.Port)
 	for srcConnDef, dstConnDefs := range def.Connections {
-		if pSrc, err := ParsePortReference(srcConnDef, o); err == nil {
+		if pSrc, err := core.ParsePortReference(srcConnDef, o); err == nil {
 			parsedConns[pSrc] = nil
 			for _, dstConnDef := range dstConnDefs {
-				if pDst, err := ParsePortReference(dstConnDef, o); err == nil {
+				if pDst, err := core.ParsePortReference(dstConnDef, o); err == nil {
 					parsedConns[pSrc] = append(parsedConns[pSrc], pDst)
 				} else {
 					return nil, fmt.Errorf("%s: %s", err.Error(), dstConnDef)
@@ -576,26 +105,52 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 	return nil
 }
 
-// READ PACKAGE DEFINITION
-
-// ReadOperatorDef reads the operator definition for the given file.
-func (e *Environ) ReadPackageDef(pkgDefFilePath string) (core.PackageDef, error) {
-	var def core.PackageDef
-
-	b, err := ioutil.ReadFile(pkgDefFilePath)
-	if err != nil {
-		return def, errors.New("could not read operator file " + pkgDefFilePath)
-	}
-
-	// Parse the file, just read it in
-	if utils.IsYAML(pkgDefFilePath) {
-		def, err = ParseYAMLPackageDef(string(b))
+func BuildAndCompile(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
+	if op, err := Build(opDef, gens, props); err == nil {
+		return Compile(op)
 	} else {
-		err = errors.New("unsupported file ending")
+		return op, err
 	}
+}
+
+func Build(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
+	// Recursively replace generics by their actual types and propagate properties
+	// TODO SpecifyOperator should instantiate and return an Operator
+	err := opDef.SpecifyOperator(gens, props)
 	if err != nil {
-		return def, err
+		return nil, err
 	}
 
-	return def, nil
+	// Create and connect the operator
+	op, err := CreateAndConnectOperator("", opDef, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return op, nil
+}
+
+func Compile(op *core.Operator) (*core.Operator, error) {
+	// Compile
+	op.Compile()
+
+	// Connect
+	flatDef, err := op.Define()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create and connect the flat operator
+	flatOp, err := CreateAndConnectOperator("", flatDef, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if all in ports are connected
+	err = flatOp.CorrectlyCompiled()
+	if err != nil {
+		return nil, err
+	}
+
+	return flatOp, nil
 }

@@ -2,7 +2,6 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -66,7 +65,7 @@ var netMQTTPublishCfg = &builtinConfig{
 
 			im := i.(map[string]interface{})
 			topic := im["topic"].(string)
-			payload := im["payload"].(utils.Binary)
+			payload := im["payload"].(core.Binary)
 
 			token := client.Publish(topic, 2, false, []byte(payload)).(*mqtt.PublishToken)
 			token.Wait()

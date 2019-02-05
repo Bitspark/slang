@@ -1,6 +1,6 @@
 # Main test
 ---
-operatorFile: wrapper_op.yaml
+operator: test_data.delegates.wrapper_op
 testCases:
 - name: Test1
   properties:

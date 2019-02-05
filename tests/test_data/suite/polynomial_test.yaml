@@ -1,6 +1,6 @@
 # Polynomial tests
 ---
-operatorFile: polynomial.yaml
+operator: test_data.suite.polynomial
 testCases:
 - name: ItemPass
   data:
@@ -11,3 +11,4 @@ testCases:
       x: 1
     out:
     - 3
+

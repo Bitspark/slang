@@ -15,32 +15,32 @@ services:
       type: number
 operators:
   dbl1:
-    operator: ".duplicator"
+    operator: "test_data.suite.duplicator"
     generics:
       itemType:
         type: number
   dbl2:
-    operator: ".duplicator"
+    operator: "test_data.suite.duplicator"
     generics:
       itemType:
         type: number
   dbl3:
-    operator: ".duplicator"
+    operator: "test_data.suite.duplicator"
     generics:
       itemType:
         type: number
   tl:
-    operator: ".takers.takeLeft"
+    operator: "test_data.suite.takers.takeLeft"
     generics:
       itemType:
         type: number
   tr:
-    operator: ".takers.takeRight"
+    operator: "test_data.suite.takers.takeRight"
     generics:
       itemType:
         type: number
   p:
-    operator: ".polynomial"
+    operator: "test_data.suite.polynomial"
 connections:
   first(:
   - (dbl1

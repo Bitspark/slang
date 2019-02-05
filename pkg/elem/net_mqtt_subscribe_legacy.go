@@ -3,7 +3,6 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/eclipse/paho.mqtt.golang"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var netMQTTSubscribeLegacyCfg = &builtinConfig{
@@ -16,7 +15,7 @@ var netMQTTSubscribeLegacyCfg = &builtinConfig{
 				Out: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
-						Type: "generic",
+						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
@@ -39,7 +38,7 @@ var netMQTTSubscribeLegacyCfg = &builtinConfig{
 					},
 				},
 				In: core.TypeDef{
-					Type: "generic",
+					Type:    "generic",
 					Generic: "itemType",
 				},
 			},
@@ -88,7 +87,7 @@ var netMQTTSubscribeLegacyCfg = &builtinConfig{
 
 			client.Subscribe(topic, 2, func(client mqtt.Client, message mqtt.Message) {
 				handler.Out().Map("messageId").Push(float64(message.MessageID()))
-				handler.Out().Map("payload").Push(utils.Binary(message.Payload()))
+				handler.Out().Map("payload").Push(core.Binary(message.Payload()))
 				handler.Out().Map("topic").Push(message.Topic())
 
 				// Push out item produced from handler

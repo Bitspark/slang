@@ -1,10 +1,9 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"image"
 	"bytes"
+	"github.com/Bitspark/slang/pkg/core"
+	"image"
 )
 
 var imageDecodeCfg = &builtinConfig{
@@ -62,7 +61,7 @@ var imageDecodeCfg = &builtinConfig{
 				continue
 			}
 
-			ib := i.(utils.Binary)
+			ib := i.(core.Binary)
 			img, format, err := image.Decode(bytes.NewReader(ib))
 			if err != nil {
 				out.Push(nil)
@@ -83,9 +82,9 @@ var imageDecodeCfg = &builtinConfig{
 				for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
 					red, green, blue, alpha := img.At(x, y).RGBA()
 					pixels.Push(map[string]interface{}{
-						"red": float64(red),
+						"red":   float64(red),
 						"green": float64(green),
-						"blue": float64(blue),
+						"blue":  float64(blue),
 						"alpha": float64(alpha),
 					})
 				}

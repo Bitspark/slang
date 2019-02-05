@@ -14,7 +14,7 @@ services:
 operators:
   # Packer
   packer:
-    operator: .pack
+    operator: test_data.slib.pack
     generics:
       stateType:
         type: number

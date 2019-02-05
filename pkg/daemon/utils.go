@@ -7,10 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/go-version"
 )
 
@@ -20,28 +18,6 @@ func IsDirEmpty(dir string) bool {
 		return false
 	}
 	return len(entries) == 0
-}
-
-func EnsureDirExists(dir string) (string, error) {
-	err := os.MkdirAll(dir, os.ModePerm)
-	return dir, err
-}
-
-func EnsureEnvironVar(key string, dfltVal string) string {
-	if val := os.Getenv(key); strings.Trim(val, " ") != "" {
-		return val
-	}
-	os.Setenv(key, dfltVal)
-	return dfltVal
-}
-
-func checkOperatorNameIsValid(fullyQualifiedName string) bool {
-	m, _ := regexp.Match(`^[A-Z][A-Za-z0-9]*$`, []byte(getOperatorName(fullyQualifiedName)))
-	return m
-}
-
-func getOperatorName(fullyQualifiedName string) string {
-	return funk.Last(strings.Split(fullyQualifiedName, ".")).(string)
 }
 
 func download(srcUrl string, dstFile *os.File) error {
@@ -113,7 +89,7 @@ func toVersion(verstr string) *version.Version {
 	return v
 }
 
-func copy(srcPath string, dstPath string) (error) {
+func copy(srcPath string, dstPath string) error {
 	srcFile, err := os.OpenFile(srcPath, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return err
@@ -131,10 +107,8 @@ func copy(srcPath string, dstPath string) (error) {
 }
 
 func copyAll(srcDir string, dstDir string, skipFirstLevel bool) error {
-	var outerErr error
-	filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	outerErr := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			outerErr = err
 			return err
 		}
 
@@ -146,7 +120,6 @@ func copyAll(srcDir string, dstDir string, skipFirstLevel bool) error {
 		// skip directory level: /root/dir0/file1  ==> /root/file1
 		relFilePath, err := filepath.Rel(srcDir, path)
 		if err != nil {
-			outerErr = err
 			return err
 		}
 		if skipFirstLevel {
@@ -161,12 +134,10 @@ func copyAll(srcDir string, dstDir string, skipFirstLevel bool) error {
 		dstFilePath = filepath.Join(dstDir, relFilePath)
 
 		if err = os.MkdirAll(filepath.Dir(dstFilePath), os.ModePerm); err != nil {
-			outerErr = err
 			return err
 		}
 
 		if err = copy(path, dstFilePath); err != nil {
-			outerErr = err
 			return err
 		}
 

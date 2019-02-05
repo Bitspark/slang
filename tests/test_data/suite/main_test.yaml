@@ -1,6 +1,6 @@
 # Main test
 ---
-operatorFile: main.yaml
+operator: test_data.suite.main
 testCases:
 - name: TC1
   data:

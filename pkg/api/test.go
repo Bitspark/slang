@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"reflect"
-	"github.com/Bitspark/slang/pkg/utils"
-	"strings"
-	"github.com/Bitspark/slang/pkg/core"
-	"path/filepath"
 )
 
 type TestCaseDef struct {
@@ -19,17 +19,17 @@ type TestCaseDef struct {
 	Description string                   `json:"description" yaml:"description"`
 	Generics    map[string]*core.TypeDef `json:"generics" yaml:"generics"`
 	Properties  map[string]interface{}   `json:"properties" yaml:"properties"`
-	Data struct {
+	Data        struct {
 		In  []interface{} `json:"in" yaml:"in"`
 		Out []interface{} `json:"out" yaml:"out"`
 	}
 }
 
 type TestDef struct {
-	OperatorFile string        `json:"operatorFile" yaml:"operatorFile"`
-	Description  string        `json:"description" yaml:"description"`
-	TestCases    []TestCaseDef `json:"testCases" yaml:"testCases"`
-	valid        bool
+	Operator    string        `json:"operator" yaml:"operator"`
+	Description string        `json:"description" yaml:"description"`
+	TestCases   []TestCaseDef `json:"testCases" yaml:"testCases"`
+	valid       bool
 }
 
 // TestOperator reads a file with test data and its corresponding operator and performs the tests.
@@ -43,9 +43,9 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	}
 
 	test := TestDef{}
-	if strings.HasSuffix(testDataFilePath, ".yaml") || strings.HasSuffix(testDataFilePath, ".yml") {
+	if utils.IsYAML(testDataFilePath) {
 		err = yaml.Unmarshal(b, &test)
-	} else if strings.HasSuffix(testDataFilePath, ".json") {
+	} else if utils.IsJSON(testDataFilePath) {
 		err = json.Unmarshal(b, &test)
 	} else {
 		err = errors.New("unsupported file ending")
@@ -53,6 +53,18 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	if err != nil {
 		return 0, 0, err
 	}
+
+	st := storage.NewStorage(nil)
+	tl := storage.NewTestLoader("./")
+	st.AddLoader(tl)
+
+	opId, ok := tl.GetUUId(test.Operator)
+	if !ok {
+		return 0, 0, fmt.Errorf("unknown test operator")
+	}
+	opDef, err := tl.Load(opId)
+	// TODO this will only work for running local tests
+	test.Operator = opDef.Id
 
 	if !test.Valid() {
 		err := test.Validate()
@@ -65,7 +77,13 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	fails := 0
 
 	for i, tc := range test.TestCases {
-		o, err := NewTestEnviron("./").BuildAndCompileOperator(filepath.Join(filepath.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties)
+		opDef, err := st.Load(opId)
+
+		if err != nil {
+			return 0, 0, err
+		}
+
+		o, err := BuildAndCompile(*opDef, tc.Generics, tc.Properties)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -75,6 +93,7 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err
 		}
+
 		o.Main().Out().Bufferize()
 		o.Start()
 
@@ -82,9 +101,9 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 
 		for j := range tc.Data.In {
 			in := tc.Data.In[j]
-			expected := utils.CleanValue(tc.Data.Out[j])
+			expected := core.CleanValue(tc.Data.Out[j])
 
-			o.Main().In().Push(utils.CleanValue(in))
+			o.Main().In().Push(core.CleanValue(in))
 			actual := o.Main().Out().Pull()
 
 			if !testEqual(expected, actual) {
@@ -114,8 +133,12 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 }
 
 func (t TestDef) Validate() error {
-	if len(t.OperatorFile) == 0 {
-		return errors.New("no operator file given")
+	if t.Operator == "" {
+		return fmt.Errorf(`no operator id given`)
+	}
+
+	if _, err := uuid.Parse(t.Operator); err != nil {
+		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, t.Operator, err)
 	}
 
 	for _, tc := range t.TestCases {

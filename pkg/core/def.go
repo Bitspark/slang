@@ -40,11 +40,8 @@ type PortGeometryDef struct {
 }
 
 type OperatorDef struct {
-	Id               string `json:"id" yaml:"id"`
-	Name             string `json:"name" yaml:"name"`
-	Icon             string `json:"icon" yaml:"icon"`
-	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-	Description      string `json:"description" yaml:"description"`
+	Id   string `json:"id" yaml:"id"`
+	Name string `json:"name" yaml:"name"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
@@ -52,6 +49,12 @@ type OperatorDef struct {
 	PropertyDefs TypeDefMap              `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
+
+	Meta *struct {
+		Icon             string `json:"icon" yaml:"icon"`
+		ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
+		Description      string `json:"description" yaml:"description"`
+	}
 
 	Geometry *struct {
 		Size struct {

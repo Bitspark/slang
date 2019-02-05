@@ -64,8 +64,8 @@ func main() {
 	envPaths := initEnvironPaths()
 
 	st := storage.
-		NewStorage(storage.NewFileSystemLoaderDumper(envPaths.SLANG_DIR)).
-		AddLoader(storage.NewFileSystemLoaderDumper(envPaths.SLANG_LIB))
+		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
+		AddLoader(storage.NewFileSystem(envPaths.SLANG_LIB))
 	srv := daemon.New(*st, "localhost", PORT)
 
 	if !skipChecks {

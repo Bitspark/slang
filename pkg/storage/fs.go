@@ -21,25 +21,26 @@ func EnsureDirExists(dir string) (string, error) {
 	return dir, err
 }
 
-type FileSystemDumperLoader struct {
+type FileSystem struct {
 	root string
 }
 
-func NewFileSystemLoaderDumper(p string) *FileSystemDumperLoader {
+func NewFileSystem(p string) *FileSystem {
 	pathSep := string(filepath.Separator)
 	p = filepath.Clean(p)
+	p, _ = filepath.Abs(p)
 	if !strings.HasSuffix(p, pathSep) {
 		p += pathSep
 	}
-	return &FileSystemDumperLoader{p}
+	return &FileSystem{p}
 }
 
-func (fs *FileSystemDumperLoader) Has(opId uuid.UUID) bool {
+func (fs *FileSystem) Has(opId uuid.UUID) bool {
 	all, err := fs.List()
 	return err == nil && funk.Contains(all, opId)
 }
 
-func (fs *FileSystemDumperLoader) List() ([]uuid.UUID, error) {
+func (fs *FileSystem) List() ([]uuid.UUID, error) {
 	var outerErr error
 
 	opsFilePathSet := make(map[uuid.UUID]bool)
@@ -49,9 +50,13 @@ func (fs *FileSystemDumperLoader) List() ([]uuid.UUID, error) {
 			return err
 		}
 
+		// Prevent recursive walk. Just read files within fs.root
+		if info.IsDir() && path != fs.root {
+			return filepath.SkipDir
+		}
+
 		if info.IsDir() ||
 			strings.HasPrefix(info.Name(), ".") ||
-			strings.Contains(info.Name(), "_") ||
 			!fs.hasSupportedSuffix(info.Name()) {
 			return nil
 		}
@@ -59,6 +64,7 @@ func (fs *FileSystemDumperLoader) List() ([]uuid.UUID, error) {
 		opDef, err := fs.readOpDefFile(path)
 
 		if err != nil {
+			fmt.Println("-->    ", path, "|", info.Name(), "|", err)
 			return err
 		}
 
@@ -79,7 +85,7 @@ func (fs *FileSystemDumperLoader) List() ([]uuid.UUID, error) {
 	}
 }
 
-func (fs *FileSystemDumperLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	opDefFile, err := fs.getFilePath(opId)
 	if err != nil {
 		return nil, err
@@ -87,7 +93,7 @@ func (fs *FileSystemDumperLoader) Load(opId uuid.UUID) (*core.OperatorDef, error
 	return fs.readOpDefFile(opDefFile)
 }
 
-func (fs *FileSystemDumperLoader) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
+func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
 	opId, err := uuid.Parse(opDef.Id)
 
 	if err != nil {
@@ -118,19 +124,19 @@ func (fs *FileSystemDumperLoader) Dump(opDef core.OperatorDef) (uuid.UUID, error
 	return opId, nil
 }
 
-func (fs *FileSystemDumperLoader) hasSupportedSuffix(filePath string) bool {
+func (fs *FileSystem) hasSupportedSuffix(filePath string) bool {
 	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
 }
 
-func (fs *FileSystemDumperLoader) getInstanceName(opDefFilePath string) string {
+func (fs *FileSystem) getInstanceName(opDefFilePath string) string {
 	return strings.TrimSuffix(filepath.Base(opDefFilePath), filepath.Ext(opDefFilePath))
 }
 
-func (fs *FileSystemDumperLoader) getFilePath(opId uuid.UUID) (string, error) {
+func (fs *FileSystem) getFilePath(opId uuid.UUID) (string, error) {
 	return utils.FileWithFileEnding(filepath.Join(fs.root, opId.String()), FILE_ENDINGS)
 }
 
-func (fs *FileSystemDumperLoader) readOpDefFile(opDefFile string) (*core.OperatorDef, error) {
+func (fs *FileSystem) readOpDefFile(opDefFile string) (*core.OperatorDef, error) {
 	b, err := ioutil.ReadFile(opDefFile)
 	if err != nil {
 		return nil, errors.New("could not read operator file " + opDefFile)

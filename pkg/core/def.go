@@ -130,25 +130,30 @@ func (d *InstanceDef) Validate() error {
 }
 
 func (d InstanceDef) Copy() InstanceDef {
-	cpy := d
-	cpy.Properties = nil
-	cpy.Generics = nil
-	cpy.OperatorDef = d.OperatorDef.Copy()
-
+	var properties Properties = nil
 	if d.Properties != nil {
-		cpy.Properties = Properties{}
+		properties = Properties{}
 		for k, v := range d.Properties {
-			cpy.Properties[k] = v
+			properties[k] = v
 		}
 	}
-
+	var generics Generics = nil
 	if d.Generics != nil {
-		cpy.Generics = Generics{}
+		generics = Generics{}
 		for k, v := range d.Generics {
-			cpy.Generics[k] = v
+			generics[k] = v
 		}
 	}
 
+	cpy := InstanceDef{
+		d.Name,
+		d.Operator,
+		d.Geometry,
+		properties,
+		generics,
+		d.valid,
+		d.OperatorDef.Copy(),
+	}
 	return cpy
 }
 
@@ -420,12 +425,12 @@ func (d *ServiceDef) Validate() error {
 }
 
 func (d ServiceDef) Copy() ServiceDef {
-	cpy := d
-
-	cpy.In = d.In.Copy()
-	cpy.Out = d.Out.Copy()
-
-	return cpy
+	return ServiceDef{
+		d.In.Copy(),
+		d.Out.Copy(),
+		d.Geometry,
+		d.valid,
+	}
 }
 
 // DELEGATE DEFINITION
@@ -448,12 +453,12 @@ func (d *DelegateDef) Validate() error {
 }
 
 func (d DelegateDef) Copy() DelegateDef {
-	cpy := d
-
-	cpy.In = d.In.Copy()
-	cpy.Out = d.Out.Copy()
-
-	return cpy
+	return DelegateDef{
+		d.In.Copy(),
+		d.Out.Copy(),
+		d.Geometry,
+		d.valid,
+	}
 }
 
 // TYPE DEFINITION
@@ -536,21 +541,28 @@ func (d *TypeDef) Validate() error {
 }
 
 func (d TypeDef) Copy() TypeDef {
-	cpy := TypeDef{Type: d.Type, Generic: d.Generic}
-
+	var tStr *TypeDef = nil
 	if d.Stream != nil {
-		strCpy := d.Stream.Copy()
-		cpy.Stream = &strCpy
+		cpy := d.Stream.Copy()
+		tStr = &cpy
 	}
+
+	var tMap map[string]*TypeDef = nil
 	if d.Map != nil {
-		cpy.Map = make(map[string]*TypeDef)
+		tMap = make(map[string]*TypeDef)
 		for k, e := range d.Map {
-			subCpy := e.Copy()
-			cpy.Map[k] = &subCpy
+			cpy := e.Copy()
+			tMap[k] = &cpy
 		}
 	}
 
-	return cpy
+	return TypeDef{
+		d.Type,
+		tStr,
+		tMap,
+		d.Generic,
+		d.valid,
+	}
 }
 
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.

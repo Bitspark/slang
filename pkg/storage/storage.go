@@ -89,7 +89,6 @@ func (s *Storage) findRelatedLoader(opId uuid.UUID) Loader {
 }
 
 func (s *Storage) load(opId uuid.UUID, dependenyChain []string) (*core.OperatorDef, error) {
-
 	if opDef, err := elem.GetOperatorDef(opId.String()); err == nil {
 		return opDef, nil
 	}

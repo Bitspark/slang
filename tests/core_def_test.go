@@ -27,7 +27,7 @@ func TestOperatorDef_Validate__FailsIdInvalid(t *testing.T) {
 	a := assertions.New(t)
 
 	_, err := validateJSONOperatorDef(`{
-		"name": "opName",
+		"meta":{"name": "opName"},
 		"services": {"main": {
 		"in": {
 			"type": "number"
@@ -40,7 +40,7 @@ func TestOperatorDef_Validate__FailsIdInvalid(t *testing.T) {
 
 	_, err = validateJSONOperatorDef(`{
 		"id": "1"
-		"name": "opName",
+		"meta":{"name": "opName"},
 		"services": {"main": {
 		"in": {
 			"type": "number"
@@ -56,7 +56,7 @@ func TestOperatorDef_Validate__FailsPortMustBeDefined_In(t *testing.T) {
 	a := assertions.New(t)
 	_, err := validateJSONOperatorDef(`{
 		"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e",
-		"name": "opName",
+		"meta":{"name": "opName"},
 		"services": {"main": {"out": {"type":"number"}}}
 	}`)
 	a.Error(err)
@@ -66,7 +66,7 @@ func TestOperatorDef_Validate__FailsPortMustBeDefined_Out(t *testing.T) {
 	a := assertions.New(t)
 	_, err := validateJSONOperatorDef(`{
 		"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e",
-		"name": "opName",
+		"meta":{"name": "opName"},
 		"services": {"main": {"in": {"type":"number"}}}
 	}`)
 	a.Error(err)
@@ -76,7 +76,7 @@ func TestOperatorDef_Validate__Succeeds(t *testing.T) {
 	a := assertions.New(t)
 	oDef, err := validateJSONOperatorDef(`{
 		"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e",
-		"name": "opName",
+		"meta":{"name": "opName"},
 		"services": {"main": {
 		"in": {
 			"type": "number"
@@ -100,14 +100,14 @@ func TestOperatorDef_Validate__Succeeds(t *testing.T) {
 
 func TestOperatorDef_SpecifyGenericPorts__NilGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.SpecifyGenericPorts(nil))
 }
 
 func TestOperatorDef_SpecifyGenericPorts__InPortGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "generic", "generic": "g1"}, "out": {"type": "number"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "generic", "generic": "g1"}, "out": {"type": "number"}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.SpecifyGenericPorts(map[string]*core.TypeDef{
 		"g1": {
@@ -119,7 +119,7 @@ func TestOperatorDef_SpecifyGenericPorts__InPortGenerics(t *testing.T) {
 
 func TestOperatorDef_SpecifyGenericPorts__OutPortGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "generic", "generic": "g1"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "generic", "generic": "g1"}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.SpecifyGenericPorts(map[string]*core.TypeDef{
 		"g1": {
@@ -132,7 +132,7 @@ func TestOperatorDef_SpecifyGenericPorts__OutPortGenerics(t *testing.T) {
 func TestOperatorDef_SpecifyGenericPorts__GenericPortsGenerics(t *testing.T) {
 	a := assertions.New(t)
 	op, _ := core.ParseJSONOperatorDef(
-		`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}, "operators": {"test": {"operator": "eeeeeeee-ffff-42e0-a5c5-dd6fda91754e", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}}}`)
+		`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}, "operators": {"test": {"operator": "eeeeeeee-ffff-42e0-a5c5-dd6fda91754e", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.SpecifyGenericPorts(map[string]*core.TypeDef{
 		"g1": {
@@ -144,7 +144,7 @@ func TestOperatorDef_SpecifyGenericPorts__GenericPortsGenerics(t *testing.T) {
 
 func TestOperatorDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "generic", "generic": "g1"}, "out": {"type": "number"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "generic", "generic": "g1"}, "out": {"type": "number"}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.SpecifyGenericPorts(map[string]*core.TypeDef{
 		"g2": {
@@ -156,28 +156,28 @@ func TestOperatorDef_SpecifyGenericPorts__DifferentIdentifier(t *testing.T) {
 
 func TestOperatorDef_GenericsSpecified__InPortGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "generic", "generic": "t1"}, "out": {"type": "number"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "generic", "generic": "t1"}, "out": {"type": "number"}}}}`)
 	require.NoError(t, op.Validate())
 	a.Error(op.GenericsSpecified())
 }
 
 func TestOperatorDef_GenericsSpecified__InPortNoGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "string"}, "out": {"type": "number"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "string"}, "out": {"type": "number"}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.GenericsSpecified())
 }
 
 func TestOperatorDef_GenericsSpecified__OutPortGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "generic", "generic": "t1"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "generic", "generic": "t1"}}}}`)
 	require.NoError(t, op.Validate())
 	a.Error(op.GenericsSpecified())
 }
 
 func TestOperatorDef_GenericsSpecified__OutPortNoGenerics(t *testing.T) {
 	a := assertions.New(t)
-	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "string"}}}}`)
+	op, _ := core.ParseJSONOperatorDef(`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "string"}}}}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.GenericsSpecified())
 }
@@ -185,7 +185,7 @@ func TestOperatorDef_GenericsSpecified__OutPortNoGenerics(t *testing.T) {
 func TestOperatorDef_GenericsSpecified__GenericPortsGenerics(t *testing.T) {
 	a := assertions.New(t)
 	op, _ := core.ParseJSONOperatorDef(
-		`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}, "operators": {"test": {"operator": "deeed0d6-4414-42e0-a5c5-dd6fda911337", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}}}`)
+		`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}, "operators": {"test": {"operator": "deeed0d6-4414-42e0-a5c5-dd6fda911337", "generics": {"itemType": {"type": "generic", "generic": "g1"}}}}}`)
 	require.NoError(t, op.Validate())
 	a.Error(op.GenericsSpecified())
 }
@@ -193,7 +193,7 @@ func TestOperatorDef_GenericsSpecified__GenericPortsGenerics(t *testing.T) {
 func TestOperatorDef_GenericsSpecified__GenericPortsNoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	op, _ := core.ParseJSONOperatorDef(
-		`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","name": "opName","services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}, "operators": [{"name": "test", "operator": "deeed0d6-4414-42e0-a5c5-dd6fda911337", "generics": {"itemType": {"type": "number"}}}]}`)
+		`{"id": "d1e020d6-4414-42e0-a5c5-dd6fda91754e","meta":{"name": "opName"},"services": {"` + core.MAIN_SERVICE + `": {"in": {"type": "number"}, "out": {"type": "number"}}}, "operators": [{"meta":{"name": "test"}, "operator": "deeed0d6-4414-42e0-a5c5-dd6fda911337", "generics": {"itemType": {"type": "number"}}}]}`)
 	require.NoError(t, op.Validate())
 	a.NoError(op.GenericsSpecified())
 }

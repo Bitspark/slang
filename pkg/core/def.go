@@ -56,9 +56,15 @@ type TestCaseDef struct {
 	valid bool
 }
 
+type OperatorMetaDef struct {
+	Name             string `json:"name" yaml:"name"`
+	Icon             string `json:"icon" yaml:"icon"`
+	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
+	Description      string `json:"description" yaml:"description"`
+}
+
 type OperatorDef struct {
-	Id   string `json:"id" yaml:"id"`
-	Name string `json:"name" yaml:"name"`
+	Id string `json:"id" yaml:"id"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
@@ -67,13 +73,8 @@ type OperatorDef struct {
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
-	TestCases []TestCaseDef `json:"testCases,omitempty" yaml:"testCases,omitempty"`
-
-	Meta *struct {
-		Icon             string `json:"icon" yaml:"icon"`
-		ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-		Description      string `json:"description" yaml:"description"`
-	} `json:"meta,omitempty" yaml:"meta,omitempty"`
+	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
+	TestCases []TestCaseDef   `json:"testCases,omitempty" yaml:"testCases,omitempty"`
 
 	Geometry *struct {
 		Size struct {
@@ -186,7 +187,7 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	if d.Name == "" {
+	if d.Meta.Name == "" {
 		return fmt.Errorf(`operator name may not be empty`)
 	}
 
@@ -335,15 +336,14 @@ func (d OperatorDef) Copy() OperatorDef {
 
 	return OperatorDef{
 		d.Id,
-		d.Name,
 		srvDefs,
 		dlgDefs,
 		insDefs,
 		propDefs,
 		connDefs,
 		d.Elementary,
-		d.TestCases,
 		d.Meta,
+		d.TestCases,
 		d.Geometry,
 		d.valid,
 	}

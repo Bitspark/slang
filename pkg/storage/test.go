@@ -44,7 +44,7 @@ func (tl *TestLoader) Reload() {
 		opId := uuid.New()
 		opDef.Id = opId.String()
 		tl.storage[opDef.Id] = opDef
-		tl.storage[opDef.Name] = opDef
+		tl.storage[opDef.Meta.Name] = opDef
 	}
 
 	// Replace instance operator names by ids
@@ -108,7 +108,7 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 			return err
 		}
 
-		opDef.Name = GetOperatorName(dir, path)
+		opDef.Meta.Name = GetOperatorName(dir, path)
 		opDefList = append(opDefList, opDef)
 
 		return nil

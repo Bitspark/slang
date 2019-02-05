@@ -62,7 +62,7 @@ func IsRegistered(idOrName string) bool {
 
 func Register(idstr string, name string, cfg *builtinConfig) {
 	cfg.opDef.Id = idstr
-	cfg.opDef.Name = name
+	cfg.opDef.Meta.Name = name
 	cfg.opDef.Elementary = idstr
 
 	id := getId(idstr)

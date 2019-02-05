@@ -270,48 +270,57 @@ func (d OperatorDef) GenericsSpecified() error {
 }
 
 func (d OperatorDef) Copy() OperatorDef {
-	cpy := d
-	cpy.InstanceDefs = nil
-	cpy.Connections = nil
-
-	cpy.ServiceDefs = make(map[string]*ServiceDef)
+	srvDefs := make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
 		c := v.Copy()
-		cpy.ServiceDefs[k] = &c
+		srvDefs[k] = &c
 	}
 
-	cpy.DelegateDefs = make(map[string]*DelegateDef)
+	dlgDefs := make(map[string]*DelegateDef)
 	for k, v := range d.DelegateDefs {
 		c := v.Copy()
-		cpy.DelegateDefs[k] = &c
+		dlgDefs[k] = &c
 	}
 
-	cpy.PropertyDefs = make(map[string]*TypeDef)
+	propDefs := make(map[string]*TypeDef)
 	for k, v := range d.PropertyDefs {
 		c := v.Copy()
-		cpy.PropertyDefs[k] = &c
+		propDefs[k] = &c
 	}
 
-	if d.Elementary != "" {
-		return cpy
-	}
+	var connDefs map[string][]string = nil
+	var insDefs InstanceDefList = nil
 
-	cpy.Connections = make(map[string][]string)
-	for k, v := range d.Connections {
-		c := make([]string, 0)
-		for _, vi := range v {
-			c = append(c, vi)
+	if d.Elementary == "" {
+		connDefs = make(map[string][]string)
+		for k, v := range d.Connections {
+			c := make([]string, 0)
+			for _, vi := range v {
+				c = append(c, vi)
+			}
+			connDefs[k] = c
 		}
-		cpy.Connections[k] = c
+
+		insDefs = InstanceDefList{}
+		for _, v := range d.InstanceDefs {
+			insCpy := v.Copy()
+			insDefs = append(insDefs, &insCpy)
+		}
 	}
 
-	cpy.InstanceDefs = InstanceDefList{}
-	for _, v := range d.InstanceDefs {
-		insCpy := v.Copy()
-		cpy.InstanceDefs = append(cpy.InstanceDefs, &insCpy)
+	return OperatorDef{
+		d.Id,
+		d.Name,
+		srvDefs,
+		dlgDefs,
+		insDefs,
+		propDefs,
+		connDefs,
+		d.Elementary,
+		d.Meta,
+		d.Geometry,
+		d.valid,
 	}
-
-	return cpy
 }
 
 func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {

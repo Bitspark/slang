@@ -4,11 +4,10 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
-	"github.com/Bitspark/slang/pkg/api"
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {
-	defPort := api.ParseTypeDef(`{"type":"number"}`)
+	defPort := core.ParseTypeDef(`{"type":"number"}`)
 	oParent, _ := core.NewOperator("parent", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1, _ := core.NewOperator("child1", nil, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: defPort, Out: defPort}}})
 	oChild1.SetParent(oParent)
@@ -70,7 +69,7 @@ func TestOperator_Compile__NestedChildren(t *testing.T) {
 	op4.SetParent(op2)
 	op5, _ := core.NewOperator("d", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op5.SetParent(op2)
-	op6, _ := core.NewOperator("e", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
+	op6, _ := core.NewOperator("st", func(*core.Operator) {}, nil, nil, nil, core.OperatorDef{ServiceDefs: map[string]*core.ServiceDef{core.MAIN_SERVICE: {In: core.TypeDef{Type: "number"}, Out: core.TypeDef{Type: "number"}}}})
 	op6.SetParent(op3)
 
 	// op1
@@ -102,7 +101,7 @@ func TestOperator_Compile__NestedChildren(t *testing.T) {
 		t.Error("child not there")
 	}
 
-	if _, ok := op1.Children()["b#e"]; !ok {
+	if _, ok := op1.Children()["b#st"]; !ok {
 		t.Error("child not there")
 	}
 

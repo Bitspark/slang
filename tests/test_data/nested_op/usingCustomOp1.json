@@ -11,7 +11,7 @@
   },
   "operators": {
     "childOpr": {
-      "operator": ".customOp"
+      "operator": "test_data.nested_op.customOp"
     }
   },
   "connections": {

@@ -4,14 +4,13 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
-	"github.com/Bitspark/slang/pkg/api"
 )
 
 // TypeDef.Validate (11 tests)
 
 func TestTypeDef_Validate__InvalidTypeInDefinition(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"gfdhgfd"}`)
+	def := core.ParseTypeDef(`{"type":"gfdhgfd"}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Error(err)
 	a.Nil(p)
@@ -19,84 +18,84 @@ func TestTypeDef_Validate__InvalidTypeInDefinition(t *testing.T) {
 
 func TestTypeDef_Validate__Stream__StreamNotPresent(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream"}`)
+	def := core.ParseTypeDef(`{"type":"stream"}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Stream__NilStream(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream","stream":null}`)
+	def := core.ParseTypeDef(`{"type":"stream","stream":null}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Stream__EmptyStream(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream","stream":{}}`)
+	def := core.ParseTypeDef(`{"type":"stream","stream":{}}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
+	def := core.ParseTypeDef(`{"type":"stream","stream":{"type":"hgfdh"}}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Map__MapNotPresent(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map"}`)
+	def := core.ParseTypeDef(`{"type":"map"}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Map__NilMap(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":null}`)
+	def := core.ParseTypeDef(`{"type":"map","map":null}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Map__EmptyMap(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{}}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Map__NullEntry(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":null}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":null}}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Map__EmptyEntry(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":{}}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":{}}}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Map__InvalidTypeInDefinition(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"gfgfd"}}}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Generic__IdentifierMissing(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"generic"}`)
+	def := core.ParseTypeDef(`{"type":"generic"}`)
 	a.Error(def.Validate())
 	a.False(def.Valid(), "should not be valid")
 }
 
 func TestTypeDef_Validate__Generic__Correct(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"generic", "generic":"id1"}`)
+	def := core.ParseTypeDef(`{"type":"generic", "generic":"id1"}`)
 	a.NoError(def.Validate())
 	a.True(def.Valid(), "should be valid")
 }
@@ -105,7 +104,7 @@ func TestTypeDef_Validate__Generic__Correct(t *testing.T) {
 
 func TestNewPort__InvalidDefinition(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"bcvbvcbvc"}`)
+	def := core.ParseTypeDef(`{"type":"bcvbvcbvc"}`)
 	p, err := core.NewPort(nil, nil, def, 0)
 	a.Error(err)
 	a.Nil(p)
@@ -113,7 +112,7 @@ func TestNewPort__InvalidDefinition(t *testing.T) {
 
 func TestNewPort__Number__NoDirectionGiven(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"number"}`)
+	def := core.ParseTypeDef(`{"type":"number"}`)
 	p, err := core.NewPort(nil, nil, def, 0)
 	a.Error(err)
 	a.Nil(p)
@@ -121,7 +120,7 @@ func TestNewPort__Number__NoDirectionGiven(t *testing.T) {
 
 func TestNewPort__Number__WrongDirectionGiven(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"number"}`)
+	def := core.ParseTypeDef(`{"type":"number"}`)
 	p, err := core.NewPort(nil, nil, def, 3)
 	a.Error(err)
 	a.Nil(p)
@@ -129,7 +128,7 @@ func TestNewPort__Number__WrongDirectionGiven(t *testing.T) {
 
 func TestNewPort__Stream(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream","stream":{"type":"number"}}`)
+	def := core.ParseTypeDef(`{"type":"stream","stream":{"type":"number"}}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.NoError(err)
 	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
@@ -138,7 +137,7 @@ func TestNewPort__Stream(t *testing.T) {
 
 func TestNewPort__Number(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"number"}`)
+	def := core.ParseTypeDef(`{"type":"number"}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 
 	a.NoError(err)
@@ -149,7 +148,7 @@ func TestNewPort__Number(t *testing.T) {
 
 func TestNewPort__Map(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.NoError(err)
 	a.Equal(core.TYPE_MAP, p.Type(), "wrong type")
@@ -158,7 +157,7 @@ func TestNewPort__Map(t *testing.T) {
 
 func TestNewPort__NestedStreams(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"string"}}}`)
+	def := core.ParseTypeDef(`{"type":"stream","stream":{"type":"stream","stream":{"type":"string"}}}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.NoError(err)
 	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
@@ -168,7 +167,7 @@ func TestNewPort__NestedStreams(t *testing.T) {
 
 func TestNewPort__MapStream(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(
+	def := core.ParseTypeDef(
 		`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"string"}},"b":{"type":"boolean"}}}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.NoError(err)
@@ -180,7 +179,7 @@ func TestNewPort__MapStream(t *testing.T) {
 
 func TestNewPort__NestedMap(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"map","map":{"a":{"type":"number"}}}}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"map","map":{"a":{"type":"number"}}}}}`)
 	p, err := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.NoError(err)
 	a.NotNil(p)
@@ -191,7 +190,7 @@ func TestNewPort__NestedMap(t *testing.T) {
 
 func TestNewPort__Complex(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(
+	def := core.ParseTypeDef(
 		`{"type":"map","map":{"a":{"type":"stream","stream":{"type":"boolean"}},"b":{"type":"map","map":
 {"a":{"type":"stream","stream":{"type":"stream","stream":{"type":"map","map":{"a":{"type":"number"},
 "b":{"type":"string"},"c":{"type":"boolean"}}}}},"b":{"type":"string"}}},"c":{"type":"boolean"}}}`)
@@ -215,42 +214,42 @@ func TestNewPort__Complex(t *testing.T) {
 
 func TestPort_Type__Simple__Primitive(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"primitive"}`)
+	def := core.ParseTypeDef(`{"type":"primitive"}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_PRIMITIVE, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__Trigger(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"trigger"}`)
+	def := core.ParseTypeDef(`{"type":"trigger"}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_TRIGGER, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__Number(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"number"}`)
+	def := core.ParseTypeDef(`{"type":"number"}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_NUMBER, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__String(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"string"}`)
+	def := core.ParseTypeDef(`{"type":"string"}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_STRING, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Simple__Boolean(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"boolean"}`)
+	def := core.ParseTypeDef(`{"type":"boolean"}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_BOOLEAN, p.Type(), "wrong type")
 }
 
 func TestPort_Type__Map(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"boolean"}}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"boolean"}}}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_MAP, p.Type(), "wrong type")
 	a.Equal(core.TYPE_BOOLEAN, p.Map("a").Type(), "wrong type")
@@ -258,7 +257,7 @@ func TestPort_Type__Map(t *testing.T) {
 
 func TestPort_Type__Stream(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"stream","stream":{"type":"string"}}`)
+	def := core.ParseTypeDef(`{"type":"stream","stream":{"type":"string"}}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
 	a.Equal(core.TYPE_STRING, p.Stream().Type(), "wrong type")
@@ -268,8 +267,8 @@ func TestPort_Type__Stream(t *testing.T) {
 
 func TestPort_Connect__Map__KeysNotMatching(t *testing.T) {
 	a := assertions.New(t)
-	def1 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
-	def2 := api.ParseTypeDef(`{"type":"map","map":{"b":{"type":"number"}}}`)
+	def1 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def2 := core.ParseTypeDef(`{"type":"map","map":{"b":{"type":"number"}}}`)
 
 	p, _ := core.NewPort(nil, nil, def1, core.DIRECTION_IN)
 	q, _ := core.NewPort(nil, nil, def2, core.DIRECTION_OUT)
@@ -281,8 +280,8 @@ func TestPort_Connect__Map__KeysNotMatching(t *testing.T) {
 
 func TestPort_Connect__Map__LeftIsSubsetOfRight(t *testing.T) {
 	a := assertions.New(t)
-	def1 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
-	def2 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	def1 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def2 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
 
 	p, _ := core.NewPort(nil, nil, def1, core.DIRECTION_IN)
 	q, _ := core.NewPort(nil, nil, def2, core.DIRECTION_OUT)
@@ -294,8 +293,8 @@ func TestPort_Connect__Map__LeftIsSubsetOfRight(t *testing.T) {
 
 func TestPort_Connect__Map__RightIsSubsetOfRight(t *testing.T) {
 	a := assertions.New(t)
-	def1 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
-	def2 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def1 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"},"b":{"type":"number"}}}`)
+	def2 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
 
 	p, _ := core.NewPort(nil, nil, def1, core.DIRECTION_IN)
 	q, _ := core.NewPort(nil, nil, def2, core.DIRECTION_OUT)
@@ -307,8 +306,8 @@ func TestPort_Connect__Map__RightIsSubsetOfRight(t *testing.T) {
 
 func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
 	a := assertions.New(t)
-	def1 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
-	def2 := api.ParseTypeDef(`{"type":"number"}`)
+	def1 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def2 := core.ParseTypeDef(`{"type":"number"}`)
 
 	p, _ := core.NewPort(nil, nil, def1, core.DIRECTION_IN)
 	q, _ := core.NewPort(nil, nil, def2, core.DIRECTION_OUT)
@@ -320,7 +319,7 @@ func TestPort_Connect__Map__IncompatibleTypes(t *testing.T) {
 
 func TestPort_Connect__Map__SameKeys(t *testing.T) {
 	a := assertions.New(t)
-	def := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
 
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	q, _ := core.NewPort(nil, nil, def, core.DIRECTION_OUT)
@@ -333,8 +332,8 @@ func TestPort_Connect__Map__SameKeys(t *testing.T) {
 
 func TestPort_Connect__Map__Subport2Primitive(t *testing.T) {
 	a := assertions.New(t)
-	def1 := api.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
-	def2 := api.ParseTypeDef(`{"type":"number"}`)
+	def1 := core.ParseTypeDef(`{"type":"map","map":{"a":{"type":"number"}}}`)
+	def2 := core.ParseTypeDef(`{"type":"number"}`)
 
 	p, _ := core.NewPort(nil, nil, def1, core.DIRECTION_IN)
 	q, _ := core.NewPort(nil, nil, def2, core.DIRECTION_OUT)

@@ -2,28 +2,28 @@ package daemon
 
 import (
 	"fmt"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/rs/cors"
 	"net/http"
 	"path/filepath"
 	"regexp"
 
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 )
 
 var SlangVersion string
 
 type Server struct {
-	Env    *api.Environ
-	Host   string
-	Port   int
-	router *mux.Router
+	Storage storage.Storage
+	Host    string
+	Port    int
+	router  *mux.Router
 }
 
-func New(host string, port int) *Server {
-	r := mux.NewRouter().Host("localhost").Subrouter()
+func New(s storage.Storage, host string, port int) *Server {
+	r := mux.NewRouter()
 	http.Handle("/", r)
-	return &Server{api.NewEnviron(), host, port, r}
+	return &Server{s, host, port, r}
 }
 
 func (s *Server) AddService(pathPrefix string, services *Service) {
@@ -31,7 +31,7 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
 		(func(endpoint *Endpoint) {
-			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Env, w, r) }))
+			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Storage, w, r) }))
 		})(endpoint)
 	}
 }

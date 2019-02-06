@@ -3,7 +3,6 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/eclipse/paho.mqtt.golang"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var netMQTTSubscribeCfg = &builtinConfig{
@@ -16,31 +15,19 @@ var netMQTTSubscribeCfg = &builtinConfig{
 				Out: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
-						Type: "generic",
-						Generic: "itemType",
-					},
-				},
-			},
-		},
-		DelegateDefs: map[string]*core.DelegateDef{
-			"handler": {
-				Out: core.TypeDef{
-					Type: "map",
-					Map: map[string]*core.TypeDef{
-						"messageId": {
-							Type: "number",
-						},
-						"payload": {
-							Type: "binary",
-						},
-						"topic": {
-							Type: "string",
+						Type: "map",
+						Map: map[string]*core.TypeDef{
+							"messageId": {
+								Type: "number",
+							},
+							"payload": {
+								Type: "binary",
+							},
+							"topic": {
+								Type: "string",
+							},
 						},
 					},
-				},
-				In: core.TypeDef{
-					Type: "generic",
-					Generic: "itemType",
 				},
 			},
 		},
@@ -54,9 +41,6 @@ var netMQTTSubscribeCfg = &builtinConfig{
 			"password": {
 				Type: "string",
 			},
-			// "clientId": {
-			// 	Type: "string",
-			// },
 			"topic": {
 				Type: "string",
 			},
@@ -65,7 +49,6 @@ var netMQTTSubscribeCfg = &builtinConfig{
 	opFunc: func(op *core.Operator) {
 		options := mqtt.NewClientOptions()
 		options.AddBroker(op.Property("broker").(string))
-		// options.SetClientID(op.Property("clientId").(string))
 		options.SetUsername(op.Property("username").(string))
 		options.SetPassword(op.Property("password").(string))
 
@@ -78,24 +61,22 @@ var netMQTTSubscribeCfg = &builtinConfig{
 			panic(token.Error())
 		}
 
-		handler := op.Delegate("handler")
-
 		in := op.Main().In()
 		out := op.Main().Out()
 		for !op.CheckStop() {
 			in.Pull()
+
 			out.PushBOS()
-
+			outStream := out.Stream()
 			client.Subscribe(topic, 2, func(client mqtt.Client, message mqtt.Message) {
-				handler.Out().Map("messageId").Push(float64(message.MessageID()))
-				handler.Out().Map("payload").Push(utils.Binary(message.Payload()))
-				handler.Out().Map("topic").Push(message.Topic())
-
-				// Push out item produced from handler
-				out.Push(handler.In().Pull())
+				outStream.Map("messageId").Push(float64(message.MessageID()))
+				outStream.Map("payload").Push(core.Binary(message.Payload()))
+				outStream.Map("topic").Push(message.Topic())
 			})
 
-			// TODO: When send EOS? In case of error?
+			op.WaitForStop()
+			out.PushEOS()
+			break
 		}
 	},
 }

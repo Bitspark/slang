@@ -4,32 +4,67 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/google/uuid"
 	"regexp"
 	"strings"
 )
 
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
-type Properties utils.MapStr
+type Properties MapStr
 type Generics map[string]*TypeDef
 
 type InstanceDef struct {
-	Name       string     `json:"-" yaml:"-"`
-	Operator   string     `json:"operator" yaml:"operator"`
+	Name     string `json:"-" yaml:"-"`
+	Operator string `json:"operator" yaml:"operator"`
+
 	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+
+	Geometry *struct {
+		Position struct {
+			X float32 `json:"x" yaml:"x"`
+			Y float32 `json:"y" yaml:"y"`
+		} `json:"position" yaml:"position"`
+	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 
 	valid       bool
 	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
 }
 
-type OperatorDef struct {
+type PortGeometryDef struct {
+	In struct {
+		Position float32 `json:"position" yaml:"position"`
+	} `json:"in" yaml:"in"`
+	Out struct {
+		Position float32 `json:"position" yaml:"position"`
+	} `json:"out" yaml:"out"`
+}
+
+type TestCaseDef struct {
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
+
+	Generics   Generics   `json:"generics" yaml:"generics"`
+	Properties Properties `json:"properties" yaml:"properties"`
+
+	Data struct {
+		In  []interface{} `json:"in" yaml:"in"`
+		Out []interface{} `json:"out" yaml:"out"`
+	}
+
+	valid bool
+}
+
+type OperatorMetaDef struct {
 	Name             string `json:"name" yaml:"name"`
-	DisplayName      string `json:"displayName" yaml:"displayName"`
 	Icon             string `json:"icon" yaml:"icon"`
 	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
 	Description      string `json:"description" yaml:"description"`
+}
+
+type OperatorDef struct {
+	Id string `json:"id" yaml:"id"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
@@ -38,6 +73,16 @@ type OperatorDef struct {
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
+	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
+	TestCases []TestCaseDef   `json:"tests,omitempty" yaml:"tests,omitempty"`
+
+	Geometry *struct {
+		Size struct {
+			Width  float32 `json:"width" yaml:"width"`
+			Height float32 `json:"height" yaml:"height"`
+		} `json:"size" yaml:"size"`
+	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
+
 	valid bool
 }
 
@@ -45,12 +90,16 @@ type DelegateDef struct {
 	In  TypeDef `json:"in" yaml:"in"`
 	Out TypeDef `json:"out" yaml:"out"`
 
+	Geometry *PortGeometryDef `json:"geometry,omitempty" yaml:"geometry,omitempty"`
+
 	valid bool
 }
 
 type ServiceDef struct {
 	In  TypeDef `json:"in" yaml:"in"`
 	Out TypeDef `json:"out" yaml:"out"`
+
+	Geometry *PortGeometryDef `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 
 	valid bool
 }
@@ -95,8 +144,42 @@ func (d *InstanceDef) Validate() error {
 		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
 	}
 
+	if _, err := uuid.Parse(d.Operator); err != nil {
+		return fmt.Errorf(`operator id is not a valid UUID v4: "%s" --> "%s"`, d.Operator, err)
+	}
+
 	d.valid = true
 	return nil
+}
+
+func (d InstanceDef) Copy() InstanceDef {
+	var properties Properties = nil
+	if d.Properties != nil {
+		properties = Properties{}
+		for k, v := range d.Properties {
+			properties[k] = v
+		}
+	}
+
+	var generics Generics = nil
+	if d.Generics != nil {
+		generics = Generics{}
+		for k, v := range d.Generics {
+			vCpy := v.Copy()
+			generics[k] = &vCpy
+		}
+	}
+
+	cpy := InstanceDef{
+		d.Name,
+		d.Operator,
+		properties,
+		generics,
+		d.Geometry,
+		d.valid,
+		d.OperatorDef.Copy(),
+	}
+	return cpy
 }
 
 // OPERATOR DEFINITION
@@ -106,6 +189,14 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
+	if d.Meta.Name == "" {
+		return fmt.Errorf(`operator name may not be empty`)
+	}
+
+	if _, err := uuid.Parse(d.Id); err != nil {
+		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
+	}
+
 	for _, srv := range d.ServiceDefs {
 		if err := srv.Validate(); err != nil {
 			return err
@@ -114,6 +205,12 @@ func (d *OperatorDef) Validate() error {
 
 	for _, del := range d.DelegateDefs {
 		if err := del.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, tc := range d.TestCases {
+		if err := tc.Validate(); err != nil {
 			return err
 		}
 	}
@@ -201,29 +298,57 @@ func (d OperatorDef) GenericsSpecified() error {
 }
 
 func (d OperatorDef) Copy() OperatorDef {
-	cpy := d
-	cpy.InstanceDefs = nil
-	cpy.Connections = nil
-
-	cpy.ServiceDefs = make(map[string]*ServiceDef)
+	srvDefs := make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
 		c := v.Copy()
-		cpy.ServiceDefs[k] = &c
+		srvDefs[k] = &c
 	}
 
-	cpy.DelegateDefs = make(map[string]*DelegateDef)
+	dlgDefs := make(map[string]*DelegateDef)
 	for k, v := range d.DelegateDefs {
 		c := v.Copy()
-		cpy.DelegateDefs[k] = &c
+		dlgDefs[k] = &c
 	}
 
-	cpy.PropertyDefs = make(map[string]*TypeDef)
+	propDefs := make(map[string]*TypeDef)
 	for k, v := range d.PropertyDefs {
 		c := v.Copy()
-		cpy.PropertyDefs[k] = &c
+		propDefs[k] = &c
 	}
 
-	return cpy
+	var connDefs map[string][]string = nil
+	var insDefs InstanceDefList = nil
+
+	if d.Elementary == "" {
+		connDefs = make(map[string][]string)
+		for k, v := range d.Connections {
+			c := make([]string, 0)
+			for _, vi := range v {
+				c = append(c, vi)
+			}
+			connDefs[k] = c
+		}
+
+		insDefs = InstanceDefList{}
+		for _, v := range d.InstanceDefs {
+			insCpy := v.Copy()
+			insDefs = append(insDefs, &insCpy)
+		}
+	}
+
+	return OperatorDef{
+		d.Id,
+		srvDefs,
+		dlgDefs,
+		insDefs,
+		propDefs,
+		connDefs,
+		d.Elementary,
+		d.Meta,
+		d.TestCases,
+		d.Geometry,
+		d.valid,
+	}
 }
 
 func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
@@ -340,12 +465,12 @@ func (d *ServiceDef) Validate() error {
 }
 
 func (d ServiceDef) Copy() ServiceDef {
-	cpy := ServiceDef{}
-
-	cpy.In = d.In.Copy()
-	cpy.Out = d.Out.Copy()
-
-	return cpy
+	return ServiceDef{
+		d.In.Copy(),
+		d.Out.Copy(),
+		d.Geometry,
+		d.valid,
+	}
 }
 
 // DELEGATE DEFINITION
@@ -368,12 +493,12 @@ func (d *DelegateDef) Validate() error {
 }
 
 func (d DelegateDef) Copy() DelegateDef {
-	cpy := DelegateDef{}
-
-	cpy.In = d.In.Copy()
-	cpy.Out = d.Out.Copy()
-
-	return cpy
+	return DelegateDef{
+		d.In.Copy(),
+		d.Out.Copy(),
+		d.Geometry,
+		d.valid,
+	}
 }
 
 // TYPE DEFINITION
@@ -456,21 +581,42 @@ func (d *TypeDef) Validate() error {
 }
 
 func (d TypeDef) Copy() TypeDef {
-	cpy := TypeDef{Type: d.Type, Generic: d.Generic}
-
+	var tStr *TypeDef = nil
 	if d.Stream != nil {
-		strCpy := d.Stream.Copy()
-		cpy.Stream = &strCpy
+		cpy := d.Stream.Copy()
+		tStr = &cpy
 	}
+
+	var tMap map[string]*TypeDef = nil
 	if d.Map != nil {
-		cpy.Map = make(map[string]*TypeDef)
+		tMap = make(map[string]*TypeDef)
 		for k, e := range d.Map {
-			subCpy := e.Copy()
-			cpy.Map[k] = &subCpy
+			cpy := e.Copy()
+			tMap[k] = &cpy
 		}
 	}
 
-	return cpy
+	return TypeDef{
+		d.Type,
+		tStr,
+		tMap,
+		d.Generic,
+		d.valid,
+	}
+}
+
+// TESTCASE DEFINITION
+
+func (tc *TestCaseDef) Validate() error {
+	if len(tc.Data.In) != len(tc.Data.Out) {
+		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
+	}
+	tc.valid = true
+	return nil
+}
+
+func (tc TestCaseDef) Valid() bool {
+	return tc.valid
 }
 
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
@@ -530,7 +676,7 @@ func (d TypeDef) VerifyData(data interface{}) error {
 		if d.Type == "string" || d.Type == "primitive" || d.Type == "trigger" {
 			return nil
 		}
-	case utils.Binary:
+	case Binary:
 		if d.Type == "binary" {
 			return nil
 		}
@@ -704,7 +850,7 @@ func (ol InstanceDefList) MarshalJSON() ([]byte, error) {
 
 func (p Properties) Clean() {
 	for k, v := range p {
-		p[k] = utils.CleanValue(v)
+		p[k] = CleanValue(v)
 	}
 }
 

@@ -3,9 +3,8 @@ package core
 import (
 	"errors"
 	"fmt"
-	"time"
 	"sync"
-	"github.com/Bitspark/slang/pkg/utils"
+	"time"
 )
 
 const (
@@ -164,7 +163,7 @@ func (p *Port) Map(name string) *Port {
 }
 
 // Returns the length of the map ports
-func (p *Port) MapSize() interface{} {
+func (p *Port) MapSize() int {
 	return len(p.subs)
 }
 
@@ -623,9 +622,9 @@ func (p *Port) PullBoolean() (bool, interface{}) {
 }
 
 // Pull a binary object
-func (p *Port) PullBinary() (utils.Binary, interface{}) {
+func (p *Port) PullBinary() (Binary, interface{}) {
 	item := p.Pull()
-	if b, ok := item.(utils.Binary); ok {
+	if b, ok := item.(Binary); ok {
 		return b, nil
 	}
 	return nil, item

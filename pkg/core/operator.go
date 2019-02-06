@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 )
 
@@ -13,6 +14,8 @@ var MAIN_SERVICE = "main"
 
 type Operator struct {
 	name        string
+	defId       uuid.UUID
+	defMeta     OperatorMetaDef
 	services    map[string]*Service
 	delegates   map[string]*Delegate
 	basePort    *Port
@@ -45,6 +48,8 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	props.Clean()
 
 	o := &Operator{}
+	o.defMeta = def.Meta
+	o.defId, _ = uuid.Parse(def.Id)
 	o.function = f
 	o.connectFunc = c
 	o.name = name
@@ -278,6 +283,8 @@ func (o *Operator) defineConnections(def *OperatorDef) {
 
 func (o *Operator) Define() (OperatorDef, error) {
 	var def OperatorDef
+	def.Id = o.defId.String()
+	def.Meta = o.defMeta
 	def.ServiceDefs = make(map[string]*ServiceDef)
 	def.DelegateDefs = make(map[string]*DelegateDef)
 	def.Connections = make(map[string][]string)

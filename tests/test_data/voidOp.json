@@ -13,5 +13,25 @@
     "(": [
       ")"
     ]
-  }
+  },
+  "tests": [
+    {
+      "name": "ItemPass",
+      "description": "Items must pass unchanged",
+      "data": {
+        "in": [
+          1,
+          "test",
+          true,
+          false
+        ],
+        "out": [
+          1,
+          "test",
+          true,
+          false
+        ]
+      }
+    }
+  ]
 }

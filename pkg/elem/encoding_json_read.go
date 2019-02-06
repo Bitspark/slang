@@ -1,9 +1,8 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var encodingJSONReadCfg = &builtinConfig{
@@ -20,7 +19,7 @@ var encodingJSONReadCfg = &builtinConfig{
 							Type: "boolean",
 						},
 						"item": {
-							Type: "generic",
+							Type:    "generic",
 							Generic: "itemType",
 						},
 					},
@@ -41,13 +40,13 @@ var encodingJSONReadCfg = &builtinConfig{
 				continue
 			}
 			var obj interface{}
-			err := json.Unmarshal([]byte(i.(utils.Binary)), &obj)
+			err := json.Unmarshal([]byte(i.(core.Binary)), &obj)
 			if err != nil {
 				out.Map("item").Push(nil)
 				out.Map("valid").Push(false)
 				continue
 			}
-			obj = utils.CleanValue(obj)
+			obj = core.CleanValue(obj)
 			err = itemDef.VerifyData(obj)
 			if err == nil {
 				out.Map("item").Push(obj)

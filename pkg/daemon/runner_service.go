@@ -2,17 +2,18 @@ package daemon
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
+	"log"
 	"math/rand"
+	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
-	"gopkg.in/yaml.v2"
 )
 
 var runningInstances = make(map[int64]struct {
@@ -24,10 +25,10 @@ var rnd = rand.New(rand.NewSource(99))
 const SuffixPacked = "_packed"
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
-				Fqn    string          `json:"fqn"`
+				Id     string          `json:"fqn"`
 				Props  core.Properties `json:"props"`
 				Gens   core.Generics   `json:"gens"`
 				Stream bool            `json:"stream"`
@@ -56,19 +57,27 @@ var RunnerService = &Service{map[string]*Endpoint{
 			for portUsed {
 				port++
 				portUsed = false
-				for _, ri := range runningInstances {
-					if ri.port == port {
-						portUsed = true
-						break
-					}
+				ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+				if err != nil {
+					portUsed = true
+				} else {
+					ln.Close()
 				}
+			}
+
+			opId, err := uuid.Parse(ri.Id)
+
+			if err != nil {
+				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				writeJSON(w, &data)
+				return
 			}
 
 			var httpDef *core.OperatorDef
 			if ri.Stream {
-				httpDef, err = constructHttpStreamEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+				httpDef, err = constructHttpStreamEndpoint(st, port, opId, ri.Gens, ri.Props)
 			} else {
-				httpDef, err = constructHttpEndpoint(e, port, ri.Fqn, ri.Gens, ri.Props)
+				httpDef, err = constructHttpEndpoint(st, port, opId, ri.Gens, ri.Props)
 			}
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
@@ -76,16 +85,18 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			packagedOperator := strings.Replace(ri.Fqn+SuffixPacked, ".", string(filepath.Separator), -1) + ".yaml"
+			packagedOperator := strings.Replace(ri.Id+SuffixPacked, ".", string(filepath.Separator), -1) + ".yaml"
 
+			/* TODO
 			bytes, _ := yaml.Marshal(httpDef)
 			ioutil.WriteFile(
-				filepath.Join(e.WorkingDir(), packagedOperator),
+				filepath.Join(st.WorkingDir(), packagedOperator),
 				bytes,
 				os.ModePerm,
 			)
+			*/
 
-			op, err := e.BuildAndCompileOperator(packagedOperator, nil, nil)
+			op, err := api.Build(*httpDef, nil, nil)
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
@@ -98,7 +109,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 				op   *core.Operator
 			}{port, op}
 
+			op.Main().Out().Bufferize()
 			op.Start()
+			log.Printf("operator %s (port: %d, id: %s) started", packagedOperator, port, strconv.FormatInt(handle, 16))
 			op.Main().In().Push(nil) // Start server
 
 			data.Status = "success"
@@ -106,6 +119,11 @@ var RunnerService = &Service{map[string]*Endpoint{
 			data.URL = "/instance/" + strconv.FormatInt(handle, 16)
 
 			writeJSON(w, &data)
+
+			go func() {
+				oprlt := op.Main().Out().Pull()
+				log.Printf("operator %s (port: %d, id: %s) terminated: %v", packagedOperator, port, strconv.FormatInt(handle, 16), oprlt)
+			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
 				Handle string `json:"handle"`

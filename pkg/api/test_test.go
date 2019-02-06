@@ -1,8 +1,8 @@
 package api
 
 import (
-	"testing"
 	"github.com/Bitspark/slang/tests/assertions"
+	"testing"
 )
 
 func TestTestEqual__Bools(t *testing.T) {

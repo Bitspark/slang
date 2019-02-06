@@ -1,13 +1,15 @@
 package daemon
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
 )
 
 // Constructs an executable operator
 // TODO: Make safer (maybe require an API key?)
-func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
+func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
 	httpDef := &core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -22,14 +24,12 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 		Connections: make(map[string][]string),
 	}
 
-	path, err := env.GetOperatorPath(operator, "")
+	opDef, err := st.Load(opId)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build operator to get interface and see if it is free from errors
-	// It will be compiled a second time later
-	op, err := env.BuildAndCompileOperator(path, gens, props)
+	op, err := api.Build(*opDef, gens, props)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 
 	// We need a switch to determine if a new value is pushed or a value request is made
 	switchIns := &core.InstanceDef{
-		Name: "switch",
+		Name:     "switch",
 		Operator: "slang.control.Switch",
 		Generics: map[string]*core.TypeDef{
 			"inType": {
@@ -121,7 +121,10 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 			},
 		},
 		Properties: core.Properties{
-			"value": []interface{}{map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"}},
+			"value": []interface{}{
+				map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"},
+				map[string]string{"key": "Content-Type", "value": "application/json"},
+			},
 		},
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, headersIns)
@@ -136,7 +139,7 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 	// This is the actual operator we want to execute
 	operatorIns := &core.InstanceDef{
 		Name:       "operator",
-		Operator:   operator,
+		Operator:   opId.String(),
 		Generics:   gens,
 		Properties: props,
 	}
@@ -148,9 +151,9 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 
 	// This is the store holding all data
 	storeIns := &core.InstanceDef{
-		Name:       "store",
-		Operator:   "slang.meta.Store",
-		Generics:   map[string]*core.TypeDef{
+		Name:     "store",
+		Operator: "slang.meta.Store",
+		Generics: map[string]*core.TypeDef{
 			"examineType": &outDef,
 		},
 		Properties: props,
@@ -178,7 +181,7 @@ func constructHttpStreamEndpoint(env *api.Environ, port int, operator string, ge
 		Operator: "slang.encoding.JSONWrite",
 		Generics: core.Generics{
 			"itemType": &core.TypeDef{
-				Type: "stream",
+				Type:   "stream",
 				Stream: &outDef,
 			},
 		},

@@ -17,14 +17,16 @@ type Generics map[string]*TypeDef
 type InstanceDef struct {
 	Name     string `json:"-" yaml:"-"`
 	Operator string `json:"operator" yaml:"operator"`
+
+	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+
 	Geometry *struct {
 		Position struct {
 			X float32 `json:"x" yaml:"x"`
 			Y float32 `json:"y" yaml:"y"`
 		} `json:"position" yaml:"position"`
 	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
-	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
-	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
 
 	valid       bool
 	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
@@ -39,9 +41,30 @@ type PortGeometryDef struct {
 	} `json:"out" yaml:"out"`
 }
 
+type TestCaseDef struct {
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
+
+	Generics   Generics   `json:"generics" yaml:"generics"`
+	Properties Properties `json:"properties" yaml:"properties"`
+
+	Data struct {
+		In  []interface{} `json:"in" yaml:"in"`
+		Out []interface{} `json:"out" yaml:"out"`
+	}
+
+	valid bool
+}
+
+type OperatorMetaDef struct {
+	Name             string `json:"name" yaml:"name"`
+	Icon             string `json:"icon" yaml:"icon"`
+	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
+	Description      string `json:"description" yaml:"description"`
+}
+
 type OperatorDef struct {
-	Id   string `json:"id" yaml:"id"`
-	Name string `json:"name" yaml:"name"`
+	Id string `json:"id" yaml:"id"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
@@ -50,11 +73,8 @@ type OperatorDef struct {
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   string                  `json:"-" yaml:"-"`
 
-	Meta *struct {
-		Icon             string `json:"icon" yaml:"icon"`
-		ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-		Description      string `json:"description" yaml:"description"`
-	}
+	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
+	TestCases []TestCaseDef   `json:"tests,omitempty" yaml:"tests,omitempty"`
 
 	Geometry *struct {
 		Size struct {
@@ -92,13 +112,6 @@ type TypeDef struct {
 	Generic string              `json:"generic,omitempty" yaml:"generic,omitempty"`
 
 	valid bool
-}
-
-type PackageDef struct {
-	Name             string `json:"name" yaml:"name"`
-	DisplayName      string `json:"displayName" yaml:"displayName"`
-	Description      string `json:"description" yaml:"description"`
-	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
 }
 
 // INSTANCE DEFINITION
@@ -140,20 +153,22 @@ func (d InstanceDef) Copy() InstanceDef {
 			properties[k] = v
 		}
 	}
+
 	var generics Generics = nil
 	if d.Generics != nil {
 		generics = Generics{}
 		for k, v := range d.Generics {
-			generics[k] = v
+			vCpy := v.Copy()
+			generics[k] = &vCpy
 		}
 	}
 
 	cpy := InstanceDef{
 		d.Name,
 		d.Operator,
-		d.Geometry,
 		properties,
 		generics,
+		d.Geometry,
 		d.valid,
 		d.OperatorDef.Copy(),
 	}
@@ -167,7 +182,7 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	if d.Name == "" {
+	if d.Meta.Name == "" {
 		return fmt.Errorf(`operator name may not be empty`)
 	}
 
@@ -183,6 +198,12 @@ func (d *OperatorDef) Validate() error {
 
 	for _, del := range d.DelegateDefs {
 		if err := del.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, tc := range d.TestCases {
+		if err := tc.Validate(); err != nil {
 			return err
 		}
 	}
@@ -310,7 +331,6 @@ func (d OperatorDef) Copy() OperatorDef {
 
 	return OperatorDef{
 		d.Id,
-		d.Name,
 		srvDefs,
 		dlgDefs,
 		insDefs,
@@ -318,6 +338,7 @@ func (d OperatorDef) Copy() OperatorDef {
 		connDefs,
 		d.Elementary,
 		d.Meta,
+		d.TestCases,
 		d.Geometry,
 		d.valid,
 	}
@@ -575,6 +596,20 @@ func (d TypeDef) Copy() TypeDef {
 		d.Generic,
 		d.valid,
 	}
+}
+
+// TESTCASE DEFINITION
+
+func (tc *TestCaseDef) Validate() error {
+	if len(tc.Data.In) != len(tc.Data.Out) {
+		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
+	}
+	tc.valid = true
+	return nil
+}
+
+func (tc TestCaseDef) Valid() bool {
+	return tc.valid
 }
 
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.

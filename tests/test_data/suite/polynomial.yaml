@@ -1,6 +1,6 @@
 # Polynomial operator
 ---
-testCases:
+tests:
   - name: ItemPass
     data:
       in:

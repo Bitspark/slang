@@ -1,6 +1,6 @@
 # Main
 ---
-testCases:
+tests:
   - name: TC1
     data:
       in:

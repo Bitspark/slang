@@ -14,7 +14,7 @@
       ")"
     ]
   },
-  "testCases": [
+  "tests": [
     {
       "name": "ItemPass",
       "description": "Items must pass unchanged",

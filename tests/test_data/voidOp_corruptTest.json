@@ -14,7 +14,7 @@
       ")"
     ]
   },
-  "testCases": [
+  "tests": [
     {
       "name": "ItemPassFail",
       "description": "Items are not changed by voidOp, but here we test if they do. Test should fail.",

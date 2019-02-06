@@ -22,7 +22,7 @@
       ")"
     ]
   },
-  "testCases": [
+  "tests": [
     {
       "name": "NumbersDouble",
       "description": "Numbers must be doubled",

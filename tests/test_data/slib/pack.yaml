@@ -1,6 +1,6 @@
 # Pack: Yields streams for each incoming element containing that element
 ---
-testCases:
+tests:
   - name: PackItems
     data:
       in:

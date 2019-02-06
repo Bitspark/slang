@@ -74,7 +74,7 @@ type OperatorDef struct {
 	Elementary   string                  `json:"-" yaml:"-"`
 
 	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
-	TestCases []TestCaseDef   `json:"testCases,omitempty" yaml:"testCases,omitempty"`
+	TestCases []TestCaseDef   `json:"tests,omitempty" yaml:"tests,omitempty"`
 
 	Geometry *struct {
 		Size struct {

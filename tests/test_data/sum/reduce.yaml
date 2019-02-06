@@ -1,6 +1,6 @@
 # Main
 ---
-testCases:
+tests:
   - name: Empty
     data:
       in:

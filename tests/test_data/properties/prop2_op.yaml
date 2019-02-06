@@ -1,4 +1,4 @@
-testCases:
+tests:
   - name: Value 1
     properties:
       v: 1

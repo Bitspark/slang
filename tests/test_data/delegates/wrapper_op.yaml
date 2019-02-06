@@ -35,7 +35,7 @@ connections:
   del2):
   - )
 
-testCases:
+tests:
   - name: Test1
     properties:
       val: 5  # b

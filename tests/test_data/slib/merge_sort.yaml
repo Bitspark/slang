@@ -1,6 +1,6 @@
 # Merge sort
 ---
-testCases:
+tests:
   - name: Empty
     data:
       in:

@@ -1,5 +1,20 @@
 # Pack: Yields streams for each incoming element containing that element
 ---
+tests:
+  - name: PackItems
+    data:
+      in:
+        - 1
+        - 2
+        - 7
+        - 10
+        - 42
+      out:
+        - [1]
+        - [2]
+        - [7]
+        - [10]
+        - [42]
 services:
   main:
     in:

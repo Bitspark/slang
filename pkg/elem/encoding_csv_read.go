@@ -1,10 +1,11 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"strings"
 	"encoding/csv"
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
 	"io"
+	"strings"
 )
 
 var encodingCSVReadCfg = &builtinConfig{
@@ -27,8 +28,7 @@ var encodingCSVReadCfg = &builtinConfig{
 				},
 			},
 		},
-		DelegateDefs: map[string]*core.DelegateDef{
-		},
+		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: map[string]*core.TypeDef{
 			"delimiter": {
 				Type: "string",
@@ -56,19 +56,19 @@ var encodingCSVReadCfg = &builtinConfig{
 			out.PushBOS()
 
 			var mapping []string
-			for _, col := range op.Property("columns").([]interface{}) {
-				mapping = append(mapping, col.(string))
-			}
+			colNames := op.Property("columns").([]interface{})
+
 			mapSize := outStream.MapSize()
 
 			r := csv.NewReader(strings.NewReader(csvText))
 			r.Comma = rune(op.Property("delimiter").(string)[0])
+
 			for {
 				rec, err := r.Read()
 				if err == io.EOF {
 					break
 				}
-				if len(rec) != mapSize {
+				if len(rec) < mapSize {
 					break
 				}
 
@@ -76,7 +76,9 @@ var encodingCSVReadCfg = &builtinConfig{
 					mapping = rec
 				} else {
 					for i, col := range mapping {
-						outStream.Map("col_" + col).Push(rec[i])
+						if funk.Contains(colNames, col) {
+							outStream.Map("col_" + col).Push(rec[i])
+						}
 					}
 				}
 			}

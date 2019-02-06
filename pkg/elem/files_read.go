@@ -3,10 +3,9 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
-	"path/filepath"
-	"github.com/Bitspark/slang/pkg/utils"
-	"strings"
 	"os/user"
+	"path/filepath"
+	"strings"
 )
 
 var filesReadCfg = &builtinConfig{
@@ -44,7 +43,7 @@ var filesReadCfg = &builtinConfig{
 			if strings.HasPrefix(path, "~") {
 				usr, _ := user.Current()
 				dir := usr.HomeDir
-				path = filepath.Join(dir,path[1:])
+				path = filepath.Join(dir, path[1:])
 			}
 			content, err := ioutil.ReadFile(path)
 			if err != nil {
@@ -53,7 +52,7 @@ var filesReadCfg = &builtinConfig{
 				continue
 			}
 
-			out.Map("content").Push(utils.Binary(content))
+			out.Map("content").Push(core.Binary(content))
 			out.Map("error").Push(nil)
 		}
 	},

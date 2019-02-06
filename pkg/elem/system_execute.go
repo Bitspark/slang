@@ -3,7 +3,6 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"os/exec"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var systemExecuteCfg = &builtinConfig{
@@ -121,7 +120,7 @@ var systemExecuteCfg = &builtinConfig{
 					if err != nil {
 						break
 					}
-					chunk := utils.Binary(bytes[0:read])
+					chunk := core.Binary(bytes[0:read])
 					user.Out().Map("stdout").Stream().Push(chunk)
 					out.Map("stdout").Stream().Push(chunk)
 				}
@@ -138,7 +137,7 @@ var systemExecuteCfg = &builtinConfig{
 					if err != nil {
 						break
 					}
-					chunk := utils.Binary(bytes[0:read])
+					chunk := core.Binary(bytes[0:read])
 					user.Out().Map("stderr").Stream().Push(chunk)
 					out.Map("stderr").Stream().Push(chunk)
 				}
@@ -156,7 +155,7 @@ var systemExecuteCfg = &builtinConfig{
 						stdin.Close()
 						break
 					}
-					input := i.(utils.Binary)
+					input := i.(core.Binary)
 					stdin.Write(input)
 					out.Map("stdin").Stream().Push(input)
 				}

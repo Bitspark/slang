@@ -1,80 +1,53 @@
 package api
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io"
-	"io/ioutil"
-	"reflect"
-	"github.com/Bitspark/slang/pkg/utils"
-	"strings"
 	"github.com/Bitspark/slang/pkg/core"
-	"path/filepath"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
+	"io"
+	"log"
+	"reflect"
 )
 
-type TestCaseDef struct {
-	Name        string                   `json:"name" yaml:"name"`
-	Description string                   `json:"description" yaml:"description"`
-	Generics    map[string]*core.TypeDef `json:"generics" yaml:"generics"`
-	Properties  map[string]interface{}   `json:"properties" yaml:"properties"`
-	Data struct {
-		In  []interface{} `json:"in" yaml:"in"`
-		Out []interface{} `json:"out" yaml:"out"`
-	}
+type TestBench struct {
+	stor *storage.Storage
 }
 
-type TestDef struct {
-	OperatorFile string        `json:"operatorFile" yaml:"operatorFile"`
-	Description  string        `json:"description" yaml:"description"`
-	TestCases    []TestCaseDef `json:"testCases" yaml:"testCases"`
-	valid        bool
+func NewTestBench(stor *storage.Storage) *TestBench {
+	return &TestBench{stor}
 }
 
 // TestOperator reads a file with test data and its corresponding operator and performs the tests.
 // It returns the number of failed and succeeded tests and and error in case something went wrong.
 // Test failures do not lead to an error. Test failures are printed to the writer.
-func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int, int, error) {
-	b, err := ioutil.ReadFile(testDataFilePath)
+func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, int, error) {
+	opDef, err := t.stor.Load(opId)
 
 	if err != nil {
 		return 0, 0, err
 	}
 
-	test := TestDef{}
-	if strings.HasSuffix(testDataFilePath, ".yaml") || strings.HasSuffix(testDataFilePath, ".yml") {
-		err = yaml.Unmarshal(b, &test)
-	} else if strings.HasSuffix(testDataFilePath, ".json") {
-		err = json.Unmarshal(b, &test)
-	} else {
-		err = errors.New("unsupported file ending")
-	}
-	if err != nil {
-		return 0, 0, err
-	}
-
-	if !test.Valid() {
-		err := test.Validate()
-		if err != nil {
-			return 0, 0, err
-		}
+	if len(opDef.TestCases) == 0 {
+		log.Println("no test cases found")
+		return 0, 0, nil
 	}
 
 	succs := 0
 	fails := 0
 
-	for i, tc := range test.TestCases {
-		o, err := NewTestEnviron("./").BuildAndCompileOperator(filepath.Join(filepath.Dir(testDataFilePath), test.OperatorFile), tc.Generics, tc.Properties)
+	for i, tc := range opDef.TestCases {
+		o, err := BuildAndCompile(*opDef, tc.Generics, tc.Properties)
 		if err != nil {
 			return 0, 0, err
 		}
 
-		fmt.Fprintf(writer, "Test case %3d/%3d: %s (operators: %d, size: %d)\n", i+1, len(test.TestCases), tc.Name, len(o.Children()), len(tc.Data.In))
+		fmt.Fprintf(writer, "Test case %3d/%3d: %s (operators: %d, size: %d)\n", i+1, len(opDef.TestCases), tc.Name, len(o.Children()), len(tc.Data.In))
 
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err
 		}
+
 		o.Main().Out().Bufferize()
 		o.Start()
 
@@ -82,9 +55,9 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 
 		for j := range tc.Data.In {
 			in := tc.Data.In[j]
-			expected := utils.CleanValue(tc.Data.Out[j])
+			expected := core.CleanValue(tc.Data.Out[j])
 
-			o.Main().In().Push(utils.CleanValue(in))
+			o.Main().In().Push(core.CleanValue(in))
 			actual := o.Main().Out().Pull()
 
 			if !testEqual(expected, actual) {
@@ -111,25 +84,6 @@ func TestOperator(testDataFilePath string, writer io.Writer, failFast bool) (int
 	}
 
 	return succs, fails, nil
-}
-
-func (t TestDef) Validate() error {
-	if len(t.OperatorFile) == 0 {
-		return errors.New("no operator file given")
-	}
-
-	for _, tc := range t.TestCases {
-		if len(tc.Data.In) != len(tc.Data.Out) {
-			return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
-		}
-	}
-
-	t.valid = true
-	return nil
-}
-
-func (t TestDef) Valid() bool {
-	return t.valid
 }
 
 func testEqual(a, b interface{}) bool {

@@ -2,7 +2,6 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
 	"reflect"
 )
 
@@ -56,12 +55,12 @@ var streamMapAccessCfg = &builtinConfig{
 			}
 
 			im := i.(map[string]interface{})
-			key := utils.CleanValue(im["key"])
+			key := core.CleanValue(im["key"])
 			stream := im["stream"].([]interface{})
 
 			for _, el := range stream {
 				elm := el.(map[string]interface{})
-				ckey := utils.CleanValue(elm["key"])
+				ckey := core.CleanValue(elm["key"])
 
 				if reflect.DeepEqual(key, ckey) {
 					out.Push(elm["value"])

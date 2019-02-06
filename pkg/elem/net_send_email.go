@@ -1,13 +1,12 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"fmt"
-	"net/smtp"
-	"net/mail"
-	"net"
 	"crypto/tls"
-	"github.com/Bitspark/slang/pkg/utils"
+	"fmt"
+	"github.com/Bitspark/slang/pkg/core"
+	"net"
+	"net/mail"
+	"net/smtp"
 )
 
 var netSendEmailCfg = &builtinConfig{
@@ -83,9 +82,9 @@ var netSendEmailCfg = &builtinConfig{
 			fromMap := im["from"].(map[string]interface{})
 			toMap := im["to"].(map[string]interface{})
 			from := mail.Address{Name: fromMap["name"].(string), Address: fromMap["address"].(string)}
-			to   := mail.Address{Name: toMap["name"].(string), Address: toMap["address"].(string)}
+			to := mail.Address{Name: toMap["name"].(string), Address: toMap["address"].(string)}
 			subj := im["subject"].(string)
-			body := im["body"].(utils.Binary)
+			body := im["body"].(core.Binary)
 
 			// Setup headers
 			headers := make(map[string]string)
@@ -95,19 +94,19 @@ var netSendEmailCfg = &builtinConfig{
 
 			// Setup message
 			message := ""
-			for k,v := range headers {
+			for k, v := range headers {
 				message += fmt.Sprintf("%s: %s\r\n", k, v)
 			}
 			message += "\r\n" + string(body)
 
 			host, _, _ := net.SplitHostPort(server)
 
-			auth := smtp.PlainAuth("",username, password, host)
+			auth := smtp.PlainAuth("", username, password, host)
 
 			// TLS config
-			tlsconfig := &tls.Config {
+			tlsconfig := &tls.Config{
 				InsecureSkipVerify: true,
-				ServerName: host,
+				ServerName:         host,
 			}
 
 			// Here is the key, you need to call tls.Dial instead of smtp.Dial

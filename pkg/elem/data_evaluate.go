@@ -124,6 +124,12 @@ var dataEvaluateCfg = &builtinConfig{
 
 			if m, ok := i.(map[string]interface{}); ok {
 				rlt, _ := expr.Eval(govaluate.MapParameters(m))
+				switch v := rlt.(type) {
+				case float64:
+					if math.IsNaN(v) || math.IsInf(v, 0) {
+						rlt = nil
+					}
+				}
 				out.Push(rlt)
 			} else {
 				panic("invalid item")

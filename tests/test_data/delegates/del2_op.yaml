@@ -27,7 +27,7 @@ properties:
 
 operators:
   del:
-    operator: .del_op
+    operator: test_data.delegates.del_op
     generics:
       gen:
         type: generic

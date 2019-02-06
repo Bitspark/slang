@@ -1,10 +1,9 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"bytes"
 	"archive/zip"
+	"bytes"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var filesZIPPackCfg = &builtinConfig{
@@ -53,7 +52,7 @@ var filesZIPPackCfg = &builtinConfig{
 				im := i.(map[string]interface{})
 
 				path := im["path"].(string)
-				file := im["file"].(utils.Binary)
+				file := im["file"].(core.Binary)
 
 				fileWriter, _ := zipWriter.Create(path)
 				fileWriter.Write(file)
@@ -61,7 +60,7 @@ var filesZIPPackCfg = &builtinConfig{
 
 			zipWriter.Close()
 
-			out.Push(utils.Binary(buf.Bytes()))
+			out.Push(core.Binary(buf.Bytes()))
 		}
 	},
 }

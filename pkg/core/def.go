@@ -153,11 +153,13 @@ func (d InstanceDef) Copy() InstanceDef {
 			properties[k] = v
 		}
 	}
+
 	var generics Generics = nil
 	if d.Generics != nil {
 		generics = Generics{}
 		for k, v := range d.Generics {
-			generics[k] = v
+			vCpy := v.Copy()
+			generics[k] = &vCpy
 		}
 	}
 

@@ -25,6 +25,7 @@ func EnsureDirExists(dir string) (string, error) {
 type FileSystem struct {
 	root  string
 	cache map[uuid.UUID]*core.OperatorDef
+	uuids []uuid.UUID
 }
 
 func NewFileSystem(p string) *FileSystem {
@@ -34,7 +35,7 @@ func NewFileSystem(p string) *FileSystem {
 	if !strings.HasSuffix(p, pathSep) {
 		p += pathSep
 	}
-	return &FileSystem{p, make(map[uuid.UUID]*core.OperatorDef)}
+	return &FileSystem{p, make(map[uuid.UUID]*core.OperatorDef), nil}
 }
 
 func (fs *FileSystem) Has(opId uuid.UUID) bool {
@@ -43,6 +44,10 @@ func (fs *FileSystem) Has(opId uuid.UUID) bool {
 }
 
 func (fs *FileSystem) List() ([]uuid.UUID, error) {
+	if fs.uuids != nil {
+		return fs.uuids, nil
+	}
+
 	opsFilePathSet := make(map[uuid.UUID]bool)
 
 	_ = filepath.Walk(fs.root, func(path string, info os.FileInfo, err error) error {
@@ -78,7 +83,9 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 		return nil
 	})
 
-	return funk.Keys(opsFilePathSet).([]uuid.UUID), nil
+	fs.uuids = funk.Keys(opsFilePathSet).([]uuid.UUID)
+
+	return fs.List()
 }
 
 func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
@@ -117,6 +124,7 @@ func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
 	}
 
 	delete(fs.cache, opId)
+	fs.uuids = nil
 
 	opDefYaml, err := yaml.Marshal(&opDef)
 

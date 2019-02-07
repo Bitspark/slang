@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,12 +43,11 @@ func (fs *FileSystem) Has(opId uuid.UUID) bool {
 }
 
 func (fs *FileSystem) List() ([]uuid.UUID, error) {
-	var outerErr error
-
 	opsFilePathSet := make(map[uuid.UUID]bool)
 
-	outerErr = filepath.Walk(fs.root, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(fs.root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			log.Printf("cannot read file %s: %s", path, err)
 			return nil
 		}
 
@@ -65,26 +65,20 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 		opDef, err := fs.readOpDefFile(path)
 
 		if err != nil {
-			fmt.Println("-->    ", path, "|", info.Name(), "|", err)
+			log.Printf("cannot read file %s: %s", path, err)
 			return nil
 		}
 
 		if opId, err := uuid.Parse(opDef.Id); err == nil {
 			opsFilePathSet[opId] = true
 		} else {
-			fmt.Println("-->    ", path, "|", info.Name(), "|", err)
+			log.Printf("invalid id in OperatorDef file %s: %s", path, err)
 			return nil
 		}
 		return nil
 	})
 
-	if outerErr != nil {
-		return nil, outerErr
-	} else if len(opsFilePathSet) == 0 {
-		return nil, fmt.Errorf("no operator files found")
-	} else {
-		return funk.Keys(opsFilePathSet).([]uuid.UUID), nil
-	}
+	return funk.Keys(opsFilePathSet).([]uuid.UUID), nil
 }
 
 func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {

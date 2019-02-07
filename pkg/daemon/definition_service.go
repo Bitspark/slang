@@ -24,8 +24,8 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		}
 
 		var dataOut outJSON
-		var opDefList []operatorDefJSON
 		var err error
+		opDefList := make([]operatorDefJSON, 0)
 
 		opIds, err := st.List()
 

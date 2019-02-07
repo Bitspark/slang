@@ -5,12 +5,18 @@ import (
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
+	"github.com/stoewer/go-strcase"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"text/template"
 )
+
+type OperatorTag struct {
+	Tag  string
+	Slug string
+}
 
 type OperatorDefinition struct {
 	UUID string
@@ -26,7 +32,7 @@ type OperatorInfo struct {
 	Description         string
 	ShortDescription    string
 	Slug                string
-	Tags                []string
+	Tags                []OperatorTag
 	OperatorDefinitions []OperatorDefinition
 }
 
@@ -38,9 +44,9 @@ type DocumentGenerator struct {
 }
 
 func main() {
-	libDir := "C:/Users/julia_000/Go/src/slang-lib/slang/"
-	docDir := "C:/Bitspark/bitspark-www/html/pages/slang/docs/"
-	tplDir := "C:/Bitspark/bitspark-www/templates/"
+	libDir := "D:/go-workspace/src/slang-lib/slang"
+	docDir := "D:/Bitspark/bitspark-www/html/pages/slang/docs/"
+	tplDir := "D:/Bitspark/bitspark-www/templates/"
 
 	dg := makeDocumentGenerator(libDir, docDir, tplDir)
 
@@ -119,8 +125,10 @@ func (dg *DocumentGenerator) collect() {
 			panic("where did that uuid come from?!")
 		}
 
-		opSlug := op.Meta.Name
+		opSlug := strcase.KebabCase(op.Meta.Name)
 
+		opTags := []OperatorTag{}
+		
 		opInfo := OperatorInfo{
 			UUID:             id.String(),
 			Name:             op.Meta.Name,
@@ -129,6 +137,7 @@ func (dg *DocumentGenerator) collect() {
 			Description:      op.Meta.Description,
 			ShortDescription: op.Meta.ShortDescription,
 			Slug:             opSlug,
+			Tags:             opTags,
 		}
 
 		dg.operatorInfos = append(dg.operatorInfos, opInfo)

@@ -193,6 +193,14 @@ func (d *OperatorDef) Validate() error {
 		return fmt.Errorf(`operator name may not be empty`)
 	}
 
+	if len(d.Meta.Name) > 12 {
+		return fmt.Errorf(`name too long (>12): ` + d.Meta.Name)
+	}
+
+	if len(d.Meta.ShortDescription) > 80 {
+		return fmt.Errorf(`short description too long (>80): ` + d.Meta.ShortDescription)
+	}
+
 	if _, err := uuid.Parse(d.Id); err != nil {
 		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
 	}

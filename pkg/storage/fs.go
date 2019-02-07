@@ -47,7 +47,7 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 
 	outerErr = filepath.Walk(fs.root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return nil
 		}
 
 		// Prevent recursive walk. Just read files within fs.root
@@ -65,13 +65,14 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 
 		if err != nil {
 			fmt.Println("-->    ", path, "|", info.Name(), "|", err)
-			return err
+			return nil
 		}
 
 		if opId, err := uuid.Parse(opDef.Id); err == nil {
 			opsFilePathSet[opId] = true
 		} else {
-			return err
+			fmt.Println("-->    ", path, "|", info.Name(), "|", err)
+			return nil
 		}
 		return nil
 	})

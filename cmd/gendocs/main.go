@@ -28,6 +28,11 @@ type OperatorDefinition struct {
 	JSON string
 }
 
+type OperatorUsage struct {
+	Count int
+	Info  *OperatorInfo
+}
+
 type OperatorInfo struct {
 	UUID                string
 	Name                string
@@ -39,6 +44,12 @@ type OperatorInfo struct {
 	Tags                []OperatorTag
 	OperatorDefinitions []OperatorDefinition
 
+	OperatorContentJSON string
+	OperatorsUsingJSON  string
+
+	operatorContent map[string]*OperatorUsage
+	operatorsUsing  map[string]*OperatorUsage
+
 	operatorDefinition *core.OperatorDef
 }
 
@@ -47,9 +58,9 @@ type DocGenerator struct {
 	docOpDir       string
 	docOpURL       *url.URL
 	opTmpl         *template.Template
-	operatorInfos  []*OperatorInfo
-	generatedInfos []*OperatorInfo
+	operatorInfos  map[string]*OperatorInfo
 	slugs          map[string]*OperatorInfo
+	generatedInfos []*OperatorInfo
 }
 
 func main() {
@@ -62,6 +73,8 @@ func main() {
 
 	dg.init()
 	dg.collect(true)
+	dg.contents()
+	dg.usage()
 	dg.generate()
 	dg.saveURLs()
 }
@@ -84,11 +97,12 @@ func makeDocumentGenerator(libDir string, docDir string, tmplDir string, docURL 
 	docOpURL.Path = path.Join(docOpURL.Path, "operator")
 
 	return DocGenerator{
-		libDir:   libDir,
-		docOpDir: path.Join(docDir, "operator"),
-		docOpURL: docOpURL,
-		opTmpl:   opTmpl,
-		slugs:    make(map[string]*OperatorInfo),
+		libDir:        libDir,
+		docOpDir:      path.Join(docDir, "operator"),
+		docOpURL:      docOpURL,
+		opTmpl:        opTmpl,
+		slugs:         make(map[string]*OperatorInfo),
+		operatorInfos: make(map[string]*OperatorInfo),
 	}
 }
 
@@ -176,10 +190,15 @@ func (dg *DocGenerator) collect(strict bool) {
 			opJSONDefs = append(opJSONDefs, jsonDef)
 		}
 
+		opIcon := opDef.Meta.Icon
+		if opIcon == "" {
+			opIcon = "box"
+		}
+
 		opInfo := &OperatorInfo{
 			UUID:                id.String(),
 			Name:                opDef.Meta.Name,
-			Icon:                opDef.Meta.Icon,
+			Icon:                opIcon,
 			Description:         opDef.Meta.Description,
 			ShortDescription:    opDef.Meta.ShortDescription,
 			Type:                opType,
@@ -187,10 +206,12 @@ func (dg *DocGenerator) collect(strict bool) {
 			Tags:                opTags,
 			OperatorDefinitions: opJSONDefs,
 			operatorDefinition:  opDef,
+			operatorContent:     make(map[string]*OperatorUsage),
+			operatorsUsing:      make(map[string]*OperatorUsage),
 		}
 
 		dg.slugs[opSlug] = opInfo
-		dg.operatorInfos = append(dg.operatorInfos, opInfo)
+		dg.operatorInfos[opDef.Id] = opInfo
 	}
 
 	if len(dg.operatorInfos) == 0 {
@@ -199,6 +220,57 @@ func (dg *DocGenerator) collect(strict bool) {
 
 	log.Printf("Collected %d operators (%d elementaries, %d libraries)\n", len(dg.operatorInfos), elementaries, libraries)
 	log.Printf("Failed to collect %d operators\n", fails)
+}
+
+func (dg *DocGenerator) contents() {
+	for _, info := range dg.operatorInfos {
+		for _, ins := range info.operatorDefinition.InstanceDefs {
+			if usage, ok := info.operatorContent[ins.Operator]; ok {
+				usage.Count++
+			} else {
+				info.operatorContent[ins.Operator] = &OperatorUsage{
+					Count: 1,
+					Info:  dg.operatorInfos[ins.Operator],
+				}
+			}
+		}
+	}
+
+	// Dump JSON
+	for _, info := range dg.operatorInfos {
+		buf := new(bytes.Buffer)
+		json.NewEncoder(buf).Encode(info.operatorContent)
+		buf.Truncate(buf.Len() - 1)
+		info.OperatorContentJSON = buf.String()
+	}
+}
+
+func (dg *DocGenerator) usage() {
+	for _, info := range dg.operatorInfos {
+		for _, ins := range info.operatorDefinition.InstanceDefs {
+			insInfo, ok := dg.operatorInfos[ins.Operator]
+			if !ok {
+				continue
+			}
+
+			if usage, ok := insInfo.operatorsUsing[ins.Operator]; ok {
+				usage.Count++
+			} else {
+				insInfo.operatorsUsing[ins.Operator] = &OperatorUsage{
+					Count: 1,
+					Info:  insInfo,
+				}
+			}
+		}
+	}
+
+	// Dump JSON
+	for _, info := range dg.operatorInfos {
+		buf := new(bytes.Buffer)
+		json.NewEncoder(buf).Encode(info.operatorsUsing)
+		buf.Truncate(buf.Len() - 1)
+		info.OperatorsUsingJSON = buf.String()
+	}
 }
 
 func (dg *DocGenerator) generate() {
@@ -248,7 +320,7 @@ func (dg *DocGenerator) saveURLs() {
 		opDocURLStr := opDocURL.String()
 
 		if opDef.Meta.DocURL == opDocURLStr {
-			continue
+			// continue
 		}
 
 		opDef.Meta.DocURL = opDocURLStr

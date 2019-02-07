@@ -57,10 +57,14 @@ type TestCaseDef struct {
 }
 
 type OperatorMetaDef struct {
-	Name             string `json:"name" yaml:"name"`
-	Icon             string `json:"icon" yaml:"icon"`
-	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-	Description      string `json:"description" yaml:"description"`
+	Name             string   `json:"name" yaml:"name"`
+	Icon             string   `json:"icon" yaml:"icon"`
+	ShortDescription string   `json:"shortDescription" yaml:"shortDescription"`
+	Description      string   `json:"description" yaml:"description"`
+	DocURL           string   `json:"docUrl" yaml:"docUrl"`
+	Tags             []string `json:"tags" yaml:"tags"`
+
+	valid bool
 }
 
 type OperatorDef struct {
@@ -152,7 +156,7 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
-func (d InstanceDef) Copy() InstanceDef {
+func (d InstanceDef) Copy(recursive bool) InstanceDef {
 	var properties Properties = nil
 	if d.Properties != nil {
 		properties = Properties{}
@@ -170,6 +174,11 @@ func (d InstanceDef) Copy() InstanceDef {
 		}
 	}
 
+	opDef := OperatorDef{}
+	if recursive {
+		opDef = d.OperatorDef.Copy(recursive)
+	}
+
 	cpy := InstanceDef{
 		d.Name,
 		d.Operator,
@@ -177,7 +186,7 @@ func (d InstanceDef) Copy() InstanceDef {
 		generics,
 		d.Geometry,
 		d.valid,
-		d.OperatorDef.Copy(),
+		opDef,
 	}
 	return cpy
 }
@@ -189,17 +198,7 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	if d.Meta.Name == "" {
-		return fmt.Errorf(`operator name may not be empty`)
-	}
-
-	if len(d.Meta.Name) > 12 {
-		return fmt.Errorf(`name too long (>12): ` + d.Meta.Name)
-	}
-
-	if len(d.Meta.ShortDescription) > 80 {
-		return fmt.Errorf(`short description too long (>80): ` + d.Meta.ShortDescription)
-	}
+	d.valid = false
 
 	if _, err := uuid.Parse(d.Id); err != nil {
 		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
@@ -305,7 +304,7 @@ func (d OperatorDef) GenericsSpecified() error {
 	return nil
 }
 
-func (d OperatorDef) Copy() OperatorDef {
+func (d OperatorDef) Copy(recursive bool) OperatorDef {
 	srvDefs := make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
 		c := v.Copy()
@@ -339,7 +338,7 @@ func (d OperatorDef) Copy() OperatorDef {
 
 		insDefs = InstanceDefList{}
 		for _, v := range d.InstanceDefs {
-			insCpy := v.Copy()
+			insCpy := v.Copy(recursive)
 			insDefs = append(insDefs, &insCpy)
 		}
 	}
@@ -450,6 +449,51 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 
 	def.PropertyDefs = nil
 
+	return nil
+}
+
+// OPERATOR META DEFINITION
+
+func (d *OperatorMetaDef) Valid() bool {
+	return d.valid
+}
+
+func (d *OperatorMetaDef) Validate() error {
+	d.valid = false
+
+	if len(d.Name) < 2 {
+		return fmt.Errorf(`name too short (<2): ` + d.Name)
+	}
+
+	if len(d.Name) > 18 {
+		return fmt.Errorf(`name too long (>18): ` + d.Name)
+	}
+
+	re := regexp.MustCompile("^[a-zA-Z0-9 \\-]*$")
+	if !re.Match([]byte(d.Name)) {
+		return fmt.Errorf(`name must only contain alphanumeric characters, dashes and spaces: ` + d.Name)
+	}
+
+	if len(d.ShortDescription) < 8 {
+		return fmt.Errorf(`short description short (<8): ` + d.ShortDescription)
+	}
+
+	if len(d.ShortDescription) > 80 {
+		return fmt.Errorf(`short description too long (>80): ` + d.ShortDescription)
+	}
+
+	if len(d.Tags) == 0 {
+		return fmt.Errorf(`needs at least one tag`)
+	}
+
+	for _, tag := range d.Tags {
+		re := regexp.MustCompile("^[a-zA-Z0-9\\-]*$")
+		if !re.Match([]byte(tag)) {
+			return fmt.Errorf(`tag must only contain alphanumeric characters and dashes: ` + tag)
+		}
+	}
+
+	d.valid = true
 	return nil
 }
 

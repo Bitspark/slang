@@ -51,7 +51,7 @@ func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
 		return nil, errors.New("builtin operator not found")
 	}
 
-	opDef := cfg.opDef.Copy()
+	opDef := cfg.opDef.Copy(true)
 	return &opDef, nil
 }
 

@@ -75,7 +75,7 @@ func (s *Storage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	if err != nil {
 		return nil, err
 	}
-	cpyOpDef := opDef.Copy()
+	cpyOpDef := opDef.Copy(true)
 	return &cpyOpDef, nil
 }
 

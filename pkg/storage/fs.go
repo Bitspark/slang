@@ -22,7 +22,8 @@ func EnsureDirExists(dir string) (string, error) {
 }
 
 type FileSystem struct {
-	root string
+	root  string
+	cache map[uuid.UUID]*core.OperatorDef
 }
 
 func NewFileSystem(p string) *FileSystem {
@@ -32,7 +33,7 @@ func NewFileSystem(p string) *FileSystem {
 	if !strings.HasSuffix(p, pathSep) {
 		p += pathSep
 	}
-	return &FileSystem{p}
+	return &FileSystem{p, make(map[uuid.UUID]*core.OperatorDef)}
 }
 
 func (fs *FileSystem) Has(opId uuid.UUID) bool {
@@ -87,11 +88,21 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 }
 
 func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+	if def, ok := fs.cache[opId]; ok {
+		return def, nil
+	}
+
 	opDefFile, err := fs.getFilePath(opId)
 	if err != nil {
 		return nil, err
 	}
-	return fs.readOpDefFile(opDefFile)
+
+	fs.cache[opId], err = fs.readOpDefFile(opDefFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.Load(opId)
 }
 
 func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
@@ -110,6 +121,8 @@ func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
 	if err != nil {
 		return opId, err
 	}
+
+	delete(fs.cache, opId)
 
 	opDefYaml, err := yaml.Marshal(&opDef)
 

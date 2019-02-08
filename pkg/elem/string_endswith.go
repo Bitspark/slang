@@ -8,6 +8,9 @@ import (
 
 var stringEndswithCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Meta: core.OperatorMetaDef{
+			Name: "ends with",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

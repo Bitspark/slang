@@ -7,6 +7,9 @@ import (
 
 var timeDelayCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Meta: core.OperatorMetaDef{
+			Name: "delay",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

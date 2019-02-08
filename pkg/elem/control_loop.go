@@ -6,6 +6,10 @@ import (
 
 var controlLoopCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "0b8a1592-1368-44bc-92d5-692acc78b1d3",
+		Meta: core.OperatorMetaDef{
+			Name: "loop",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

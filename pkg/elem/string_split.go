@@ -7,6 +7,9 @@ import (
 
 var stringSplitCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Meta: core.OperatorMetaDef{
+			Name: "split string",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

@@ -28,6 +28,10 @@ func getWindowStore(store string) *windowStore {
 
 var streamWindowCollectCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "14f5de1a-5e38-4f9c-a625-eff7a572078c",
+		Meta: core.OperatorMetaDef{
+			Name: "collect window",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

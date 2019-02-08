@@ -7,6 +7,9 @@ import (
 
 var netMQTTPublishCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Meta: core.OperatorMetaDef{
+			Name: "MQTT publish",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

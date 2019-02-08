@@ -7,6 +7,9 @@ import (
 
 var systemExecuteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Meta: core.OperatorMetaDef{
+			Name: "execute",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

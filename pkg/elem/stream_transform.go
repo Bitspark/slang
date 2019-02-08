@@ -6,6 +6,10 @@ import (
 
 var streamTransformCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "dce082cb-7272-4e85-b4fa-740778e8ba8d",
+		Meta: core.OperatorMetaDef{
+			Name: "transform stream",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

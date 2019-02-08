@@ -6,6 +6,10 @@ import (
 
 var controlTakeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
+		Meta: core.OperatorMetaDef{
+			Name: "take",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

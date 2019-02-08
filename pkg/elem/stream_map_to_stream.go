@@ -6,6 +6,10 @@ import (
 
 var streamMapToStreamCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "d099a1cd-69eb-43a2-b95b-239612c457fc",
+		Meta: core.OperatorMetaDef{
+			Name: "map to stream",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

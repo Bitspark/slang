@@ -6,6 +6,10 @@ import (
 
 var streamWindowReleaseCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "47b3f097-2043-42c6-aad5-0cfdb9004aef",
+		Meta: core.OperatorMetaDef{
+			Name: "release window",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

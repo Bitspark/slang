@@ -7,6 +7,10 @@ import (
 
 var streamMapAccessCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "618c4007-70fc-44ac-9443-184df77ab730",
+		Meta: core.OperatorMetaDef{
+			Name: "access map",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

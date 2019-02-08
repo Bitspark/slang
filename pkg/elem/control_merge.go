@@ -6,6 +6,10 @@ import (
 
 var controlMergeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "97583526-178b-42ca-b73c-9491ed8536f2",
+		Meta: core.OperatorMetaDef{
+			Name: "merge",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

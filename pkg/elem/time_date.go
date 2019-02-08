@@ -22,6 +22,9 @@ func parseDate(dateStr string) (time.Time, error) {
 
 var timeParseDateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Meta: core.OperatorMetaDef{
+			Name: "to date",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

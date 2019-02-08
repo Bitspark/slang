@@ -8,6 +8,10 @@ import (
 
 var streamSerializeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "13257172-b05d-497c-be23-da7c86577c1e",
+		Meta: core.OperatorMetaDef{
+			Name: "serialize",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

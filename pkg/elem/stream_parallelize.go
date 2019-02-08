@@ -8,6 +8,10 @@ import (
 
 var streamParallelizeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "b8428777-7667-4012-b76a-a5b7f4d1e433",
+		Meta: core.OperatorMetaDef{
+			Name: "parallelize",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

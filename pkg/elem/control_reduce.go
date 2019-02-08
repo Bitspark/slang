@@ -7,6 +7,14 @@ import (
 
 var controlReduceCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "b95e6da8-9770-4a04-a73d-cdfe2081870f",
+		Meta: core.OperatorMetaDef{
+			Name: "reduce",
+			ShortDescription: "reduces the items of a stream pairwise using a reducer delegate",
+			Icon: "compress-alt",
+			Tags: []string{"data", "stream"},
+			DocURL: "https://bitspark.de/slang/docs/operator/reduce",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

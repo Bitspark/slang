@@ -7,6 +7,10 @@ import (
 
 var controlIterateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "e58624d4-5568-40d3-8b77-ab792ef620f1",
+		Meta: core.OperatorMetaDef{
+			Name: "iterate",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

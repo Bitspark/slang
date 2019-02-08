@@ -1,425 +1,528 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
-	"gopkg.in/yaml.v2"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
+	"github.com/stoewer/go-strcase"
 	"io/ioutil"
+	"log"
+	"net/url"
 	"os"
 	"path"
-	"path/filepath"
-	"sort"
-	"strings"
 	"text/template"
-	"unicode"
 )
 
-type OperatorYAML struct {
-	Name string
+type TagInfo struct {
+	Tag           string
+	Slug          string
+	Count         int
+	OperatorsJSON string
+
+	operators []*OperatorInfo
+}
+
+type OperatorDefinition struct {
+	UUID string
 	Type string
-	YAML string
+	JSON string
 }
 
-type OperatorEntry struct {
-	Name             string
-	DisplayName      string
-	FQName           string
-	Path             string
-	Def              core.OperatorDef
-	Type             string
-	IconClass        string
-	PackageList      string
-	ShortDescription string
-	Description      string
-	Index            string
-	OperatorYAMLs    []OperatorYAML
+type OperatorUsage struct {
+	Count int
+	Info  *OperatorInfo
 }
 
-type Operator struct {
-	Name      string `yaml:"name" json:"name"`
-	IconClass string `yaml:"iconClass" json:"iconClass"`
-	Path      string `yaml:"path" json:"path"`
-	Opened    bool   `yaml:"opened" json:"opened"`
+type OperatorInfo struct {
+	UUID                string
+	Name                string
+	Type                string
+	Icon                string
+	Description         string
+	ShortDescription    string
+	Slug                string
+	Tags                []*TagInfo
+	OperatorDefinitions []OperatorDefinition
 
-	Type string `yaml:"type" json:"type"`
+	OperatorContentCount int
+	OperatorContentJSON  string
+	OperatorsUsingCount  int
+	OperatorsUsingJSON   string
+
+	operatorContent map[string]*OperatorUsage
+	operatorsUsing  map[string]*OperatorUsage
+
+	operatorDefinition *core.OperatorDef
 }
 
-type Package struct {
-	Name      string `yaml:"name" json:"name"`
-	IconClass string `yaml:"iconClass" json:"iconClass"`
-	Path      string `yaml:"path" json:"path"`
-	Expanded  bool   `yaml:"expanded" json:"expanded"`
-	Opened    bool   `yaml:"opened" json:"opened"`
-
-	SubPackages []*Package  `yaml:"subPackages" json:"subPackages"`
-	Operators   []*Operator `yaml:"operators" json:"operators"`
+type DocGenerator struct {
+	libDir         string
+	docOpDir       string
+	docTagDir      string
+	docIndexPath   string
+	docOpURL       *url.URL
+	docTagURL      *url.URL
+	opTmpl         *template.Template
+	tagTmpl        *template.Template
+	indexTmpl      *template.Template
+	operatorInfos  map[string]*OperatorInfo
+	tagInfos       map[string]*TagInfo
+	slugs          map[string]*OperatorInfo
+	generatedInfos []*OperatorInfo
 }
 
 func main() {
-	tplOperatorPath := "D:/Bitspark/bitspark-www/templates/operator.html"
-	tplPackagePath := "D:/Bitspark/bitspark-www/templates/package.html"
+	libDir := "C:/Users/julia_000/Go/src/slang-lib/slang"
+	docDir := "C:/Bitspark/bitspark-www/html/pages/slang/docs/"
+	tplDir := "C:/Bitspark/bitspark-www/templates/"
+	docURL := "https://bitspark.de/slang/docs/"
 
-	docDir := "D:/Bitspark/bitspark-www/html/pages/slang/docs/"
+	dg := makeDocumentGenerator(libDir, docDir, tplDir, docURL)
 
-	err := os.RemoveAll(docDir + "slang")
+	dg.init()
+	dg.collect(true)
+	dg.contents()
+	dg.usage()
+	dg.generateOperatorDocs()
+	dg.removeTagRecursion()
+	dg.generateTagDocs()
+	dg.generateIndex()
+	dg.saveURLs()
+}
+
+func makeDocumentGenerator(libDir string, docDir string, tmplDir string, docURL string) DocGenerator {
+	bytesOperator, err := ioutil.ReadFile(path.Join(tmplDir, "operator.html"))
+	if err != nil {
+		panic(err)
+	}
+	opTmpl, err := template.New("DocOperatorInfo").Delims("[[", "]]").Parse(string(bytesOperator))
 	if err != nil {
 		panic(err)
 	}
 
-	os.MkdirAll(docDir, os.ModeDir)
-
-	bytesOperator, err := ioutil.ReadFile(tplOperatorPath)
+	bytesTag, err := ioutil.ReadFile(path.Join(tmplDir, "tag.html"))
 	if err != nil {
 		panic(err)
 	}
-	tmplOperator, err := template.New("Operator").Delims("[[", "]]").Parse(string(bytesOperator))
-	if err != nil {
-		panic(err)
-	}
-
-	bytesPackage, err := ioutil.ReadFile(tplPackagePath)
-	if err != nil {
-		panic(err)
-	}
-	tmplPackage, err := template.New("Index").Delims("[[", "]]").Parse(string(bytesPackage))
+	tagTmpl, err := template.New("DocTagInfo").Delims("[[", "]]").Parse(string(bytesTag))
 	if err != nil {
 		panic(err)
 	}
 
-	e := api.NewEnviron()
-
-	var ops []struct {
-		FQName string
-		Def    core.OperatorDef
-		Type   string
-	}
-
-	libs, err := e.ListOperatorNames()
+	bytesIndex, err := ioutil.ReadFile(path.Join(tmplDir, "doc-index.html"))
 	if err != nil {
 		panic(err)
 	}
-	for _, fqname := range libs {
-		if e.IsLocalOperator(fqname) {
-			continue
-		}
+	indexTmpl, err := template.New("DocIndex").Delims("[[", "]]").Parse(string(bytesIndex))
+	if err != nil {
+		panic(err)
+	}
 
-		opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(fqname, ".", string(filepath.Separator), -1), "")
+	docOpURL, _ := url.Parse(docURL)
+	docOpURL.Path = path.Join(docOpURL.Path, "operator")
+	docTagURL, _ := url.Parse(docURL)
+	docTagURL.Path = path.Join(docTagURL.Path, "tag")
+
+	return DocGenerator{
+		libDir:        libDir,
+		docOpDir:      path.Join(docDir, "operator"),
+		docTagDir:     path.Join(docDir, "tag"),
+		docIndexPath:  path.Join(docDir, "index.html"),
+		docOpURL:      docOpURL,
+		docTagURL:     docTagURL,
+		opTmpl:        opTmpl,
+		tagTmpl:       tagTmpl,
+		indexTmpl:     indexTmpl,
+		slugs:         make(map[string]*OperatorInfo),
+		tagInfos:      make(map[string]*TagInfo),
+		operatorInfos: make(map[string]*OperatorInfo),
+	}
+}
+
+func (dg *DocGenerator) init() {
+	os.Remove(dg.docIndexPath)
+	os.RemoveAll(dg.docOpDir)
+	os.RemoveAll(dg.docTagDir)
+
+	os.MkdirAll(path.Dir(dg.docIndexPath), os.ModeDir)
+	os.MkdirAll(dg.docOpDir, os.ModeDir)
+	os.MkdirAll(dg.docTagDir, os.ModeDir)
+}
+
+func (dg *DocGenerator) collect(strict bool) {
+	log.Println("Begin collecting")
+	log.Printf("Library path: %s\n", dg.libDir)
+
+	elementaryUUIDs := elem.GetBuiltinIds()
+
+	store := storage.NewStorage(nil).AddLoader(storage.NewFileSystem(dg.libDir))
+
+	libraryUUIDs, err := store.List()
+	if err != nil {
+		panic(err)
+	}
+
+	var uuids []uuid.UUID
+
+	for _, id := range elementaryUUIDs {
+		uuids = append(uuids, id)
+	}
+
+	for _, id := range libraryUUIDs {
+		uuids = append(uuids, id)
+	}
+
+	elementaries := 0
+	libraries := 0
+	tries := 0
+
+	for _, id := range uuids {
+		tries++
+
+		opDef, err := store.Load(id)
 		if err != nil {
+			log.Println(opDef.Id, opDef.Meta.Name, err)
 			continue
 		}
 
-		def, err := e.ReadOperatorDef(opDefFilePath, []string{})
-		if err != nil {
-			continue
-		}
-
-		ops = append(ops, struct {
-			FQName string
-			Def    core.OperatorDef
-			Type   string
-		}{fqname, def, "Library"})
-	}
-
-	elems := elem.GetBuiltinNames()
-	for _, fqname := range elems {
-		def, err := elem.GetOperatorDef(fqname)
-		if err != nil {
-			continue
-		}
-
-		ops = append(ops, struct {
-			FQName string
-			Def    core.OperatorDef
-			Type   string
-		}{fqname, def, "Elementary"})
-	}
-
-	var opEntries []OperatorEntry
-	for _, op := range ops {
-		fqname := op.FQName
-		def := op.Def
-
-		operatorYAML := make(map[string]OperatorYAML)
-		packOperatorIntoYAML(e, fqname, operatorYAML)
-
-		var operatorYAMLs []OperatorYAML
-		for _, o := range operatorYAML {
-			operatorYAMLs = append(operatorYAMLs, o)
-		}
-
-		p := strings.Replace(fqname, ".", "/", -1) + ".html"
-		entry := OperatorEntry{
-			def.Name,
-			def.DisplayName,
-			fqname,
-			p,
-			def,
-			op.Type,
-			"fas fa-" + def.Icon,
-			buildPackageList(fqname),
-			def.ShortDescription,
-			def.Description,
-			"",
-			operatorYAMLs,
-		}
-		if entry.Name == "" {
-			entry.Name = getName(entry.FQName)
-			entry.DisplayName = getName(entry.FQName)
-		}
-		if def.Icon == "" {
-			entry.IconClass = "fas fa-box-open"
-		}
-		opEntries = append(opEntries, entry)
-	}
-
-	for i := range opEntries {
-		opEntries[i].Index = packageToString(buildIndex(e, opEntries[i].FQName, "slang", opEntries))
-	}
-
-	for _, entry := range opEntries {
-		writeOperatorDocFile(docDir, tmplOperator, entry)
-	}
-
-	sort.SliceStable(ops, func(i, j int) bool {
-		return strings.Compare(ops[i].FQName, ops[j].FQName) == -1
-	})
-
-	buildPackageFiles(e, docDir, tmplPackage, "slang", "slang", opEntries)
-}
-
-func packageToString(pkgPtr *Package) string {
-	pkgYaml, err := json.Marshal(pkgPtr)
-	if err != nil {
-		panic(err)
-	}
-	return string(pkgYaml)
-}
-
-func getPath(fqname string) string {
-	fqsplit := strings.Split(fqname, ".")
-	lastPart := fqsplit[len(fqsplit)-1]
-	if unicode.IsUpper(rune(lastPart[0])) {
-		pathsplit := fqsplit[0 : len(fqsplit)-1]
-		p := strings.Join(pathsplit, ".")
-		return p
-	} else {
-		return fqname
-	}
-}
-
-func getName(fqname string) string {
-	fqnameSplit := strings.Split(fqname, ".")
-	return fqnameSplit[len(fqnameSplit)-1]
-}
-
-func writeOperatorDocFile(docDir string, tmpl *template.Template, entry OperatorEntry) {
-	os.MkdirAll(path.Dir(docDir+entry.Path), os.ModeDir)
-
-	file, err := os.Create(docDir + entry.Path)
-	if err != nil {
-		panic(err)
-	}
-
-	tmpl.Execute(file, entry)
-	file.Close()
-}
-
-func getPackageDef(e *api.Environ, pkg string) core.PackageDef {
-	pkgDefPath, _, err := e.GetFilePathWithFileEnding(strings.Replace(pkg, ".", "/", -1)+"/_package", "")
-	if err != nil {
-		panic(err)
-	}
-
-	pkgDef, err := e.ReadPackageDef(pkgDefPath)
-	if err != nil {
-		panic(err)
-	}
-
-	return pkgDef
-}
-
-func buildPackageFile(e *api.Environ, docDir string, tmpl *template.Template, pkg string, ops []OperatorEntry) {
-	file, err := os.Create(docDir + "index.html")
-	if err != nil {
-		panic(err)
-	}
-
-	pkgDef := getPackageDef(e, pkg)
-
-	tmpl.Execute(file, struct {
-		Name             string
-		DisplayName      string
-		Description      string
-		ShortDescription string
-		Index            string
-	}{pkgDef.Name, pkgDef.DisplayName, pkgDef.Description, pkgDef.ShortDescription, packageToString(buildIndex(e, pkg, "slang", ops))})
-	file.Close()
-}
-
-func buildPackageList(fqname string) string {
-	type entry struct {
-		Name string `json:"name"`
-		Path string `json:"path"`
-	}
-
-	var packageList []entry
-
-	fqnameSplit := strings.Split(fqname, ".")
-	pstr := ""
-	if len(fqnameSplit) > 1 {
-		for _, p := range fqnameSplit[0 : len(fqnameSplit)-1] {
-			pstr += p + "/"
-			packageList = append(packageList, entry{p, pstr})
-		}
-	}
-	packageListJson, err := json.Marshal(&packageList)
-	if err != nil {
-		panic(err)
-	}
-	return string(packageListJson)
-}
-
-func buildPackageFiles(e *api.Environ, docDir string, tmpl *template.Template, pkg string, name string, ops []OperatorEntry) {
-	buildPackageFile(e, docDir+strings.Replace(pkg, ".", "/", -1)+"/", tmpl, pkg, ops)
-
-	subsHandled := make(map[string]bool)
-	for _, op := range ops {
-		if pkg != "" && !strings.HasPrefix(op.FQName, pkg+".") {
-			continue
-		}
-
-		remainder := op.FQName
-		if pkg != "" {
-			remainder = remainder[len(pkg)+1:]
-		}
-		remainderSplit := strings.Split(remainder, ".")
-
-		if len(remainderSplit) > 1 {
-			if _, ok := subsHandled[remainderSplit[0]]; !ok {
-				subsHandled[remainderSplit[0]] = true
-				if pkg == "" {
-					buildPackageFiles(e, docDir, tmpl, remainderSplit[0], remainderSplit[0], ops)
-				} else {
-					buildPackageFiles(e, docDir, tmpl, pkg+"."+remainderSplit[0], remainderSplit[0], ops)
-				}
+		if strict {
+			if err := opDef.Meta.Validate(); err != nil {
+				log.Println(opDef.Id, opDef.Meta.Name, err)
+				continue
 			}
 		}
-	}
-}
 
-func buildIndex(e *api.Environ, self, pkg string, ops []OperatorEntry) *Package {
-	pkgPtr := new(Package)
-	pkgDef := getPackageDef(e, pkg)
-
-	dpkg := getPath(self)
-	pkgPtr.Expanded = strings.HasPrefix(dpkg, pkg)
-
-	if pkg != "" {
-		pkgPtr.Name = pkgDef.DisplayName
-		pkgPtr.Opened = pkg == self
-		pkgPtr.Path = strings.Replace(pkg, ".", "/", -1)
-	}
-
-	subsHandled := make(map[string]bool)
-	for _, op := range ops {
-		if pkg != "" && !strings.HasPrefix(op.FQName, pkg+".") {
-			continue
+		var opType string
+		if funk.Contains(libraryUUIDs, id) {
+			libraries++
+			opType = "library"
+		} else if funk.Contains(elementaryUUIDs, id) {
+			elementaries++
+			opType = "elementary"
+		} else {
+			panic("where did that uuid come from?!")
 		}
 
-		remainder := op.FQName
-		if pkg != "" {
-			remainder = remainder[len(pkg)+1:]
-		}
-		remainderSplit := strings.Split(remainder, ".")
-
-		if len(remainderSplit) > 1 {
-			if _, ok := subsHandled[remainderSplit[0]]; !ok {
-				subsHandled[remainderSplit[0]] = true
-				subPkgName := ""
-				if pkg == "" {
-					subPkgName = remainderSplit[0]
-				} else {
-					subPkgName = pkg + "." + remainderSplit[0]
-				}
-				subPkgPtr := buildIndex(e, self, subPkgName, ops)
-				pkgPtr.SubPackages = append(pkgPtr.SubPackages, subPkgPtr)
+		var opSlug string
+		if opDef.Meta.DocURL == "" {
+			opSlug = dg.findSlug(opDef, strcase.KebabCase(opDef.Meta.Name))
+		} else {
+			u, err := url.Parse(opDef.Meta.DocURL)
+			if err != nil {
+				panic(err)
 			}
-		} else {
-			opPtr := new(Operator)
-			opPtr.Name = op.DisplayName
-			opPtr.Path = op.Path
-			opPtr.Opened = op.FQName == self
-
-			pkgPtr.Operators = append(pkgPtr.Operators, opPtr)
+			opSlug = path.Base(u.Path)
 		}
+
+		opInfo := &OperatorInfo{}
+
+		opTags := []*TagInfo{}
+		for _, tag := range opDef.Meta.Tags {
+			kebabTag := strcase.KebabCase(tag)
+			opTag, ok := dg.tagInfos[kebabTag]
+			if !ok {
+				opTag = &TagInfo{tag, kebabTag, 0, "", []*OperatorInfo{}}
+				dg.tagInfos[kebabTag] = opTag
+			}
+			opTags = append(opTags, opTag)
+
+			opTag.operators = append(opTag.operators, opInfo)
+			opTag.Count++
+		}
+
+		opJSONDefs := make([]OperatorDefinition, 0)
+		for _, jsonDef := range dumpDefinitions(*opDef) {
+			opJSONDefs = append(opJSONDefs, jsonDef)
+		}
+
+		opIcon := opDef.Meta.Icon
+		if opIcon == "" {
+			opIcon = "box"
+		}
+
+		*opInfo = OperatorInfo{
+			UUID:                id.String(),
+			Name:                opDef.Meta.Name,
+			Icon:                opIcon,
+			Description:         opDef.Meta.Description,
+			ShortDescription:    opDef.Meta.ShortDescription,
+			Type:                opType,
+			Slug:                opSlug,
+			Tags:                opTags,
+			OperatorDefinitions: opJSONDefs,
+			operatorDefinition:  opDef,
+			operatorContent:     make(map[string]*OperatorUsage),
+			operatorsUsing:      make(map[string]*OperatorUsage),
+		}
+
+		dg.slugs[opSlug] = opInfo
+		dg.operatorInfos[opDef.Id] = opInfo
 	}
 
-	return pkgPtr
+	if len(dg.operatorInfos) == 0 {
+		panic("No operators found")
+	}
+
+	fails := tries - len(dg.operatorInfos)
+
+	log.Printf("Collected %d operators (%d elementaries, %d libraries)\n", len(dg.operatorInfos), elementaries, libraries)
+	log.Printf("Failed to collect %d operators\n", fails)
 }
 
-func packOperatorIntoYAML(e *api.Environ, fqop string, read map[string]OperatorYAML) error {
-	if _, ok := read[fqop]; ok {
-		return nil
-	}
-
-	if elem.IsRegistered(fqop) {
-		def, err := elem.GetOperatorDef(fqop)
-		if err != nil {
-			return err
-		}
-		defYAML, err := yaml.Marshal(def)
-		if err != nil {
-			return err
-		}
-		read[fqop] = OperatorYAML{
-			fqop,
-			"elementary",
-			string(defYAML),
-		}
-	} else {
-		tp := ""
-		if strings.HasPrefix(fqop, "slang.") {
-			tp = "library"
-		} else {
-			tp = "local"
-		}
-
-		relPath := strings.Replace(fqop, ".", string(filepath.Separator), -1)
-		absPath, _, err := e.GetFilePathWithFileEnding(relPath, "")
-		if err != nil {
-			return err
-		}
-
-		fileContents, err := ioutil.ReadFile(absPath)
-		if err != nil {
-			return err
-		}
-		read[fqop] = OperatorYAML{
-			fqop,
-			tp,
-			string(fileContents),
-		}
-
-		def, err := e.ReadOperatorDef(absPath, nil)
-		if err != nil {
-			return err
-		}
-
-		var baseFqop string
-		dotIdx := strings.LastIndex(fqop, ".")
-		if dotIdx != -1 {
-			baseFqop = fqop[:dotIdx+1]
-		}
-		for _, ins := range def.InstanceDefs {
-			if !strings.HasPrefix(ins.Operator, ".") {
-				packOperatorIntoYAML(e, ins.Operator, read)
+func (dg *DocGenerator) contents() {
+	for _, info := range dg.operatorInfos {
+		for _, ins := range info.operatorDefinition.InstanceDefs {
+			if usage, ok := info.operatorContent[ins.Operator]; ok {
+				usage.Count++
 			} else {
-				packOperatorIntoYAML(e, baseFqop+ins.Operator[1:], read)
+				info.operatorContent[ins.Operator] = &OperatorUsage{
+					Count: 1,
+					Info:  dg.operatorInfos[ins.Operator],
+				}
+			}
+			info.OperatorContentCount++
+		}
+	}
+
+	// Dump JSON
+	for _, info := range dg.operatorInfos {
+		buf := new(bytes.Buffer)
+		json.NewEncoder(buf).Encode(info.operatorContent)
+		buf.Truncate(buf.Len() - 1)
+		info.OperatorContentJSON = buf.String()
+	}
+}
+
+func (dg *DocGenerator) usage() {
+	for _, info := range dg.operatorInfos {
+		for _, ins := range info.operatorDefinition.InstanceDefs {
+			insInfo, ok := dg.operatorInfos[ins.Operator]
+			if !ok {
+				continue
+			}
+
+			if usage, ok := insInfo.operatorsUsing[info.UUID]; ok {
+				usage.Count++
+			} else {
+				insInfo.operatorsUsing[info.UUID] = &OperatorUsage{
+					Count: 1,
+					Info:  info,
+				}
+			}
+
+			insInfo.OperatorsUsingCount++
+		}
+	}
+
+	// Dump JSON
+	for _, info := range dg.operatorInfos {
+		buf := new(bytes.Buffer)
+		json.NewEncoder(buf).Encode(info.operatorsUsing)
+		buf.Truncate(buf.Len() - 1)
+		info.OperatorsUsingJSON = buf.String()
+	}
+}
+
+func (dg *DocGenerator) generateOperatorDocs() {
+	log.Println("Begin generating operator docs")
+
+	if len(dg.operatorInfos) == 0 {
+		panic("No operators found")
+	}
+
+	generated := 0
+
+	for _, opInfo := range dg.operatorInfos {
+		file, err := os.Create(path.Join(dg.docOpDir, opInfo.Slug+".html"))
+		if err != nil {
+			panic(err)
+		}
+		err = dg.opTmpl.Execute(file, opInfo)
+		if err != nil {
+			panic(err)
+		}
+		file.Close()
+
+		generated++
+
+		dg.generatedInfos = append(dg.generatedInfos, opInfo)
+	}
+
+	log.Printf("Generated %d operator doc files\n", generated)
+}
+
+func (dg *DocGenerator) removeTagRecursion() {
+	for _, tagInfo := range dg.tagInfos {
+		// Remove JSON and tags to avoid recursion
+		for i, op := range tagInfo.operators {
+			opCpy := &OperatorInfo{}
+			*opCpy = *op
+			opCpy.OperatorContentJSON = ""
+			opCpy.OperatorsUsingJSON = ""
+			opCpy.OperatorDefinitions = nil
+			tagInfo.operators[i] = opCpy
+		}
+	}
+}
+
+func (dg *DocGenerator) generateTagDocs() {
+	log.Println("Begin generating tag docs")
+
+	if len(dg.tagInfos) == 0 {
+		panic("No tags found")
+	}
+
+	generated := 0
+
+	for _, tagInfo := range dg.tagInfos {
+		buf := new(bytes.Buffer)
+
+		// Remove JSON and tags to avoid recursion
+		for i, op := range tagInfo.operators {
+			opCpy := &OperatorInfo{}
+			*opCpy = *op
+			opCpy.OperatorContentJSON = ""
+			opCpy.OperatorsUsingJSON = ""
+			opCpy.OperatorDefinitions = nil
+			tagInfo.operators[i] = opCpy
+		}
+
+		json.NewEncoder(buf).Encode(tagInfo.operators)
+		buf.Truncate(buf.Len() - 1)
+		tagInfo.OperatorsJSON = buf.String()
+
+		file, err := os.Create(path.Join(dg.docTagDir, tagInfo.Slug+".html"))
+		if err != nil {
+			panic(err)
+		}
+		err = dg.tagTmpl.Execute(file, tagInfo)
+		if err != nil {
+			panic(err)
+		}
+		file.Close()
+
+		generated++
+	}
+
+	log.Printf("Generated %d operator doc files\n", generated)
+}
+
+func (dg *DocGenerator) generateIndex() {
+	log.Println("Begin generating doc index")
+
+	if len(dg.tagInfos) == 0 {
+		panic("No tags found")
+	}
+
+	file, err := os.Create(dg.docIndexPath)
+	if err != nil {
+		panic(err)
+	}
+	err = dg.indexTmpl.Execute(file, struct {
+		Total int
+		Tags  map[string]*TagInfo
+	}{len(dg.generatedInfos), dg.tagInfos})
+	if err != nil {
+		panic(err)
+	}
+	file.Close()
+
+	log.Println("Generated doc index file")
+}
+
+func (dg *DocGenerator) saveURLs() {
+	log.Println("Begin saving URLs")
+
+	if len(dg.generatedInfos) == 0 {
+		panic("No operators generated")
+	}
+
+	written := 0
+
+	store := storage.NewStorage(storage.NewFileSystem(dg.libDir))
+
+	for _, opInfo := range dg.generatedInfos {
+		if opInfo.Type != "library" {
+			continue
+		}
+
+		opDef := opInfo.operatorDefinition.Copy(false)
+
+		opDocURL, _ := url.Parse(dg.docOpURL.String())
+		opDocURL.Path = path.Join(opDocURL.Path, opInfo.Slug)
+		opDocURLStr := opDocURL.String()
+
+		if opDef.Meta.DocURL == opDocURLStr {
+			// continue
+		}
+
+		opDef.Meta.DocURL = opDocURLStr
+
+		_, err := store.Store(opDef)
+		if err != nil {
+			panic(err)
+		}
+
+		written++
+	}
+
+	log.Printf("Updated %d URLs\n", written)
+}
+
+func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
+	if info, ok := dg.slugs[slug]; !ok {
+		return slug
+	} else {
+		otherTags := info.Tags
+		additionalTags := []string{}
+
+		for _, tag := range opDef.Meta.Tags {
+			if !funk.Contains(otherTags, tag) {
+				additionalTags = append(additionalTags, tag)
+			}
+		}
+
+		if len(additionalTags) == 0 {
+			log.Panicf("cannot find alternative slug for")
+		}
+
+		slug += "-" + additionalTags[0]
+
+		return dg.findSlug(opDef, slug)
+	}
+}
+
+func dumpDefinitions(opDef core.OperatorDef) map[string]OperatorDefinition {
+	defs := make(map[string]OperatorDefinition)
+
+	var opType string
+	if opDef.Elementary == "" {
+		opType = "library"
+	} else {
+		opType = "elementary"
+	}
+
+	buf := new(bytes.Buffer)
+	json.NewEncoder(buf).Encode(opDef)
+
+	// Remove newline at the end
+	buf.Truncate(buf.Len() - 1)
+
+	defs[opDef.Id] = OperatorDefinition{opDef.Id, opType, buf.String()}
+
+	for _, ins := range opDef.InstanceDefs {
+		subDefs := dumpDefinitions(ins.OperatorDef)
+
+		for id, def := range subDefs {
+			if _, ok := defs[id]; !ok {
+				defs[id] = def
 			}
 		}
 	}
 
-	return nil
+	return defs
 }

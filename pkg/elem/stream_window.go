@@ -6,6 +6,10 @@ import (
 
 var streamWindowCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "5b704038-9617-454a-b7a1-2091277cff69",
+		Meta: core.OperatorMetaDef{
+			Name: "window",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

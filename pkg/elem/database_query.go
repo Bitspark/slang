@@ -9,8 +9,13 @@ import (
 
 var databaseQueryCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "ce3a3e0e-d579-4712-8573-713a645c2271",
 		Meta: core.OperatorMetaDef{
 			Name: "DB query",
+			ShortDescription: "queries an SQL query on a relational database and emits the result set",
+			Icon: "database",
+			Tags: []string{"database"},
+			DocURL: "https://bitspark.de/slang/docs/operator/db-execute",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

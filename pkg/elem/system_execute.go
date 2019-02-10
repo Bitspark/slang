@@ -7,6 +7,7 @@ import (
 
 var systemExecuteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "13cbad40-da00-40d7-bdcd-981b14ec346b",
 		Meta: core.OperatorMetaDef{
 			Name: "execute",
 		},

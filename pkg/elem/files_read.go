@@ -10,6 +10,7 @@ import (
 
 var filesReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "f7eecf2c-6504-478f-b2fa-809bec71463c",
 		Meta: core.OperatorMetaDef{
 			Name: "read file",
 		},

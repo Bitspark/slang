@@ -10,8 +10,13 @@ import (
 
 var encodingCSVReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "77d60459-f8b5-4f4b-b293-740164c49a82",
 		Meta: core.OperatorMetaDef{
 			Name: "read CSV",
+			ShortDescription: "reads a CSV file and emits a stream of lines, separated into columns",
+			Icon: "file-csv",
+			Tags: []string{"csv", "encoding"},
+			DocURL: "https://bitspark.de/slang/docs/operator/read-csv",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

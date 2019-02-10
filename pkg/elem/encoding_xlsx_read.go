@@ -7,8 +7,13 @@ import (
 
 var encodingXLSXReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "69db81cf-2a24-4470-863f-ceffaeb8b246",
 		Meta: core.OperatorMetaDef{
 			Name: "read Excel",
+			ShortDescription: "decodes Excel data into a stream of sheets, each being a 2d-stream of cells",
+			Icon: "file-excel",
+			Tags: []string{"http", "encoding"},
+			DocURL: "https://bitspark.de/slang/docs/operator/encode-url",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

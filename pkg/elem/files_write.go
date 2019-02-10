@@ -9,6 +9,7 @@ import (
 
 var filesWriteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "9b61597d-cfbc-42d1-9620-210081244ba1",
 		Meta: core.OperatorMetaDef{
 			Name: "write file",
 		},

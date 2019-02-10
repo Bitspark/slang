@@ -88,8 +88,8 @@ func main() {
 	dg.contents()
 	dg.usage()
 	dg.generateOperatorDocs()
-	dg.removeTagRecursion()
-	dg.generateTagDocs()
+	dg.prepareTags()
+	// dg.generateTagDocs()
 	dg.generateIndex()
 	dg.saveURLs()
 }
@@ -147,10 +147,6 @@ func (dg *DocGenerator) init() {
 	os.Remove(dg.docIndexPath)
 	os.RemoveAll(dg.docOpDir)
 	os.RemoveAll(dg.docTagDir)
-
-	os.MkdirAll(path.Dir(dg.docIndexPath), os.ModeDir)
-	os.MkdirAll(dg.docOpDir, os.ModeDir)
-	os.MkdirAll(dg.docTagDir, os.ModeDir)
 }
 
 func (dg *DocGenerator) collect(strict bool) {
@@ -334,6 +330,8 @@ func (dg *DocGenerator) generateOperatorDocs() {
 		panic("No operators found")
 	}
 
+	os.MkdirAll(dg.docOpDir, os.ModeDir)
+
 	generated := 0
 
 	for _, opInfo := range dg.operatorInfos {
@@ -355,7 +353,7 @@ func (dg *DocGenerator) generateOperatorDocs() {
 	log.Printf("Generated %d operator doc files\n", generated)
 }
 
-func (dg *DocGenerator) removeTagRecursion() {
+func (dg *DocGenerator) prepareTags() {
 	for _, tagInfo := range dg.tagInfos {
 		// Remove JSON and tags to avoid recursion
 		for i, op := range tagInfo.operators {
@@ -366,6 +364,11 @@ func (dg *DocGenerator) removeTagRecursion() {
 			opCpy.OperatorDefinitions = nil
 			tagInfo.operators[i] = opCpy
 		}
+
+		buf := new(bytes.Buffer)
+		json.NewEncoder(buf).Encode(tagInfo.operators)
+		buf.Truncate(buf.Len() - 1)
+		tagInfo.OperatorsJSON = buf.String()
 	}
 }
 
@@ -376,25 +379,11 @@ func (dg *DocGenerator) generateTagDocs() {
 		panic("No tags found")
 	}
 
+	os.MkdirAll(dg.docTagDir, os.ModeDir)
+
 	generated := 0
 
 	for _, tagInfo := range dg.tagInfos {
-		buf := new(bytes.Buffer)
-
-		// Remove JSON and tags to avoid recursion
-		for i, op := range tagInfo.operators {
-			opCpy := &OperatorInfo{}
-			*opCpy = *op
-			opCpy.OperatorContentJSON = ""
-			opCpy.OperatorsUsingJSON = ""
-			opCpy.OperatorDefinitions = nil
-			tagInfo.operators[i] = opCpy
-		}
-
-		json.NewEncoder(buf).Encode(tagInfo.operators)
-		buf.Truncate(buf.Len() - 1)
-		tagInfo.OperatorsJSON = buf.String()
-
 		file, err := os.Create(path.Join(dg.docTagDir, tagInfo.Slug+".html"))
 		if err != nil {
 			panic(err)
@@ -417,6 +406,8 @@ func (dg *DocGenerator) generateIndex() {
 	if len(dg.tagInfos) == 0 {
 		panic("No tags found")
 	}
+
+	os.MkdirAll(path.Dir(dg.docIndexPath), os.ModeDir)
 
 	file, err := os.Create(dg.docIndexPath)
 	if err != nil {

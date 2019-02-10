@@ -7,6 +7,7 @@ import (
 
 var stringFormatCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "21dbddf2-2d07-494e-8950-3ac0224a3ff5",
 		Meta: core.OperatorMetaDef{
 			Name: "format",
 		},

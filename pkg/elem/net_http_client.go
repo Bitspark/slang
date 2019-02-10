@@ -12,6 +12,9 @@ var netHTTPClientCfg = &builtinConfig{
 		Id: "f7f5907d-758b-4892-8a3e-ae86b877b869",
 		Meta: core.OperatorMetaDef{
 			Name: "HTTP client",
+			ShortDescription: "sends an HTTP request",
+			Tags: []string{"network", "http"},
+			DocURL: "https://bitspark.de/slang/docs/operator/http-client",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

@@ -8,6 +8,7 @@ import (
 
 var filesAppendCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "e49369c2-eac2-4dc7-9a6d-b635ae1654f9",
 		Meta: core.OperatorMetaDef{
 			Name: "append file",
 		},

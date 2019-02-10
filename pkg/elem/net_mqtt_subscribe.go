@@ -7,6 +7,7 @@ import (
 
 var netMQTTSubscribeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "fd51e295-3483-4558-9b26-8c16d579c4ef",
 		Meta: core.OperatorMetaDef{
 			Name: "MQTT subscribe",
 		},

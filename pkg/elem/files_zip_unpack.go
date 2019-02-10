@@ -8,6 +8,7 @@ import (
 
 var filesZIPUnpackCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "04714d4a-1d5d-4b68-b614-524dd4662ef4",
 		Meta: core.OperatorMetaDef{
 			Name: "unpack ZIP",
 		},

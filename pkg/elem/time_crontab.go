@@ -7,6 +7,7 @@ import (
 
 var timeCrontabCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "60b849fd-ca5a-4206-8312-996e4e3f6c31",
 		Meta: core.OperatorMetaDef{
 			Name: "crontab",
 		},

@@ -8,6 +8,7 @@ import (
 
 var imageDecodeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "4b082c52-9a99-472f-9277-f5ca9651dbfb",
 		Meta: core.OperatorMetaDef{
 			Name: "decode image",
 		},

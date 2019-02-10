@@ -15,6 +15,7 @@ import (
 
 var imageEncodeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "bd4475af-795b-4be8-9e57-9fec9444e028",
 		Meta: core.OperatorMetaDef{
 			Name: "encode image",
 		},

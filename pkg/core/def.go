@@ -475,11 +475,11 @@ func (d *OperatorMetaDef) Validate() error {
 	}
 
 	if len(d.ShortDescription) < 8 {
-		return fmt.Errorf(`short description short (<8): ` + d.ShortDescription)
+		return fmt.Errorf("short description short (%d, min. 8): %s", len(d.ShortDescription), d.ShortDescription)
 	}
 
 	if len(d.ShortDescription) > 80 {
-		return fmt.Errorf(`short description too long (>80): ` + d.ShortDescription)
+		return fmt.Errorf("short description too long (%d, max. 80): %s", len(d.ShortDescription), d.ShortDescription)
 	}
 
 	if len(d.Tags) == 0 {

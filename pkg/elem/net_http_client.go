@@ -13,6 +13,7 @@ var netHTTPClientCfg = &builtinConfig{
 		Meta: core.OperatorMetaDef{
 			Name: "HTTP client",
 			ShortDescription: "sends an HTTP request",
+			Icon: "browser",
 			Tags: []string{"network", "http"},
 			DocURL: "https://bitspark.de/slang/docs/operator/http-client",
 		},

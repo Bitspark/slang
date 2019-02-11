@@ -9,6 +9,10 @@ var streamSliceCfg = &builtinConfig{
 		Id: "2471a7aa-c5b9-4392-b23f-d0c7bcdb3f39",
 		Meta: core.OperatorMetaDef{
 			Name: "slice",
+			ShortDescription: "emits a sub-stream of another stream",
+			Icon: "cut",
+			Tags: []string{"stream"},
+			DocURL: "https://bitspark.de/slang/docs/operator/slice",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

@@ -11,6 +11,10 @@ var stringContainsCfg = &builtinConfig{
 		Id: "8a01dfe3-5dcf-4f40-9e54-f5b168148d2a",
 		Meta: core.OperatorMetaDef{
 			Name: "contains",
+			ShortDescription: "tells if a string contains another string",
+			Icon: "search",
+			Tags: []string{"string"},
+			DocURL: "https://bitspark.de/slang/docs/operator/contains",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

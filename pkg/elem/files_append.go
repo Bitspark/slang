@@ -11,6 +11,10 @@ var filesAppendCfg = &builtinConfig{
 		Id: "e49369c2-eac2-4dc7-9a6d-b635ae1654f9",
 		Meta: core.OperatorMetaDef{
 			Name: "append file",
+			ShortDescription: "appends binary data to a file or creates it if non existent",
+			Icon: "file-plus",
+			Tags: []string{"file"},
+			DocURL: "https://bitspark.de/slang/docs/operator/append-file",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

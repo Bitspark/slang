@@ -11,6 +11,10 @@ var filesZIPUnpackCfg = &builtinConfig{
 		Id: "04714d4a-1d5d-4b68-b614-524dd4662ef4",
 		Meta: core.OperatorMetaDef{
 			Name: "unpack ZIP",
+			ShortDescription: "unpacks a zip archive and emits a stream of files and their binary content",
+			Icon: "file-archive",
+			Tags: []string{"zip", "compression"},
+			DocURL: "https://bitspark.de/slang/docs/operator/unpack-zip",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

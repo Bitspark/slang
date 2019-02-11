@@ -11,6 +11,10 @@ var stringBeginswithCfg = &builtinConfig{
 		Id: "9f274995-2726-4513-ac7c-f15ac7b68720",
 		Meta: core.OperatorMetaDef{
 			Name: "begins with",
+			ShortDescription: "tells if a string begins with another string",
+			Icon: "hand-point-left",
+			Tags: []string{"string"},
+			DocURL: "https://bitspark.de/slang/docs/operator/begins-with",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

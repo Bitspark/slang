@@ -104,14 +104,14 @@ func makeDocumentGenerator(libDir string, docDir string, tmplDir string, docURL 
 		panic(err)
 	}
 
-	bytesTag, err := ioutil.ReadFile(path.Join(tmplDir, "tag.html"))
-	if err != nil {
-		panic(err)
-	}
-	tagTmpl, err := template.New("DocTagInfo").Delims("[[", "]]").Parse(string(bytesTag))
-	if err != nil {
-		panic(err)
-	}
+	//bytesTag, err := ioutil.ReadFile(path.Join(tmplDir, "tag.html"))
+	//if err != nil {
+	//	panic(err)
+	//}
+	//tagTmpl, err := template.New("DocTagInfo").Delims("[[", "]]").Parse(string(bytesTag))
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	bytesIndex, err := ioutil.ReadFile(path.Join(tmplDir, "doc-index.html"))
 	if err != nil {
@@ -135,7 +135,6 @@ func makeDocumentGenerator(libDir string, docDir string, tmplDir string, docURL 
 		docOpURL:      docOpURL,
 		docTagURL:     docTagURL,
 		opTmpl:        opTmpl,
-		tagTmpl:       tagTmpl,
 		indexTmpl:     indexTmpl,
 		slugs:         make(map[string]*OperatorInfo),
 		tagInfos:      make(map[string]*TagInfo),

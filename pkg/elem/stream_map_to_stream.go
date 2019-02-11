@@ -9,6 +9,10 @@ var streamMapToStreamCfg = &builtinConfig{
 		Id: "d099a1cd-69eb-43a2-b95b-239612c457fc",
 		Meta: core.OperatorMetaDef{
 			Name: "map to stream",
+			ShortDescription: "takes a map and emits a stream of key-value pairs",
+			Icon: "cubes",
+			Tags: []string{"stream", "convert"},
+			DocURL: "https://bitspark.de/slang/docs/operator/map-to-stream",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -26,11 +30,11 @@ var streamMapToStreamCfg = &builtinConfig{
 					Stream: &core.TypeDef{
 						Type: "map",
 						Map: map[string]*core.TypeDef{
-							"{key}": {
+							"key": {
 								Type:    "generic",
 								Generic: "keyType",
 							},
-							"{value}": {
+							"value": {
 								Type:    "generic",
 								Generic: "valueType",
 							},
@@ -41,12 +45,6 @@ var streamMapToStreamCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.TypeDefMap{
-			"key": {
-				Type: "string",
-			},
-			"value": {
-				Type: "string",
-			},
 			"entries": {
 				Type: "stream",
 				Stream: &core.TypeDef{
@@ -62,8 +60,6 @@ var streamMapToStreamCfg = &builtinConfig{
 		for _, entry := range op.Property("entries").([]interface{}) {
 			entries = append(entries, entry.(string))
 		}
-		keyStr := op.Property("key").(string)
-		valueStr := op.Property("value").(string)
 		for !op.CheckStop() {
 			i := in.Pull()
 			if core.IsMarker(i) {
@@ -77,8 +73,8 @@ var streamMapToStreamCfg = &builtinConfig{
 			for _, entry := range entries {
 				value := im[entry]
 				valueMap := make(map[string]interface{})
-				valueMap[keyStr] = entry
-				valueMap[valueStr] = value
+				valueMap["key"] = entry
+				valueMap["value"] = value
 				out.Stream().Push(valueMap)
 			}
 			out.PushEOS()

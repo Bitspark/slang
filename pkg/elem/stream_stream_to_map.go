@@ -9,6 +9,10 @@ var streamStreamToMapCfg = &builtinConfig{
 		Id: "42d0f961-4ce0-4a20-b1b0-3da46396ae66",
 		Meta: core.OperatorMetaDef{
 			Name: "stream to map",
+			ShortDescription: "takes a map and emits a stream of key-value pairs",
+			Icon: "cubes",
+			Tags: []string{"stream", "convert"},
+			DocURL: "https://bitspark.de/slang/docs/operator/map-to-stream",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

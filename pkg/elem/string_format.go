@@ -10,6 +10,10 @@ var stringFormatCfg = &builtinConfig{
 		Id: "21dbddf2-2d07-494e-8950-3ac0224a3ff5",
 		Meta: core.OperatorMetaDef{
 			Name: "format",
+			ShortDescription: "places values formatted in a C-like manner inside a string",
+			Icon: "edit",
+			Tags: []string{"string"},
+			DocURL: "https://bitspark.de/slang/docs/operator/format",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

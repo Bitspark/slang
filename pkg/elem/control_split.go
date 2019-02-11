@@ -9,7 +9,7 @@ var controlSplitCfg = &builtinConfig{
 		Id: "fed72b41-2584-424c-8213-1978410ccab6",
 		Meta: core.OperatorMetaDef{
 			Name: "split",
-			ShortDescription: "splits a stream by emitting items to one of two streams depending on the control value",
+			ShortDescription: "emits items of a stream to either outgoing stream depending on the control value",
 			Icon: "code-merge",
 			Tags: []string{"control"},
 			DocURL: "https://bitspark.de/slang/docs/operator/split",

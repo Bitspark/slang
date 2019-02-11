@@ -10,6 +10,10 @@ var systemExecuteCfg = &builtinConfig{
 		Id: "13cbad40-da00-40d7-bdcd-981b14ec346b",
 		Meta: core.OperatorMetaDef{
 			Name: "execute",
+			ShortDescription: "executes a command on the host system",
+			Icon: "terminal",
+			Tags: []string{"system"},
+			DocURL: "https://bitspark.de/slang/docs/operator/execute",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

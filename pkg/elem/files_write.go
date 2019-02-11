@@ -12,6 +12,10 @@ var filesWriteCfg = &builtinConfig{
 		Id: "9b61597d-cfbc-42d1-9620-210081244ba1",
 		Meta: core.OperatorMetaDef{
 			Name: "write file",
+			ShortDescription: "creates or replaces a file and writes binary data to it",
+			Icon: "file-signature",
+			Tags: []string{"file"},
+			DocURL: "https://bitspark.de/slang/docs/operator/write-file",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

@@ -10,6 +10,10 @@ var timeDelayCfg = &builtinConfig{
 		Id: "7d61b83a-9aa2-4875-9c21-1e11f6adbfae",
 		Meta: core.OperatorMetaDef{
 			Name: "delay",
+			ShortDescription: "takes an item and emits it again after a given number of milliseconds has passed",
+			Icon: "clock",
+			Tags: []string{"time"},
+			DocURL: "https://bitspark.de/slang/docs/operator/now",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

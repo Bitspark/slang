@@ -143,7 +143,7 @@ func init() {
 	Register(imageDecodeCfg)
 	Register(imageEncodeCfg)
 
-	Register(systemExecuteCfg)
+	Register(shellExecuteCfg)
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}

@@ -166,7 +166,6 @@ func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
 	if err = opDef.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
 		return nil, err
 	}
-
 	insDef.OperatorDef = *opDef
 
 	return MakeOperator(insDef)

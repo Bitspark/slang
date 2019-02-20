@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
@@ -19,7 +20,26 @@ var runningInstances = make(map[int64]struct {
 })
 var rnd = rand.New(rand.NewSource(99))
 
-const SuffixPacked = "_packed"
+type httpDefLoader struct {
+	httpDef *core.OperatorDef
+}
+
+func (l *httpDefLoader) List() ([]uuid.UUID, error) {
+	httpDefId, _ := uuid.Parse(l.httpDef.Id)
+	return []uuid.UUID{httpDefId}, nil
+}
+
+func (l *httpDefLoader) Has(opId uuid.UUID) bool {
+	httpDefId, _ := uuid.Parse(l.httpDef.Id)
+	return httpDefId == opId
+}
+
+func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+	if !l.Has(opId) {
+		return nil, fmt.Errorf("")
+	}
+	return l.httpDef, nil
+}
 
 var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
@@ -83,7 +103,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			op, err := api.BuildAndCompile(*httpDef, nil, nil)
+			st.AddLoader(&httpDefLoader{httpDef})
+			httpDefId, _ := uuid.Parse(httpDef.Id)
+			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)

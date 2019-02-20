@@ -38,7 +38,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 	// Const port instance
 	portIns := &core.InstanceDef{
 		Name:     "port",
-		Operator: "slang.data.Value",
+		Operator: elem.GetId("value").String(),
 		Generics: core.Generics{
 			"valueType": {
 				Type: "number",
@@ -54,7 +54,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 	// HTTP operator instance
 	httpIns := &core.InstanceDef{
 		Name:     "httpServer",
-		Operator: "slang.net.HTTPServer",
+		Operator: elem.GetId("HTTP server").String(),
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, httpIns)
 	httpDef.Connections["port)"] = []string{"(httpServer"}
@@ -83,7 +83,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 		// It contains the JSON we need to unpack
 		unpackerIns := &core.InstanceDef{
 			Name:     "unpacker",
-			Operator: "slang.encoding.JSONRead",
+			Operator: elem.GetId("decode JSON").String(),
 			Generics: core.Generics{
 				"itemType": &inDef,
 			},
@@ -101,7 +101,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 		// It contains the JSON we need to pack
 		packerIns := &core.InstanceDef{
 			Name:     "packer",
-			Operator: "slang.encoding.JSONWrite",
+			Operator: elem.GetId("encode JSON").String(),
 			Generics: core.Generics{
 				"itemType": &outDef,
 			},
@@ -115,7 +115,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 		// Status code operator
 		statusCodeIns := &core.InstanceDef{
 			Name:     "statusCode",
-			Operator: "slang.data.Value",
+			Operator: elem.GetId("value").String(),
 			Generics: core.Generics{
 				"valueType": {
 					Type: "number",
@@ -131,7 +131,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 		// Status code operator
 		headersIns := &core.InstanceDef{
 			Name:     "headers",
-			Operator: "slang.data.Value",
+			Operator: elem.GetId("value").String(),
 			Generics: core.Generics{
 				"valueType": {
 					Type: "stream",

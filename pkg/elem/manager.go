@@ -36,7 +36,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func getId(idOrName string) uuid.UUID {
+func GetId(idOrName string) uuid.UUID {
 	if id, ok := name2Id[idOrName]; ok {
 		return id
 	}
@@ -45,7 +45,7 @@ func getId(idOrName string) uuid.UUID {
 }
 
 func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
-	cfg, ok := cfgs[getId(idOrName)]
+	cfg, ok := cfgs[GetId(idOrName)]
 
 	if !ok {
 		return nil, errors.New("builtin operator not found")
@@ -56,14 +56,14 @@ func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
 }
 
 func IsRegistered(idOrName string) bool {
-	_, b := cfgs[getId(idOrName)]
+	_, b := cfgs[GetId(idOrName)]
 	return b
 }
 
 func Register(cfg *builtinConfig) {
 	cfg.opDef.Elementary = cfg.opDef.Id
 
-	id := getId(cfg.opDef.Id)
+	id := GetId(cfg.opDef.Id)
 	cfgs[id] = cfg
 	name2Id[cfg.opDef.Meta.Name] = id
 }
@@ -150,7 +150,7 @@ func init() {
 }
 
 func getBuiltinCfg(id string) *builtinConfig {
-	c, _ := cfgs[getId(id)]
+	c, _ := cfgs[GetId(id)]
 	return c
 }
 

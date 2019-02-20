@@ -3,17 +3,14 @@ package daemon
 import (
 	"encoding/json"
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
-	"path/filepath"
 	"strconv"
-	"strings"
-
-	"github.com/Bitspark/slang/pkg/core"
 )
 
 var runningInstances = make(map[int64]struct {
@@ -28,7 +25,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
-				Id     string          `json:"fqn"`
+				Id     string          `json:"id"`
 				Props  core.Properties `json:"props"`
 				Gens   core.Generics   `json:"gens"`
 				Stream bool            `json:"stream"`
@@ -79,24 +76,14 @@ var RunnerService = &Service{map[string]*Endpoint{
 			} else {
 				httpDef, err = constructHttpEndpoint(st, port, opId, ri.Gens, ri.Props)
 			}
+
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
 
-			packagedOperator := strings.Replace(ri.Id+SuffixPacked, ".", string(filepath.Separator), -1) + ".yaml"
-
-			/* TODO
-			bytes, _ := yaml.Marshal(httpDef)
-			ioutil.WriteFile(
-				filepath.Join(st.WorkingDir(), packagedOperator),
-				bytes,
-				os.ModePerm,
-			)
-			*/
-
-			op, err := api.Build(*httpDef, nil, nil)
+			op, err := api.BuildAndCompile(*httpDef, nil, nil)
 			if err != nil {
 				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
@@ -111,7 +98,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			op.Main().Out().Bufferize()
 			op.Start()
-			log.Printf("operator %s (port: %d, id: %s) started", packagedOperator, port, strconv.FormatInt(handle, 16))
+			log.Printf("operator %s (port: %d, id: %s) started", port, strconv.FormatInt(handle, 16))
 			op.Main().In().Push(nil) // Start server
 
 			data.Status = "success"
@@ -122,7 +109,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			go func() {
 				oprlt := op.Main().Out().Pull()
-				log.Printf("operator %s (port: %d, id: %s) terminated: %v", packagedOperator, port, strconv.FormatInt(handle, 16), oprlt)
+				log.Printf("operator %s (port: %d, id: %s) terminated: %v", port, strconv.FormatInt(handle, 16), oprlt)
 			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {

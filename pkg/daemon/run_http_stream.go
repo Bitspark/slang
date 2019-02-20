@@ -3,6 +3,7 @@ package daemon
 import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
@@ -37,7 +38,7 @@ func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, g
 	// Const port instance
 	portIns := &core.InstanceDef{
 		Name:     "port",
-		Operator: "slang.data.Value",
+		Operator: elem.GetId("value").String(),
 		Generics: core.Generics{
 			"valueType": {
 				Type: "number",
@@ -53,7 +54,7 @@ func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, g
 	// HTTP operator instance
 	httpIns := &core.InstanceDef{
 		Name:     "httpServer",
-		Operator: "slang.net.HTTPServer",
+		Operator: elem.GetId("HTTP server").String(),
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, httpIns)
 	httpDef.Connections["port)"] = []string{"(httpServer"}

@@ -12,6 +12,8 @@ import (
 // TODO: Make safer (maybe require an API key?)
 func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
 	httpDef := &core.OperatorDef{
+		Id:   "caff9fef-01fa-4ef8-bb11-aabbccddeeff",
+		Meta: core.OperatorMetaDef{Name: "httpWrapper"},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
@@ -25,12 +27,7 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 		Connections: make(map[string][]string),
 	}
 
-	opDef, err := st.Load(opId)
-	if err != nil {
-		return nil, err
-	}
-
-	op, err := api.Build(*opDef, gens, props)
+	op, err := api.Build(opId, gens, props, st)
 	if err != nil {
 		return nil, err
 	}

@@ -147,8 +147,8 @@ func constructHttpEndpoint(st storage.Storage, port int, opId uuid.UUID, gens co
 			},
 			Properties: core.Properties{
 				"value": []interface{}{
-					map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"},
-					map[string]string{"key": "Content-Type", "value": "application/json"},
+					map[string]interface{}{"key": "Access-Control-Allow-Origin", "value": "*"},
+					map[string]interface{}{"key": "Content-Type", "value": "application/json"},
 				},
 			},
 		}

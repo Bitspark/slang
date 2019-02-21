@@ -367,7 +367,9 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 	}
 
 	def.specifyGenericsOnPortGroups(gens)
-	def.applyPropertiesOnPortGroups(props)
+	if err := def.applyPropertiesOnPortGroups(props); err != nil {
+		return err
+	}
 
 	def.PropertyDefs = nil
 

@@ -67,8 +67,6 @@ var databaseKafjaSubscribeCfg = &builtinConfig{
 			}
 
 			config := sarama.NewConfig()
-			config.Net.LocalAddr = nil
-
 			consumer, err := sarama.NewConsumer(brokers, config)
 			if err != nil {
 				panic(err)

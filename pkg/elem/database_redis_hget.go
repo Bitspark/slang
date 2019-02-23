@@ -77,7 +77,9 @@ var databaseRedisHGetCfg = &builtinConfig{
 			field := pair["field"].(string)
 
 			valueCmd := client.HGet(key, field)
-			if valueCmd == nil {
+			if value, err := valueCmd.Result(); err == nil {
+				out.Push(value)
+			} else {
 				op.Delegate("creator").Out().Push(pair)
 				value := op.Delegate("creator").In().Pull()
 
@@ -88,8 +90,6 @@ var databaseRedisHGetCfg = &builtinConfig{
 				} else {
 					panic(err)
 				}
-			} else {
-				out.Push(valueCmd.String())
 			}
 		}
 	},

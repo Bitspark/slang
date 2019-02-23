@@ -4,7 +4,6 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/Shopify/sarama"
-	"log"
 	"os"
 	"os/signal"
 )
@@ -59,7 +58,7 @@ var databaseKafjaSubscribeCfg = &builtinConfig{
 		outKeyStream := out.Stream().Map("key")
 		outValueStream := out.Stream().Map("value")
 
-		for true {
+		for {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)
@@ -85,8 +84,6 @@ var databaseKafjaSubscribeCfg = &builtinConfig{
 			for {
 				select {
 				case msg := <-partitionConsumer.Messages():
-					log.Printf("Consumed message offset %d\n", msg.Offset)
-
 					outKeyStream.Push(msg.Key)
 					outValueStream.Push(utils.Binary(msg.Value))
 				case <-signals:

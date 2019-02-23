@@ -66,12 +66,12 @@ func init() {
 	Register("slang.data.Value", dataValueCfg)
 	Register("slang.data.Evaluate", dataEvaluateCfg)
 	Register("slang.data.Convert", dataConvertCfg)
+	Register("slang.data.UUID", dataUUIDCfg)
 
 	// Flow control operators
 	Register("slang.control.Split", controlSplitCfg)
 	Register("slang.control.Merge", controlMergeCfg)
 	Register("slang.control.Switch", controlSwitchCfg)
-	// Register("slang.control.SingleSplit", controlSingleSplitCfg)
 	Register("slang.control.Take", controlTakeCfg)
 	Register("slang.control.Loop", controlLoopCfg)
 	Register("slang.control.Iterate", controlIterateCfg)
@@ -114,6 +114,7 @@ func init() {
 	Register("slang.time.Crontab", timeCrontabCfg)
 	Register("slang.time.ParseDate", timeParseDateCfg)
 	Register("slang.time.Now", timeDateNowCfg)
+	Register("slang.time.UNIXMillis", timeUNIXMillisCfg)
 
 	Register("slang.string.Template", stringTemplateCfg)
 	Register("slang.string.Format", stringFormatCfg)
@@ -126,6 +127,16 @@ func init() {
 	Register("slang.database.Execute", databaseExecuteCfg)
 	Register("slang.database.KafkaSubscribe", databaseKafjaSubscribeCfg)
 
+	Register("slang.database.RedisGet", databaseRedisGetCfg)
+	Register("slang.database.RedisSet", databaseRedisSetCfg)
+	Register("slang.database.RedisHGet", databaseRedisHGetCfg)
+	Register("slang.database.RedisHSet", databaseRedisHSetCfg)
+	Register("slang.database.RedisLPush", databaseRedisLPushCfg)
+	Register("slang.database.RedisHIncrBy", databaseRedisHIncrByCfg)
+
+	Register("slang.database.MemoryRead", databaseMemoryReadCfg)
+	Register("slang.database.MemoryWrite", databaseMemoryWriteCfg)
+
 	Register("slang.image.Decode", imageDecodeCfg)
 	Register("slang.image.Encode", imageEncodeCfg)
 
@@ -133,6 +144,9 @@ func init() {
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}
+
+	memoryStores = make(map[string]*memoryStore)
+	memoryMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -10,9 +10,13 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 )
 
 /*** (SlangFile ******/
@@ -157,40 +161,79 @@ func start(op core.Operator) {
 	op.Main().Out().Bufferize()
 	op.Start()
 
+	inPort := op.Main().In()
+	outPort := op.Main().Out()
+
 	// Handle STDIN
 	go func() {
+		defer op.Stop()
+
 		for {
-			text, _ := stdin.ReadString('\n')
+			idat, eof := readPipeDecodeJSON(stdin, stderr)
 
-			var dataIn interface{}
-			err := json.Unmarshal([]byte(text), &dataIn)
-
-			if err != nil {
-				stderr.WriteString(fmt.Sprint(err))
-				continue
+			if eof {
+				break
 			}
 
-			fmt.Printf("<<< %v\n", dataIn)
-
-			op.Main().In().Push(dataIn)
+			inPort.Push(idat)
 		}
+
 	}()
 
 	// Handle STDOUT
 	go func() {
-		for {
-			dataOut := op.Main().Out().Pull()
-			fmt.Printf(">>> %v\n", dataOut)
-			text, err := json.Marshal(dataOut)
+		defer os.Exit(0)
+
+		for !op.Stopped() {
+			odat := outPort.Pull()
+			text, err := json.Marshal(odat)
 
 			if err != nil {
-				stderr.WriteString(fmt.Sprint(err))
+				stderr.WriteString(err.Error() + "\n")
+				stderr.Flush()
 				continue
 			}
 
 			stdout.WriteString(string(text))
 		}
+
+	}()
+
+	// Handle SIGTERM (CTRL-C)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		op.Stop()
+		os.Exit(1)
 	}()
 
 	select {}
+}
+
+func readPipeDecodeJSON(rd *bufio.Reader, wrerr *bufio.Writer) (interface{}, bool) {
+	var idat interface{}
+	for {
+		text, err := rd.ReadString('\n')
+
+		if err == io.EOF {
+			return nil, true
+		}
+
+		text = strings.TrimSpace(text)
+
+		if len(text) == 0 {
+			return nil, false
+		}
+
+		err = json.Unmarshal([]byte(text), &idat)
+
+		if err != nil {
+			wrerr.WriteString(err.Error() + "\n")
+			wrerr.Flush()
+			continue
+		}
+
+		return idat, false
+	}
 }

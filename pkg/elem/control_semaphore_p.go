@@ -16,10 +16,10 @@ func getSemaphoreStore(semaphore string) *semaphoreStore {
 	semaphoreMutex.Lock()
 	semStore, ok := semaphoreStores[semaphore]
 	if !ok {
-		mx := &semaphoreStore{
+		semStore = &semaphoreStore{
 			semaphore: make(chan bool),
 		}
-		semaphoreStores[semaphore] = mx
+		semaphoreStores[semaphore] = semStore
 	}
 	semaphoreMutex.Unlock()
 	return semStore

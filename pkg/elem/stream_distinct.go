@@ -1,7 +1,6 @@
 package elem
 
 import (
-	"fmt"
 	"github.com/Bitspark/slang/pkg/core"
 	"strconv"
 )
@@ -88,8 +87,6 @@ var streamDistinctCfg = &builtinConfig{
 				for {
 					hn := h + strconv.Itoa(num)
 					if mi, ok := m[hn]; ok {
-						fmt.Println("compare", i, "and", mi)
-
 						checker.Out().Map("a").Push(i)
 						checker.Out().Map("b").Push(mi)
 

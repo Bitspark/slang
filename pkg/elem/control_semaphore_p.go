@@ -59,7 +59,7 @@ var controlSemaphorePCfg = &builtinConfig{
 				continue
 			}
 
-			<-semStore.semaphore
+			semStore.semaphore <- true
 			out.Push(i)
 		}
 	},

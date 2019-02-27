@@ -38,7 +38,7 @@ var controlSemaphoreVCfg = &builtinConfig{
 				continue
 			}
 
-			semStore.semaphore <- true
+			<-semStore.semaphore
 			out.Push(i)
 		}
 	},

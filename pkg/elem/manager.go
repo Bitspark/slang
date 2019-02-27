@@ -91,6 +91,7 @@ func init() {
 	Register("slang.stream.StreamToMap", streamStreamToMapCfg)
 	Register("slang.stream.Slice", streamSliceCfg)
 	Register("slang.stream.Transform", streamTransformCfg)
+	Register("slang.stream.Distinct", streamDistinctCfg)
 
 	// Miscellaneous operators
 	Register("slang.net.HTTPServer", netHTTPServerCfg)

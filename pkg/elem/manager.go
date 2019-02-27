@@ -76,6 +76,8 @@ func init() {
 	Register("slang.control.Loop", controlLoopCfg)
 	Register("slang.control.Iterate", controlIterateCfg)
 	Register("slang.control.Reduce", controlReduceCfg)
+	Register("slang.control.SemaphoreP", controlSemaphorePCfg)
+	Register("slang.control.SemaphoreV", controlSemaphoreVCfg)
 
 	// Stream accessing and processing operators
 	Register("slang.stream.Serialize", streamSerializeCfg)
@@ -147,6 +149,9 @@ func init() {
 
 	memoryStores = make(map[string]*memoryStore)
 	memoryMutex = &sync.Mutex{}
+
+	semaphoreStores = make(map[string]*semaphoreStore)
+	semaphoreMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(name string) *builtinConfig {

@@ -17,7 +17,7 @@ func getSemaphoreStore(semaphore string) *semaphoreStore {
 	semStore, ok := semaphoreStores[semaphore]
 	if !ok {
 		semStore = &semaphoreStore{
-			semaphore: make(chan bool),
+			semaphore: make(chan bool, 1),
 		}
 		semaphoreStores[semaphore] = semStore
 	}

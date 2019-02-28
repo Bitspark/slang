@@ -20,48 +20,6 @@ import (
 	"syscall"
 )
 
-/*** (SlangFile ******/
-type completeOperatorDef struct {
-	Main string `json:"main" yaml:"main"`
-
-	Args struct {
-		Properties core.Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
-		Generics   core.Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
-	} `json:"args,omitempty" yaml:"args,omitempty"`
-
-	Blueprints []core.OperatorDef `json:"blueprints" yaml:"blueprints"`
-
-	valid bool
-}
-
-func (sf completeOperatorDef) Valid() bool {
-	return sf.valid
-}
-
-func (sf *completeOperatorDef) Validate() error {
-	if sf.Main == "" {
-		return fmt.Errorf(`missing main blueprint id`)
-	}
-
-	if _, err := uuid.Parse(sf.Main); err != nil {
-		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
-	}
-
-	if len(sf.Blueprints) == 0 {
-		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
-
-	}
-
-	for _, bp := range sf.Blueprints {
-		if err := bp.Validate(); err != nil {
-			return err
-		}
-	}
-
-	sf.valid = true
-	return nil
-}
-
 /*** (Loader *******/
 type runnerLoader struct {
 	blueprintbyId map[string]core.OperatorDef
@@ -138,21 +96,16 @@ func (w *wrkCmds) Hello() (string, error) {
 }
 
 func (w *wrkCmds) Init(a string) (string, error) {
-	fmt.Println("--> /init", w.op)
-
 	if w.op != nil {
 		return "", nil
 	}
 
-	cmpltOpDef := completeOperatorDef{}
+	cmpltOpDef := core.SlangFileDef{}
 	if err := json.Unmarshal([]byte(a), &cmpltOpDef); err != nil {
-		fmt.Println("--> 1)", err)
 		return "", err
 	}
 
 	op, err := buildOperator(cmpltOpDef)
-
-	fmt.Println("--> 2)", err)
 
 	if err != nil {
 		return "", err
@@ -161,34 +114,26 @@ func (w *wrkCmds) Init(a string) (string, error) {
 	w.op = op
 
 	sp, err := newSocketPort(op, aggrIn, aggrOut)
-	fmt.Println("--> 3)", err)
+
 	if err != nil {
 		return "", err
 	}
 
 	w.sp = sp
 
-	fmt.Println("--> ready")
 	w.ready <- true
 
 	return w.PrtCfg()
 }
 
 func (w *wrkCmds) PrtCfg() (string, error) {
-
-	fmt.Println("--> 0) /ports")
-
 	if w.op == nil {
-		fmt.Println("--> 1) no op")
 		return "", fmt.Errorf("runner is not initialized: provide valid operator")
 	}
 
 	// todo timeout to prevent infinite loop
 	for w.sp == nil {
-		fmt.Println("--> 2) no op")
 	}
-
-	fmt.Println("---> portscfg", w.sp.String())
 
 	return w.sp.String(), nil
 }
@@ -196,12 +141,8 @@ func (w *wrkCmds) PrtCfg() (string, error) {
 func (w *wrkCmds) Action() error {
 	<-w.ready
 
-	fmt.Println("---> starting")
-
 	op := w.op
 	sp := w.sp
-
-	fmt.Println("---> starting operator")
 
 	op.Main().Out().Bufferize()
 	op.Start()
@@ -228,7 +169,7 @@ func run() error {
 	return nil
 }
 
-func buildOperator(d completeOperatorDef) (*core.Operator, error) {
+func buildOperator(d core.SlangFileDef) (*core.Operator, error) {
 	if !d.Valid() {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -419,10 +360,7 @@ func hndlInput(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGrou
 	rdconn := bufio.NewReader(conn)
 
 	for !op.Stopped() {
-		fmt.Println("---> input")
-
 		msg, err := rdBuf(rdconn)
-
 		fmt.Println(">>>>", msg, err)
 
 		if eof(err) {
@@ -454,10 +392,9 @@ func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
 	defer wrconn.Flush()
 
 	for !op.Stopped() {
-		fmt.Println("---> output")
 		odat := p.Pull()
-		msg, err := json.Marshal(odat)
 
+		msg, err := json.Marshal(odat)
 		fmt.Println("<<<", msg, err)
 
 		if err != nil {

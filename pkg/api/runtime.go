@@ -68,9 +68,7 @@ func (m *cmdr) Begin(action func(c Commands) error) error {
 
 	go func() {
 		for {
-			fmt.Println("---> waiting", ln.Addr().String())
 			conn, err := ln.Accept()
-			fmt.Println("---> listen", ln.Addr().String())
 
 			if err != nil {
 				errors <- err
@@ -94,9 +92,7 @@ func (m *wrkr) Begin(newWorkerCmds func() Commands) error {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		for {
-			fmt.Println("--> lets go")
 			if conn, err := net.Dial("tcp", m.addr); err == nil {
-				fmt.Println("--> connected")
 				c := newWorkerCmds()
 				go m.dispatch(conn, c, errors, &wg)
 				go func() {
@@ -104,7 +100,6 @@ func (m *wrkr) Begin(newWorkerCmds func() Commands) error {
 						errors <- err
 					}
 				}()
-				fmt.Println("--> waiting")
 				wg.Wait()
 				wg.Add(1)
 			}
@@ -126,7 +121,6 @@ func (m *wrkr) dispatch(conn net.Conn, c Commands, errors chan error, wg *sync.W
 		var rmsg string
 		var err error
 
-		fmt.Println("--> dispatch")
 		msg, err = Rdbuf(rd)
 
 		if err != nil {
@@ -136,8 +130,6 @@ func (m *wrkr) dispatch(conn net.Conn, c Commands, errors chan error, wg *sync.W
 
 		s := strings.SplitN(msg, " ", 2)
 
-		fmt.Println("---> incoming cmd", s[0])
-
 		switch s[0] {
 		case "/hello":
 			rmsg, err = c.Hello()
@@ -146,7 +138,7 @@ func (m *wrkr) dispatch(conn net.Conn, c Commands, errors chan error, wg *sync.W
 		case "/ports":
 			rmsg, err = c.PrtCfg()
 		default:
-			fmt.Println("---> unkwon command", s[0])
+			continue
 		}
 
 		if err != nil {
@@ -220,10 +212,7 @@ func (c *cmdrCmdsImpl) Action() error {
 }
 
 func (c *cmdrCmdsImpl) Hello() (string, error) {
-	fmt.Println("---> write hello")
 	err := Wrbuf(c.wr, "/hello")
-
-	fmt.Println("---> ", err)
 
 	if err != nil {
 		return "", err

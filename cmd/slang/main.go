@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,59 +15,95 @@ import (
 	"os/exec"
 )
 
+var printPorts bool
+
 func main() {
+	flag.BoolVar(&printPorts, "print-ports", false, "display port def")
+
+	if len(os.Args) < 2 {
+		fmt.Println("USAGE: slang [OPTIONS] SLANGFILE.slang.json")
+		fmt.Println("OPTIONS:")
+		flag.PrintDefaults()
+		return
+	}
+
 	flag.Parse()
 
-	slangFile := flag.Arg(0)
+	slFile, err := readSlangFile(flag.Arg(0))
 
-	fmt.Println("---> Args", slangFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := run(slangFile); err != nil {
+	if printPorts {
+		if err := printPortDef(slFile); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
+	if err := run(slFile); err != nil {
 		log.Fatal(err)
 	}
 
 }
 
-func run(slangFile string) error {
-	b, err := ioutil.ReadFile(slangFile)
+func readSlangFile(slFilePath string) (*core.SlangFileDef, error) {
+	var slFile core.SlangFileDef
+
+	b, err := ioutil.ReadFile(slFilePath)
 
 	if err != nil {
-		return fmt.Errorf("could not read operator file: %s", slangFile)
+		return &slFile, fmt.Errorf("could not read operator file: %s", slFilePath)
 	}
+	err = json.Unmarshal(b, &slFile)
+	return &slFile, err
+}
+
+func printPortDef(slFile *core.SlangFileDef) error {
+	mainBpId := slFile.Main
+	var opDef *core.OperatorDef
+	for _, bp := range slFile.Blueprints {
+		if mainBpId == bp.Id {
+			opDef = &bp
+		}
+	}
+
+	if opDef == nil {
+		return fmt.Errorf("unknown blueprint: %s", mainBpId)
+	}
+
+	fmt.Printf("Ports:\n")
+	fmt.Printf("\tIn:\n\t\t%s\n", jsonString(opDef.ServiceDefs["main"].In))
+	fmt.Printf("\tOut:\n\t\t%s\n", jsonString(opDef.ServiceDefs["main"].Out))
+
+	return nil
+}
+
+func run(slFile *core.SlangFileDef) error {
 
 	errors := make(chan error, 1)
 	done := make(chan bool, 1)
 	portcfgs := make(chan map[string]string, 1)
 
-	fmt.Println("-> new commander")
 	cmdr := api.NewCommander(":0")
-	fmt.Println("-> begin")
 
 	go func() {
 		err := cmdr.Begin(func(c api.Commands) error {
 			var msg string
 			var err error
 
-			fmt.Println("--> /", msg)
-
 			msg, err = c.Hello()
-
-			fmt.Println("--> /hello", msg, err)
 
 			if err != nil {
 				return err
 			}
 
 			if msg == "" {
-				fmt.Println("--> requires init")
-				msg, err = c.Init(string(b))
-				fmt.Println("--> /init", msg, err)
+				msg, err = c.Init(jsonString(slFile))
 			} else {
 				msg, err = c.PrtCfg()
-				fmt.Println("--> /ports", msg, err)
 			}
-
-			fmt.Println("---> ready", msg, err)
 
 			if err != nil {
 				return err
@@ -74,11 +111,8 @@ func run(slangFile string) error {
 
 			var pcfg map[string]string
 			if err = json.Unmarshal([]byte(msg), &pcfg); err != nil {
-				fmt.Println("---> failed", msg, err)
 				return err
 			}
-
-			fmt.Println("---> ports", pcfg, err)
 
 			portcfgs <- pcfg
 			return nil
@@ -89,23 +123,18 @@ func run(slangFile string) error {
 		}
 	}()
 
-	fmt.Println("about to spawn slang runner:", fmt.Sprintf("--mgnt-addr \"%s\"", cmdr.Addr()))
 	cmd := exec.Command("slangr", "--aggr-in", "--aggr-out", "--mgnt-addr", fmt.Sprintf("%s", cmdr.Addr()))
-	fmt.Println("===>", cmd.Args)
 
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("---> Slang runner started")
-
 	go func() {
 		if err := cmd.Wait(); err != nil {
-			fmt.Println("--> err", err)
 			<-done
 		}
 		done <- true
@@ -118,8 +147,6 @@ func run(slangFile string) error {
 	case portcfg = <-portcfgs:
 		break
 	}
-
-	fmt.Println("--->", portcfg)
 
 	pconn := api.NewPortConnHandler(portcfg)
 	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
@@ -134,6 +161,11 @@ func run(slangFile string) error {
 	return nil
 }
 
+func jsonString(j interface{}) string {
+	jb, _ := json.Marshal(j)
+	return string(jb)
+}
+
 func wrerr(err error) {
 	wrerr := bufio.NewWriter(os.Stderr)
 	wrerr.WriteString(err.Error() + "\n")
@@ -141,7 +173,6 @@ func wrerr(err error) {
 }
 
 func pushToRnr(connRnr net.Conn) {
-	fmt.Println("push to", connRnr)
 	stdin := bufio.NewReader(os.Stdin)
 	wrRnr := bufio.NewWriter(connRnr)
 

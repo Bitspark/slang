@@ -879,6 +879,47 @@ func (p Properties) Clean() {
 	}
 }
 
+type SlangFileDef struct {
+	Main string `json:"main" yaml:"main"`
+
+	Args struct {
+		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+	} `json:"args,omitempty" yaml:"args,omitempty"`
+
+	Blueprints []OperatorDef `json:"blueprints" yaml:"blueprints"`
+
+	valid bool
+}
+
+func (sf SlangFileDef) Valid() bool {
+	return sf.valid
+}
+
+func (sf *SlangFileDef) Validate() error {
+	if sf.Main == "" {
+		return fmt.Errorf(`missing main blueprint id`)
+	}
+
+	if _, err := uuid.Parse(sf.Main); err != nil {
+		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
+	}
+
+	if len(sf.Blueprints) == 0 {
+		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
+
+	}
+
+	for _, bp := range sf.Blueprints {
+		if err := bp.Validate(); err != nil {
+			return err
+		}
+	}
+
+	sf.valid = true
+	return nil
+}
+
 // PROPERTY PARSING
 
 func expandExpressionPart(exprPart string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {

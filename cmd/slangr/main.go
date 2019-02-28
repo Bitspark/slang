@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
@@ -16,6 +17,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -66,6 +68,16 @@ type runnerLoader struct {
 	blueprintbyId map[string]core.OperatorDef
 }
 
+func newRunnerStorage(blueprints []core.OperatorDef) *storage.Storage {
+	m := make(map[string]core.OperatorDef)
+
+	for _, bp := range blueprints {
+		m[bp.Id] = bp
+	}
+
+	return storage.NewStorage(nil).AddLoader(&runnerLoader{m})
+}
+
 func (l *runnerLoader) Has(opId uuid.UUID) bool {
 	_, ok := l.blueprintbyId[opId.String()]
 	return ok
@@ -90,26 +102,133 @@ func (l *runnerLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	return nil, fmt.Errorf("unknown operator")
 }
 
+var mgntAddr string
+
 func main() {
-	cmpltOpDef, err := readCompleteOperatorDef(bufio.NewReader(os.Stdin))
+	flag.StringVar(&mgntAddr, "mgnt-addr", "", "REQUIRED")
+	flag.Parse()
+
+	if mgntAddr == "" {
+		log.Fatal("address for receiving management commands")
+	}
+
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+type wrkCmds struct {
+	op    *core.Operator
+	sp    *SocketPort
+	ready chan bool
+}
+
+func newWrkCmds() api.Cmds {
+	return &wrkCmds{nil, nil, make(chan bool, 1)}
+}
+
+func (w *wrkCmds) Hello() (string, error) {
+	if w.op != nil {
+		return w.op.Id().String(), nil
+	}
+	return "", nil
+}
+
+func (w *wrkCmds) Init(a string) (string, error) {
+	fmt.Println("--> /init", w.op)
+
+	if w.op != nil {
+		return "", nil
+	}
+
+	cmpltOpDef := completeOperatorDef{}
+	if err := json.Unmarshal([]byte(a), &cmpltOpDef); err != nil {
+		fmt.Println("--> 1)", err)
+		return "", err
+	}
+
+	op, err := buildOperator(cmpltOpDef)
+
+	fmt.Println("--> 2)", err)
 
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
-	operator, err := buildOperator(*cmpltOpDef)
+	w.op = op
+
+	sp, err := newSocketPort(op, false, true)
+	fmt.Println("--> 3)", err)
+	if err != nil {
+		return "", err
+	}
+
+	w.sp = sp
+
+	fmt.Println("--> ready")
+	w.ready <- true
+
+	return w.PrtCfg()
+}
+
+func (w *wrkCmds) PrtCfg() (string, error) {
+
+	fmt.Println("--> 0) /ports")
+
+	if w.op == nil {
+		fmt.Println("--> 1) no op")
+		return "", fmt.Errorf("runner is not initialized: provide valid operator")
+	}
+
+	// todo timeout to prevent infinite loop
+	for w.sp == nil {
+		fmt.Println("--> 2) no op")
+	}
+
+	fmt.Println("---> portscfg", w.sp.String())
+
+	return w.sp.String(), nil
+}
+
+func (w *wrkCmds) Action() error {
+	<-w.ready
+
+	fmt.Println("---> starting")
+
+	op := w.op
+	sp := w.sp
+
+	fmt.Println("---> starting operator")
+
+	op.Main().Out().Bufferize()
+	op.Start()
+
+	go sp.OnInput(hndlInput)
+	go sp.OnOutput(hndlOutput)
+
+	// Handle SIGTERM (CTRL-C)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+	op.Stopped()
+	return nil
+}
+
+func run() error {
+	wrkr := api.NewWorkerConnHandler(mgntAddr)
+	err := wrkr.Begin(newWrkCmds)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	if err := start(*operator); err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }
 
 func readCompleteOperatorDef(rd *bufio.Reader) (*completeOperatorDef, error) {
 	b, err := ioutil.ReadAll(rd)
+	fmt.Println("--->", err)
 
 	if err != nil {
 		return nil, err
@@ -123,76 +242,104 @@ func readCompleteOperatorDef(rd *bufio.Reader) (*completeOperatorDef, error) {
 	return &d, nil
 }
 
-func buildOperator(cmpltOpDef completeOperatorDef) (*core.Operator, error) {
-	stor := newRunnerStorage(cmpltOpDef.Blueprints)
-
-	return newOperator(cmpltOpDef, *stor)
-}
-
-func newRunnerStorage(blueprints []core.OperatorDef) *storage.Storage {
-	m := make(map[string]core.OperatorDef)
-
-	for _, bp := range blueprints {
-		m[bp.Id] = bp
-	}
-
-	return storage.NewStorage(nil).AddLoader(&runnerLoader{m})
-}
-
-func newOperator(d completeOperatorDef, stor storage.Storage) (*core.Operator, error) {
+func buildOperator(d completeOperatorDef) (*core.Operator, error) {
 	if !d.Valid() {
 		if err := d.Validate(); err != nil {
 			return nil, err
 		}
 	}
 
+	stor := newRunnerStorage(d.Blueprints)
+
 	bpId, _ := uuid.Parse(d.Main)
-	return api.BuildAndCompile(bpId, d.Args.Generics, d.Args.Properties, stor)
+	return api.BuildAndCompile(bpId, d.Args.Generics, d.Args.Properties, *stor)
 }
 
-func wrErr(err error) {
-	if err == nil {
-		return
+func wrBuf(buf *bufio.Writer, msg string) error {
+	msg = strings.TrimSpace(msg)
+	_, err := buf.WriteString(msg + "\n")
+	return err
+}
+
+func rdBuf(buf *bufio.Reader) (string, error) {
+	msg, err := buf.ReadString('\n')
+	if err != nil {
+		return msg, err
 	}
-	stderr := bufio.NewWriter(os.Stderr)
-	_, _ = stderr.WriteString(err.Error() + "\n")
-	_ = stderr.Flush()
+	msg = strings.TrimSpace(msg)
+	return msg, nil
+}
+
+func eof(e error) bool {
+	return e == io.EOF
 }
 
 type SocketPort struct {
-	op    core.Operator
+	op    *core.Operator
 	pmap  map[net.Addr]*core.Port
 	lnmap map[net.Addr]net.Listener
 }
 
-func newSocketPort(op core.Operator) (*SocketPort, error) {
+func newSocketPort(op *core.Operator, inested bool, onested bool) (*SocketPort, error) {
 	pmap := make(map[net.Addr]*core.Port)
 	lnmap := make(map[net.Addr]net.Listener)
 
-	ln, err := net.Listen("tcp", ":0")
+	var port *core.Port
 
-	if err != nil {
-		return nil, err
-	}
+	port = op.Main().In()
 
-	pmap[ln.Addr()] = op.Main().In()
-	lnmap[ln.Addr()] = ln
+	if inested {
+		mapLnP, err := getListenerForPrimitivePorts(port)
 
-	mapLnP, err := getListenerForPort(op.Main().Out())
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
-	}
+		for ln, p := range mapLnP {
+			lnmap[ln.Addr()] = ln
+			pmap[ln.Addr()] = p
+		}
 
-	for ln, p := range mapLnP {
+	} else {
+		ln, err := net.Listen("tcp", ":0")
+
+		if err != nil {
+			return nil, err
+		}
+
+		pmap[ln.Addr()] = port
 		lnmap[ln.Addr()] = ln
-		pmap[ln.Addr()] = p
+	}
+
+	port = op.Main().Out()
+
+	if onested {
+		mapLnP, err := getListenerForPrimitivePorts(port)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for ln, p := range mapLnP {
+			lnmap[ln.Addr()] = ln
+			pmap[ln.Addr()] = p
+		}
+
+	} else {
+		ln, err := net.Listen("tcp", ":0")
+
+		if err != nil {
+			return nil, err
+		}
+
+		pmap[ln.Addr()] = port
+		lnmap[ln.Addr()] = ln
 	}
 
 	return &SocketPort{op, pmap, lnmap}, nil
 }
 
-func getListenerForPort(port *core.Port) (map[net.Listener]*core.Port, error) {
+func getListenerForPrimitivePorts(port *core.Port) (map[net.Listener]*core.Port, error) {
 	if port.Primitive() {
 		ln, err := net.Listen("tcp", ":0")
 
@@ -204,12 +351,12 @@ func getListenerForPort(port *core.Port) (map[net.Listener]*core.Port, error) {
 	}
 
 	if port.Stream() != nil {
-		return getListenerForPort(port.Stream())
+		return getListenerForPrimitivePorts(port.Stream())
 	}
 
 	m := make(map[net.Listener]*core.Port)
 	for _, pname := range port.MapEntries() {
-		n, err := getListenerForPort(port.Map(pname))
+		n, err := getListenerForPrimitivePorts(port.Map(pname))
 		if err != nil {
 			return nil, err
 		}
@@ -221,19 +368,52 @@ func getListenerForPort(port *core.Port) (map[net.Listener]*core.Port, error) {
 	return m, nil
 }
 
-func (sp *SocketPort) OnAccept(hndlIn func(op core.Operator, p *core.Port, conn net.Conn), hndlOut func(op core.Operator, p *core.Port, conn net.Conn)) {
-	for a, ln := range sp.lnmap {
-		go func() {
-			for !sp.op.Stopped() {
-				conn, err := ln.Accept()
-				wrErr(err)
-				p, _ := sp.pmap[a]
+func (sp *SocketPort) OnInput(hndl func(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGroup)) {
+	for a, p := range sp.pmap {
 
-				if p.Direction() == core.DIRECTION_IN {
-					hndlIn(sp.op, p, conn)
-				} else {
-					hndlOut(sp.op, p, conn)
+		if p.Direction() != core.DIRECTION_IN {
+			continue
+		}
+		ln := sp.lnmap[a]
+		op := sp.op
+
+		go func() {
+			var wg sync.WaitGroup
+			wg.Add(1)
+
+			for !op.Stopped() {
+				conn, err := ln.Accept()
+
+				if err != nil {
+					continue
 				}
+
+				go hndl(sp.op, p, conn, &wg)
+
+				wg.Wait()
+			}
+		}()
+	}
+}
+
+func (sp *SocketPort) OnOutput(hndl func(op *core.Operator, p *core.Port, conn net.Conn)) {
+	for a, p := range sp.pmap {
+
+		if p.Direction() != core.DIRECTION_OUT {
+			continue
+		}
+		ln := sp.lnmap[a]
+		op := sp.op
+
+		go func() {
+			for !op.Stopped() {
+				conn, err := ln.Accept()
+
+				if err != nil {
+					continue
+				}
+
+				go hndl(sp.op, p, conn)
 			}
 		}()
 	}
@@ -249,49 +429,15 @@ func (sp *SocketPort) String() string {
 	return string(j)
 }
 
-func start(op core.Operator) error {
-	op.Main().Out().Bufferize()
-	op.Start()
-
-	sp, err := newSocketPort(op)
-	if err != nil {
-		return err
-	}
-
-	go sp.OnAccept(handleInput, handleOutput)
-
-	fmt.Println(sp.String())
-
-	// Handle SIGTERM (CTRL-C)
-	info := make(chan os.Signal, 1)
-	signal.Notify(info, syscall.SIGUSR1)
-	go func() {
-		select {
-		case <-info:
-			fmt.Println(sp.String())
-		default:
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-	op.Stopped()
-	return nil
-}
-
-func handleInput(op core.Operator, p *core.Port, conn net.Conn) {
+func hndlInput(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGroup) {
 	rdconn := bufio.NewReader(conn)
-	defer conn.Close()
 
 	for !op.Stopped() {
-		msg, err := rdconn.ReadString('\n')
+		msg, err := rdBuf(rdconn)
 
-		if err == io.EOF {
+		if eof(err) {
 			break
 		}
-
-		msg = strings.TrimSpace(msg)
 
 		if len(msg) == 0 {
 			p.Push(nil)
@@ -302,16 +448,17 @@ func handleInput(op core.Operator, p *core.Port, conn net.Conn) {
 		err = json.Unmarshal([]byte(msg), &idat)
 
 		if err != nil {
-			wrErr(err)
 			continue
 		}
 
 		p.Push(idat)
 	}
 
+	wg.Done()
+
 }
 
-func handleOutput(op core.Operator, p *core.Port, conn net.Conn) {
+func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
 	wrconn := bufio.NewWriter(conn)
 	defer conn.Close()
 	defer wrconn.Flush()
@@ -321,10 +468,11 @@ func handleOutput(op core.Operator, p *core.Port, conn net.Conn) {
 		msg, err := json.Marshal(odat)
 
 		if err != nil {
-			wrErr(err)
 			continue
 		}
 
-		wrconn.WriteString(string(msg) + "\n")
+		if err = wrBuf(wrconn, string(msg)); err != nil {
+			break
+		}
 	}
 }

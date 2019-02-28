@@ -82,6 +82,10 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	return o, nil
 }
 
+func (o *Operator) Id() uuid.UUID {
+	return o.defId
+}
+
 func (o *Operator) Service(srv string) *Service {
 	if s, ok := o.services[srv]; ok {
 		return s

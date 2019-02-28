@@ -2,63 +2,66 @@ package api
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"github.com/Bitspark/go-funk"
+	"io"
 	"net"
 	"strings"
 	"sync"
 	"time"
 )
 
-type CommanderConnHandler interface {
-	Begin(action func(c Cmds) error) error
+type Commander interface {
+	Begin(action func(c Commands) error) error
 	Addr() string
 }
 
-type WorkerConnHandler interface {
-	Begin(new func() Cmds) error
+type Worker interface {
+	Begin(new func() Commands) error
 	Addr() string
 }
 
-type Cmds interface {
+type Commands interface {
 	Hello() (string, error)
 	Init(a string) (string, error)
 	PrtCfg() (string, error)
 	Action() error
 }
 
-type cmdConnHandlr struct {
+type cmdr struct {
 	addr string
 	ln   net.Listener
 }
 
-type wkrConnHandlr struct {
+type wrkr struct {
 	addr string
 }
 
-type cmds struct {
+type cmdrCmdsImpl struct {
 	wr     *bufio.Writer
 	rd     *bufio.Reader
-	action func(c Cmds) error
+	action func(c Commands) error
 }
 
-func NewCommanderConnHandler(addr string) CommanderConnHandler {
+func NewCommander(addr string) Commander {
 	ln, _ := net.Listen("tcp", addr)
-	return &cmdConnHandlr{ln.Addr().String(), ln}
+	return &cmdr{ln.Addr().String(), ln}
 }
 
-func NewWorkerConnHandler(addr string) WorkerConnHandler {
-	return &wkrConnHandlr{addr}
+func NewWorker(addr string) Worker {
+	return &wrkr{addr}
 }
 
-func (m *cmdConnHandlr) Addr() string {
+func (m *cmdr) Addr() string {
 	return m.addr
 }
 
-func (m *wkrConnHandlr) Addr() string {
+func (m *wrkr) Addr() string {
 	return m.addr
 }
 
-func (m *cmdConnHandlr) Begin(action func(c Cmds) error) error {
+func (m *cmdr) Begin(action func(c Commands) error) error {
 	ln := m.ln
 
 	errors := make(chan error, 1)
@@ -73,7 +76,7 @@ func (m *cmdConnHandlr) Begin(action func(c Cmds) error) error {
 				errors <- err
 			}
 
-			c := &cmds{bufio.NewWriter(conn), bufio.NewReader(conn), action}
+			c := &cmdrCmdsImpl{bufio.NewWriter(conn), bufio.NewReader(conn), action}
 			go func() {
 				if err := c.Action(); err != nil {
 					errors <- err
@@ -85,7 +88,7 @@ func (m *cmdConnHandlr) Begin(action func(c Cmds) error) error {
 	return <-errors
 }
 
-func (m *wkrConnHandlr) Begin(newWorkerCmds func() Cmds) error {
+func (m *wrkr) Begin(newWorkerCmds func() Commands) error {
 	errors := make(chan error, 1)
 	go func() {
 		var wg sync.WaitGroup
@@ -112,7 +115,7 @@ func (m *wkrConnHandlr) Begin(newWorkerCmds func() Cmds) error {
 	return <-errors
 }
 
-func (m *wkrConnHandlr) dispatch(conn net.Conn, c Cmds, errors chan error, wg *sync.WaitGroup) {
+func (m *wrkr) dispatch(conn net.Conn, c Commands, errors chan error, wg *sync.WaitGroup) {
 	wr := bufio.NewWriter(conn)
 	rd := bufio.NewReader(conn)
 
@@ -124,7 +127,7 @@ func (m *wkrConnHandlr) dispatch(conn net.Conn, c Cmds, errors chan error, wg *s
 		var err error
 
 		fmt.Println("--> dispatch")
-		msg, err = readBuf(rd)
+		msg, err = Rdbuf(rd)
 
 		if err != nil {
 			errors <- err
@@ -151,7 +154,7 @@ func (m *wkrConnHandlr) dispatch(conn net.Conn, c Cmds, errors chan error, wg *s
 			break
 		}
 
-		err = writeBuf(wr, rmsg)
+		err = Wrbuf(wr, rmsg)
 		if err != nil {
 			errors <- err
 			break
@@ -161,7 +164,7 @@ func (m *wkrConnHandlr) dispatch(conn net.Conn, c Cmds, errors chan error, wg *s
 
 }
 
-func writeBuf(wr *bufio.Writer, msg string) error {
+func Wrbuf(wr *bufio.Writer, msg string) error {
 	msg = strings.TrimSpace(msg)
 	if _, err := wr.WriteString(msg + "\n"); err != nil {
 		return err
@@ -169,22 +172,56 @@ func writeBuf(wr *bufio.Writer, msg string) error {
 	return wr.Flush()
 }
 
-func readBuf(rd *bufio.Reader) (string, error) {
+func Rdbuf(rd *bufio.Reader) (string, error) {
 	msg, err := rd.ReadString('\n')
+
 	if err != nil {
 		return msg, err
 	}
+
 	msg = strings.TrimSpace(msg)
 	return msg, nil
 }
 
-func (c *cmds) Action() error {
+func JsonWrbuf(wr *bufio.Writer, j interface{}) error {
+	msg, err := json.Marshal(j)
+
+	if err != nil {
+		return err
+	}
+
+	if err = Wrbuf(wr, string(msg)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func JsonRdbuf(rd *bufio.Reader) (interface{}, error) {
+	msg, err := Rdbuf(rd)
+
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	var j interface{}
+
+	if len(msg) > 0 {
+		if err = json.Unmarshal([]byte(msg), &j); err != nil {
+			return nil, err
+		}
+	}
+
+	return j, nil
+}
+
+func (c *cmdrCmdsImpl) Action() error {
 	return c.action(c)
 }
 
-func (c *cmds) Hello() (string, error) {
+func (c *cmdrCmdsImpl) Hello() (string, error) {
 	fmt.Println("---> write hello")
-	err := writeBuf(c.wr, "/hello")
+	err := Wrbuf(c.wr, "/hello")
 
 	fmt.Println("---> ", err)
 
@@ -192,19 +229,63 @@ func (c *cmds) Hello() (string, error) {
 		return "", err
 	}
 
-	return readBuf(c.rd)
+	return Rdbuf(c.rd)
 }
 
-func (c *cmds) Init(a string) (string, error) {
-	if err := writeBuf(c.wr, "/init "+a); err != nil {
+func (c *cmdrCmdsImpl) Init(a string) (string, error) {
+	if err := Wrbuf(c.wr, "/init "+a); err != nil {
 		return "", err
 	}
-	return readBuf(c.rd)
+	return Rdbuf(c.rd)
 }
 
-func (c *cmds) PrtCfg() (string, error) {
-	if err := writeBuf(c.wr, "/ports"); err != nil {
+func (c *cmdrCmdsImpl) PrtCfg() (string, error) {
+	if err := Wrbuf(c.wr, "/ports"); err != nil {
 		return "", err
 	}
-	return readBuf(c.rd)
+	return Rdbuf(c.rd)
+}
+
+type PortConnHandler interface {
+	ListPortRefs() []string
+	ConnectTo(p string, hndl func(c net.Conn)) error
+}
+
+type prtScktMap struct {
+	pmap map[string]string
+}
+
+func NewPortConnHandler(pmap map[string]string) PortConnHandler {
+	return &prtScktMap{pmap}
+}
+
+func (ps *prtScktMap) ListPortRefs() []string {
+	return funk.Keys(ps.pmap).([]string)
+}
+
+func (ps *prtScktMap) ConnectTo(p string, hndl func(c net.Conn)) error {
+	addr, ok := ps.pmap[p]
+
+	go func() {
+		var wg sync.WaitGroup
+		wg.Add(1)
+		for {
+			if conn, err := net.Dial("tcp", addr); err == nil {
+				go func() {
+					hndl(conn)
+					wg.Done()
+				}()
+
+				wg.Wait()
+				wg.Add(1)
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+	}()
+
+	if !ok {
+		return fmt.Errorf("unknown port: %s", p)
+	}
+	return nil
 }

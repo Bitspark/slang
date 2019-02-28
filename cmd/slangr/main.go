@@ -11,7 +11,6 @@ import (
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -103,9 +102,13 @@ func (l *runnerLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 }
 
 var mgntAddr string
+var aggrIn bool
+var aggrOut bool
 
 func main() {
 	flag.StringVar(&mgntAddr, "mgnt-addr", "", "REQUIRED")
+	flag.BoolVar(&aggrIn, "aggr-in", false, "")
+	flag.BoolVar(&aggrOut, "aggr-out", false, "")
 	flag.Parse()
 
 	if mgntAddr == "" {
@@ -115,7 +118,6 @@ func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 type wrkCmds struct {
@@ -124,7 +126,7 @@ type wrkCmds struct {
 	ready chan bool
 }
 
-func newWrkCmds() api.Cmds {
+func newWrkCmds() api.Commands {
 	return &wrkCmds{nil, nil, make(chan bool, 1)}
 }
 
@@ -158,7 +160,7 @@ func (w *wrkCmds) Init(a string) (string, error) {
 
 	w.op = op
 
-	sp, err := newSocketPort(op, false, true)
+	sp, err := newSocketPort(op, aggrIn, aggrOut)
 	fmt.Println("--> 3)", err)
 	if err != nil {
 		return "", err
@@ -216,7 +218,7 @@ func (w *wrkCmds) Action() error {
 }
 
 func run() error {
-	wrkr := api.NewWorkerConnHandler(mgntAddr)
+	wrkr := api.NewWorker(mgntAddr)
 	err := wrkr.Begin(newWrkCmds)
 
 	if err != nil {
@@ -224,22 +226,6 @@ func run() error {
 	}
 
 	return nil
-}
-
-func readCompleteOperatorDef(rd *bufio.Reader) (*completeOperatorDef, error) {
-	b, err := ioutil.ReadAll(rd)
-	fmt.Println("--->", err)
-
-	if err != nil {
-		return nil, err
-	}
-
-	d := completeOperatorDef{}
-	if err := json.Unmarshal([]byte(b), &d); err != nil {
-		return nil, err
-	}
-
-	return &d, nil
 }
 
 func buildOperator(d completeOperatorDef) (*core.Operator, error) {
@@ -280,7 +266,7 @@ type SocketPort struct {
 	lnmap map[net.Addr]net.Listener
 }
 
-func newSocketPort(op *core.Operator, inested bool, onested bool) (*SocketPort, error) {
+func newSocketPort(op *core.Operator, aggrIn bool, aggrOut bool) (*SocketPort, error) {
 	pmap := make(map[net.Addr]*core.Port)
 	lnmap := make(map[net.Addr]net.Listener)
 
@@ -288,7 +274,16 @@ func newSocketPort(op *core.Operator, inested bool, onested bool) (*SocketPort, 
 
 	port = op.Main().In()
 
-	if inested {
+	if aggrIn {
+		ln, err := net.Listen("tcp", ":0")
+
+		if err != nil {
+			return nil, err
+		}
+
+		pmap[ln.Addr()] = port
+		lnmap[ln.Addr()] = ln
+	} else {
 		mapLnP, err := getListenerForPrimitivePorts(port)
 
 		if err != nil {
@@ -300,20 +295,20 @@ func newSocketPort(op *core.Operator, inested bool, onested bool) (*SocketPort, 
 			pmap[ln.Addr()] = p
 		}
 
-	} else {
-		ln, err := net.Listen("tcp", ":0")
-
-		if err != nil {
-			return nil, err
-		}
-
-		pmap[ln.Addr()] = port
-		lnmap[ln.Addr()] = ln
 	}
 
 	port = op.Main().Out()
 
-	if onested {
+	if aggrOut {
+		ln, err := net.Listen("tcp", ":0")
+
+		if err != nil {
+			return nil, err
+		}
+
+		pmap[ln.Addr()] = port
+		lnmap[ln.Addr()] = ln
+	} else {
 		mapLnP, err := getListenerForPrimitivePorts(port)
 
 		if err != nil {
@@ -325,15 +320,6 @@ func newSocketPort(op *core.Operator, inested bool, onested bool) (*SocketPort, 
 			pmap[ln.Addr()] = p
 		}
 
-	} else {
-		ln, err := net.Listen("tcp", ":0")
-
-		if err != nil {
-			return nil, err
-		}
-
-		pmap[ln.Addr()] = port
-		lnmap[ln.Addr()] = ln
 	}
 
 	return &SocketPort{op, pmap, lnmap}, nil
@@ -433,7 +419,11 @@ func hndlInput(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGrou
 	rdconn := bufio.NewReader(conn)
 
 	for !op.Stopped() {
+		fmt.Println("---> input")
+
 		msg, err := rdBuf(rdconn)
+
+		fmt.Println(">>>>", msg, err)
 
 		if eof(err) {
 			break
@@ -464,8 +454,11 @@ func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
 	defer wrconn.Flush()
 
 	for !op.Stopped() {
+		fmt.Println("---> output")
 		odat := p.Pull()
 		msg, err := json.Marshal(odat)
+
+		fmt.Println("<<<", msg, err)
 
 		if err != nil {
 			continue

@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/Bitspark/slang/pkg/api"
+	"io"
 	"io/ioutil"
 	"log"
+	"net"
+	"os"
 	"os/exec"
 )
 
@@ -32,55 +36,65 @@ func run(slangFile string) error {
 
 	errors := make(chan error, 1)
 	done := make(chan bool, 1)
-	portcfgs := make(chan interface{}, 1)
+	portcfgs := make(chan map[string]string, 1)
 
-	cmdr := api.NewCommanderConnHandler(":0")
-	err = cmdr.Begin(func(c api.Cmds) error {
-		var msg string
-		var err error
+	fmt.Println("-> new commander")
+	cmdr := api.NewCommander(":0")
+	fmt.Println("-> begin")
 
-		fmt.Println("--> /", msg)
+	go func() {
+		err := cmdr.Begin(func(c api.Commands) error {
+			var msg string
+			var err error
 
-		msg, err = c.Hello()
+			fmt.Println("--> /", msg)
 
-		fmt.Println("--> /hello", msg, err)
+			msg, err = c.Hello()
+
+			fmt.Println("--> /hello", msg, err)
+
+			if err != nil {
+				return err
+			}
+
+			if msg == "" {
+				fmt.Println("--> requires init")
+				msg, err = c.Init(string(b))
+				fmt.Println("--> /init", msg, err)
+			} else {
+				msg, err = c.PrtCfg()
+				fmt.Println("--> /ports", msg, err)
+			}
+
+			fmt.Println("---> ready", msg, err)
+
+			if err != nil {
+				return err
+			}
+
+			var pcfg map[string]string
+			if err = json.Unmarshal([]byte(msg), &pcfg); err != nil {
+				fmt.Println("---> failed", msg, err)
+				return err
+			}
+
+			fmt.Println("---> ports", pcfg, err)
+
+			portcfgs <- pcfg
+			return nil
+		})
 
 		if err != nil {
-			return err
+			errors <- err
 		}
+	}()
 
-		if msg == "" {
-			fmt.Println("--> requires init")
-			msg, err = c.Init(string(b))
-			fmt.Println("--> /init", msg, err)
-		} else {
-			msg, err = c.PrtCfg()
-			fmt.Println("--> /ports", msg, err)
-		}
+	fmt.Println("about to spawn slang runner:", fmt.Sprintf("--mgnt-addr \"%s\"", cmdr.Addr()))
+	cmd := exec.Command("slangr", "--aggr-in", "--aggr-out", "--mgnt-addr", fmt.Sprintf("%s", cmdr.Addr()))
+	fmt.Println("===>", cmd.Args)
 
-		fmt.Println("---> ready", msg, err)
-
-		if err != nil {
-			return err
-		}
-
-		var pcfg interface{}
-		if err = json.Unmarshal([]byte(msg), &pcfg); err != nil {
-			fmt.Println("---> failed", msg, err)
-			return err
-		}
-
-		fmt.Println("---> ports", pcfg, err)
-
-		portcfgs <- pcfg
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command("slangr", "--mgmnt-addr", cmdr.Addr())
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
 
 	err = cmd.Start()
 	if err != nil {
@@ -92,12 +106,12 @@ func run(slangFile string) error {
 	go func() {
 		if err := cmd.Wait(); err != nil {
 			fmt.Println("--> err", err)
-			errors <- err
+			<-done
 		}
 		done <- true
 	}()
 
-	var portcfg interface{}
+	var portcfg map[string]string
 	select {
 	case err = <-errors:
 		return err
@@ -106,66 +120,72 @@ func run(slangFile string) error {
 	}
 
 	fmt.Println("--->", portcfg)
+
+	pconn := api.NewPortConnHandler(portcfg)
+	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
+		return err
+	}
+	if err := pconn.ConnectTo(")", pullFromRnr); err != nil {
+		return err
+	}
+
 	log.Printf("Waiting for command to finish...")
 	<-done
 	return nil
 }
 
-/*
-func obtainPortCfg(ln net.Listener) (interface{}, error) {
-	fmt.Println("---> waiting", ln.Addr().String())
-	conn, err := ln.Accept()
-	fmt.Println("---> listen", ln.Addr().String())
-
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = bufio.NewWriter(conn).WriteString("\n")
-
-	if err != nil {
-		return nil, err
-	}
-
-	msg, err := bufio.NewReader(conn).ReadString('\n')
-
-	fmt.Println("---> read", msg)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var pcfg interface{}
-	err = json.Unmarshal([]byte(msg), &pcfg)
-
-	return pcfg, err
+func wrerr(err error) {
+	wrerr := bufio.NewWriter(os.Stderr)
+	wrerr.WriteString(err.Error() + "\n")
+	wrerr.Flush()
 }
 
-func readPipeDecodeJSON(rd *bufio.Reader, wrerr *bufio.Writer) (interface{}, bool) {
-	var idat interface{}
+func pushToRnr(connRnr net.Conn) {
+	fmt.Println("push to", connRnr)
+	stdin := bufio.NewReader(os.Stdin)
+	wrRnr := bufio.NewWriter(connRnr)
+
+	defer connRnr.Close()
+
 	for {
-		text, err := rd.ReadString('\n')
+		m, err := api.Rdbuf(stdin)
 
 		if err == io.EOF {
-			return nil, true
+			break
 		}
-
-		text = strings.TrimSpace(text)
-
-		if len(text) == 0 {
-			return nil, false
-		}
-
-		err = json.Unmarshal([]byte(text), &idat)
 
 		if err != nil {
-			wrerr.WriteString(err.Error() + "\n")
-			wrerr.Flush()
+			wrerr(err)
 			continue
 		}
 
-		return idat, false
+		if err := api.Wrbuf(wrRnr, m); err != nil {
+			break
+		}
 	}
+
 }
 
-*/
+func pullFromRnr(connRnr net.Conn) {
+	rdRnr := bufio.NewReader(connRnr)
+	stdout := bufio.NewWriter(os.Stdin)
+
+	defer connRnr.Close()
+
+	for {
+		m, err := api.Rdbuf(rdRnr)
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			wrerr(err)
+			continue
+		}
+
+		if err := api.Wrbuf(stdout, m); err != nil {
+			break
+		}
+	}
+}

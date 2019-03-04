@@ -85,7 +85,7 @@ type wrkCmds struct {
 }
 
 func newWrkCmds() api.Commands {
-	return &wrkCmds{nil, nil, make(chan bool, 1)}
+	return &wrkCmds{nil, nil, make(chan bool, 0)}
 }
 
 func (w *wrkCmds) Hello() (string, error) {
@@ -121,6 +121,7 @@ func (w *wrkCmds) Init(a string) (string, error) {
 
 	w.sp = sp
 
+	op.Main().Out().Bufferize()
 	w.ready <- true
 
 	return w.PrtCfg()
@@ -144,7 +145,6 @@ func (w *wrkCmds) Action() error {
 	op := w.op
 	sp := w.sp
 
-	op.Main().Out().Bufferize()
 	op.Start()
 
 	go sp.OnInput(hndlInput)
@@ -304,7 +304,7 @@ func (sp *SocketPort) OnInput(hndl func(op *core.Operator, p *core.Port, conn ne
 		ln := sp.lnmap[a]
 		op := sp.op
 
-		go func() {
+		go func(p *core.Port) {
 			var wg sync.WaitGroup
 			wg.Add(1)
 
@@ -319,7 +319,7 @@ func (sp *SocketPort) OnInput(hndl func(op *core.Operator, p *core.Port, conn ne
 
 				wg.Wait()
 			}
-		}()
+		}(p)
 	}
 }
 
@@ -332,7 +332,7 @@ func (sp *SocketPort) OnOutput(hndl func(op *core.Operator, p *core.Port, conn n
 		ln := sp.lnmap[a]
 		op := sp.op
 
-		go func() {
+		go func(p *core.Port) {
 			for !op.Stopped() {
 				conn, err := ln.Accept()
 
@@ -342,7 +342,7 @@ func (sp *SocketPort) OnOutput(hndl func(op *core.Operator, p *core.Port, conn n
 
 				go hndl(sp.op, p, conn)
 			}
-		}()
+		}(p)
 	}
 }
 
@@ -357,11 +357,12 @@ func (sp *SocketPort) String() string {
 }
 
 func hndlInput(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGroup) {
+
 	rdconn := bufio.NewReader(conn)
 
 	for !op.Stopped() {
 		msg, err := rdBuf(rdconn)
-		fmt.Println(">>>>", msg, err)
+		fmt.Println(">>>", msg, err)
 
 		if eof(err) {
 			break
@@ -387,6 +388,7 @@ func hndlInput(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGrou
 }
 
 func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
+
 	wrconn := bufio.NewWriter(conn)
 	defer conn.Close()
 	defer wrconn.Flush()
@@ -395,7 +397,7 @@ func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
 		odat := p.Pull()
 
 		msg, err := json.Marshal(odat)
-		fmt.Println("<<<", msg, err)
+		fmt.Println("<<<", string(msg), err)
 
 		if err != nil {
 			continue

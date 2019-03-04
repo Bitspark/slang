@@ -11,7 +11,7 @@
   },
   "operators": {
     "void": {
-      "operator": ".recOp2"
+      "operator": "test_data.recOp2"
     }
   },
   "connections": {

@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/utils"
 	"sync"
 	"time"
 )
@@ -623,9 +622,9 @@ func (p *Port) PullBoolean() (bool, interface{}) {
 }
 
 // Pull a binary object
-func (p *Port) PullBinary() (utils.Binary, interface{}) {
+func (p *Port) PullBinary() (Binary, interface{}) {
 	item := p.Pull()
-	if b, ok := item.(utils.Binary); ok {
+	if b, ok := item.(Binary); ok {
 		return b, nil
 	}
 	return nil, item

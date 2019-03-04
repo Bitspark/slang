@@ -2,27 +2,17 @@ package daemon
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/elem"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"gopkg.in/yaml.v2"
 )
 
-const SuffixVisual = "_visual"
-
 var DefinitionService = &Service{map[string]*Endpoint{
-	"/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
+	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
 		type operatorDefJSON struct {
-			Name string           `json:"name"`
 			Def  core.OperatorDef `json:"def"`
 			Type string           `json:"type"`
 		}
@@ -34,52 +24,44 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		}
 
 		var dataOut outJSON
-		var opDefList []operatorDefJSON
 		var err error
+		opDefList := make([]operatorDefJSON, 0)
 
-		opNames, err := e.ListOperatorNames()
+		opIds, err := st.List()
 
 		if err == nil {
-			builtinOpNames := elem.GetBuiltinNames()
+			builtinOpIds := elem.GetBuiltinIds()
 
 			// Gather builtin/elementary opDefs
-			for _, opFQName := range builtinOpNames {
-				opDef, err := elem.GetOperatorDef(opFQName)
+			for _, opId := range builtinOpIds {
+				opDef, err := elem.GetOperatorDef(opId.String())
 
 				if err != nil {
 					break
 				}
 
 				opDefList = append(opDefList, operatorDefJSON{
-					Name: opFQName,
 					Type: "elementary",
-					Def:  opDef,
+					Def:  *opDef,
 				})
 			}
 
 			if err == nil {
 				// Gather opDefs from local & lib
-				for _, opFQName := range opNames {
-					opDefFilePath, _, err := e.GetFilePathWithFileEnding(strings.Replace(opFQName, ".", string(filepath.Separator), -1), "")
-
-					if err != nil {
-						continue
-					}
-
-					opDef, err := e.ReadOperatorDef(opDefFilePath, nil)
+				for _, opId := range opIds {
+					opDef, err := st.Load(opId)
 					if err != nil {
 						continue
 					}
 
 					opType := "library"
-					if e.IsLocalOperator(opFQName) {
+					if st.IsDumpable(opId) {
 						opType = "local"
 					}
 
 					opDefList = append(opDefList, operatorDefJSON{
-						Name: opFQName,
 						Type: opType,
-						Def:  opDef,
+						Def:  *opDef,
 					})
 				}
 			}
@@ -97,23 +79,12 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			log.Print(err)
 		}
 	}},
-	"/def/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
+	"/def/": {func(e storage.Storage, w http.ResponseWriter, r *http.Request) {
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}
 
 		if r.Method == "POST" {
-			/*
-			 * POST OperatorDef
-			 */
-			cwd := e.WorkingDir()
-			opFQName := r.FormValue("fqop")
-
-			if !checkOperatorNameIsValid(opFQName) {
-				fail(&Error{Msg: fmt.Sprintf("operator must start with capital letter and may only contain alphanumerics"), Code: "E000X"})
-				return
-			}
-
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})
@@ -127,113 +98,13 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
-			absPath := filepath.Join(cwd, relPath+".yaml")
-			_, err = EnsureDirExists(filepath.Dir(absPath))
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			body, err = yaml.Marshal(&def)
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			err = ioutil.WriteFile(absPath, body, os.ModePerm)
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-			sendSuccess(w, nil)
-		}
-	}},
-	"/meta/visual/": {func(e *api.Environ, w http.ResponseWriter, r *http.Request) {
-		fail := func(err *Error) {
-			sendFailure(w, &responseBad{err})
-		}
-		/*
-		 * GET meta/visual
-		 */
-		if r.Method == "GET" {
-			var err error
-			var b []byte
-			opFQName := r.FormValue("fqop")
-
-			// Find the operator first
-			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
-			absPath, p, err := e.GetFilePathWithFileEnding(relPath, "")
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			// Then find the appropriate visual file and read it
-			absPath, _, err = e.GetFilePathWithFileEnding(relPath+SuffixVisual, p)
-			b, err = ioutil.ReadFile(absPath)
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			// Marshal
-			resp := &responseOK{}
-			if utils.IsJSON(absPath) {
-				err = json.Unmarshal(b, &resp.Data)
-			} else if utils.IsYAML(absPath) {
-				err = yaml.Unmarshal(b, &resp.Data)
-				resp.Data = utils.CleanValue(resp.Data)
-			}
+			_, err = e.Store(def)
 
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
-			// And send
-			sendSuccess(w, resp)
-		} else if r.Method == "POST" {
-			/*
-			 * POST meta/visual
-			 */
-			cwd := e.WorkingDir()
-			opFQName := r.FormValue("fqop")
 
-			body, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			var data interface{}
-			err = json.Unmarshal(body, &data)
-			if err != nil {
-				err = yaml.Unmarshal(body, &data)
-			}
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			relPath := strings.Replace(opFQName, ".", string(filepath.Separator), -1)
-			absPath := filepath.Join(cwd, relPath+SuffixVisual+".yaml")
-			_, err = EnsureDirExists(filepath.Dir(absPath))
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			body, err = yaml.Marshal(&data)
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
-
-			err = ioutil.WriteFile(absPath, body, os.ModePerm)
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
-			}
 			sendSuccess(w, nil)
 		}
 	}},

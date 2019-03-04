@@ -1,17 +1,16 @@
 package elem
 
 import (
+	"bufio"
+	"bytes"
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"image"
 	"image/color"
-	_ "image/jpeg"
-	_ "image/png"
-	"github.com/Bitspark/go-funk"
-	"image/png"
-	"bytes"
-	"bufio"
-	"github.com/Bitspark/slang/pkg/utils"
 	"image/jpeg"
+	_ "image/jpeg"
+	"image/png"
+	_ "image/png"
 )
 
 var imageEncodeCfg = &builtinConfig{
@@ -115,7 +114,7 @@ var imageEncodeCfg = &builtinConfig{
 				break
 			}
 
-			out.Push(utils.Binary(b.Bytes()))
+			out.Push(core.Binary(b.Bytes()))
 		}
 	},
 }

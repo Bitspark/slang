@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 var filesWriteCfg = &builtinConfig{
@@ -41,7 +40,7 @@ var filesWriteCfg = &builtinConfig{
 
 			data := i.(map[string]interface{})
 			var content []byte
-			if b, ok := data["content"].(utils.Binary); ok {
+			if b, ok := data["content"].(core.Binary); ok {
 				content = b
 			}
 			if s, ok := data["content"].(string); ok {

@@ -2,7 +2,6 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -71,7 +70,7 @@ var netMQTTSubscribeCfg = &builtinConfig{
 			outStream := out.Stream()
 			client.Subscribe(topic, 2, func(client mqtt.Client, message mqtt.Message) {
 				outStream.Map("messageId").Push(float64(message.MessageID()))
-				outStream.Map("payload").Push(utils.Binary(message.Payload()))
+				outStream.Map("payload").Push(core.Binary(message.Payload()))
 				outStream.Map("topic").Push(message.Topic())
 			})
 

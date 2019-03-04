@@ -1,10 +1,9 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"bytes"
 	"archive/zip"
+	"bytes"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var filesZIPUnpackCfg = &builtinConfig{
@@ -41,7 +40,7 @@ var filesZIPUnpackCfg = &builtinConfig{
 				continue
 			}
 
-			b := i.(utils.Binary)
+			b := i.(core.Binary)
 			reader := bytes.NewReader(b)
 			zipReader, err := zip.NewReader(reader, reader.Size())
 			if err != nil {
@@ -55,7 +54,7 @@ var filesZIPUnpackCfg = &builtinConfig{
 				fileReader, _ := file.Open()
 				buf := new(bytes.Buffer)
 				buf.ReadFrom(fileReader)
-				out.Stream().Map("file").Push(utils.Binary(buf.Bytes()))
+				out.Stream().Map("file").Push(core.Binary(buf.Bytes()))
 			}
 			out.PushEOS()
 		}

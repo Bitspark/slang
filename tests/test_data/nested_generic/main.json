@@ -19,7 +19,7 @@
   },
   "operators": {
     "pass1": {
-      "operator": ".passer",
+      "operator": "test_data.nested_generic.passer",
       "generics": {
         "itemType": {
           "type": "number"

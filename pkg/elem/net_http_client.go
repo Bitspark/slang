@@ -1,18 +1,17 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"net/http"
 	"bytes"
+	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
+	"net/http"
 )
 
 var netHTTPClientCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
-				In:  func() core.TypeDef {
+				In: func() core.TypeDef {
 					req := HTTP_REQUEST_DEF.Copy()
 					delete(req.Map, "params")
 					delete(req.Map, "path")
@@ -37,7 +36,7 @@ var netHTTPClientCfg = &builtinConfig{
 			req := i.(map[string]interface{})
 			method := req["method"].(string)
 			url := req["url"].(string)
-			body := req["body"].(utils.Binary)
+			body := req["body"].(core.Binary)
 			headers := req["headers"].([]interface{})
 
 			r, err := http.NewRequest(method, url, bytes.NewReader(body))
@@ -65,7 +64,7 @@ var netHTTPClientCfg = &builtinConfig{
 			}
 
 			out.Map("status").Push(float64(resp.StatusCode))
-			out.Map("body").Push(utils.Binary(respBody))
+			out.Map("body").Push(core.Binary(respBody))
 
 			out.Map("headers").PushBOS()
 			for key := range resp.Header {

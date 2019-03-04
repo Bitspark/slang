@@ -1,14 +1,13 @@
 package elem
 
 import (
-	"testing"
-	"github.com/Bitspark/slang/tests/assertions"
+	"bytes"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
 	"net/http"
-	"bytes"
+	"testing"
 	"time"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 func Test_HTTP__IsRegistered(t *testing.T) {
@@ -133,7 +132,7 @@ func Test_HTTP__Response200(t *testing.T) {
 
 	o.Start()
 	o.Main().In().Push(9439)
-	handler.In().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": utils.Binary("hallo slang!")})
+	handler.In().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": core.Binary("hallo slang!")})
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9439/test789")
@@ -166,7 +165,7 @@ func Test_HTTP__Response404(t *testing.T) {
 
 	o.Start()
 	o.Main().In().Push(9440)
-	handler.In().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": utils.Binary("bye slang!")})
+	handler.In().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": core.Binary("bye slang!")})
 
 	for i := 0; i < 5; i++ {
 		resp, _ := http.Get("http://127.0.0.1:9440/test789")

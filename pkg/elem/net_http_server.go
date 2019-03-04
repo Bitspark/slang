@@ -1,12 +1,11 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"strconv"
-	"net/http"
 	"bytes"
+	"github.com/Bitspark/slang/pkg/core"
+	"net/http"
+	"strconv"
 	"time"
-	"github.com/Bitspark/slang/pkg/utils"
 )
 
 type requestHandler struct {
@@ -62,7 +61,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(req.Body)
-		out.Map("body").Push(utils.Binary(buf.Bytes()))
+		out.Map("body").Push(core.Binary(buf.Bytes()))
 	})
 
 	r.sync.Pull(token, func(in *core.Port) {
@@ -95,7 +94,7 @@ var netHTTPServerCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{
 			"handler": {
-				In: HTTP_RESPONSE_DEF.Copy(),
+				In:  HTTP_RESPONSE_DEF.Copy(),
 				Out: HTTP_REQUEST_DEF.Copy(),
 			},
 		},

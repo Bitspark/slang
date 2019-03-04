@@ -126,7 +126,6 @@ func run(slFile *core.SlangFileDef) error {
 	cmd := exec.Command("slangr", "--aggr-in", "--aggr-out", "--mgnt-addr", fmt.Sprintf("%s", cmdr.Addr()))
 
 	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
 
 	err := cmd.Start()
 	if err != nil {
@@ -156,7 +155,6 @@ func run(slFile *core.SlangFileDef) error {
 		return err
 	}
 
-	log.Printf("Waiting for command to finish...")
 	<-done
 	return nil
 }
@@ -216,6 +214,7 @@ func pullFromRnr(connRnr net.Conn) {
 		}
 
 		if err := api.Wrbuf(stdout, m); err != nil {
+			wrerr(err)
 			break
 		}
 	}

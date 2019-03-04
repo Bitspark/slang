@@ -15,7 +15,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 )
@@ -182,21 +181,6 @@ func buildOperator(d core.SlangFileDef) (*core.Operator, error) {
 	return api.BuildAndCompile(bpId, d.Args.Generics, d.Args.Properties, *stor)
 }
 
-func wrBuf(buf *bufio.Writer, msg string) error {
-	msg = strings.TrimSpace(msg)
-	_, err := buf.WriteString(msg + "\n")
-	return err
-}
-
-func rdBuf(buf *bufio.Reader) (string, error) {
-	msg, err := buf.ReadString('\n')
-	if err != nil {
-		return msg, err
-	}
-	msg = strings.TrimSpace(msg)
-	return msg, nil
-}
-
 func eof(e error) bool {
 	return e == io.EOF
 }
@@ -361,20 +345,19 @@ func hndlInput(op *core.Operator, p *core.Port, conn net.Conn, wg *sync.WaitGrou
 	rdconn := bufio.NewReader(conn)
 
 	for !op.Stopped() {
-		msg, err := rdBuf(rdconn)
-		fmt.Println(">>>", msg, err)
+		m, err := api.Rdbuf(rdconn)
 
 		if eof(err) {
 			break
 		}
 
-		if len(msg) == 0 {
+		if len(m) == 0 {
 			p.Push(nil)
 			continue
 		}
 
 		var idat interface{}
-		err = json.Unmarshal([]byte(msg), &idat)
+		err = json.Unmarshal([]byte(m), &idat)
 
 		if err != nil {
 			continue
@@ -397,13 +380,12 @@ func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
 		odat := p.Pull()
 
 		msg, err := json.Marshal(odat)
-		fmt.Println("<<<", string(msg), err)
 
 		if err != nil {
 			continue
 		}
 
-		if err = wrBuf(wrconn, string(msg)); err != nil {
+		if err = api.Wrbuf(wrconn, string(msg)); err != nil {
 			break
 		}
 	}

@@ -124,7 +124,9 @@ func (m *wrkr) dispatch(conn net.Conn, c Commands, errors chan error, wg *sync.W
 		msg, err = Rdbuf(rd)
 
 		if err != nil {
-			errors <- err
+			if err != io.EOF {
+				errors <- err
+			}
 			break
 		}
 
@@ -237,7 +239,7 @@ func (c *cmdrCmdsImpl) PrtCfg() (string, error) {
 
 type PortConnHandler interface {
 	ListPortRefs() []string
-	ConnectTo(p string, hndl func(c net.Conn)) error
+	ConnectTo(p string, hndl func(c net.Conn) bool) error
 }
 
 type prtScktMap struct {
@@ -252,7 +254,7 @@ func (ps *prtScktMap) ListPortRefs() []string {
 	return funk.Keys(ps.pmap).([]string)
 }
 
-func (ps *prtScktMap) ConnectTo(p string, hndl func(c net.Conn)) error {
+func (ps *prtScktMap) ConnectTo(p string, hndl func(c net.Conn) bool) error {
 	addr, ok := ps.pmap[p]
 
 	go func() {
@@ -260,12 +262,19 @@ func (ps *prtScktMap) ConnectTo(p string, hndl func(c net.Conn)) error {
 		wg.Add(1)
 		for {
 			if conn, err := net.Dial("tcp", addr); err == nil {
+				reconn := true
+
 				go func() {
-					hndl(conn)
+					reconn = hndl(conn)
 					wg.Done()
 				}()
 
 				wg.Wait()
+
+				if !reconn {
+					return
+				}
+
 				wg.Add(1)
 			}
 			time.Sleep(100 * time.Millisecond)

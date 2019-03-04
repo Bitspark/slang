@@ -13,6 +13,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"time"
 )
 
 var printPorts bool
@@ -148,7 +149,11 @@ func run(slFile *core.SlangFileDef) error {
 	}
 
 	pconn := api.NewPortConnHandler(portcfg)
-	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
+	if err := pconn.ConnectTo("(", func(conn net.Conn) bool {
+		pushToRnr(conn)
+		done <- true
+		return false
+	}); err != nil {
 		return err
 	}
 	if err := pconn.ConnectTo(")", pullFromRnr); err != nil {
@@ -170,7 +175,7 @@ func wrerr(err error) {
 	wrerr.Flush()
 }
 
-func pushToRnr(connRnr net.Conn) {
+func pushToRnr(connRnr net.Conn) bool {
 	stdin := bufio.NewReader(os.Stdin)
 	wrRnr := bufio.NewWriter(connRnr)
 
@@ -178,6 +183,8 @@ func pushToRnr(connRnr net.Conn) {
 
 	for {
 		m, err := api.Rdbuf(stdin)
+
+		time.Sleep(1 * time.Second)
 
 		if err == io.EOF {
 			break
@@ -193,11 +200,12 @@ func pushToRnr(connRnr net.Conn) {
 		}
 	}
 
+	return false
 }
 
-func pullFromRnr(connRnr net.Conn) {
+func pullFromRnr(connRnr net.Conn) bool {
 	rdRnr := bufio.NewReader(connRnr)
-	stdout := bufio.NewWriter(os.Stdin)
+	stdout := bufio.NewWriter(os.Stdout)
 
 	defer connRnr.Close()
 
@@ -218,4 +226,5 @@ func pullFromRnr(connRnr net.Conn) {
 			break
 		}
 	}
+	return false
 }

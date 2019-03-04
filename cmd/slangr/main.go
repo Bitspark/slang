@@ -185,6 +185,7 @@ func eof(e error) bool {
 	return e == io.EOF
 }
 
+// TODO see api.PortConnHandler (client) of SocketPort
 type SocketPort struct {
 	op    *core.Operator
 	pmap  map[net.Addr]*core.Port
@@ -302,6 +303,7 @@ func (sp *SocketPort) OnInput(hndl func(op *core.Operator, p *core.Port, conn ne
 				go hndl(sp.op, p, conn, &wg)
 
 				wg.Wait()
+				wg.Add(1)
 			}
 		}(p)
 	}
@@ -379,13 +381,13 @@ func hndlOutput(op *core.Operator, p *core.Port, conn net.Conn) {
 	for !op.Stopped() {
 		odat := p.Pull()
 
-		msg, err := json.Marshal(odat)
+		m, err := json.Marshal(odat)
 
 		if err != nil {
 			continue
 		}
 
-		if err = api.Wrbuf(wrconn, string(msg)); err != nil {
+		if err = api.Wrbuf(wrconn, string(m)); err != nil {
 			break
 		}
 	}

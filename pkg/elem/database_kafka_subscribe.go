@@ -2,7 +2,6 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/Shopify/sarama"
 	"os"
 	"os/signal"
@@ -85,7 +84,7 @@ var databaseKafjaSubscribeCfg = &builtinConfig{
 				select {
 				case msg := <-partitionConsumer.Messages():
 					outKeyStream.Push(msg.Key)
-					outValueStream.Push(utils.Binary(msg.Value))
+					outValueStream.Push(core.Binary(msg.Value))
 				case <-signals:
 					break ConsumerLoop
 				}

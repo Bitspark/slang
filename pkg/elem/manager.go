@@ -84,6 +84,7 @@ func init() {
 	Register("8b62495a-e482-4a3e-8020-0ab8a350ad2d", "slang.data.Value", dataValueCfg)
 	Register("37ccdc28-67b0-4bb1-8591-4e0e813e3ec1", "slang.data.Evaluate", dataEvaluateCfg)
 	Register("d1191456-3583-4eaf-8ec1-e486c3818c60", "slang.data.Convert", dataConvertCfg)
+	Register("f9b2a1a6-8111-4c23-963a-d39e7709b4a2", "slang.data.UUID", dataUUIDCfg)
 
 	// Flow control operators
 	Register("fed72b41-2584-424c-8213-1978410ccab6", "slang.control.Split", controlSplitCfg)
@@ -93,6 +94,8 @@ func init() {
 	Register("0b8a1592-1368-44bc-92d5-692acc78b1d3", "slang.control.Loop", controlLoopCfg)
 	Register("e58624d4-5568-40d3-8b77-ab792ef620f1", "slang.control.Iterate", controlIterateCfg)
 	Register("b95e6da8-9770-4a04-a73d-cdfe2081870f", "slang.control.Reduce", controlReduceCfg)
+	Register("fb815170-6215-40db-8406-04ef45172c9f", "slang.control.SemaphoreP", controlSemaphorePCfg)
+	Register("fb790120-b6a5-4569-bd69-3a5812996e9f", "slang.control.SemaphoreV", controlSemaphoreVCfg)
 
 	// Stream accessing and processing operators
 	Register("13257172-b05d-497c-be23-da7c86577c1e", "slang.stream.Serialize", streamSerializeCfg)
@@ -106,6 +109,7 @@ func init() {
 	Register("42d0f961-4ce0-4a20-b1b0-3da46396ae66", "slang.stream.StreamToMap", streamStreamToMapCfg)
 	Register("2471a7aa-c5b9-4392-b23f-d0c7bcdb3f39", "slang.stream.Slice", streamSliceCfg)
 	Register("dce082cb-7272-4e85-b4fa-740778e8ba8d", "slang.stream.Transform", streamTransformCfg)
+	Register("badb3a2c-eeda-40ba-abec-40fb4abf461f", "slang.stream.Distinct", streamDistinctCfg)
 
 	// Miscellaneous operators
 	Register("241cc7ef-c6d6-49c1-8729-c5e3c0be8188", "slang.net.HTTPServer", netHTTPServerCfg)
@@ -131,6 +135,7 @@ func init() {
 	Register("60b849fd-ca5a-4206-8312-996e4e3f6c31", "slang.time.Crontab", timeCrontabCfg)
 	Register("2a9da2d5-2684-4d2f-8a37-9560d0f2de29", "slang.time.ParseDate", timeParseDateCfg)
 	Register("808c7846-db9f-43ee-989b-37a08ce7e70d", "slang.time.Now", timeDateNowCfg)
+	Register("1accb9a4-9450-4247-96cc-5a6276278577", "slang.time.UNIXMillis", timeUNIXMillisCfg)
 
 	Register("3c39f999-b5c2-490d-aed1-19149d228b04", "slang.string.Template", stringTemplateCfg)
 	Register("21dbddf2-2d07-494e-8950-3ac0224a3ff5", "slang.string.Format", stringFormatCfg)
@@ -141,6 +146,15 @@ func init() {
 
 	Register("ce3a3e0e-d579-4712-8573-713a645c2271", "slang.database.Query", databaseQueryCfg)
 	Register("e5abeb01-3aad-47f3-a753-789a9fff0d50", "slang.database.Execute", databaseExecuteCfg)
+	Register("e4962908-75af-4b21-a244-878ee83f2ffe", "slang.database.KafkaSubscribe", databaseKafjaSubscribeCfg)
+	Register("f7ff93d9-7cbe-42f0-a204-451e716e372b", "slang.database.RedisGet", databaseRedisGetCfg)
+	Register("b4beecf9-7e72-4fec-b4d6-95c5aa3fb41a", "slang.database.RedisSet", databaseRedisSetCfg)
+	Register("d89d3e7c-9e59-4ebc-8ee5-048665bf8aea", "slang.database.RedisHGet", databaseRedisHGetCfg)
+	Register("01a4e52b-a57d-4478-b490-7254d8b1873b", "slang.database.RedisHSet", databaseRedisHSetCfg)
+	Register("e61baa3e-1fbe-4fc2-bd1d-90863b7b9f6a", "slang.database.RedisLPush", databaseRedisLPushCfg)
+	Register("4ae45316-f9d4-4eec-8c57-a4675a744366", "slang.database.RedisHIncrBy", databaseRedisHIncrByCfg)
+	Register("e79f7b75-e266-4339-ba51-bd39fc651f43", "slang.database.MemoryRead", databaseMemoryReadCfg)
+	Register("9111ec03-9340-442a-a123-64fd9f10a656", "slang.database.MemoryWrite", databaseMemoryWriteCfg)
 
 	Register("4b082c52-9a99-472f-9277-f5ca9651dbfb", "slang.image.Decode", imageDecodeCfg)
 	Register("bd4475af-795b-4be8-9e57-9fec9444e028", "slang.image.Encode", imageEncodeCfg)
@@ -149,6 +163,12 @@ func init() {
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}
+
+	memoryStores = make(map[string]*memoryStore)
+	memoryMutex = &sync.Mutex{}
+
+	semaphoreStores = make(map[string]*semaphoreStore)
+	semaphoreMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(id string) *builtinConfig {

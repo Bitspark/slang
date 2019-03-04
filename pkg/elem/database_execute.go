@@ -8,6 +8,14 @@ import (
 
 var databaseExecuteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "e5abeb01-3aad-47f3-a753-789a9fff0d50",
+		Meta: core.OperatorMetaDef{
+			Name: "DB execute",
+			ShortDescription: "executes an SQL query on a relational database",
+			Icon: "database",
+			Tags: []string{"database"},
+			DocURL: "https://bitspark.de/slang/docs/operator/db-execute",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

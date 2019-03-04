@@ -2,14 +2,21 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/Shopify/sarama"
 	"os"
 	"os/signal"
 )
 
-var databaseKafjaSubscribeCfg = &builtinConfig{
+var databaseKafkaSubscribeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "b6cb78ca-bbfd-475e-a11f-3593ce295e3c",
+		Meta: core.OperatorMetaDef{
+			Name: "Kafka subscribe",
+			ShortDescription: "subscribes at a Kafka topic",
+			Icon: "",
+			Tags: []string{"database", "kafka"},
+			DocURL: "https://bitspark.de/slang/docs/operator/kafka-subscribe",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
@@ -85,7 +92,7 @@ var databaseKafjaSubscribeCfg = &builtinConfig{
 				select {
 				case msg := <-partitionConsumer.Messages():
 					outKeyStream.Push(msg.Key)
-					outValueStream.Push(utils.Binary(msg.Value))
+					outValueStream.Push(core.Binary(msg.Value))
 				case <-signals:
 					break ConsumerLoop
 				}

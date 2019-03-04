@@ -6,6 +6,14 @@ import (
 
 var streamWindowCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "5b704038-9617-454a-b7a1-2091277cff69",
+		Meta: core.OperatorMetaDef{
+			Name: "window",
+			ShortDescription: "cuts a stream into windows of a certain size and emits them",
+			Icon: "window-restore",
+			Tags: []string{"stream", "window"},
+			DocURL: "https://bitspark.de/slang/docs/operator/window",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

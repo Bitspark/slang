@@ -6,6 +6,14 @@ import (
 
 var controlTakeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
+		Meta: core.OperatorMetaDef{
+			Name:             "take",
+			ShortDescription: "merges two streams using a compare delegate deciding which item has precedence",
+			Icon:             "hand-point-up",
+			Tags:             []string{"control"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/take",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
@@ -39,24 +47,18 @@ var controlTakeCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{
 			"compare": {
 				In: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "boolean",
-					},
+					Type: "boolean",
 				},
 				Out: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "map",
-						Map: map[string]*core.TypeDef{
-							"true": {
-								Type:    "generic",
-								Generic: "itemType",
-							},
-							"false": {
-								Type:    "generic",
-								Generic: "itemType",
-							},
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"true": {
+							Type:    "generic",
+							Generic: "itemType",
+						},
+						"false": {
+							Type:    "generic",
+							Generic: "itemType",
 						},
 					},
 				},
@@ -75,8 +77,8 @@ var controlTakeCfg = &builtinConfig{
 			if !in.Map("true").OwnBOS(t) {
 				if core.IsMarker(t) {
 					if t == f {
-						cOut.Stream().Push(t)
-						sel := cIn.Stream().Pull()
+						cOut.Push(t)
+						sel := cIn.Pull()
 
 						if sel != t {
 							panic("expected marker")
@@ -96,9 +98,6 @@ var controlTakeCfg = &builtinConfig{
 			}
 
 			out.PushBOS()
-
-			cOut.PushBOS()
-			cIn.PullBOS()
 
 			t = nil
 			f = nil
@@ -140,11 +139,11 @@ var controlTakeCfg = &builtinConfig{
 					}
 				} else {
 					// Send to comparator
-					cOut.Stream().Map("true").Push(t)
-					cOut.Stream().Map("false").Push(f)
+					cOut.Map("true").Push(t)
+					cOut.Map("false").Push(f)
 
 					// Get result
-					s, ok := cIn.Stream().Pull().(bool)
+					s, ok := cIn.Pull().(bool)
 
 					if !ok {
 						panic("expected boolean")
@@ -161,9 +160,6 @@ var controlTakeCfg = &builtinConfig{
 			}
 
 		end:
-			cOut.PushEOS()
-			cIn.PullEOS()
-
 			out.PushEOS()
 		}
 	},

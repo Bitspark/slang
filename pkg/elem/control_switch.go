@@ -7,6 +7,14 @@ import (
 
 var controlSwitchCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "cd6fc5c8-5b64-4b1a-9885-59ede141b398",
+		Meta: core.OperatorMetaDef{
+			Name: "switch",
+			ShortDescription: "emits a constant value for each item",
+			Icon: "code-merge",
+			Tags: []string{"control"},
+			DocURL: "https://bitspark.de/slang/docs/operator/switch",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

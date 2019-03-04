@@ -8,6 +8,14 @@ import (
 
 var stringTemplateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "3c39f999-b5c2-490d-aed1-19149d228b04",
+		Meta: core.OperatorMetaDef{
+			Name: "template",
+			ShortDescription: "replaces placeholders in a given string with given values",
+			Icon: "stamp",
+			Tags: []string{"string"},
+			DocURL: "https://bitspark.de/slang/docs/operator/template",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

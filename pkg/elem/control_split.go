@@ -6,6 +6,14 @@ import (
 
 var controlSplitCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "fed72b41-2584-424c-8213-1978410ccab6",
+		Meta: core.OperatorMetaDef{
+			Name: "split",
+			ShortDescription: "emits items of a stream to either outgoing stream depending on the control value",
+			Icon: "code-merge",
+			Tags: []string{"control"},
+			DocURL: "https://bitspark.de/slang/docs/operator/split",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

@@ -10,6 +10,14 @@ import (
 
 var filesReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "f7eecf2c-6504-478f-b2fa-809bec71463c",
+		Meta: core.OperatorMetaDef{
+			Name: "read file",
+			ShortDescription: "reads the contents of a file and emits them",
+			Icon: "file",
+			Tags: []string{"file"},
+			DocURL: "https://bitspark.de/slang/docs/operator/read-file",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

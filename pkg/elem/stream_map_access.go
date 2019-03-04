@@ -7,6 +7,14 @@ import (
 
 var streamMapAccessCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "618c4007-70fc-44ac-9443-184df77ab730",
+		Meta: core.OperatorMetaDef{
+			Name: "access map",
+			ShortDescription: "takes a stream of key-value pairs and emits the value with the given key",
+			Icon: "envelope",
+			Tags: []string{"stream"},
+			DocURL: "https://bitspark.de/slang/docs/operator/access-map",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

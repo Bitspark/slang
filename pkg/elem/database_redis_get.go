@@ -7,6 +7,14 @@ import (
 
 var databaseRedisGetCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "362482c1-2021-4e5c-9463-b580a6c1967e",
+		Meta: core.OperatorMetaDef{
+			Name: "Redis Get",
+			ShortDescription: "executes a Get command at the specified Redis server",
+			Icon: "database",
+			Tags: []string{"database", "redis"},
+			DocURL: "https://bitspark.de/slang/docs/operator/redis-get",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

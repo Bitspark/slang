@@ -10,7 +10,7 @@ import (
 func Test_CtrlTake__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocTake := getBuiltinCfg("slang.control.Take")
+	ocTake := getBuiltinCfg("9bebc4bf-d512-4944-bcb1-5b2c3d5b5471")
 	a.NotNil(ocTake)
 }
 
@@ -18,7 +18,7 @@ func Test_CtrlTake__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Take",
+			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
 		},
 	)
 	a.Error(err)
@@ -29,7 +29,7 @@ func Test_CtrlTake__InPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Take",
+			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -43,17 +43,17 @@ func Test_CtrlTake__InPorts(t *testing.T) {
 	a.Equal(core.TYPE_MAP, to.Main().In().Type())
 	a.Equal(core.TYPE_STREAM, to.Main().In().Map("true").Type())
 	a.Equal(core.TYPE_STREAM, to.Main().In().Map("false").Type())
-	a.Equal(core.TYPE_STREAM, to.Delegate("compare").In().Type())
+	a.Equal(core.TYPE_MAP, to.Delegate("compare").In().Type())
 	a.Equal(core.TYPE_NUMBER, to.Main().In().Map("true").Stream().Type())
 	a.Equal(core.TYPE_NUMBER, to.Main().In().Map("false").Stream().Type())
-	a.Equal(core.TYPE_BOOLEAN, to.Delegate("compare").In().Stream().Type())
+	a.Equal(core.TYPE_BOOLEAN, to.Delegate("compare").In().Type())
 }
 
 func Test_CtrlTake__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Take",
+			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -66,17 +66,16 @@ func Test_CtrlTake__OutPorts(t *testing.T) {
 
 	a.Equal(core.TYPE_STREAM, to.Main().Out().Type())
 	a.Equal(core.TYPE_NUMBER, to.Main().Out().Stream().Type())
-	a.Equal(core.TYPE_STREAM, to.Delegate("compare").Out().Type())
-	a.Equal(core.TYPE_MAP, to.Delegate("compare").Out().Stream().Type())
-	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Stream().Map("true").Type())
-	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Stream().Map("false").Type())
+	a.Equal(core.TYPE_MAP, to.Delegate("compare").Out().Type())
+	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Map("true").Type())
+	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Map("false").Type())
 }
 
 func Test_CtrlTake__Simple1(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Take",
+			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -95,23 +94,17 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	to.Main().In().Map("true").Push([]interface{}{1, 2, 3})
 	to.Main().In().Map("false").Push([]interface{}{4, 5})
 
-	// Push BOS to select stream
-	to.Delegate("compare").In().PushBOS()
-
 	// Eat BOS
 
 	i := to.Main().Out().Stream().Pull()
 	a.True(to.Main().Out().OwnBOS(i))
 
-	i = to.Delegate("compare").Out().Stream().Pull()
-	a.True(to.Delegate("compare").Out().OwnBOS(i))
-
 	// Actual logic
 
-	i = to.Delegate("compare").Out().Stream().Pull()
+	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 1, "false": 4}, i)
 
-	to.Delegate("compare").In().Stream().Push(true)
+	to.Delegate("compare").In().Push(true)
 
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(1, i)
@@ -120,7 +113,7 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 2, "false": 4}, i)
 
-	to.Delegate("compare").In().Stream().Push(false)
+	to.Delegate("compare").In().Push(false)
 
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(4, i)
@@ -129,7 +122,7 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 2, "false": 5}, i)
 
-	to.Delegate("compare").In().Stream().Push(true)
+	to.Delegate("compare").In().Push(true)
 
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(2, i)
@@ -138,22 +131,13 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 3, "false": 5}, i)
 
-	to.Delegate("compare").In().Stream().Push(true)
+	to.Delegate("compare").In().Push(true)
 
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(3, i)
 
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(5, i)
-
-	// Eat EOS
-
-	i = to.Delegate("compare").Out().Stream().Pull()
-	a.True(to.Delegate("compare").Out().OwnEOS(i))
-
-	// Push EOS
-
-	to.Delegate("compare").In().PushEOS()
 
 	i = to.Main().Out().Stream().Pull()
 	a.True(to.Main().Out().OwnEOS(i))

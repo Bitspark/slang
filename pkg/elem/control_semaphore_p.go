@@ -27,6 +27,14 @@ func getSemaphoreStore(semaphore string) *semaphoreStore {
 
 var controlSemaphorePCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "199f14c3-3e25-4813-aaba-7ec7fa3d94e2",
+		Meta: core.OperatorMetaDef{
+			Name: "semaphore P",
+			ShortDescription: "tries to acquire semaphore token",
+			Icon: "traffic-light-stop",
+			Tags: []string{"control", "sync"},
+			DocURL: "https://bitspark.de/slang/docs/operator/semaphore-p",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

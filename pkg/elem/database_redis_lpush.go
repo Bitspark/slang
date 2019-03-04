@@ -7,6 +7,14 @@ import (
 
 var databaseRedisLPushCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "8f8a095c-9274-4d39-96d9-3ef463659426",
+		Meta: core.OperatorMetaDef{
+			Name: "Redis LPush",
+			ShortDescription: "executes an LPush command at the specified Redis server",
+			Icon: "database",
+			Tags: []string{"database", "redis"},
+			DocURL: "https://bitspark.de/slang/docs/operator/redis-lpush",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

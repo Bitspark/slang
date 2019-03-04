@@ -9,6 +9,14 @@ import (
 
 var dataConvertCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "d1191456-3583-4eaf-8ec1-e486c3818c60",
+		Meta: core.OperatorMetaDef{
+			Name: "convert",
+			ShortDescription: "converts the type of a value",
+			Icon: "arrow-alt-right",
+			Tags: []string{"data"},
+			DocURL: "https://bitspark.de/slang/docs/operator/convert",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

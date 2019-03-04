@@ -23,7 +23,9 @@ func EnsureDirExists(dir string) (string, error) {
 }
 
 type FileSystem struct {
-	root string
+	root  string
+	cache map[uuid.UUID]*core.OperatorDef
+	uuids []uuid.UUID
 }
 
 func NewFileSystem(p string) *FileSystem {
@@ -33,7 +35,7 @@ func NewFileSystem(p string) *FileSystem {
 	if !strings.HasSuffix(p, pathSep) {
 		p += pathSep
 	}
-	return &FileSystem{p}
+	return &FileSystem{p, make(map[uuid.UUID]*core.OperatorDef), nil}
 }
 
 func (fs *FileSystem) Has(opId uuid.UUID) bool {
@@ -42,6 +44,10 @@ func (fs *FileSystem) Has(opId uuid.UUID) bool {
 }
 
 func (fs *FileSystem) List() ([]uuid.UUID, error) {
+	if fs.uuids != nil {
+		return fs.uuids, nil
+	}
+
 	opsFilePathSet := make(map[uuid.UUID]bool)
 
 	_ = filepath.Walk(fs.root, func(path string, info os.FileInfo, err error) error {
@@ -77,15 +83,27 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 		return nil
 	})
 
-	return funk.Keys(opsFilePathSet).([]uuid.UUID), nil
+	fs.uuids = funk.Keys(opsFilePathSet).([]uuid.UUID)
+
+	return fs.List()
 }
 
 func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+	if def, ok := fs.cache[opId]; ok {
+		return def, nil
+	}
+
 	opDefFile, err := fs.getFilePath(opId)
 	if err != nil {
 		return nil, err
 	}
-	return fs.readOpDefFile(opDefFile)
+
+	fs.cache[opId], err = fs.readOpDefFile(opDefFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return fs.Load(opId)
 }
 
 func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
@@ -104,6 +122,9 @@ func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
 	if err != nil {
 		return opId, err
 	}
+
+	delete(fs.cache, opId)
+	fs.uuids = nil
 
 	opDefYaml, err := yaml.Marshal(&opDef)
 

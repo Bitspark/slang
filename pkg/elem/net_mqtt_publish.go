@@ -7,6 +7,14 @@ import (
 
 var netMQTTPublishCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "c6b5bef6-e93e-4bc1-8ded-49c90919f39d",
+		Meta: core.OperatorMetaDef{
+			Name: "MQTT publish",
+			ShortDescription: "publishes an MQTT message at a given topic",
+			Icon: "chart-network",
+			Tags: []string{"network", "mqtt"},
+			DocURL: "https://bitspark.de/slang/docs/operator/mqtt-publish",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

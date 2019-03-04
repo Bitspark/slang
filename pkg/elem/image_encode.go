@@ -15,6 +15,14 @@ import (
 
 var imageEncodeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "bd4475af-795b-4be8-9e57-9fec9444e028",
+		Meta: core.OperatorMetaDef{
+			Name: "encode image",
+			ShortDescription: "takes pixels as stream of rgb values and encodes it into an image binary",
+			Icon: "file-image",
+			Tags: []string{"image"},
+			DocURL: "https://bitspark.de/slang/docs/operator/encode-image",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

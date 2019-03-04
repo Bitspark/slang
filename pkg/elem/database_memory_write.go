@@ -6,6 +6,14 @@ import (
 
 var databaseMemoryWriteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "78e92496-dd73-4422-bcd0-691fa549dccd",
+		Meta: core.OperatorMetaDef{
+			Name: "read from memory",
+			ShortDescription: "writes an item to memory and associates it with a key string",
+			Icon: "memory",
+			Tags: []string{"database", "memory"},
+			DocURL: "https://bitspark.de/slang/docs/operator/memory-write",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

@@ -83,6 +83,14 @@ func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 
 var dataEvaluateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "37ccdc28-67b0-4bb1-8591-4e0e813e3ec1",
+		Meta: core.OperatorMetaDef{
+			Name: "evaluate",
+			ShortDescription: "evaluates an expression",
+			Icon: "function",
+			Tags: []string{"math", "boolean", "function"},
+			DocURL: "https://bitspark.de/slang/docs/operator/evaluate",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

@@ -7,6 +7,14 @@ import (
 
 var timeUNIXMillisCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "d58b458e-8b3a-49f3-a6e9-45e737354937",
+		Meta: core.OperatorMetaDef{
+			Name: "UNIX milliseconds",
+			ShortDescription: "emits the current UNIX timestamp in milliseconds",
+			Icon: "database",
+			Tags: []string{"database", "redis"},
+			DocURL: "https://bitspark.de/slang/docs/operator/unix-milliseconds",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

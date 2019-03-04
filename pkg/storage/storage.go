@@ -58,7 +58,7 @@ func (s *Storage) List() ([]uuid.UUID, error) {
 		l, err := loader.List()
 
 		if err != nil {
-			return all, err
+			continue
 		}
 		all = append(all, l...)
 	}
@@ -75,7 +75,7 @@ func (s *Storage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	if err != nil {
 		return nil, err
 	}
-	cpyOpDef := opDef.Copy()
+	cpyOpDef := opDef.Copy(true)
 	return &cpyOpDef, nil
 }
 

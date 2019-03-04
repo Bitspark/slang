@@ -8,6 +8,14 @@ import (
 
 var stringEndswithCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "db8b1677-baaf-4072-8047-0359cd68be9e",
+		Meta: core.OperatorMetaDef{
+			Name: "ends with",
+			ShortDescription: "tells if a string ends with another string",
+			Icon: "hand-point-right",
+			Tags: []string{"string"},
+			DocURL: "https://bitspark.de/slang/docs/operator/ends-with",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

@@ -149,11 +149,7 @@ func run(slFile *core.SlangFileDef) error {
 	}
 
 	pconn := api.NewPortConnHandler(portcfg)
-	if err := pconn.ConnectTo("(", func(conn net.Conn) bool {
-		pushToRnr(conn)
-		done <- true
-		return false
-	}); err != nil {
+	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
 		return err
 	}
 	if err := pconn.ConnectTo(")", pullFromRnr); err != nil {

@@ -118,13 +118,6 @@ type TypeDef struct {
 	valid bool
 }
 
-type PackageDef struct {
-	Name             string `json:"name" yaml:"name"`
-	DisplayName      string `json:"displayName" yaml:"displayName"`
-	Description      string `json:"description" yaml:"description"`
-	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-}
-
 // INSTANCE DEFINITION
 
 func (d InstanceDef) Valid() bool {
@@ -884,6 +877,47 @@ func (p Properties) Clean() {
 	for k, v := range p {
 		p[k] = CleanValue(v)
 	}
+}
+
+type SlangFileDef struct {
+	Main string `json:"main" yaml:"main"`
+
+	Args struct {
+		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+	} `json:"args,omitempty" yaml:"args,omitempty"`
+
+	Blueprints []OperatorDef `json:"blueprints" yaml:"blueprints"`
+
+	valid bool
+}
+
+func (sf SlangFileDef) Valid() bool {
+	return sf.valid
+}
+
+func (sf *SlangFileDef) Validate() error {
+	if sf.Main == "" {
+		return fmt.Errorf(`missing main blueprint id`)
+	}
+
+	if _, err := uuid.Parse(sf.Main); err != nil {
+		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
+	}
+
+	if len(sf.Blueprints) == 0 {
+		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
+
+	}
+
+	for _, bp := range sf.Blueprints {
+		if err := bp.Validate(); err != nil {
+			return err
+		}
+	}
+
+	sf.valid = true
+	return nil
 }
 
 // PROPERTY PARSING

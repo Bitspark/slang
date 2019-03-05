@@ -5,7 +5,6 @@ import (
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
-	"log"
 	"sync"
 )
 

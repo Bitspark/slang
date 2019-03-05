@@ -5,6 +5,7 @@ import (
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"log"
 	"sync"
 )
 
@@ -82,15 +83,17 @@ func init() {
 	Register(dataValueCfg)
 	Register(dataEvaluateCfg)
 	Register(dataConvertCfg)
+	Register(dataUUIDCfg)
 
 	// Flow control operators
 	Register(controlSplitCfg)
-	// Register(controlMergeCfg)
 	Register(controlSwitchCfg)
 	Register(controlTakeCfg)
 	Register(controlLoopCfg)
 	Register(controlIterateCfg)
 	Register(controlReduceCfg)
+	Register(controlSemaphorePCfg)
+	Register(controlSemaphoreVCfg)
 
 	// Stream accessing and processing operators
 	Register(streamSerializeCfg)
@@ -104,6 +107,7 @@ func init() {
 	Register(streamStreamToMapCfg)
 	Register(streamSliceCfg)
 	Register(streamTransformCfg)
+	Register(streamDistinctCfg)
 
 	// Miscellaneous operators
 	Register(netHTTPServerCfg)
@@ -129,6 +133,7 @@ func init() {
 	Register(timeCrontabCfg)
 	Register(timeParseDateCfg)
 	Register(timeDateNowCfg)
+	Register(timeUNIXMillisCfg)
 
 	Register(stringTemplateCfg)
 	Register(stringFormatCfg)
@@ -139,6 +144,15 @@ func init() {
 
 	Register(databaseQueryCfg)
 	Register(databaseExecuteCfg)
+	Register(databaseKafkaSubscribeCfg)
+	Register(databaseRedisGetCfg)
+	Register(databaseRedisSetCfg)
+	Register(databaseRedisHGetCfg)
+	Register(databaseRedisHSetCfg)
+	Register(databaseRedisLPushCfg)
+	Register(databaseRedisHIncrByCfg)
+	Register(databaseMemoryReadCfg)
+	Register(databaseMemoryWriteCfg)
 
 	Register(imageDecodeCfg)
 	Register(imageEncodeCfg)
@@ -147,6 +161,12 @@ func init() {
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}
+
+	memoryStores = make(map[string]*memoryStore)
+	memoryMutex = &sync.Mutex{}
+
+	semaphoreStores = make(map[string]*semaphoreStore)
+	semaphoreMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(id string) *builtinConfig {

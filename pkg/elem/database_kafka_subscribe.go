@@ -1,50 +1,37 @@
 package elem
 
 import (
-	"context"
 	"github.com/Bitspark/slang/pkg/core"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/lovoo/goka"
-	"github.com/lovoo/goka/codec"
-	"log"
+	"github.com/Shopify/sarama"
 	"os"
 	"os/signal"
-	"syscall"
 )
 
-var databaseKafjaReadCfg = &builtinConfig{
+var databaseKafkaSubscribeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "7aebae50-254d-4216-827a-96445be081da",
+		Id: "b6cb78ca-bbfd-475e-a11f-3593ce295e3c",
 		Meta: core.OperatorMetaDef{
 			Name: "Kafka subscribe",
-			ShortDescription: "subscribes to a Kafka stream",
-			Icon: "database",
+			ShortDescription: "subscribes at a Kafka topic",
+			Icon: "",
 			Tags: []string{"database", "kafka"},
 			DocURL: "https://bitspark.de/slang/docs/operator/kafka-subscribe",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "map",
-					Map: map[string]*core.TypeDef{
-						"trigger": {
-							Type: "trigger",
-						},
-						"{queryParams}": {
-							Type: "primitive",
-						},
-					},
+					Type: "trigger",
 				},
 				Out: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
 						Type: "map",
 						Map: map[string]*core.TypeDef{
-							"trigger": {
-								Type: "trigger",
+							"key": {
+								Type: "string",
 							},
-							"{rowColumns}": {
-								Type: "primitive",
+							"value": {
+								Type: "binary",
 							},
 						},
 					},
@@ -65,7 +52,7 @@ var databaseKafjaReadCfg = &builtinConfig{
 		},
 	},
 	opFunc: func(op *core.Operator) {
-		topic := op.Property("topic").(goka.Stream)
+		topic := op.Property("topic").(string)
 		brokers := []string{}
 
 		for _, broker := range op.Property("brokers").([]interface{}) {
@@ -78,46 +65,39 @@ var databaseKafjaReadCfg = &builtinConfig{
 		outKeyStream := out.Stream().Map("key")
 		outValueStream := out.Stream().Map("value")
 
-		for true {
+		for {
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)
 				continue
 			}
 
-			cb := func(ctx goka.Context, msg interface{}) {
-				log.Printf("key = %s, msg = %v", ctx.Key(), msg)
-				outKeyStream.Push(ctx.Key())
-				outValueStream.Push(ctx.Value())
-			}
-
-			g := goka.DefineGroup("group",
-				goka.Input(topic, new(codec.Bytes), cb),
-				goka.Persist(new(codec.Int64)),
-			)
-
-			p, err := goka.NewProcessor(brokers, g)
+			config := sarama.NewConfig()
+			consumer, err := sarama.NewConsumer(brokers, config)
 			if err != nil {
-				log.Fatalf("error creating processor: %v", err)
+				panic(err)
 			}
 
-			ctx, cancel := context.WithCancel(context.Background())
-			done := make(chan bool)
+			partitionConsumer, err := consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
+			if err != nil {
+				panic(err)
+			}
 
-			go func() {
-				defer close(done)
-				if err = p.Run(ctx); err != nil {
-					log.Fatalf("error running processor: %v", err)
+			signals := make(chan os.Signal, 1)
+			signal.Notify(signals, os.Interrupt)
+
+			out.PushBOS()
+		ConsumerLoop:
+			for {
+				select {
+				case msg := <-partitionConsumer.Messages():
+					outKeyStream.Push(msg.Key)
+					outValueStream.Push(core.Binary(msg.Value))
+				case <-signals:
+					break ConsumerLoop
 				}
-			}()
-
-			wait := make(chan os.Signal, 1)
-			signal.Notify(wait, syscall.SIGINT, syscall.SIGTERM)
-			<-wait   // wait for SIGINT/SIGTERM
-			cancel() // gracefully stop processor
-			<-done
-
-			out.Push(nil)
+			}
+			out.PushEOS()
 		}
 	},
 }

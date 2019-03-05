@@ -366,18 +366,29 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 		}
 	}
 
+	def.specifyGenericsOnPortGroups(gens)
+	if err := def.applyPropertiesOnPortGroups(props); err != nil {
+		return err
+	}
+
+	def.PropertyDefs = nil
+
+	return nil
+}
+
+func (def *OperatorDef) specifyGenericsOnPortGroups(gens Generics) {
 	for _, srv := range def.ServiceDefs {
 		srv.In.SpecifyGenerics(gens)
 		srv.Out.SpecifyGenerics(gens)
 	}
-
 	for _, dlg := range def.DelegateDefs {
 		dlg.In.SpecifyGenerics(gens)
 		dlg.Out.SpecifyGenerics(gens)
 	}
-
 	def.PropertyDefs.SpecifyGenerics(gens)
+}
 
+func (def *OperatorDef) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
 	for prop, propDef := range def.PropertyDefs {
@@ -417,37 +428,6 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 		}
 	}
 	def.DelegateDefs = newDels
-
-	for _, childOpInsDef := range def.InstanceDefs {
-		// Propagate property values to child operators
-		for prop, propVal := range childOpInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
-				continue
-			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childOpInsDef.Properties[prop] = val
-			} else {
-				return fmt.Errorf("unknown property \"%s\"", prop)
-			}
-		}
-
-		for _, gen := range childOpInsDef.Generics {
-			gen.SpecifyGenerics(gens)
-		}
-
-		err := childOpInsDef.OperatorDef.SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties)
-		if err != nil {
-			return err
-		}
-	}
-
-	def.PropertyDefs = nil
 
 	return nil
 }

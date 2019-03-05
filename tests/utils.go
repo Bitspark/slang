@@ -188,11 +188,7 @@ func (t testEnv) RunTestBench(opFile string, writer io.Writer, failFast bool) (i
 }
 
 func (t testEnv) CompileFile(opFile string, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
-	if opDef, err := st.Load(t.getUUIDFromFile(opFile)); err == nil {
-		return api.BuildAndCompile(*opDef, gens, props)
-	} else {
-		return nil, err
-	}
+	return api.BuildAndCompile(t.getUUIDFromFile(opFile), gens, props, *st)
 }
 
 const testdir string = "./"

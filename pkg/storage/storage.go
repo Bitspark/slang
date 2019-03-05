@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/google/uuid"
@@ -71,7 +70,7 @@ func (s *Storage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
 }
 
 func (s *Storage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	opDef, err := s.load(opId, []string{})
+	opDef, err := s.loadFirstFound(opId)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func (s *Storage) findRelatedLoader(opId uuid.UUID) Loader {
 	return nil
 }
 
-func (s *Storage) load(opId uuid.UUID, dependenyChain []string) (*core.OperatorDef, error) {
+func (s *Storage) loadFirstFound(opId uuid.UUID) (*core.OperatorDef, error) {
 	if opDef, err := elem.GetOperatorDef(opId.String()); err == nil {
 		return opDef, nil
 	}
@@ -103,32 +102,6 @@ func (s *Storage) load(opId uuid.UUID, dependenyChain []string) (*core.OperatorD
 
 	if err != nil {
 		return nil, err
-	}
-
-	dependenyChain = append(dependenyChain, opId.String())
-
-	for _, childInsDef := range opDef.InstanceDefs {
-		if childInsDef.OperatorDef.Id != "" {
-			continue
-		}
-
-		if funk.ContainsString(dependenyChain, childInsDef.Operator) {
-			return nil, fmt.Errorf("recursion in %s", childInsDef.Name)
-		}
-
-		insOpId, err := uuid.Parse(childInsDef.Operator)
-
-		if err != nil {
-			return opDef, fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, opDef.Id, err)
-		}
-
-		childOpDef, err := s.load(insOpId, dependenyChain)
-
-		if err != nil {
-			continue
-		}
-
-		childInsDef.OperatorDef = *childOpDef
 	}
 
 	return opDef, nil

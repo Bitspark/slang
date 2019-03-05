@@ -46,7 +46,7 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 			return 0, 0, errors.New("description too short")
 		}
 
-		o, err := BuildAndCompile(*opDef, tc.Generics, tc.Properties)
+		o, err := BuildAndCompile(opId, tc.Generics, tc.Properties, *t.stor)
 		if err != nil {
 			return 0, 0, err
 		}

@@ -12,7 +12,7 @@ var timeUNIXMillisCfg = &builtinConfig{
 			Name: "UNIX milliseconds",
 			ShortDescription: "emits the current UNIX timestamp in milliseconds",
 			Icon: "database",
-			Tags: []string{"database", "redis"},
+			Tags: []string{"time"},
 			DocURL: "https://bitspark.de/slang/docs/operator/unix-milliseconds",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

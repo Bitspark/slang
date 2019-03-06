@@ -240,7 +240,7 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		opJSONDefs := make([]OperatorDefinition, 0)
-		for _, jsonDef := range dumpDefinitions(*opDef) {
+		for _, jsonDef := range dumpDefinitions(id, store) {
 			opJSONDefs = append(opJSONDefs, jsonDef)
 		}
 
@@ -534,7 +534,12 @@ func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
 	}
 }
 
-func dumpDefinitions(opDef core.OperatorDef) map[string]OperatorDefinition {
+func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[string]OperatorDefinition {
+	opDef, err := store.Load(id)
+	if err != nil {
+		panic(err)
+	}
+
 	defs := make(map[string]OperatorDefinition)
 
 	var opType string
@@ -553,7 +558,11 @@ func dumpDefinitions(opDef core.OperatorDef) map[string]OperatorDefinition {
 	defs[opDef.Id] = OperatorDefinition{opDef.Id, opType, buf.String()}
 
 	for _, ins := range opDef.InstanceDefs {
-		subDefs := dumpDefinitions(ins.OperatorDef)
+		opUuid, err := uuid.Parse(ins.Operator)
+		if err != nil {
+			panic(err)
+		}
+		subDefs := dumpDefinitions(opUuid, store)
 
 		for id, def := range subDefs {
 			if _, ok := defs[id]; !ok {

@@ -11,7 +11,7 @@ var timeUNIXMillisCfg = &builtinConfig{
 		Meta: core.OperatorMetaDef{
 			Name: "UNIX milliseconds",
 			ShortDescription: "emits the current UNIX timestamp in milliseconds",
-			Icon: "database",
+			Icon: "stamp",
 			Tags: []string{"time"},
 			DocURL: "https://bitspark.de/slang/docs/operator/unix-milliseconds",
 		},

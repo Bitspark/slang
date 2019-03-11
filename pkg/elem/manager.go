@@ -2,10 +2,11 @@ package elem
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
-	"sync"
 )
 
 type builtinConfig struct {
@@ -147,6 +148,12 @@ func init() {
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}
+
+	memoryStores = make(map[string]*memoryStore)
+	memoryMutex = &sync.Mutex{}
+
+	semaphoreStores = make(map[string]*semaphoreStore)
+	semaphoreMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(id string) *builtinConfig {

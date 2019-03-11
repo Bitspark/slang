@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
@@ -37,6 +38,14 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 	fails := 0
 
 	for i, tc := range opDef.TestCases {
+		if len(tc.Name) < 3 {
+			return 0, 0, errors.New("name too short")
+		}
+
+		if len(tc.Description) < 8 {
+			return 0, 0, errors.New("description too short")
+		}
+
 		o, err := BuildAndCompile(opId, tc.Generics, tc.Properties, *t.stor)
 		if err != nil {
 			return 0, 0, err

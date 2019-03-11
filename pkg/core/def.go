@@ -587,9 +587,6 @@ func (d *TypeDef) Validate() error {
 		}
 		return d.Stream.Validate()
 	} else if d.Type == "map" {
-		if len(d.Map) == 0 {
-			return errors.New("map missing or empty")
-		}
 		for _, e := range d.Map {
 			if e == nil {
 				return errors.New("map entry must not be null")

@@ -7,6 +7,14 @@ import (
 
 var streamDistinctCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "d8914bae-2878-46f3-b468-9e7faea7a463",
+		Meta: core.OperatorMetaDef{
+			Name: "distinct values",
+			ShortDescription: "takes a streams and emits distinct items",
+			Icon: "shapes",
+			Tags: []string{"stream"},
+			DocURL: "https://bitspark.de/slang/docs/operator/distinct",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

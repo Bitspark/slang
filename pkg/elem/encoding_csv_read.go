@@ -63,30 +63,34 @@ var encodingCSVReadCfg = &builtinConfig{
 
 			out.PushBOS()
 
-			var mapping []string
 			colNames := op.Property("columns").([]interface{})
-
-			mapSize := outStream.MapSize()
 
 			r := csv.NewReader(strings.NewReader(csvText))
 			r.Comma = rune(op.Property("delimiter").(string)[0])
 
+			var mapping []string
+			var nilPorts []string
 			for {
 				rec, err := r.Read()
 				if err == io.EOF {
 					break
 				}
-				if len(rec) < mapSize {
-					break
-				}
 
 				if mapping == nil {
 					mapping = rec
+					for _, col := range colNames {
+						if !funk.Contains(mapping, col.(string)) {
+							nilPorts = append(nilPorts, col.(string))
+						}
+					}
 				} else {
 					for i, col := range mapping {
 						if funk.Contains(colNames, col) {
 							outStream.Map("col_" + col).Push(rec[i])
 						}
+					}
+					for _, nilPort := range nilPorts {
+						outStream.Map("col_" + nilPort).Push(nil)
 					}
 				}
 			}

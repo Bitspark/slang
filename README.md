@@ -1,8 +1,9 @@
 [![CircleCI](https://circleci.com/gh/Bitspark/slang/tree/master.svg?style=svg&circle-token=ba892aab7dad71da5e2c426eff2a336974d96df0)](https://circleci.com/gh/Bitspark/slang/tree/master)
 
 # Slang Daemon
-
-<img src="https://files.bitspark.de/slang2.png" height="130">
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Bitspark/slang/master/logo.png" height="130">
+</p>
 
 *Powered by [Bitspark](https://bitspark.de)*
 

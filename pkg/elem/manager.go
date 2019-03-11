@@ -159,6 +159,8 @@ func init() {
 
 	Register(shellExecuteCfg)
 
+	Register(apiGoogleAnalyticsCfg)
+
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}
 

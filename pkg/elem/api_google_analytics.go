@@ -64,13 +64,13 @@ var apiGoogleAnalyticsCfg = &builtinConfig{
 			if err != nil {
 				panic(err)
 			}
-			val := svc.Data.Ga.Get(op.Property("gaid").(string), "2019-03-12", "2019-03-13", "ga:users")
+			val := svc.Data.Ga.Get(op.Property("gaid").(string), "2019-03-12", "2019-03-13", "ga:sessions")
 			rlt, err := val.Do()
 			if err != nil {
 				panic(err)
 			}
 
-			users, ok := rlt.TotalsForAllResults["ga:users"]
+			users, ok := rlt.TotalsForAllResults["ga:sessions"]
 			if ok {
 				userNumber, _ := strconv.Atoi(users)
 				out.Push(float64(userNumber))

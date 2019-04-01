@@ -12,6 +12,13 @@ import (
 	"github.com/Bitspark/go-version"
 )
 
+func IsDir(p string) bool {
+	if info, err := os.Stat(p); err == nil {
+		return info.IsDir()
+	}
+	return false
+}
+
 func IsDirEmpty(dir string) bool {
 	entries, err := ioutil.ReadDir(dir)
 	if err != nil {

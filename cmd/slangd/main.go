@@ -63,14 +63,19 @@ func main() {
 
 	envPaths := initEnvironPaths()
 
-	st := storage.
-		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
-		AddLoader(storage.NewFileSystem(envPaths.SLANG_LIB))
-	srv := daemon.New(*st, "localhost", PORT)
-
 	if !skipChecks {
 		envPaths.loadLocalComponents()
 	}
+
+	dirSlib := filepath.Join(envPaths.SLANG_LIB, "slang")
+	if !daemon.IsDir(dirSlib) {
+		log.Fatal("SLANG_LIB directory requires a sub directory 'slang/' containing all stdlib operators: ", dirSlib)
+	}
+
+	st := storage.
+		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
+		AddLoader(storage.NewFileSystem(dirSlib))
+	srv := daemon.New(*st, "localhost", PORT)
 	envPaths.loadDaemonServices(srv)
 	envPaths.startDaemonServer(srv)
 }
@@ -89,17 +94,17 @@ func initEnvironPaths() *EnvironPaths {
 		EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
 		EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
 	}
-	/* TODO
-	if _, err = EnsureDirExists(e.SLANG_DIR); err != nil {
+
+	if _, err = utils.EnsureDirExists(e.SLANG_DIR); err != nil {
 		log.Fatal(err)
 	}
-	if _, err = EnsureDirExists(e.SLANG_LIB); err != nil {
+	if _, err = utils.EnsureDirExists(e.SLANG_LIB); err != nil {
 		log.Fatal(err)
 	}
-	if _, err = EnsureDirExists(e.SLANG_UI); err != nil {
+	if _, err = utils.EnsureDirExists(e.SLANG_UI); err != nil {
 		log.Fatal(err)
 	}
-	*/
+
 	return e
 }
 
@@ -138,6 +143,7 @@ func (e *EnvironPaths) loadLocalComponents() {
 			if err := dl.Load(); err != nil {
 				log.Fatal(err)
 			}
+
 			log.Printf("Done.")
 		} else {
 			localVer := dl.GetLocalReleaseVersion()

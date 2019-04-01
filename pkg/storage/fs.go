@@ -17,11 +17,6 @@ import (
 
 var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matters!
 
-func EnsureDirExists(dir string) (string, error) {
-	err := os.MkdirAll(dir, os.ModePerm)
-	return dir, err
-}
-
 type FileSystem struct {
 	root  string
 	cache map[uuid.UUID]*core.OperatorDef
@@ -117,7 +112,7 @@ func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
 
 	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
 	absPath := filepath.Join(cwd, relPath+".yaml")
-	_, err = EnsureDirExists(filepath.Dir(absPath))
+	_, err = utils.EnsureDirExists(filepath.Dir(absPath))
 
 	if err != nil {
 		return opId, err

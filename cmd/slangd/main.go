@@ -150,17 +150,6 @@ func (e *EnvironPaths) loadLocalComponents() {
 			log.Printf("Your local %v is up-to-date (%v).", repoName, localVer.String())
 		}
 	}
-
-	// Load slang examples only when slang is started the first time
-	if daemon.IsDirEmpty(e.SLANG_DIR) {
-		dl := daemon.NewComponentLoaderLatestMaster("slang-examples", e.SLANG_DIR)
-		log.Println("Downloading example operators.")
-		if err := dl.Load(); err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Done.")
-	}
-
 }
 
 func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {

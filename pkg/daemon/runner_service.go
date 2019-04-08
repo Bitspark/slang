@@ -3,15 +3,16 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/google/uuid"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
 	"strconv"
+
+	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
 )
 
 var runningInstances = make(map[int64]struct {
@@ -120,7 +121,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			op.Main().Out().Bufferize()
 			op.Start()
-			log.Printf("operator %s (port: %d, id: %s) started", port, strconv.FormatInt(handle, 16))
+			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, strconv.FormatInt(handle, 16))
 			op.Main().In().Push(nil) // Start server
 
 			data.Status = "success"
@@ -131,7 +132,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			go func() {
 				oprlt := op.Main().Out().Pull()
-				log.Printf("operator %s (port: %d, id: %s) terminated: %v", port, strconv.FormatInt(handle, 16), oprlt)
+				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, strconv.FormatInt(handle, 16), oprlt)
 			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {

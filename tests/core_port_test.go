@@ -1,9 +1,10 @@
 package tests
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
-	"testing"
 )
 
 // TypeDef.Validate (11 tests)
@@ -44,25 +45,25 @@ func TestTypeDef_Validate__Stream__InvalidTypeInDefinition(t *testing.T) {
 	a.False(def.Valid(), "should not be valid")
 }
 
-func TestTypeDef_Validate__Map__MapNotPresent(t *testing.T) {
+func TestTypeDef_Validate__Map__NoMapEntries(t *testing.T) {
 	a := assertions.New(t)
 	def := core.ParseTypeDef(`{"type":"map"}`)
-	a.Error(def.Validate())
-	a.False(def.Valid(), "should not be valid")
+	a.NoError(def.Validate())
+	a.True(def.Valid(), "should be valid")
 }
 
 func TestTypeDef_Validate__Map__NilMap(t *testing.T) {
 	a := assertions.New(t)
 	def := core.ParseTypeDef(`{"type":"map","map":null}`)
-	a.Error(def.Validate())
-	a.False(def.Valid(), "should not be valid")
+	a.NoError(def.Validate())
+	a.True(def.Valid(), "should be valid")
 }
 
 func TestTypeDef_Validate__Map__EmptyMap(t *testing.T) {
 	a := assertions.New(t)
 	def := core.ParseTypeDef(`{"type":"map","map":{}}`)
-	a.Error(def.Validate())
-	a.False(def.Valid(), "should not be valid")
+	a.NoError(def.Validate())
+	a.True(def.Valid(), "should be valid")
 }
 
 func TestTypeDef_Validate__Map__NullEntry(t *testing.T) {

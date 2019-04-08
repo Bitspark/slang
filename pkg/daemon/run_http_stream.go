@@ -3,6 +3,7 @@ package daemon
 import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
@@ -11,6 +12,7 @@ import (
 // TODO: Make safer (maybe require an API key?)
 func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, gens core.Generics, props core.Properties) (*core.OperatorDef, error) {
 	httpDef := &core.OperatorDef{
+		Id: "caff9fef-01fa-4ef8-bb11-aabbccddeeff",
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
@@ -24,12 +26,7 @@ func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, g
 		Connections: make(map[string][]string),
 	}
 
-	opDef, err := st.Load(opId)
-	if err != nil {
-		return nil, err
-	}
-
-	op, err := api.Build(*opDef, gens, props)
+	op, err := api.Build(opId, gens, props, st)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +34,7 @@ func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, g
 	// Const port instance
 	portIns := &core.InstanceDef{
 		Name:     "port",
-		Operator: "slang.data.Value",
+		Operator: elem.GetId("value").String(),
 		Generics: core.Generics{
 			"valueType": {
 				Type: "number",
@@ -53,7 +50,7 @@ func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, g
 	// HTTP operator instance
 	httpIns := &core.InstanceDef{
 		Name:     "httpServer",
-		Operator: "slang.net.HTTPServer",
+		Operator: elem.GetId("HTTP server").String(),
 	}
 	httpDef.InstanceDefs = append(httpDef.InstanceDefs, httpIns)
 	httpDef.Connections["port)"] = []string{"(httpServer"}
@@ -122,8 +119,8 @@ func constructHttpStreamEndpoint(st storage.Storage, port int, opId uuid.UUID, g
 		},
 		Properties: core.Properties{
 			"value": []interface{}{
-				map[string]string{"key": "Access-Control-Allow-Origin", "value": "*"},
-				map[string]string{"key": "Content-Type", "value": "application/json"},
+				map[string]interface{}{"key": "Access-Control-Allow-Origin", "value": "*"},
+				map[string]interface{}{"key": "Content-Type", "value": "application/json"},
 			},
 		},
 	}

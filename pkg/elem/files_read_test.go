@@ -1,16 +1,17 @@
 package elem
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_FileRead__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFileRead := getBuiltinCfg("slang.files.Read")
+	ocFileRead := getBuiltinCfg(filesReadId)
 	a.NotNil(ocFileRead)
 }
 
@@ -19,7 +20,7 @@ func Test_FileRead__InPorts(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.files.Read",
+			Operator: filesReadId,
 		},
 	)
 	require.NoError(t, err)
@@ -33,7 +34,7 @@ func Test_FileRead__OutPorts(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.files.Read",
+			Operator: filesReadId,
 		},
 	)
 	require.NoError(t, err)
@@ -49,7 +50,7 @@ func Test_FileRead__Simple(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.files.Read",
+			Operator: filesReadId,
 		},
 	)
 	require.NoError(t, err)
@@ -67,7 +68,7 @@ func Test_FileRead__NotFound(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.files.Read",
+			Operator: filesReadId,
 		},
 	)
 	require.NoError(t, err)

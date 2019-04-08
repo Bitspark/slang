@@ -2,18 +2,19 @@ package elem
 
 import (
 	"bytes"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/tests/assertions"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_HTTP__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.net.HTTPServer")
+	ocFork := getBuiltinCfg(netHTTPServerId)
 	a.NotNil(ocFork)
 }
 
@@ -22,7 +23,7 @@ func Test_HTTP__InPorts(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.net.HTTPServer",
+			Operator: netHTTPServerId,
 		},
 	)
 	require.NoError(t, err)
@@ -36,7 +37,7 @@ func Test_HTTP__OutPorts(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.net.HTTPServer",
+			Operator: netHTTPServerId,
 		},
 	)
 	require.NoError(t, err)
@@ -50,7 +51,7 @@ func Test_HTTP__Delegates(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.net.HTTPServer",
+			Operator: netHTTPServerId,
 		},
 	)
 	require.NoError(t, err)
@@ -86,7 +87,7 @@ func Test_HTTP__Request(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.net.HTTPServer",
+			Operator: netHTTPServerId,
 		},
 	)
 	require.NoError(t, err)
@@ -121,7 +122,7 @@ func Test_HTTP__Response200(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.net.HTTPServer",
+			Operator: netHTTPServerId,
 		},
 	)
 	require.NoError(t, err)
@@ -154,7 +155,7 @@ func Test_HTTP__Response404(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.net.HTTPServer",
+			Operator: netHTTPServerId,
 		},
 	)
 	require.NoError(t, err)

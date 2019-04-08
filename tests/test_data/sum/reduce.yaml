@@ -2,12 +2,14 @@
 ---
 tests:
   - name: Empty
+    description: "Testcase"
     data:
       in:
         - []
       out:
         - 0.0
   - name: Single
+    description: "Testcase"
     data:
       in:
         - [0.0]
@@ -20,6 +22,7 @@ tests:
         - 2.0
         - 3.0
   - name: OneRun
+    description: "Testcase"
     data:
       in:
         - [1.0, 2.0]
@@ -30,6 +33,7 @@ tests:
         - 6.0
         - 10.0
   - name: MultipleRuns
+    description: "Testcase"
     data:
       in:
         - [1.0, 2.0, 3.0]
@@ -53,12 +57,12 @@ services:
       type: number
 operators:
   adder:
-    operator: slang.data.Evaluate
+    operator: 37ccdc28-67b0-4bb1-8591-4e0e813e3ec1
     properties:
       expression: "a+b"
       variables: ["a", "b"]
   reducer:
-    operator: slang.control.Reduce
+    operator: b95e6da8-9770-4a04-a73d-cdfe2081870f
     generics:
       itemType:
         type: number

@@ -2,15 +2,16 @@ package elem
 
 import (
 	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_TemplateFormat__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.string.Template")
+	ocFork := getBuiltinCfg(stringTemplateId)
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +20,7 @@ func Test_TemplateFormat__String(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.string.Template",
+			Operator: stringTemplateId,
 			Properties: map[string]interface{}{
 				"variables": []interface{}{"a"},
 			},

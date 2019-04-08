@@ -8,6 +8,14 @@ import (
 
 var streamSerializeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "13257172-b05d-497c-be23-da7c86577c1e",
+		Meta: core.OperatorMetaDef{
+			Name: "serialize",
+			ShortDescription: "takes a map of items and serializes them into a stream",
+			Icon: "ellipsis-h",
+			Tags: []string{"stream", "convert"},
+			DocURL: "https://bitspark.de/slang/docs/operator/serialize",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

@@ -2,10 +2,11 @@ package elem
 
 import (
 	"bytes"
-	"github.com/Bitspark/slang/pkg/core"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 type requestHandler struct {
@@ -80,8 +81,17 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 	})
 }
 
+var netHTTPServerId = "241cc7ef-c6d6-49c1-8729-c5e3c0be8188"
 var netHTTPServerCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: netHTTPServerId,
+		Meta: core.OperatorMetaDef{
+			Name:             "HTTP server",
+			ShortDescription: "starts an HTTP server, uses a handler delegate to process requests",
+			Icon:             "server",
+			Tags:             []string{"network", "http"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/http-server",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

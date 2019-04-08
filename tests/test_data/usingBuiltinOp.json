@@ -1,5 +1,4 @@
 {
-  "name": "opr",
   "services": {
     "main": {
       "in": {
@@ -17,7 +16,7 @@
   },
   "operators": {
     "passer": {
-      "operator": "slang.data.Evaluate",
+      "operator": "37ccdc28-67b0-4bb1-8591-4e0e813e3ec1",
       "properties": {
         "expression": "a",
         "variables": [

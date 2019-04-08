@@ -5,15 +5,24 @@ import (
 	"github.com/google/uuid"
 )
 
+var dataUUIDId = "a83bf9b2-cf1b-4b14-94c2-ea04d5cf70c0"
 var dataUUIDCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: dataUUIDId,
+		Meta: core.OperatorMetaDef{
+			Name:             "generate UUID",
+			ShortDescription: "generates a random UUID",
+			Icon:             "barcode-alt",
+			Tags:             []string{"data", "random"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/uuid",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
 					Type: "trigger",
 				},
 				Out: core.TypeDef{
-					Type:    "string",
+					Type: "string",
 				},
 			},
 		},

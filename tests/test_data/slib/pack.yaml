@@ -26,7 +26,7 @@ services:
 
 operators:
   loop:
-    operator: slang.control.Loop
+    operator: 0b8a1592-1368-44bc-92d5-692acc78b1d3
     generics:
       itemType:
         type: number
@@ -38,14 +38,14 @@ operators:
           send:
             type: boolean
   T:
-    operator: slang.data.Value
+    operator: 8b62495a-e482-4a3e-8020-0ab8a350ad2d
     generics:
       valueType:
         type: boolean
     properties:
       value: true
   F:
-    operator: slang.data.Value
+    operator: 8b62495a-e482-4a3e-8020-0ab8a350ad2d
     generics:
       valueType:
         type: boolean

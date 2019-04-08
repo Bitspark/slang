@@ -7,6 +7,14 @@ import (
 
 var timeCrontabCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "60b849fd-ca5a-4206-8312-996e4e3f6c31",
+		Meta: core.OperatorMetaDef{
+			Name: "crontab",
+			ShortDescription: "takes a UNIX crontab string, sends triggers to its handler delegate accordingly",
+			Icon: "calendar-alt",
+			Tags: []string{"time"},
+			DocURL: "https://bitspark.de/slang/docs/operator/crontab",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

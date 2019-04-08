@@ -2,22 +2,23 @@ package elem
 
 import (
 	"testing"
-	"github.com/Bitspark/slang/tests/assertions"
+
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_CtrlReduce__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocReduce := getBuiltinCfg("slang.control.Reduce")
+	ocReduce := getBuiltinCfg(controlReduceId)
 	a.NotNil(ocReduce)
 }
 
 func Test_CtrlReduce__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce"})
+	_, err := buildOperator(core.InstanceDef{Operator: controlReduceId})
 	a.Error(err)
 }
 
@@ -25,7 +26,7 @@ func Test_CtrlReduce__InPorts(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
+	o, err := buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	// Item type
@@ -33,7 +34,7 @@ func Test_CtrlReduce__InPorts(t *testing.T) {
 	a.Equal(itemType, o.Main().In().Stream().Type())
 	a.Equal(itemType, o.Delegate("reducer").In().Type())
 
-	o, err = buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
+	o, err = buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
 	r.NoError(err)
 
 	// Item type
@@ -47,7 +48,7 @@ func Test_CtrlReduce__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
+	o, err := buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	a.Equal(core.TYPE_NUMBER, o.Main().Out().Type())
@@ -58,7 +59,7 @@ func Test_CtrlReduce__OutPorts(t *testing.T) {
 	a.Equal(itemType, o.Delegate("reducer").Out().Map("a").Type())
 	a.Equal(itemType, o.Delegate("reducer").Out().Map("b").Type())
 
-	o, err = buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
+	o, err = buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}}, Properties: map[string]interface{}{"emptyValue": ""}})
 	r.NoError(err)
 
 	// Item type
@@ -71,7 +72,7 @@ func Test_CtrlReduce__PassMarkers(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
+	o, err := buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -91,8 +92,8 @@ func Test_CtrlReduce__SelectionFromItemsEmpty(t *testing.T) {
 	r := require.New(t)
 
 	o, err := buildOperator(core.InstanceDef{
-		Operator: "slang.control.Reduce",
-		Generics: map[string]*core.TypeDef{"itemType": {Type: "string"}},
+		Operator:   controlReduceId,
+		Generics:   map[string]*core.TypeDef{"itemType": {Type: "string"}},
 		Properties: map[string]interface{}{"emptyValue": "empty"},
 	})
 	r.NoError(err)
@@ -111,7 +112,7 @@ func Test_CtrlReduce__SelectionFromItemsSingle(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
+	o, err := buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -128,7 +129,7 @@ func Test_CtrlReduce__SelectionFromItemsMultiple(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
+	o, err := buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()
@@ -149,7 +150,7 @@ func Test_CtrlReduce__SelectionFromPool(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)
 
-	o, err := buildOperator(core.InstanceDef{Operator: "slang.control.Reduce", Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
+	o, err := buildOperator(core.InstanceDef{Operator: controlReduceId, Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}}, Properties: map[string]interface{}{"emptyValue": -1}})
 	r.NoError(err)
 
 	o.Main().Out().Bufferize()

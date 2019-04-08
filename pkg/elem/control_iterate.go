@@ -1,12 +1,22 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"fmt"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var controlIterateId = "e58624d4-5568-40d3-8b77-ab792ef620f1"
 var controlIterateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: controlIterateId,
+		Meta: core.OperatorMetaDef{
+			Name:             "iterate",
+			ShortDescription: "uses an iterator delegate to aggregate items of a stream",
+			Icon:             "compress-alt",
+			Tags:             []string{"data", "stream"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/iterate",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

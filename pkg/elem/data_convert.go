@@ -2,13 +2,23 @@ package elem
 
 import (
 	"fmt"
-	"github.com/Bitspark/slang/pkg/core"
 	"strconv"
 	"strings"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var dataConvertId = "d1191456-3583-4eaf-8ec1-e486c3818c60"
 var dataConvertCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: dataConvertId,
+		Meta: core.OperatorMetaDef{
+			Name:             "convert",
+			ShortDescription: "converts the type of a value",
+			Icon:             "arrow-alt-right",
+			Tags:             []string{"data"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/convert",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

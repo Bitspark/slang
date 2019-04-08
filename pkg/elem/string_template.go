@@ -1,13 +1,23 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"strings"
 	"fmt"
+	"strings"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var stringTemplateId = "3c39f999-b5c2-490d-aed1-19149d228b04"
 var stringTemplateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: stringTemplateId,
+		Meta: core.OperatorMetaDef{
+			Name:             "template",
+			ShortDescription: "replaces placeholders in a given string with given values",
+			Icon:             "stamp",
+			Tags:             []string{"string"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/template",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
@@ -52,7 +62,7 @@ var stringTemplateCfg = &builtinConfig{
 			for _, v := range vars {
 				val := data[v.(string)]
 				valStr := fmt.Sprintf("%v", val)
-				content = strings.Replace(content, "{" + v.(string) + "}", valStr, -1)
+				content = strings.Replace(content, "{"+v.(string)+"}", valStr, -1)
 			}
 
 			out.Push(content)

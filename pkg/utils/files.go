@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+func EnsureDirExists(dir string) (string, error) {
+	err := os.MkdirAll(dir, os.ModePerm)
+	return dir, err
+}
+
 func FileWithFileEnding(filename string, fileEndings []string) (string, error) {
 	for _, fileEnding := range fileEndings {
 		if strings.HasSuffix(filename, fileEnding) {

@@ -2,15 +2,16 @@ package elem
 
 import (
 	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_StreamMapAccess__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.stream.MapAccess")
+	ocFork := getBuiltinCfg(streamMapAccessId)
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +20,7 @@ func Test_StreamMapAccess__String(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.stream.MapAccess",
+			Operator: streamMapAccessId,
 			Generics: map[string]*core.TypeDef{
 				"keyType": {
 					Type: "string",

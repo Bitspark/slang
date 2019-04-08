@@ -1,12 +1,13 @@
 package tests
 
 import (
-	"github.com/Bitspark/slang/tests/assertions"
 	"io/ioutil"
 	"testing"
+
+	"github.com/Bitspark/slang/tests/assertions"
 )
 
-func TestTestOperator__TrivialTests(t *testing.T) {
+func TestOperator__TrivialTests(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/voidOp.json", ioutil.Discard, true)
 	a.NoError(err)
@@ -14,7 +15,7 @@ func TestTestOperator__TrivialTests(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator__SimpleFail(t *testing.T) {
+func TestOperator__SimpleFail(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/voidOp_corruptTest.json", ioutil.Discard, true)
 	a.NoError(err)
@@ -22,7 +23,7 @@ func TestTestOperator__SimpleFail(t *testing.T) {
 	a.Equal(1, fails)
 }
 
-func TestTestOperator__ComplexTest(t *testing.T) {
+func TestOperator__ComplexTest(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/nested_op/usingSubCustomOpDouble.json", ioutil.Discard, true)
 	a.NoError(err)
@@ -30,7 +31,7 @@ func TestTestOperator__ComplexTest(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator__SuiteTests(t *testing.T) {
+func TestOperator__SuiteTests(t *testing.T) {
 	a := assertions.New(t)
 
 	succs, fails, err := Test.RunTestBench("test_data/suite/polynomial.yaml", ioutil.Discard, false)
@@ -52,7 +53,7 @@ func TestOperator_Pack(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator__SumReduce(t *testing.T) {
+func TestOperator__SumReduce(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/sum/reduce.yaml", ioutil.Discard, true)
 	a.NoError(err)
@@ -60,7 +61,7 @@ func TestTestOperator__SumReduce(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator__MergeSort(t *testing.T) {
+func TestOperator__MergeSort(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/slib/merge_sort.yaml", ioutil.Discard, true)
 	a.NoError(err)
@@ -68,7 +69,7 @@ func TestTestOperator__MergeSort(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator_Properties(t *testing.T) {
+func TestOperator_Properties(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/properties/prop_op.yaml", ioutil.Discard, true)
 	a.NoError(err)
@@ -76,7 +77,7 @@ func TestTestOperator_Properties(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator_NestedProperties(t *testing.T) {
+func TestOperator_NestedProperties(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/properties/prop2_op.yaml", ioutil.Discard, false)
 	a.NoError(err)
@@ -84,7 +85,7 @@ func TestTestOperator_NestedProperties(t *testing.T) {
 	a.Equal(0, fails)
 }
 
-func TestTestOperator_NestedDelegates(t *testing.T) {
+func TestOperator_NestedDelegates(t *testing.T) {
 	a := assertions.New(t)
 	succs, fails, err := Test.RunTestBench("test_data/delegates/wrapper_op.yaml", ioutil.Discard, true)
 	a.NoError(err)

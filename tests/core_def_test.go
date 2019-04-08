@@ -1,10 +1,11 @@
 package tests
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // OPERATOR DEFINITION

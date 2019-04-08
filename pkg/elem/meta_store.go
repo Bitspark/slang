@@ -111,8 +111,13 @@ func (s store) resetIndexes() {
 	}
 }
 
+var metaStoreId = "cf20bcec-2028-45b4-a00c-0ce348c381c4"
 var metaStoreCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: metaStoreId,
+		Meta: core.OperatorMetaDef{
+			Name: "meta store",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

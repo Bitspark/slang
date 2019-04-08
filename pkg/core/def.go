@@ -57,10 +57,14 @@ type TestCaseDef struct {
 }
 
 type OperatorMetaDef struct {
-	Name             string `json:"name" yaml:"name"`
-	Icon             string `json:"icon" yaml:"icon"`
-	ShortDescription string `json:"shortDescription" yaml:"shortDescription"`
-	Description      string `json:"description" yaml:"description"`
+	Name             string   `json:"name" yaml:"name"`
+	Icon             string   `json:"icon" yaml:"icon"`
+	ShortDescription string   `json:"shortDescription" yaml:"shortDescription"`
+	Description      string   `json:"description" yaml:"description"`
+	DocURL           string   `json:"docUrl" yaml:"docUrl"`
+	Tags             []string `json:"tags" yaml:"tags"`
+
+	valid bool
 }
 
 type OperatorDef struct {
@@ -145,7 +149,7 @@ func (d *InstanceDef) Validate() error {
 	return nil
 }
 
-func (d InstanceDef) Copy() InstanceDef {
+func (d InstanceDef) Copy(recursive bool) InstanceDef {
 	var properties Properties = nil
 	if d.Properties != nil {
 		properties = Properties{}
@@ -163,6 +167,11 @@ func (d InstanceDef) Copy() InstanceDef {
 		}
 	}
 
+	opDef := OperatorDef{}
+	if recursive {
+		opDef = d.OperatorDef.Copy(recursive)
+	}
+
 	cpy := InstanceDef{
 		d.Name,
 		d.Operator,
@@ -170,7 +179,7 @@ func (d InstanceDef) Copy() InstanceDef {
 		generics,
 		d.Geometry,
 		d.valid,
-		d.OperatorDef.Copy(),
+		opDef,
 	}
 	return cpy
 }
@@ -182,9 +191,7 @@ func (d OperatorDef) Valid() bool {
 }
 
 func (d *OperatorDef) Validate() error {
-	if d.Meta.Name == "" {
-		return fmt.Errorf(`operator name may not be empty`)
-	}
+	d.valid = false
 
 	if _, err := uuid.Parse(d.Id); err != nil {
 		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
@@ -290,7 +297,7 @@ func (d OperatorDef) GenericsSpecified() error {
 	return nil
 }
 
-func (d OperatorDef) Copy() OperatorDef {
+func (d OperatorDef) Copy(recursive bool) OperatorDef {
 	srvDefs := make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
 		c := v.Copy()
@@ -324,7 +331,7 @@ func (d OperatorDef) Copy() OperatorDef {
 
 		insDefs = InstanceDefList{}
 		for _, v := range d.InstanceDefs {
-			insCpy := v.Copy()
+			insCpy := v.Copy(recursive)
 			insDefs = append(insDefs, &insCpy)
 		}
 	}
@@ -352,18 +359,29 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 		}
 	}
 
+	def.specifyGenericsOnPortGroups(gens)
+	if err := def.applyPropertiesOnPortGroups(props); err != nil {
+		return err
+	}
+
+	def.PropertyDefs = nil
+
+	return nil
+}
+
+func (def *OperatorDef) specifyGenericsOnPortGroups(gens Generics) {
 	for _, srv := range def.ServiceDefs {
 		srv.In.SpecifyGenerics(gens)
 		srv.Out.SpecifyGenerics(gens)
 	}
-
 	for _, dlg := range def.DelegateDefs {
 		dlg.In.SpecifyGenerics(gens)
 		dlg.Out.SpecifyGenerics(gens)
 	}
-
 	def.PropertyDefs.SpecifyGenerics(gens)
+}
 
+func (def *OperatorDef) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
 	for prop, propDef := range def.PropertyDefs {
@@ -404,37 +422,51 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 	}
 	def.DelegateDefs = newDels
 
-	for _, childOpInsDef := range def.InstanceDefs {
-		// Propagate property values to child operators
-		for prop, propVal := range childOpInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
-				continue
-			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childOpInsDef.Properties[prop] = val
-			} else {
-				return fmt.Errorf("unknown property \"%s\"", prop)
-			}
-		}
+	return nil
+}
 
-		for _, gen := range childOpInsDef.Generics {
-			gen.SpecifyGenerics(gens)
-		}
+// OPERATOR META DEFINITION
 
-		err := childOpInsDef.OperatorDef.SpecifyOperator(childOpInsDef.Generics, childOpInsDef.Properties)
-		if err != nil {
-			return err
+func (d *OperatorMetaDef) Valid() bool {
+	return d.valid
+}
+
+func (d *OperatorMetaDef) Validate() error {
+	d.valid = false
+
+	if len(d.Name) < 2 {
+		return fmt.Errorf(`name too short (<2): ` + d.Name)
+	}
+
+	if len(d.Name) > 18 {
+		return fmt.Errorf(`name too long (>18): ` + d.Name)
+	}
+
+	re := regexp.MustCompile("^[a-zA-Z0-9 \\-]*$")
+	if !re.Match([]byte(d.Name)) {
+		return fmt.Errorf(`name must only contain alphanumeric characters, dashes and spaces: ` + d.Name)
+	}
+
+	if len(d.ShortDescription) < 8 {
+		return fmt.Errorf("short description short (%d, min. 8): %s", len(d.ShortDescription), d.ShortDescription)
+	}
+
+	if len(d.ShortDescription) > 80 {
+		return fmt.Errorf("short description too long (%d, max. 80): %s", len(d.ShortDescription), d.ShortDescription)
+	}
+
+	if len(d.Tags) == 0 {
+		return fmt.Errorf(`needs at least one tag`)
+	}
+
+	for _, tag := range d.Tags {
+		re := regexp.MustCompile("^[a-zA-Z0-9\\-]*$")
+		if !re.Match([]byte(tag)) {
+			return fmt.Errorf(`tag must only contain alphanumeric characters and dashes: ` + tag)
 		}
 	}
 
-	def.PropertyDefs = nil
-
+	d.valid = true
 	return nil
 }
 
@@ -555,9 +587,6 @@ func (d *TypeDef) Validate() error {
 		}
 		return d.Stream.Validate()
 	} else if d.Type == "map" {
-		if len(d.Map) == 0 {
-			return errors.New("map missing or empty")
-		}
 		for _, e := range d.Map {
 			if e == nil {
 				return errors.New("map entry must not be null")
@@ -845,6 +874,47 @@ func (p Properties) Clean() {
 	for k, v := range p {
 		p[k] = CleanValue(v)
 	}
+}
+
+type SlangFileDef struct {
+	Main string `json:"main" yaml:"main"`
+
+	Args struct {
+		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
+		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
+	} `json:"args,omitempty" yaml:"args,omitempty"`
+
+	Blueprints []OperatorDef `json:"blueprints" yaml:"blueprints"`
+
+	valid bool
+}
+
+func (sf SlangFileDef) Valid() bool {
+	return sf.valid
+}
+
+func (sf *SlangFileDef) Validate() error {
+	if sf.Main == "" {
+		return fmt.Errorf(`missing main blueprint id`)
+	}
+
+	if _, err := uuid.Parse(sf.Main); err != nil {
+		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
+	}
+
+	if len(sf.Blueprints) == 0 {
+		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
+
+	}
+
+	for _, bp := range sf.Blueprints {
+		if err := bp.Validate(); err != nil {
+			return err
+		}
+	}
+
+	sf.valid = true
+	return nil
 }
 
 // PROPERTY PARSING

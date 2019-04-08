@@ -1,16 +1,17 @@
 package elem
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_StreamWindow__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.stream.Window")
+	ocFork := getBuiltinCfg(streamWindowId)
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +20,7 @@ func Test_StreamWindow__Sliding1(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.stream.Window",
+			Operator: streamWindowId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -52,7 +53,7 @@ func Test_StreamWindow__Sliding2(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.stream.Window",
+			Operator: streamWindowId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -82,7 +83,7 @@ func Test_StreamWindow__Sliding3(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.stream.Window",
+			Operator: streamWindowId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -112,7 +113,7 @@ func Test_StreamWindow__Jumping1(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.stream.Window",
+			Operator: streamWindowId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",

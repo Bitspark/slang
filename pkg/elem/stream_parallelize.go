@@ -1,13 +1,23 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"strconv"
 	"fmt"
+	"strconv"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var streamParallelizeId = "b8428777-7667-4012-b76a-a5b7f4d1e433"
 var streamParallelizeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: streamParallelizeId,
+		Meta: core.OperatorMetaDef{
+			Name:             "parallelize",
+			ShortDescription: "takes a stream and emits a map of items, selected by given indices",
+			Icon:             "align-justify",
+			Tags:             []string{"stream", "convert"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/parallelize",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

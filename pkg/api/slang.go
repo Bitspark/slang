@@ -2,8 +2,12 @@ package api
 
 import (
 	"fmt"
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
+	"strings"
 )
 
 func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
@@ -105,25 +109,30 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 	return nil
 }
 
-func BuildAndCompile(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
-	if op, err := Build(opDef, gens, props); err == nil {
+func BuildAndCompile(opId uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
+	if op, err := Build(opId, gens, props, st); err == nil {
 		return Compile(op)
 	} else {
 		return op, err
 	}
 }
 
-func Build(opDef core.OperatorDef, gens map[string]*core.TypeDef, props map[string]interface{}) (*core.Operator, error) {
+func Build(opId uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
 	// Recursively replace generics by their actual types and propagate properties
 	// TODO SpecifyOperator should instantiate and return an Operator
-	opDef = opDef.Copy()
-	err := opDef.SpecifyOperator(gens, props)
+	opDef, err := st.Load(opId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = specifyOperator(opDef, gens, props, st, []string{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and connect the operator
-	op, err := CreateAndConnectOperator("", opDef, false)
+	op, err := CreateAndConnectOperator("", *opDef, false)
 	if err != nil {
 		return nil, err
 	}
@@ -154,4 +163,60 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	}
 
 	return flatOp, nil
+}
+
+func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []string) error {
+	if err := def.SpecifyOperator(gens, props); err != nil {
+		return err
+	}
+	dependenyChain = append(dependenyChain, def.Id)
+
+	for _, childInsDef := range def.InstanceDefs {
+
+		// Load OperatorDef for childInsDef
+		if childInsDef.OperatorDef.Id == "" {
+			childOpId, _ := uuid.Parse(childInsDef.Operator)
+			if childOpDef, err := st.Load(childOpId); err == nil {
+				childInsDef.OperatorDef = *childOpDef
+			} else {
+				return err
+			}
+		}
+
+		if funk.ContainsString(dependenyChain, childInsDef.Operator) {
+			return fmt.Errorf("recursion in %s", def.Id)
+		}
+
+		// Propagate property values to child operators
+		for prop, propVal := range childInsDef.Properties {
+			propKey, ok := propVal.(string)
+			if !ok {
+				continue
+			}
+			// Parameterized properties must start with a '$'
+			if !strings.HasPrefix(propKey, "$") {
+				continue
+			}
+			propKey = propKey[1:]
+			if val, ok := props[propKey]; ok {
+				childInsDef.Properties[prop] = val
+			} else {
+				return fmt.Errorf("unknown property \"%s\"", prop)
+			}
+		}
+
+		for _, gen := range childInsDef.Generics {
+			gen.SpecifyGenerics(gens)
+		}
+
+		err := specifyOperator(&childInsDef.OperatorDef, childInsDef.Generics, childInsDef.Properties, st, dependenyChain)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	def.PropertyDefs = nil
+
+	return nil
 }

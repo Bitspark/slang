@@ -5,8 +5,16 @@ import (
 	"os/exec"
 )
 
-var systemExecuteCfg = &builtinConfig{
+var shellExecuteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "13cbad40-da00-40d7-bdcd-981b14ec346b",
+		Meta: core.OperatorMetaDef{
+			Name:             "shell execute",
+			ShortDescription: "executes a shell command on the host system",
+			Icon:             "terminal",
+			Tags:             []string{"system"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/shell-execute",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

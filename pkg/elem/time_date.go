@@ -22,6 +22,14 @@ func parseDate(dateStr string) (time.Time, error) {
 
 var timeParseDateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "2a9da2d5-2684-4d2f-8a37-9560d0f2de29",
+		Meta: core.OperatorMetaDef{
+			Name: "to date",
+			ShortDescription: "takes a string containing date and time and emits its parsed values",
+			Icon: "calendar-week",
+			Tags: []string{"time"},
+			DocURL: "https://bitspark.de/slang/docs/operator/to-date",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

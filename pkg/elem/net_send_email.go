@@ -11,6 +11,14 @@ import (
 
 var netSendEmailCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "741b8a21-0b6d-40e5-a281-b179a49e9030",
+		Meta: core.OperatorMetaDef{
+			Name: "send email",
+			ShortDescription: "sends an email",
+			Icon: "envelope",
+			Tags: []string{"network", "smtp", "email"},
+			DocURL: "https://bitspark.de/slang/docs/operator/send-email",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

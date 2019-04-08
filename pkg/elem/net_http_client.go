@@ -9,6 +9,14 @@ import (
 
 var netHTTPClientCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "f7f5907d-758b-4892-8a3e-ae86b877b869",
+		Meta: core.OperatorMetaDef{
+			Name: "HTTP client",
+			ShortDescription: "sends an HTTP request",
+			Icon: "browser",
+			Tags: []string{"network", "http"},
+			DocURL: "https://bitspark.de/slang/docs/operator/http-client",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: func() core.TypeDef {

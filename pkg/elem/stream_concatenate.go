@@ -6,6 +6,14 @@ import (
 
 var streamConcatenateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: "fb174c53-80bd-4e29-955a-aafe33ebfb30",
+		Meta: core.OperatorMetaDef{
+			Name: "concatenate",
+			ShortDescription: "concatenates two streams",
+			Icon: "layer-plus",
+			Tags: []string{"stream"},
+			DocURL: "https://bitspark.de/slang/docs/operator/concatenate",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{

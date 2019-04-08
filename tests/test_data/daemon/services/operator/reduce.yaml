@@ -10,12 +10,12 @@ services:
       type: number
 operators:
   adder:
-    operator: slang.data.Evaluate
+    operator: 37ccdc28-67b0-4bb1-8591-4e0e813e3ec1
     properties:
       expression: "a+b"
       variables: ["a", "b"]
   reducer:
-    operator: slang.control.Reduce
+    operator: b95e6da8-9770-4a04-a73d-cdfe2081870f
     generics:
       itemType:
         type: number

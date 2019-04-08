@@ -1,16 +1,17 @@
 package elem
 
 import (
-	"github.com/stretchr/testify/require"
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
-	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOperatorCSVRead__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocConst := getBuiltinCfg("slang.encoding.CSVRead")
+	ocConst := getBuiltinCfg(encodingCSVReadId)
 	a.NotNil(ocConst)
 }
 
@@ -19,7 +20,7 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 	r := require.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.encoding.CSVRead",
+			Operator: encodingCSVReadId,
 			Generics: map[string]*core.TypeDef{
 				"colMap": {
 					Type: "map",
@@ -38,7 +39,7 @@ func TestOperatorCSVRead__3Lines(t *testing.T) {
 			},
 			Properties: map[string]interface{}{
 				"delimiter": ",",
-				"columns": []interface{}{"a", "b", "c"},
+				"columns":   []interface{}{"a", "b", "c"},
 			},
 		},
 	)
@@ -61,7 +62,7 @@ func TestOperatorCSVRead__DifferentOrder(t *testing.T) {
 	r := require.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.encoding.CSVRead",
+			Operator: encodingCSVReadId,
 			Generics: map[string]*core.TypeDef{
 				"colMap": {
 					Type: "map",
@@ -80,7 +81,7 @@ func TestOperatorCSVRead__DifferentOrder(t *testing.T) {
 			},
 			Properties: map[string]interface{}{
 				"delimiter": ",",
-				"columns": []interface{}{"a", "b", "c"},
+				"columns":   []interface{}{"a", "b", "c"},
 			},
 		},
 	)

@@ -1,16 +1,17 @@
 package elem
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_JsonWrite__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.encoding.JSONWrite")
+	ocFork := getBuiltinCfg(encodingJSONWriteId)
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +20,7 @@ func Test_JsonWrite__String(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.encoding.JSONWrite",
+			Operator: encodingJSONWriteId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "string",

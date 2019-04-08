@@ -1,17 +1,18 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
-	"github.com/stretchr/testify/require"
+
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 // Test if fork operator is registered under the correct name
 func Test_CtrlLoop__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocLoop := getBuiltinCfg("slang.control.Loop")
+	ocLoop := getBuiltinCfg(controlLoopId)
 	a.NotNil(ocLoop)
 }
 
@@ -23,7 +24,7 @@ func Test_CtrlLoop__Signature(t *testing.T) {
 	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.control.Loop",
+			Operator: controlLoopId,
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",
@@ -95,7 +96,7 @@ func Test_CtrlLoop__GenericType(t *testing.T) {
 			lop, err := buildOperator(
 				core.InstanceDef{
 					Name:     "fork",
-					Operator: "slang.control.Loop",
+					Operator: controlLoopId,
 					Generics: map[string]*core.TypeDef{
 						"stateType": {
 							Type: stateTp,
@@ -151,7 +152,7 @@ func Test_CtrlLoop__Behavior(t *testing.T) {
 	lop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "loop",
-			Operator: "slang.control.Loop",
+			Operator: controlLoopId,
 			Generics: map[string]*core.TypeDef{
 				"stateType": {
 					Type: "number",

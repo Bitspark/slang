@@ -4,8 +4,17 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
+var streamWindowId = "5b704038-9617-454a-b7a1-2091277cff69"
 var streamWindowCfg = &builtinConfig{
 	opDef: core.OperatorDef{
+		Id: streamWindowId,
+		Meta: core.OperatorMetaDef{
+			Name:             "window",
+			ShortDescription: "cuts a stream into windows of a certain size and emits them",
+			Icon:             "window-restore",
+			Tags:             []string{"stream", "window"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/window",
+		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
@@ -27,8 +36,7 @@ var streamWindowCfg = &builtinConfig{
 				},
 			},
 		},
-		DelegateDefs: map[string]*core.DelegateDef{
-		},
+		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: map[string]*core.TypeDef{
 			"size": {
 				Type: "number",
@@ -81,7 +89,7 @@ var streamWindowCfg = &builtinConfig{
 					} else {
 						items = []interface{}{}
 					}
-				} else if !started && len(items) % stride == 0 {
+				} else if !started && len(items)%stride == 0 {
 					out.Stream().Push(items)
 				}
 			}

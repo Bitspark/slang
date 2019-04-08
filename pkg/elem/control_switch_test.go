@@ -1,16 +1,17 @@
 package elem
 
 import (
-	"github.com/stretchr/testify/require"
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
-	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_CtrlSwitch__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocSwitch := getBuiltinCfg("slang.control.Switch")
+	ocSwitch := getBuiltinCfg(controlSwitchId)
 	a.NotNil(ocSwitch)
 }
 
@@ -20,10 +21,10 @@ func Test_CtrlSwitch__Ports(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Switch",
+			Operator: controlSwitchId,
 			Generics: map[string]*core.TypeDef{
-				"inType": {Type: "string"},
-				"outType": {Type: "number"},
+				"inType":     {Type: "string"},
+				"outType":    {Type: "number"},
 				"selectType": {Type: "boolean"},
 			},
 			Properties: map[string]interface{}{
@@ -45,10 +46,10 @@ func Test_CtrlSwitch__Delegates_Bool(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Switch",
+			Operator: controlSwitchId,
 			Generics: map[string]*core.TypeDef{
-				"inType": {Type: "string"},
-				"outType": {Type: "number"},
+				"inType":     {Type: "string"},
+				"outType":    {Type: "number"},
 				"selectType": {Type: "boolean"},
 			},
 			Properties: map[string]interface{}{
@@ -70,10 +71,10 @@ func Test_CtrlSwitch__Delegates_String(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Switch",
+			Operator: controlSwitchId,
 			Generics: map[string]*core.TypeDef{
-				"inType": {Type: "string"},
-				"outType": {Type: "number"},
+				"inType":     {Type: "string"},
+				"outType":    {Type: "number"},
 				"selectType": {Type: "string"},
 			},
 			Properties: map[string]interface{}{
@@ -96,10 +97,10 @@ func Test_CtrlSwitch__Redirect_Number(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Switch",
+			Operator: controlSwitchId,
 			Generics: map[string]*core.TypeDef{
-				"inType": {Type: "string"},
-				"outType": {Type: "number"},
+				"inType":     {Type: "string"},
+				"outType":    {Type: "number"},
 				"selectType": {Type: "number"},
 			},
 			Properties: map[string]interface{}{
@@ -140,4 +141,3 @@ func Test_CtrlSwitch__Redirect_Number(t *testing.T) {
 	a.Equal(12, o.Main().Out().Pull())
 	a.Equal(13, o.Main().Out().Pull())
 }
-

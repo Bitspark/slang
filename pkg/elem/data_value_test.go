@@ -1,16 +1,17 @@
 package elem
 
 import (
-	"github.com/stretchr/testify/require"
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
-	"testing"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_DataConstant__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocConst := getBuiltinCfg("slang.data.Value")
+	ocConst := getBuiltinCfg(dataValueId)
 	a.NotNil(ocConst)
 }
 
@@ -46,7 +47,7 @@ func TestBuiltinConst__Correct(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
@@ -66,7 +67,7 @@ func TestBuiltinConst__PushBoolean(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "boolean",
@@ -96,7 +97,7 @@ func TestBuiltinConst__PushStream(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "stream",
@@ -130,7 +131,7 @@ func TestBuiltinConst__PushMap(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "map",
@@ -169,7 +170,7 @@ func Test_DataConstant__SimpleNumber(t *testing.T) {
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
@@ -194,7 +195,7 @@ func Test_DataConstant__ComplexStreamMap(t *testing.T) {
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "map",
@@ -231,7 +232,7 @@ func Test_DataConstant__PassMarkers(t *testing.T) {
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.data.Value",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",

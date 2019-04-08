@@ -2,15 +2,16 @@ package elem
 
 import (
 	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_CtrlTake__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocTake := getBuiltinCfg("9bebc4bf-d512-4944-bcb1-5b2c3d5b5471")
+	ocTake := getBuiltinCfg(controlTakeId)
 	a.NotNil(ocTake)
 }
 
@@ -18,7 +19,7 @@ func Test_CtrlTake__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
+			Operator: controlTakeId,
 		},
 	)
 	a.Error(err)
@@ -29,7 +30,7 @@ func Test_CtrlTake__InPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
+			Operator: controlTakeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -53,7 +54,7 @@ func Test_CtrlTake__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
+			Operator: controlTakeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -75,7 +76,7 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471",
+			Operator: controlTakeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -109,7 +110,6 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(1, i)
 
-
 	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 2, "false": 4}, i)
 
@@ -118,7 +118,6 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(4, i)
 
-
 	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 2, "false": 5}, i)
 
@@ -126,7 +125,6 @@ func Test_CtrlTake__Simple1(t *testing.T) {
 
 	i = to.Main().Out().Stream().Pull()
 	a.Equal(2, i)
-
 
 	i = to.Delegate("compare").Out().Pull()
 	a.Equal(map[string]interface{}{"true": 3, "false": 5}, i)

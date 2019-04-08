@@ -1,8 +1,9 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"sync"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 type memoryStore struct {
@@ -26,15 +27,16 @@ func getMemoryStore(store string) *memoryStore {
 	return ms
 }
 
+var databaseMemoryReadId = "2fcd32f5-c83c-4fff-9ac2-ccd6d02139fa"
 var databaseMemoryReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "2fcd32f5-c83c-4fff-9ac2-ccd6d02139fa",
+		Id: databaseMemoryReadId,
 		Meta: core.OperatorMetaDef{
-			Name: "read from memory",
+			Name:             "read from memory",
 			ShortDescription: "reads an item from memory by key string",
-			Icon: "memory",
-			Tags: []string{"database", "memory"},
-			DocURL: "https://bitspark.de/slang/docs/operator/memory-read",
+			Icon:             "memory",
+			Tags:             []string{"database", "memory"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/memory-read",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

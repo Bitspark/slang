@@ -4,15 +4,16 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
+var streamMapToStreamId = "d099a1cd-69eb-43a2-b95b-239612c457fc"
 var streamMapToStreamCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "d099a1cd-69eb-43a2-b95b-239612c457fc",
+		Id: streamMapToStreamId,
 		Meta: core.OperatorMetaDef{
-			Name: "map to stream",
+			Name:             "map to stream",
 			ShortDescription: "takes a map and emits a stream of key-value pairs",
-			Icon: "cubes",
-			Tags: []string{"stream", "convert"},
-			DocURL: "https://bitspark.de/slang/docs/operator/map-to-stream",
+			Icon:             "cubes",
+			Tags:             []string{"stream", "convert"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/map-to-stream",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

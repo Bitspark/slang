@@ -1,22 +1,24 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
 	"os/user"
 	"path/filepath"
 	"strings"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var filesReadId = "f7eecf2c-6504-478f-b2fa-809bec71463c"
 var filesReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "f7eecf2c-6504-478f-b2fa-809bec71463c",
+		Id: filesReadId,
 		Meta: core.OperatorMetaDef{
-			Name: "read file",
+			Name:             "read file",
 			ShortDescription: "reads the contents of a file and emits them",
-			Icon: "file",
-			Tags: []string{"file"},
-			DocURL: "https://bitspark.de/slang/docs/operator/read-file",
+			Icon:             "file",
+			Tags:             []string{"file"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/read-file",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

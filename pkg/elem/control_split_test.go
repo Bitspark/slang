@@ -1,9 +1,10 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
 )
 
@@ -11,7 +12,7 @@ import (
 func Test_CtrlSplit__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.control.Split")
+	ocFork := getBuiltinCfg(controlSplitId)
 	a.NotNil(ocFork)
 }
 
@@ -23,7 +24,7 @@ func Test_CtrlSplit__Signature(t *testing.T) {
 	fop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "fork",
-			Operator: "slang.control.Split",
+			Operator: controlSplitId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -78,7 +79,7 @@ func Test_CtrlSplit__GenericType(t *testing.T) {
 		fop, err := buildOperator(
 			core.InstanceDef{
 				Name:     "fork",
-				Operator: "slang.control.Split",
+				Operator: controlSplitId,
 				Generics: map[string]*core.TypeDef{
 					"itemType": {
 						Type: tp,
@@ -116,7 +117,7 @@ func Test_CtrlSplit__Forking(t *testing.T) {
 	fop, err := buildOperator(
 		core.InstanceDef{
 			Name:     "fork",
-			Operator: "slang.control.Split",
+			Operator: controlSplitId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",

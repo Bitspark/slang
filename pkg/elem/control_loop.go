@@ -4,15 +4,16 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
+var controlLoopId = "0b8a1592-1368-44bc-92d5-692acc78b1d3"
 var controlLoopCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "0b8a1592-1368-44bc-92d5-692acc78b1d3",
+		Id: controlLoopId,
 		Meta: core.OperatorMetaDef{
-			Name: "loop",
+			Name:             "loop",
 			ShortDescription: "lets an iterator delegate process a state until the controller tells it to stop",
-			Icon: "undo",
-			Tags: []string{"data", "stream"},
-			DocURL: "https://bitspark.de/slang/docs/operator/loop",
+			Icon:             "undo",
+			Tags:             []string{"data", "stream"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/loop",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

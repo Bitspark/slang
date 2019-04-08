@@ -2,9 +2,10 @@ package elem
 
 import (
 	"errors"
+	"math"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Knetic/govaluate"
-	"math"
 )
 
 type EvaluableExpression struct {
@@ -45,17 +46,17 @@ func makeMathFunc2(f mathFunc2, args ...interface{}) govaluate.ExpressionFunctio
 }
 
 func evalFunctions() map[string]govaluate.ExpressionFunction {
-	functions := map[string]govaluate.ExpressionFunction {
+	functions := map[string]govaluate.ExpressionFunction{
 		"floor": makeMathFunc1(math.Floor),
-		"ceil": makeMathFunc1(math.Ceil),
-		"sqrt": makeMathFunc1(math.Sqrt),
-		"sin": makeMathFunc1(math.Sin),
-		"asin": makeMathFunc1(math.Asin),
-		"cos": makeMathFunc1(math.Cos),
-		"acos": makeMathFunc1(math.Acos),
-		"tan": makeMathFunc1(math.Tan),
-		"atan": makeMathFunc1(math.Atan),
-		"pow": makeMathFunc2(math.Pow),
+		"ceil":  makeMathFunc1(math.Ceil),
+		"sqrt":  makeMathFunc1(math.Sqrt),
+		"sin":   makeMathFunc1(math.Sin),
+		"asin":  makeMathFunc1(math.Asin),
+		"cos":   makeMathFunc1(math.Cos),
+		"acos":  makeMathFunc1(math.Acos),
+		"tan":   makeMathFunc1(math.Tan),
+		"atan":  makeMathFunc1(math.Atan),
+		"pow":   makeMathFunc2(math.Pow),
 		"atan2": makeMathFunc2(math.Atan2),
 		"isNull": func(args ...interface{}) (interface{}, error) {
 			if len(args) == 0 {
@@ -81,20 +82,21 @@ func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 	return nil, err
 }
 
+var dataEvaluateId = "37ccdc28-67b0-4bb1-8591-4e0e813e3ec1"
 var dataEvaluateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "37ccdc28-67b0-4bb1-8591-4e0e813e3ec1",
+		Id: dataEvaluateId,
 		Meta: core.OperatorMetaDef{
-			Name: "evaluate",
+			Name:             "evaluate",
 			ShortDescription: "evaluates an expression",
-			Icon: "function",
-			Tags: []string{"math", "boolean", "function"},
-			DocURL: "https://bitspark.de/slang/docs/operator/evaluate",
+			Icon:             "function",
+			Tags:             []string{"math", "boolean", "function"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/evaluate",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type:    "map",
+					Type: "map",
 					Map: map[string]*core.TypeDef{
 						"{variables}": {
 							Type: "primitive",

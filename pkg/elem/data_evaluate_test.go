@@ -1,10 +1,10 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
 
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
 )
 
 func Test_DataEvaluate__TranslatesVariables(t *testing.T) {
@@ -17,31 +17,31 @@ func Test_DataEvaluate__TranslatesVariables(t *testing.T) {
 
 func Test_DataEvaluate__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
-	a.True(IsRegistered("slang.data.Evaluate"))
+	a.True(IsRegistered(dataEvaluateId))
 }
 
 func Test_DataEvaluate__NilProperties(t *testing.T) {
 	a := assertions.New(t)
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.data.Evaluate"})
+	_, err := buildOperator(core.InstanceDef{Operator: dataEvaluateId})
 	a.Error(err)
 }
 
 func Test_DataEvaluate__EmptyExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.data.Evaluate", Properties: map[string]interface{}{"expression": ""}})
+	_, err := buildOperator(core.InstanceDef{Operator: dataEvaluateId, Properties: map[string]interface{}{"expression": ""}})
 	a.Error(err)
 }
 
 func Test_DataEvaluate__InvalidExpression(t *testing.T) {
 	a := assertions.New(t)
-	_, err := buildOperator(core.InstanceDef{Operator: "slang.data.Evaluate", Properties: map[string]interface{}{"expression": "+"}})
+	_, err := buildOperator(core.InstanceDef{Operator: dataEvaluateId, Properties: map[string]interface{}{"expression": "+"}})
 	a.Error(err)
 }
 
 func Test_DataEvaluate__Add(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator: "slang.data.Evaluate",
+		Operator: dataEvaluateId,
 		Properties: map[string]interface{}{
 			"expression": "a+b",
 			"variables":  []interface{}{"a", "b"},
@@ -63,7 +63,7 @@ func Test_DataEvaluate__Add(t *testing.T) {
 func Test_DataEvaluate__Floor(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator: "slang.data.Evaluate",
+		Operator: dataEvaluateId,
 		Properties: map[string]interface{}{
 			"expression": "floor(a)",
 			"variables":  []interface{}{"a"},
@@ -85,10 +85,10 @@ func Test_DataEvaluate__Floor(t *testing.T) {
 func Test_DataEvaluate__Ceil(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.data.Evaluate",
+		Operator: dataEvaluateId,
 		Properties: map[string]interface{}{
 			"expression": "ceil(a)",
-			"variables": []interface{}{"a"},
+			"variables":  []interface{}{"a"},
 		},
 	})
 	a.NoError(err)
@@ -107,10 +107,10 @@ func Test_DataEvaluate__Ceil(t *testing.T) {
 func Test_DataEvaluate__IsNull(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.data.Evaluate",
+		Operator: dataEvaluateId,
 		Properties: map[string]interface{}{
 			"expression": "isNull(a)",
-			"variables": []interface{}{"a"},
+			"variables":  []interface{}{"a"},
 		},
 	})
 	a.NoError(err)
@@ -129,10 +129,10 @@ func Test_DataEvaluate__IsNull(t *testing.T) {
 func Test_DataEvaluate__Pow(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.data.Evaluate",
+		Operator: dataEvaluateId,
 		Properties: map[string]interface{}{
 			"expression": "pow(a, b)",
-			"variables": []interface{}{"a", "b"},
+			"variables":  []interface{}{"a", "b"},
 		},
 	})
 	a.NoError(err)
@@ -152,10 +152,10 @@ func Test_DataEvaluate__Pow(t *testing.T) {
 func Test_DataEvaluate__BoolArith(t *testing.T) {
 	a := assertions.New(t)
 	fo, err := buildOperator(core.InstanceDef{
-		Operator:   "slang.data.Evaluate",
+		Operator: dataEvaluateId,
 		Properties: map[string]interface{}{
 			"expression": "a && (b != c)",
-			"variables": []interface{}{"a", "b", "c"},
+			"variables":  []interface{}{"a", "b", "c"},
 		},
 	})
 	a.NoError(err)

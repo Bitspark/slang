@@ -1,16 +1,17 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/tests/assertions"
 	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_CtrlIterate__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocAgg := getBuiltinCfg("slang.control.Iterate")
+	ocAgg := getBuiltinCfg(controlIterateId)
 	a.NotNil(ocAgg)
 }
 
@@ -19,7 +20,7 @@ func Test_CtrlIterate__PassOtherMarkers(t *testing.T) {
 	r := require.New(t)
 
 	ao, err := buildOperator(core.InstanceDef{
-		Operator: "slang.control.Iterate",
+		Operator: controlIterateId,
 		Generics: map[string]*core.TypeDef{
 			"stateType": {
 				Type: "number",
@@ -80,7 +81,7 @@ func Test_CtrlIterate__SimpleAggregation(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.control.Iterate",
+			Operator: controlIterateId,
 			Generics: map[string]*core.TypeDef{
 				"inItemType": {
 					Type: "number",

@@ -4,15 +4,16 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 )
 
+var controlSemaphoreVId = "dc9b35a3-bd0e-4ca3-99df-4e2689ea5097"
 var controlSemaphoreVCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "dc9b35a3-bd0e-4ca3-99df-4e2689ea5097",
+		Id: controlSemaphoreVId,
 		Meta: core.OperatorMetaDef{
-			Name: "semaphore V",
+			Name:             "semaphore V",
 			ShortDescription: "frees a semaphore token",
-			Icon: "traffic-light-go",
-			Tags: []string{"control", "sync"},
-			DocURL: "https://bitspark.de/slang/docs/operator/semaphore-v",
+			Icon:             "traffic-light-go",
+			Tags:             []string{"control", "sync"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/semaphore-v",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

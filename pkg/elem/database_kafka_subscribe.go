@@ -1,21 +1,23 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Shopify/sarama"
 	"os"
 	"os/signal"
+
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Shopify/sarama"
 )
 
+var databaseKafkaSubscribeId = "b6cb78ca-bbfd-475e-a11f-3593ce295e3c"
 var databaseKafkaSubscribeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "b6cb78ca-bbfd-475e-a11f-3593ce295e3c",
+		Id: databaseKafkaSubscribeId,
 		Meta: core.OperatorMetaDef{
-			Name: "Kafka subscribe",
+			Name:             "Kafka subscribe",
 			ShortDescription: "subscribes at a Kafka topic",
-			Icon: "",
-			Tags: []string{"database", "kafka"},
-			DocURL: "https://bitspark.de/slang/docs/operator/kafka-subscribe",
+			Icon:             "",
+			Tags:             []string{"database", "kafka"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/kafka-subscribe",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

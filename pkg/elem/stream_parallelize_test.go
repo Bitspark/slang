@@ -2,15 +2,16 @@ package elem
 
 import (
 	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
 	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_StreamParallelize__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.stream.Parallelize")
+	ocFork := getBuiltinCfg(streamParallelizeId)
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +20,7 @@ func Test_StreamParallelize__String(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.stream.Parallelize",
+			Operator: streamParallelizeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "string",

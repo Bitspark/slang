@@ -2,16 +2,17 @@ package elem
 
 import (
 	"testing"
-	"github.com/Bitspark/slang/tests/assertions"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/stretchr/testify/require"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/tests/assertions"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_MetaStore__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocMetaStore := getBuiltinCfg("slang.meta.Store")
+	ocMetaStore := getBuiltinCfg(metaStoreId)
 	a.NotNil(ocMetaStore)
 }
 
@@ -20,7 +21,7 @@ func Test_MetaStore__Single(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.meta.Store",
+			Operator: metaStoreId,
 			Generics: map[string]*core.TypeDef{
 				"examineType": {
 					Type: "string",
@@ -60,7 +61,7 @@ func Test_MetaStore__Stream(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.meta.Store",
+			Operator: metaStoreId,
 			Generics: map[string]*core.TypeDef{
 				"examineType": {
 					Type: "stream",
@@ -113,7 +114,7 @@ func Test_MetaStore__Map(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.meta.Store",
+			Operator: metaStoreId,
 			Generics: map[string]*core.TypeDef{
 				"examineType": {
 					Type: "map",
@@ -180,7 +181,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.meta.Store",
+			Operator: metaStoreId,
 			Generics: map[string]*core.TypeDef{
 				"examineType": {
 					Type: "stream",
@@ -263,7 +264,7 @@ func Test_MetaStore__MapStream(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.meta.Store",
+			Operator: metaStoreId,
 			Generics: map[string]*core.TypeDef{
 				"examineType": {
 					Type: "map",

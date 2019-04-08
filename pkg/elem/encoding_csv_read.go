@@ -2,21 +2,23 @@ package elem
 
 import (
 	"encoding/csv"
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/core"
 	"io"
 	"strings"
+
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var encodingCSVReadId = "77d60459-f8b5-4f4b-b293-740164c49a82"
 var encodingCSVReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "77d60459-f8b5-4f4b-b293-740164c49a82",
+		Id: encodingCSVReadId,
 		Meta: core.OperatorMetaDef{
-			Name: "read CSV",
+			Name:             "read CSV",
 			ShortDescription: "reads a CSV file and emits a stream of lines, separated into columns",
-			Icon: "file-csv",
-			Tags: []string{"csv", "encoding"},
-			DocURL: "https://bitspark.de/slang/docs/operator/read-csv",
+			Icon:             "file-csv",
+			Tags:             []string{"csv", "encoding"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/read-csv",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

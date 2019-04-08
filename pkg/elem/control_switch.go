@@ -1,19 +1,21 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"fmt"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var controlSwitchId = "cd6fc5c8-5b64-4b1a-9885-59ede141b398"
 var controlSwitchCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "cd6fc5c8-5b64-4b1a-9885-59ede141b398",
+		Id: controlSwitchId,
 		Meta: core.OperatorMetaDef{
-			Name: "switch",
+			Name:             "switch",
 			ShortDescription: "emits a constant value for each item",
-			Icon: "code-merge",
-			Tags: []string{"control"},
-			DocURL: "https://bitspark.de/slang/docs/operator/switch",
+			Icon:             "code-merge",
+			Tags:             []string{"control"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/switch",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

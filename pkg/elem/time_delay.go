@@ -1,19 +1,21 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var timeDelayId = "7d61b83a-9aa2-4875-9c21-1e11f6adbfae"
 var timeDelayCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "7d61b83a-9aa2-4875-9c21-1e11f6adbfae",
+		Id: timeDelayId,
 		Meta: core.OperatorMetaDef{
-			Name: "delay",
+			Name:             "delay",
 			ShortDescription: "takes an item and emits it again after a given number of milliseconds has passed",
-			Icon: "clock",
-			Tags: []string{"time"},
-			DocURL: "https://bitspark.de/slang/docs/operator/now",
+			Icon:             "clock",
+			Tags:             []string{"time"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/now",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -21,7 +23,7 @@ var timeDelayCfg = &builtinConfig{
 					Type: "map",
 					Map: map[string]*core.TypeDef{
 						"item": {
-							Type: "generic",
+							Type:    "generic",
 							Generic: "itemType",
 						},
 						"delay": {
@@ -30,7 +32,7 @@ var timeDelayCfg = &builtinConfig{
 					},
 				},
 				Out: core.TypeDef{
-					Type: "generic",
+					Type:    "generic",
 					Generic: "itemType",
 				},
 			},

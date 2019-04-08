@@ -1,19 +1,21 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"sync"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
+var controlReduceId = "b95e6da8-9770-4a04-a73d-cdfe2081870f"
 var controlReduceCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "b95e6da8-9770-4a04-a73d-cdfe2081870f",
+		Id: controlReduceId,
 		Meta: core.OperatorMetaDef{
-			Name: "reduce",
+			Name:             "reduce",
 			ShortDescription: "reduces the items of a stream pairwise using a reducer delegate",
-			Icon: "compress-alt",
-			Tags: []string{"data", "stream"},
-			DocURL: "https://bitspark.de/slang/docs/operator/reduce",
+			Icon:             "compress-alt",
+			Tags:             []string{"data", "stream"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/reduce",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

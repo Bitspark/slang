@@ -1,16 +1,17 @@
 package elem
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_JsonRead__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocFork := getBuiltinCfg("slang.encoding.JSONRead")
+	ocFork := getBuiltinCfg(encodingJSONReadId)
 	a.NotNil(ocFork)
 }
 
@@ -19,7 +20,7 @@ func Test_JsonRead__String(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.encoding.JSONRead",
+			Operator: encodingJSONReadId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "string",
@@ -41,7 +42,7 @@ func Test_JsonRead__Invalid(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.encoding.JSONRead",
+			Operator: encodingJSONReadId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "map",
@@ -72,7 +73,7 @@ func Test_JsonRead__Complex(t *testing.T) {
 
 	o, err := buildOperator(
 		core.InstanceDef{
-			Operator: "slang.encoding.JSONRead",
+			Operator: encodingJSONReadId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "map",

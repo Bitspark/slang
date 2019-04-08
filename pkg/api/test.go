@@ -3,12 +3,13 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/google/uuid"
 	"io"
 	"log"
 	"reflect"
+
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
 )
 
 type TestBench struct {
@@ -40,10 +41,6 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 	for i, tc := range opDef.TestCases {
 		if len(tc.Name) < 3 {
 			return 0, 0, errors.New("name too short")
-		}
-
-		if len(tc.Description) < 8 {
-			return 0, 0, errors.New("description too short")
 		}
 
 		o, err := BuildAndCompile(opId, tc.Generics, tc.Properties, *t.stor)

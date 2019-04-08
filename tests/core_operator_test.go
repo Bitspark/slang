@@ -1,9 +1,10 @@
 package tests
 
 import (
+	"testing"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
-	"testing"
 )
 
 func TestOperator_NewOperator__CorrectRelation(t *testing.T) {

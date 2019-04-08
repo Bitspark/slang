@@ -75,13 +75,13 @@ operators:
         type: number
   # Sorter
   sorter:
-    operator: slang.control.Take
+    operator: 9bebc4bf-d512-4944-bcb1-5b2c3d5b5471
     generics:
       itemType:
         type: number
   # Reducer
   reducer:
-    operator: slang.control.Reduce
+    operator: b95e6da8-9770-4a04-a73d-cdfe2081870f
     generics:
       itemType:
         type: stream
@@ -91,7 +91,7 @@ operators:
       emptyValue: []
   # Comparator
   comparator:
-    operator: slang.data.Evaluate
+    operator: 37ccdc28-67b0-4bb1-8591-4e0e813e3ec1
     properties:
       expression: a <= b
       variables: ["a", "b"]
@@ -105,12 +105,12 @@ connections:
     - true(sorter
   reducer.reducer)b:
     - false(sorter
-  sorter.compare)~.true:
+  sorter.compare)true:
     - a(comparator
-  sorter.compare)~.false:
+  sorter.compare)false:
     - b(comparator
   comparator):
-    - ~(sorter.compare
+    - (sorter.compare
   sorter):
     - (reducer.reducer
   reducer):

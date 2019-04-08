@@ -44,7 +44,6 @@ func Test_CtrlTake__InPorts(t *testing.T) {
 	a.Equal(core.TYPE_MAP, to.Main().In().Type())
 	a.Equal(core.TYPE_STREAM, to.Main().In().Map("true").Type())
 	a.Equal(core.TYPE_STREAM, to.Main().In().Map("false").Type())
-	a.Equal(core.TYPE_MAP, to.Delegate("compare").In().Type())
 	a.Equal(core.TYPE_NUMBER, to.Main().In().Map("true").Stream().Type())
 	a.Equal(core.TYPE_NUMBER, to.Main().In().Map("false").Stream().Type())
 	a.Equal(core.TYPE_BOOLEAN, to.Delegate("compare").In().Type())

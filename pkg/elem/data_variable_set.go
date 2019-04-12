@@ -31,11 +31,11 @@ var dataVariableSetCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: dataVariableSetId,
 		Meta: core.OperatorMetaDef{
-			Name:             "set variable",
-			ShortDescription: "",
-			Icon:             "box-full",
+			Name:             "set value",
+			ShortDescription: "stores a value for later use",
+			Icon:             "inbox-in",
 			Tags:             []string{"data"},
-			DocURL:           "https://bitspark.de/slang/docs/operator/set-variable",
+			DocURL:           "https://bitspark.de/slang/docs/operator/set-value",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -49,7 +49,7 @@ var dataVariableSetCfg = &builtinConfig{
 			},
 		},
 		PropertyDefs: map[string]*core.TypeDef{
-			"variableName": {
+			"valueName": {
 				Type: "string",
 			},
 		},
@@ -59,7 +59,7 @@ var dataVariableSetCfg = &builtinConfig{
 		out := op.Main().Out()
 
 		// Get store
-		store := op.Property("variableName").(string)
+		store := op.Property("valueName").(string)
 		vs := getVariableStore(store)
 
 		for !op.CheckStop() {

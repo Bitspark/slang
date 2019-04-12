@@ -10,11 +10,11 @@ var dataVariableGetCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: dataVariableGetId,
 		Meta: core.OperatorMetaDef{
-			Name:             "get variable",
-			ShortDescription: "",
-			Icon:             "box-full",
+			Name:             "get value",
+			ShortDescription: "emits a value previously saved for each item",
+			Icon:             "inbox-out",
 			Tags:             []string{"data"},
-			DocURL:           "https://bitspark.de/slang/docs/operator/get-variable",
+			DocURL:           "https://bitspark.de/slang/docs/operator/get-value",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -28,7 +28,7 @@ var dataVariableGetCfg = &builtinConfig{
 			},
 		},
 		PropertyDefs: map[string]*core.TypeDef{
-			"variableName": {
+			"valueName": {
 				Type: "string",
 			},
 			"waitForSet": {
@@ -41,7 +41,7 @@ var dataVariableGetCfg = &builtinConfig{
 		out := op.Main().Out()
 
 		// Get store
-		store := op.Property("variableName").(string)
+		store := op.Property("valueName").(string)
 		wait := op.Property("waitForSet").(bool)
 
 		vs := getVariableStore(store)

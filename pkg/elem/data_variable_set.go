@@ -1,0 +1,78 @@
+package elem
+
+import (
+	"github.com/Bitspark/slang/pkg/core"
+	"sync"
+)
+
+type variableStore struct {
+	mutex *sync.Mutex
+	value interface{}
+}
+
+var variableStores map[string]*variableStore
+var variableMutex *sync.Mutex
+
+func getVariableStore(store string) *variableStore {
+	variableMutex.Lock()
+	ws, ok := variableStores[store]
+	if !ok {
+		ws = &variableStore{}
+		ws.mutex = &sync.Mutex{}
+		ws.value = nil
+		variableStores[store] = ws
+	}
+	variableMutex.Unlock()
+	return ws
+}
+
+var dataVariableSetId = "3be41b5b-5a43-4f94-a7ae-7f0bacc4ae77"
+var dataVariableSetCfg = &builtinConfig{
+	opDef: core.OperatorDef{
+		Id: dataVariableSetId,
+		Meta: core.OperatorMetaDef{
+			Name:             "set variable",
+			ShortDescription: "",
+			Icon:             "box-full",
+			Tags:             []string{"data"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/set-variable",
+		},
+		ServiceDefs: map[string]*core.ServiceDef{
+			core.MAIN_SERVICE: {
+				In: core.TypeDef{
+					Type:    "generic",
+					Generic: "valueType",
+				},
+				Out: core.TypeDef{
+					Type: "trigger",
+				},
+			},
+		},
+		PropertyDefs: map[string]*core.TypeDef{
+			"variableName": {
+				Type: "string",
+			},
+		},
+	},
+	opFunc: func(op *core.Operator) {
+		in := op.Main().In()
+		out := op.Main().Out()
+
+		// Get store
+		store := op.Property("variableName").(string)
+		vs := getVariableStore(store)
+
+		for !op.CheckStop() {
+			i := in.Pull()
+			if core.IsMarker(i) {
+				out.Push(i)
+			}
+
+			vs.mutex.Lock()
+			vs.value = i
+			vs.mutex.Unlock()
+
+			out.Push(nil)
+		}
+	},
+}

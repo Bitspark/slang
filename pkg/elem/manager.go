@@ -2,10 +2,11 @@ package elem
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
-	"sync"
 )
 
 type builtinConfig struct {
@@ -123,6 +124,7 @@ func init() {
 	Register(filesZIPUnpackCfg)
 
 	Register(encodingCSVReadCfg)
+	Register(encodingCSVWriteCfg)
 	Register(encodingJSONReadCfg)
 	Register(encodingJSONWriteCfg)
 	Register(encodingXLSXReadCfg)

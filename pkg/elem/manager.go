@@ -84,6 +84,8 @@ func init() {
 	Register(dataEvaluateCfg)
 	Register(dataConvertCfg)
 	Register(dataUUIDCfg)
+	Register(dataVariableSetCfg)
+	Register(dataVariableGetCfg)
 
 	// Flow control operators
 	Register(controlSplitCfg)
@@ -159,6 +161,9 @@ func init() {
 	Register(imageEncodeCfg)
 
 	Register(shellExecuteCfg)
+
+	variableStores = make(map[string]*variableStore)
+	variableMutex = &sync.Mutex{}
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}

@@ -65,7 +65,7 @@ var databaseRedisSubscribeCfg = &builtinConfig{
 		// on the subscribed channel(s)
 		for {
 			marker := in.Pull()
-			if marker != nil {
+			if core.IsMarker(marker) {
 				out.Push(marker)
 				continue
 			}

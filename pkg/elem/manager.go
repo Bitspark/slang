@@ -154,6 +154,7 @@ func init() {
 	Register(databaseRedisHSetCfg)
 	Register(databaseRedisLPushCfg)
 	Register(databaseRedisHIncrByCfg)
+	Register(databaseRedisSubscribeCfg)
 	Register(databaseMemoryReadCfg)
 	Register(databaseMemoryWriteCfg)
 

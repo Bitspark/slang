@@ -12,7 +12,7 @@ jobs:
       - run:
           name: Test
           command: | 
-            go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+            go test -coverprofile=coverage.txt -covermode=atomic -v ./...
             bash <(curl -s https://codecov.io/bash)
   build:
     docker:

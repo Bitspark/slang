@@ -11,7 +11,9 @@ jobs:
           command: go get -v -t -d ./...
       - run:
           name: Test
-          command: go test -v ./...
+          command: | 
+            go test -coverprofile=coverage.txt -covermode=atomic -v ./...
+            bash <(curl -s https://codecov.io/bash)
   build:
     docker:
       - image: bitspark/slang-ci:latest

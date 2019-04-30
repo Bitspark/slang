@@ -1,12 +1,11 @@
 package daemon
 
 import (
+	"context"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/rs/cors"
 	"net/http"
-	"path/filepath"
-	"regexp"
+
+	"github.com/rs/cors"
 
 	"github.com/gorilla/mux"
 )
@@ -70,9 +69,15 @@ func (s *Server) AddRedirect(path string, redirectTo string) {
 	r.Handler(http.RedirectHandler(redirectTo, http.StatusSeeOther))
 }
 
-func (s *Server) Run() error {
+func AddContext(next http.Handler, ctx context.Context) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) Run(ctx context.Context) error {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},
 	}).Handler(s.router)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), handler)
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), AddContext(handler, ctx))
 }

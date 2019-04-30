@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/Bitspark/slang/pkg/storage"
@@ -76,8 +77,9 @@ func main() {
 		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
 		AddLoader(storage.NewFileSystem(dirSlib))
 	srv := daemon.New(*st, "localhost", PORT)
+	ctx := context.WithValue(context.Background(), "storage", *st)
 	envPaths.loadDaemonServices(srv)
-	envPaths.startDaemonServer(srv)
+	envPaths.startDaemonServer(srv, ctx)
 }
 
 func initEnvironPaths() *EnvironPaths {
@@ -161,11 +163,11 @@ func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
 	srv.AddOperatorProxy("/instance")
 }
 
-func (e *EnvironPaths) startDaemonServer(srv *daemon.Server) {
+func (e *EnvironPaths) startDaemonServer(srv *daemon.Server, ctx context.Context) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
 	errors := make(chan error)
 	go informUser(url, errors)
-	errors <- srv.Run()
+	errors <- srv.Run(ctx)
 	select {} // prevent immediate exit when srv.Run fails --> informUser goroutine can handle error
 }
 

@@ -13,24 +13,22 @@ import (
 var SlangVersion string
 
 type Server struct {
-	Storage storage.Storage
-	Host    string
-	Port    int
-	router  *mux.Router
+	Host   string
+	Port   int
+	router *mux.Router
 }
 
-func New(s storage.Storage, host string, port int) *Server {
-	r := mux.NewRouter()
+func New(host string, port int) *Server {
+	r := mux.NewRouter().StrictSlash(true)
 	http.Handle("/", r)
-	return &Server{s, host, port, r}
+	return &Server{host, port, r}
 }
 
 func (s *Server) AddService(pathPrefix string, services *Service) {
-	s.AddRedirect(pathPrefix, pathPrefix+"/")
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
 		(func(endpoint *Endpoint) {
-			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Storage, w, r) }))
+			r.HandleFunc(path, endpoint.Handle)
 		})(endpoint)
 	}
 }

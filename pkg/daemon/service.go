@@ -2,10 +2,11 @@ package daemon
 
 import (
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/storage"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/Bitspark/slang/pkg/storage"
 )
 
 type Service struct {
@@ -13,7 +14,7 @@ type Service struct {
 }
 
 type Endpoint struct {
-	Handle func(st storage.Storage, w http.ResponseWriter, r *http.Request)
+	Handle func(w http.ResponseWriter, r *http.Request)
 }
 
 func getStorage(r *http.Request) storage.Storage {

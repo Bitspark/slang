@@ -4,13 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/storage"
 	"log"
 	"net/http"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/storage"
 
 	"strconv"
 
@@ -76,7 +77,7 @@ func main() {
 	st := storage.
 		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
 		AddLoader(storage.NewFileSystem(dirSlib))
-	srv := daemon.New(*st, "localhost", PORT)
+	srv := daemon.New("localhost", PORT)
 	ctx := context.WithValue(context.Background(), "storage", *st)
 	envPaths.loadDaemonServices(srv)
 	envPaths.startDaemonServer(srv, ctx)

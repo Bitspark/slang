@@ -78,7 +78,8 @@ func main() {
 		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
 		AddLoader(storage.NewFileSystem(dirSlib))
 	srv := daemon.New("localhost", PORT)
-	ctx := context.WithValue(context.Background(), "storage", *st)
+	ctx := context.WithValue(context.Background(), daemon.StorageKey, *st)
+
 	envPaths.loadDaemonServices(srv)
 	envPaths.startDaemonServer(srv, ctx)
 }

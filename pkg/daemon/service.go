@@ -17,8 +17,12 @@ type Endpoint struct {
 	Handle func(w http.ResponseWriter, r *http.Request)
 }
 
+type contextKey string
+
+const StorageKey contextKey = "storage"
+
 func getStorage(r *http.Request) storage.Storage {
-	return contextGet(r, "storage").(storage.Storage)
+	return contextGet(r, StorageKey).(storage.Storage)
 }
 
 func contextGet(r *http.Request, key interface{}) interface{} {

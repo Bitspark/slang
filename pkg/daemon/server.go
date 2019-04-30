@@ -33,33 +33,15 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 	}
 }
 
-func (s *Server) AddAppServer(pathPrefix string, directory http.Dir) {
-	s.AddRedirect(pathPrefix, pathPrefix+"/")
+func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
 	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix,
-		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path != "/" {
-				if m, _ := regexp.Match(`\..{1,4}$`, []byte(r.URL.Path)); m {
-					http.ServeFile(w, r, filepath.Join(string(directory), r.URL.Path))
-					return
-				}
-			}
-			http.ServeFile(w, r, filepath.Join(string(directory), "index.html"))
-		}).GetHandler()))
+	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(http.Dir(directory))))
 }
 
 func (s *Server) AddOperatorProxy(pathPrefix string) {
 	r := s.router.PathPrefix(pathPrefix)
 	r.Handler(http.StripPrefix(pathPrefix,
-		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			proxyRequestToOperator(w, r)
-		}).GetHandler()))
-}
-
-func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
-	s.AddRedirect(pathPrefix, pathPrefix+"/")
-	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
+		r.HandlerFunc(proxyRequestToOperator).GetHandler()))
 }
 
 func (s *Server) AddRedirect(path string, redirectTo string) {

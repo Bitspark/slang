@@ -3,18 +3,19 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/elem"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/google/uuid"
-	"github.com/stoewer/go-strcase"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
 	"path"
 	"text/template"
+
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
+	"github.com/stoewer/go-strcase"
 )
 
 type TagInfo struct {

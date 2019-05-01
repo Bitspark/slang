@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
@@ -11,11 +17,6 @@ import (
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/google/uuid"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func parseJSON(str string) interface{} {

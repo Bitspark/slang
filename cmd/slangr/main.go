@@ -5,11 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/google/uuid"
 	"io"
 	"log"
 	"net"
@@ -17,6 +12,12 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
 )
 
 /*** (Loader *******/

@@ -2,12 +2,13 @@ package daemon
 
 import (
 	"encoding/json"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/elem"
-	"github.com/Bitspark/slang/pkg/storage"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
 )
 
 var DefinitionService = &Service{map[string]*Endpoint{

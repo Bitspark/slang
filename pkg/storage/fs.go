@@ -3,16 +3,17 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"github.com/google/uuid"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/google/uuid"
+	"gopkg.in/yaml.v2"
 )
 
 var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matters!

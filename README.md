@@ -1,4 +1,6 @@
-[![CircleCI](https://circleci.com/gh/Bitspark/slang/tree/master.svg?style=svg&circle-token=ba892aab7dad71da5e2c426eff2a336974d96df0)](https://circleci.com/gh/Bitspark/slang/tree/master)
+[![CircleCI](https://circleci.com/gh/Bitspark/slang/tree/master.svg?style=svg&circle-token=ba892aab7dad71da5e2c426eff2a336974d96df0)](https://circleci.com/gh/Bitspark/slang/tree/master)[![codecov](https://codecov.io/gh/Bitspark/slang/branch/master/graph/badge.svg)](https://codecov.io/gh/Bitspark/slang)
+
+
 
 # Slang Daemon
 <p align="center">

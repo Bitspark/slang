@@ -108,7 +108,7 @@ func (s *Storage) selectBackends(f func(Backend) bool) []Backend {
 func (s *Storage) selectBackend(opId uuid.UUID) Backend {
 	backends := s.selectBackends(func(b Backend) bool { return b.Has(opId) })
 	if len(backends) > 0 {
-		return backends[0] // always return the first backend they
+		return backends[0] // always return the first backend as there should not be different version of the same operator.
 	}
 	return nil
 }

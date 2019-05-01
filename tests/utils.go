@@ -195,5 +195,5 @@ func (t testEnv) CompileFile(opFile string, gens map[string]*core.TypeDef, props
 const testdir string = "./"
 
 var tl = NewTestLoader(testdir)
-var st = storage.NewStorage(nil).AddLoader(tl)
+var st = storage.NewStorage().AddBackend(tl)
 var Test = testEnv{testdir, tl, st}

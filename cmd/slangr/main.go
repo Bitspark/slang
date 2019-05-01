@@ -32,7 +32,7 @@ func newRunnerStorage(blueprints []core.OperatorDef) *storage.Storage {
 		m[bp.Id] = bp
 	}
 
-	return storage.NewStorage(nil).AddLoader(&runnerLoader{m})
+	return storage.NewStorage().AddBackend(&runnerLoader{m})
 }
 
 func (l *runnerLoader) Has(opId uuid.UUID) bool {

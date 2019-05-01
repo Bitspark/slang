@@ -104,7 +104,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			st.AddLoader(&httpDefLoader{httpDef})
+			st.AddBackend(&httpDefLoader{httpDef})
 			httpDefId, _ := uuid.Parse(httpDef.Id)
 			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
 			if err != nil {

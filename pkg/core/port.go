@@ -84,7 +84,7 @@ func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 	if srv != nil {
 		p.operator = srv.op
 	} else if del != nil {
-		p.operator = del.op
+		p.operator = del.operator
 	}
 	p.service = srv
 	p.delegate = del

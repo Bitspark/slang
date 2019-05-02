@@ -47,10 +47,12 @@ func EnsureEnvironVar(key string, dfltVal string) string {
 
 var onlyDaemon bool
 var skipChecks bool
+var withoutUI bool
 
 func main() {
 	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Don't automatically open UI")
 	flag.BoolVar(&skipChecks, "skip-checks", false, "Skip checking and updating UI and Lib")
+	flag.BoolVar(&withoutUI, "without-ui", false, "Do not serve the UI found in SLANG_UI")
 	flag.Parse()
 
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
@@ -80,7 +82,11 @@ func main() {
 	srv := daemon.New("localhost", PORT)
 	ctx := context.WithValue(context.Background(), daemon.StorageKey, *st)
 
-	envPaths.loadDaemonServices(srv)
+	if !withoutUI {
+		srv.AddRedirect("/", "/app/")
+		srv.AddStaticServer("/app", http.Dir(envPaths.SLANG_UI))
+	}
+
 	envPaths.startDaemonServer(srv, ctx)
 }
 
@@ -156,15 +162,6 @@ func (e *EnvironPaths) loadLocalComponents() {
 	}
 }
 
-func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
-	srv.AddRedirect("/", "/app/")
-	srv.AddStaticServer("/app", http.Dir(e.SLANG_UI))
-	srv.AddService("/operator", daemon.DefinitionService)
-	srv.AddService("/run", daemon.RunnerService)
-	srv.AddService("/share", daemon.SharingService)
-	srv.AddOperatorProxy("/instance")
-}
-
 func (e *EnvironPaths) startDaemonServer(srv *daemon.Server, ctx context.Context) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
 	errors := make(chan error)
@@ -178,8 +175,8 @@ func informUser(url string, errors chan error) {
 	case err := <-errors:
 		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
 	case <-time.After(500 * time.Millisecond):
-		log.Printf("\n\n\tOpen  %s  in your browser.\n\n", url)
-		if !onlyDaemon {
+		if !onlyDaemon && !withoutUI {
+			log.Printf("\n\n\tOpen  %s  in your browser.\n\n", url)
 			browser.OpenURL(url)
 		}
 	}

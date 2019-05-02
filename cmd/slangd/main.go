@@ -55,9 +55,9 @@ func main() {
 	}
 
 	st := storage.NewStorage().
-		AddBackend(storage.NewWritableFileSystem(envPaths.SLANG_DIR)).
-		AddBackend(storage.NewReadOnlyFileSystem(dirSlib))
-	srv := daemon.New("localhost", PORT)
+		AddBackend(storage.NewWritableFileSystem(env.SLANG_DIR)).
+		AddBackend(storage.NewReadOnlyFileSystem(env.SLANG_LIB))
+	srv := daemon.NewServer(env)
 	ctx := context.WithValue(context.Background(), daemon.StorageKey, *st)
 
 	if !withoutUI {

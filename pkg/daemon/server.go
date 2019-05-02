@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Bitspark/slang/pkg/env"
+
 	"github.com/rs/cors"
 
 	"github.com/gorilla/mux"
@@ -27,7 +29,7 @@ func addContext(ctx context.Context, next http.Handler) http.Handler {
 func New(host string, port int) *Server {
 	r := mux.NewRouter().StrictSlash(true)
 	http.Handle("/", r)
-	srv := &Server{host, port, r}
+	srv := &Server{env.HTTP.Address, env.HTTP.Port, r}
 	srv.mountWebServices()
 	return srv
 }

@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os/user"
-	"path/filepath"
-	"strings"
 	"time"
 
+	"github.com/Bitspark/slang/pkg/env"
 	"github.com/Bitspark/slang/pkg/storage"
 
 	"strconv"
@@ -29,21 +27,6 @@ var (
 	Version   string
 	BuildTime string
 )
-
-type EnvironPaths struct {
-	SLANG_PATH string
-	SLANG_DIR  string
-	SLANG_LIB  string
-	SLANG_UI   string
-}
-
-func EnsureEnvironVar(key string, dfltVal string) string {
-	if val := os.Getenv(key); strings.Trim(val, " ") != "" {
-		return val
-	}
-	os.Setenv(key, dfltVal)
-	return dfltVal
-}
 
 var onlyDaemon bool
 var skipChecks bool
@@ -65,15 +48,10 @@ func main() {
 
 	daemon.SlangVersion = Version
 
-	envPaths := initEnvironPaths()
+	env := env.New("localhost", PORT)
 
 	if !skipChecks {
-		envPaths.loadLocalComponents()
-	}
-
-	dirSlib := filepath.Join(envPaths.SLANG_LIB, "slang")
-	if !daemon.IsDir(dirSlib) {
-		log.Fatal("SLANG_LIB directory requires a sub directory 'slang/' containing all stdlib operators: ", dirSlib)
+		loadLocalComponents(env)
 	}
 
 	st := storage.NewStorage().
@@ -84,38 +62,10 @@ func main() {
 
 	if !withoutUI {
 		srv.AddRedirect("/", "/app/")
-		srv.AddStaticServer("/app", http.Dir(envPaths.SLANG_UI))
+		srv.AddStaticServer("/app", http.Dir(env.SLANG_UI))
 	}
 
-	envPaths.startDaemonServer(srv, ctx)
-}
-
-func initEnvironPaths() *EnvironPaths {
-	currUser, err := user.Current()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	slangPath := filepath.Join(currUser.HomeDir, "slang")
-
-	e := &EnvironPaths{
-		slangPath,
-		EnsureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
-		EnsureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib")),
-		EnsureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
-	}
-
-	if _, err = utils.EnsureDirExists(e.SLANG_DIR); err != nil {
-		log.Fatal(err)
-	}
-	if _, err = utils.EnsureDirExists(e.SLANG_LIB); err != nil {
-		log.Fatal(err)
-	}
-	if _, err = utils.EnsureDirExists(e.SLANG_UI); err != nil {
-		log.Fatal(err)
-	}
-
-	return e
+	startDaemonServer(ctx, srv)
 }
 
 func checkNewestVersion() {
@@ -139,8 +89,8 @@ func checkNewestVersion() {
 	}
 }
 
-func (e *EnvironPaths) loadLocalComponents() {
-	for repoName, dirPath := range map[string]string{"slang-lib": e.SLANG_LIB, "slang-ui": e.SLANG_UI} {
+func loadLocalComponents(e *env.Environment) {
+	for repoName, dirPath := range map[string]string{"slang-lib": e.SLANG_LIB_REPO_PATH, "slang-ui": e.SLANG_UI} {
 		dl := daemon.NewComponentLoaderLatestRelease(repoName, dirPath)
 		if dl.NewerVersionExists() {
 			localVer := dl.GetLocalReleaseVersion()
@@ -162,7 +112,7 @@ func (e *EnvironPaths) loadLocalComponents() {
 	}
 }
 
-func (e *EnvironPaths) startDaemonServer(srv *daemon.Server, ctx context.Context) {
+func startDaemonServer(ctx context.Context, srv *daemon.Server) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
 	errors := make(chan error)
 	go informUser(url, errors)

@@ -18,6 +18,12 @@ type Server struct {
 	router *mux.Router
 }
 
+func addContext(ctx context.Context, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func New(host string, port int) *Server {
 	r := mux.NewRouter().StrictSlash(true)
 	http.Handle("/", r)
@@ -49,15 +55,9 @@ func (s *Server) AddRedirect(path string, redirectTo string) {
 	r.Handler(http.RedirectHandler(redirectTo, http.StatusSeeOther))
 }
 
-func AddContext(next http.Handler, ctx context.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 func (s *Server) Run(ctx context.Context) error {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},
 	}).Handler(s.router)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), AddContext(handler, ctx))
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), addContext(ctx, handler))
 }

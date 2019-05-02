@@ -1,60 +1,53 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/google/uuid"
 )
 
-type Loader interface {
+type Backend interface {
 	List() ([]uuid.UUID, error)
-	Has(opId uuid.UUID) bool
 	Load(opId uuid.UUID) (*core.OperatorDef, error)
+	Has(opId uuid.UUID) bool
 }
 
-type LoaderDumper interface {
-	List() ([]uuid.UUID, error)
-	Load(opId uuid.UUID) (*core.OperatorDef, error)
-	Dump(opDef core.OperatorDef) (uuid.UUID, error)
-	Has(opId uuid.UUID) bool
+type WriteableBackend interface {
+	Backend
+	Save(opDef core.OperatorDef) (uuid.UUID, error)
 }
 
 type Storage struct {
-	loader []Loader
-	dumper LoaderDumper
+	backends []Backend
 }
 
-func NewStorage(ld LoaderDumper) *Storage {
-	st := &Storage{make([]Loader, 0), nil}
-
-	if ld != nil {
-		st.dumper = ld
-		st.AddLoader(ld)
-	}
-
-	return st
+func NewStorage() *Storage {
+	return &Storage{make([]Backend, 0)}
 }
 
-func (s *Storage) AddLoader(loader Loader) *Storage {
-	s.loader = append(s.loader, loader)
+func (s *Storage) AddBackend(backend Backend) *Storage {
+	s.backends = append(s.backends, backend)
 	return s
 }
 
-func (s *Storage) IsDumpable(opId uuid.UUID) bool {
-	return s.dumper.Has(opId)
-}
-
-func (s *Storage) IsLoadable(opId uuid.UUID) bool {
-	loader := s.findRelatedLoader(opId)
-	return loader != nil
+func (s *Storage) IsSavedInWritableBackend(opId uuid.UUID) bool {
+	writableBackends := s.writeableBackends()
+	for _, backend := range writableBackends {
+		if backend.Has(opId) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Storage) List() ([]uuid.UUID, error) {
 	all := make([]uuid.UUID, 0)
 
-	for _, loader := range s.loader {
-		l, err := loader.List()
+	for _, backend := range s.backends {
+		l, err := backend.List()
 
 		if err != nil {
 			continue
@@ -65,12 +58,36 @@ func (s *Storage) List() ([]uuid.UUID, error) {
 	return all, nil
 }
 
-func (s *Storage) Store(opDef core.OperatorDef) (uuid.UUID, error) {
-	return s.dumper.Dump(opDef)
+func (s *Storage) Save(opDef core.OperatorDef) (uuid.UUID, error) {
+	var opId uuid.UUID
+	var err error
+	// The question is whether we want multiple backends that are able to take a write
+	// because if we need to make sure they all use the same identifier
+	writableBackends := s.writeableBackends()
+	if len(writableBackends) == 0 {
+		return opId, errors.New("No writable backend for saving found")
+	}
+	for _, backend := range writableBackends {
+		opId, err = backend.Save(opDef)
+	}
+	return opId, err
+}
+
+func (s *Storage) writeableBackends() []WriteableBackend {
+	writeableBackends := make([]WriteableBackend, 0)
+
+	backends := s.selectBackends(func(b Backend) bool {
+		b, ok := b.(WriteableBackend)
+		return ok
+	})
+	for _, backend := range backends {
+		writeableBackends = append(writeableBackends, backend.(WriteableBackend))
+	}
+	return writeableBackends
 }
 
 func (s *Storage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	opDef, err := s.loadFirstFound(opId)
+	opDef, err := s.getOpDef(opId)
 	if err != nil {
 		return nil, err
 	}
@@ -78,27 +95,36 @@ func (s *Storage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	return &cpyOpDef, nil
 }
 
-func (s *Storage) findRelatedLoader(opId uuid.UUID) Loader {
-	for _, loader := range s.loader {
-		if loader.Has(opId) {
-			return loader
+func (s *Storage) selectBackends(f func(Backend) bool) []Backend {
+	selected := make([]Backend, 0)
+	for _, backend := range s.backends {
+		if f(backend) {
+			selected = append(selected, backend)
 		}
+	}
+	return selected
+}
+
+func (s *Storage) selectBackend(opId uuid.UUID) Backend {
+	backends := s.selectBackends(func(b Backend) bool { return b.Has(opId) })
+	if len(backends) > 0 {
+		return backends[0] // always return the first backend as there should not be different version of the same operator.
 	}
 	return nil
 }
 
-func (s *Storage) loadFirstFound(opId uuid.UUID) (*core.OperatorDef, error) {
+func (s *Storage) getOpDef(opId uuid.UUID) (*core.OperatorDef, error) {
 	if opDef, err := elem.GetOperatorDef(opId.String()); err == nil {
 		return opDef, nil
 	}
 
-	loader := s.findRelatedLoader(opId)
+	backend := s.selectBackend(opId)
 
-	if loader == nil {
+	if backend == nil {
 		return nil, fmt.Errorf("unknown operator for id: %s", opId)
 	}
 
-	opDef, err := loader.Load(opId)
+	opDef, err := backend.Load(opId)
 
 	if err != nil {
 		return nil, err

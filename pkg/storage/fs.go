@@ -3,16 +3,17 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/utils"
-	"github.com/google/uuid"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/utils"
+	"github.com/google/uuid"
+	"gopkg.in/yaml.v2"
 )
 
 var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matters!
@@ -23,13 +24,27 @@ type FileSystem struct {
 	uuids []uuid.UUID
 }
 
-func NewFileSystem(p string) *FileSystem {
+type WritableFileSystem struct {
+	FileSystem
+}
+
+func cleanPath(p string) string {
 	pathSep := string(filepath.Separator)
 	p = filepath.Clean(p)
 	p, _ = filepath.Abs(p)
 	if !strings.HasSuffix(p, pathSep) {
 		p += pathSep
 	}
+	return p
+}
+
+func NewWritableFileSystem(root string) *WritableFileSystem {
+	p := cleanPath(root)
+	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.OperatorDef), nil}}
+}
+
+func NewReadOnlyFileSystem(root string) *FileSystem {
+	p := cleanPath(root)
 	return &FileSystem{p, make(map[uuid.UUID]*core.OperatorDef), nil}
 }
 
@@ -101,7 +116,7 @@ func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	return fs.Load(opId)
 }
 
-func (fs *FileSystem) Dump(opDef core.OperatorDef) (uuid.UUID, error) {
+func (fs *WritableFileSystem) Save(opDef core.OperatorDef) (uuid.UUID, error) {
 	opId, err := uuid.Parse(opDef.Id)
 
 	if err != nil {

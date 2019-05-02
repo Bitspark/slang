@@ -56,7 +56,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 					}
 
 					opType := "library"
-					if st.IsDumpable(opId) {
+					if st.IsSavedInWritableBackend(opId) {
 						opType = "local"
 					}
 
@@ -100,7 +100,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			_, err = st.Store(def)
+			_, err = st.Save(def)
 
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})

@@ -74,9 +74,9 @@ func main() {
 		log.Fatal("SLANG_LIB directory requires a sub directory 'slang/' containing all stdlib operators: ", dirSlib)
 	}
 
-	st := storage.
-		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
-		AddLoader(storage.NewFileSystem(dirSlib))
+	st := storage.NewStorage().
+		AddBackend(storage.NewWritableFileSystem(envPaths.SLANG_DIR)).
+		AddBackend(storage.NewReadOnlyFileSystem(dirSlib))
 	srv := daemon.New("localhost", PORT)
 	ctx := context.WithValue(context.Background(), daemon.StorageKey, *st)
 

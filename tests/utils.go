@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
@@ -11,11 +17,6 @@ import (
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/google/uuid"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func parseJSON(str string) interface{} {
@@ -194,5 +195,5 @@ func (t testEnv) CompileFile(opFile string, gens map[string]*core.TypeDef, props
 const testdir string = "./"
 
 var tl = NewTestLoader(testdir)
-var st = storage.NewStorage(nil).AddLoader(tl)
+var st = storage.NewStorage().AddBackend(tl)
 var Test = testEnv{testdir, tl, st}

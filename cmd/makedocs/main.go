@@ -3,18 +3,19 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/elem"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/google/uuid"
-	"github.com/stoewer/go-strcase"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
 	"path"
 	"text/template"
+
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/google/uuid"
+	"github.com/stoewer/go-strcase"
 )
 
 type TagInfo struct {
@@ -164,7 +165,7 @@ func (dg *DocGenerator) collect(strict bool) {
 
 	elementaryUUIDs := elem.GetBuiltinIds()
 
-	store := storage.NewStorage(nil).AddLoader(storage.NewFileSystem(dg.libDir))
+	store := storage.NewStorage().AddBackend(storage.NewReadOnlyFileSystem(dg.libDir))
 
 	libraryUUIDs, err := store.List()
 	if err != nil {
@@ -481,7 +482,7 @@ func (dg *DocGenerator) saveURLs() {
 
 	written := 0
 
-	store := storage.NewStorage(storage.NewFileSystem(dg.libDir))
+	store := storage.NewStorage().AddBackend(storage.NewWritableFileSystem(dg.libDir))
 
 	for _, opInfo := range dg.generatedInfos {
 		if opInfo.Type != "library" {
@@ -500,7 +501,7 @@ func (dg *DocGenerator) saveURLs() {
 
 		opDef.Meta.DocURL = opDocURLStr
 
-		_, err := store.Store(opDef)
+		_, err := store.Save(opDef)
 		if err != nil {
 			panic(err)
 		}

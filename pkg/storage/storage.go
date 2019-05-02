@@ -68,7 +68,7 @@ func (s *Storage) Save(opDef core.OperatorDef) (uuid.UUID, error) {
 		return opId, errors.New("No writable backend for saving found")
 	}
 	for _, backend := range writableBackends {
-		opId, err = backend.(WriteableBackend).Save(opDef)
+		opId, err = backend.Save(opDef)
 	}
 	return opId, err
 }

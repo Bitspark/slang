@@ -11,7 +11,6 @@ import (
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
 
@@ -43,7 +42,8 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 }
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
+	"/": {func(w http.ResponseWriter, r *http.Request) {
+		st := getStorage(r)
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
 				Id     string          `json:"id"`

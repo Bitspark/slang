@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/storage"
 	"log"
 	"net/http"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/storage"
 
 	"strconv"
 
@@ -75,9 +77,11 @@ func main() {
 	st := storage.
 		NewStorage(storage.NewFileSystem(envPaths.SLANG_DIR)).
 		AddLoader(storage.NewFileSystem(dirSlib))
-	srv := daemon.New(*st, "localhost", PORT)
+	srv := daemon.New("localhost", PORT)
+	ctx := context.WithValue(context.Background(), daemon.StorageKey, *st)
+
 	envPaths.loadDaemonServices(srv)
-	envPaths.startDaemonServer(srv)
+	envPaths.startDaemonServer(srv, ctx)
 }
 
 func initEnvironPaths() *EnvironPaths {
@@ -154,19 +158,18 @@ func (e *EnvironPaths) loadLocalComponents() {
 
 func (e *EnvironPaths) loadDaemonServices(srv *daemon.Server) {
 	srv.AddRedirect("/", "/app/")
-	srv.AddAppServer("/app", http.Dir(e.SLANG_UI))
-	srv.AddAppServer("/studio", http.Dir(filepath.Join(filepath.Dir(e.SLANG_UI), "studio")))
+	srv.AddStaticServer("/app", http.Dir(e.SLANG_UI))
 	srv.AddService("/operator", daemon.DefinitionService)
 	srv.AddService("/run", daemon.RunnerService)
 	srv.AddService("/share", daemon.SharingService)
 	srv.AddOperatorProxy("/instance")
 }
 
-func (e *EnvironPaths) startDaemonServer(srv *daemon.Server) {
+func (e *EnvironPaths) startDaemonServer(srv *daemon.Server, ctx context.Context) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
 	errors := make(chan error)
 	go informUser(url, errors)
-	errors <- srv.Run()
+	errors <- srv.Run(ctx)
 	select {} // prevent immediate exit when srv.Run fails --> informUser goroutine can handle error
 }
 

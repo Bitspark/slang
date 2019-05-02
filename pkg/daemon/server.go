@@ -1,12 +1,11 @@
 package daemon
 
 import (
+	"context"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/rs/cors"
 	"net/http"
-	"path/filepath"
-	"regexp"
+
+	"github.com/rs/cors"
 
 	"github.com/gorilla/mux"
 )
@@ -14,55 +13,41 @@ import (
 var SlangVersion string
 
 type Server struct {
-	Storage storage.Storage
-	Host    string
-	Port    int
-	router  *mux.Router
+	Host   string
+	Port   int
+	router *mux.Router
 }
 
-func New(s storage.Storage, host string, port int) *Server {
-	r := mux.NewRouter()
+func addContext(ctx context.Context, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func New(host string, port int) *Server {
+	r := mux.NewRouter().StrictSlash(true)
 	http.Handle("/", r)
-	return &Server{s, host, port, r}
+	return &Server{host, port, r}
 }
 
 func (s *Server) AddService(pathPrefix string, services *Service) {
-	s.AddRedirect(pathPrefix, pathPrefix+"/")
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
 		(func(endpoint *Endpoint) {
-			r.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { endpoint.Handle(s.Storage, w, r) }))
+			r.HandleFunc(path, endpoint.Handle)
 		})(endpoint)
 	}
 }
 
-func (s *Server) AddAppServer(pathPrefix string, directory http.Dir) {
-	s.AddRedirect(pathPrefix, pathPrefix+"/")
+func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
 	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix,
-		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path != "/" {
-				if m, _ := regexp.Match(`\..{1,4}$`, []byte(r.URL.Path)); m {
-					http.ServeFile(w, r, filepath.Join(string(directory), r.URL.Path))
-					return
-				}
-			}
-			http.ServeFile(w, r, filepath.Join(string(directory), "index.html"))
-		}).GetHandler()))
+	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(http.Dir(directory))))
 }
 
 func (s *Server) AddOperatorProxy(pathPrefix string) {
 	r := s.router.PathPrefix(pathPrefix)
 	r.Handler(http.StripPrefix(pathPrefix,
-		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			proxyRequestToOperator(w, r)
-		}).GetHandler()))
-}
-
-func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
-	s.AddRedirect(pathPrefix, pathPrefix+"/")
-	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
+		r.HandlerFunc(proxyRequestToOperator).GetHandler()))
 }
 
 func (s *Server) AddRedirect(path string, redirectTo string) {
@@ -70,9 +55,9 @@ func (s *Server) AddRedirect(path string, redirectTo string) {
 	r.Handler(http.RedirectHandler(redirectTo, http.StatusSeeOther))
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run(ctx context.Context) error {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},
 	}).Handler(s.router)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), handler)
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), addContext(ctx, handler))
 }

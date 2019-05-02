@@ -3,8 +3,9 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
+
+	"github.com/google/uuid"
 )
 
 type OFunc func(op *Operator)
@@ -31,17 +32,17 @@ type Operator struct {
 }
 
 type Delegate struct {
-	op      *Operator
-	name    string
-	inPort  *Port
-	outPort *Port
+	operator *Operator
+	name     string
+	inPort   *Port
+	outPort  *Port
 }
 
 type Service struct {
-	op      *Operator
-	name    string
-	inPort  *Port
-	outPort *Port
+	operator *Operator
+	name     string
+	inPort   *Port
+	outPort  *Port
 }
 
 func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def OperatorDef) (*Operator, error) {
@@ -341,7 +342,7 @@ func NewService(name string, op *Operator, def ServiceDef) (*Service, error) {
 		}
 	}
 
-	srv := &Service{name: name, op: op}
+	srv := &Service{name: name, operator: op}
 
 	var err error
 	if srv.inPort, err = NewPort(srv, nil, def.In, DIRECTION_IN); err != nil {
@@ -359,7 +360,7 @@ func (s *Service) Name() string {
 }
 
 func (s *Service) Operator() *Operator {
-	return s.op
+	return s.operator
 }
 
 func (s *Service) In() *Port {
@@ -387,7 +388,7 @@ func NewDelegate(name string, op *Operator, def DelegateDef) (*Delegate, error) 
 		}
 	}
 
-	del := &Delegate{name: name, op: op}
+	del := &Delegate{name: name, operator: op}
 
 	var err error
 	if del.inPort, err = NewPort(nil, del, def.In, DIRECTION_IN); err != nil {
@@ -405,7 +406,7 @@ func (d *Delegate) Name() string {
 }
 
 func (d *Delegate) Operator() *Operator {
-	return d.op
+	return d.operator
 }
 
 func (d *Delegate) In() *Port {

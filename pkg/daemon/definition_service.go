@@ -8,11 +8,11 @@ import (
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
-	"github.com/Bitspark/slang/pkg/storage"
 )
 
 var DefinitionService = &Service{map[string]*Endpoint{
-	"/": {func(st storage.Storage, w http.ResponseWriter, r *http.Request) {
+	"/": {func(w http.ResponseWriter, r *http.Request) {
+		st := getStorage(r)
 		type operatorDefJSON struct {
 			Def  core.OperatorDef `json:"def"`
 			Type string           `json:"type"`
@@ -80,7 +80,8 @@ var DefinitionService = &Service{map[string]*Endpoint{
 			log.Print(err)
 		}
 	}},
-	"/def/": {func(e storage.Storage, w http.ResponseWriter, r *http.Request) {
+	"/def/": {func(w http.ResponseWriter, r *http.Request) {
+		st := getStorage(r)
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}
@@ -99,7 +100,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			_, err = e.Save(def)
+			_, err = st.Save(def)
 
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})

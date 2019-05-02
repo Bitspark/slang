@@ -57,8 +57,9 @@ func main() {
 	st := storage.NewStorage().
 		AddBackend(storage.NewWritableFileSystem(env.SLANG_DIR)).
 		AddBackend(storage.NewReadOnlyFileSystem(env.SLANG_LIB))
-	srv := daemon.NewServer(env)
-	ctx := context.WithValue(context.Background(), daemon.StorageKey, *st)
+
+	ctx := daemon.SetStorage(context.Background(), st)
+	srv := daemon.NewServer(&ctx, env)
 
 	if !withoutUI {
 		srv.AddRedirect("/", "/app/")
@@ -116,7 +117,7 @@ func startDaemonServer(ctx context.Context, srv *daemon.Server) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
 	errors := make(chan error)
 	go informUser(url, errors)
-	errors <- srv.Run(ctx)
+	errors <- srv.Run()
 	select {} // prevent immediate exit when srv.Run fails --> informUser goroutine can handle error
 }
 

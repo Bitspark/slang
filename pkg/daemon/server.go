@@ -39,8 +39,9 @@ var (
 		// allow every host/origin to make a connection e.g. :8080 -> 5149
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-	Root             = &UserID{0}
-	ConnectedClients = make(map[*UserID][]*ConnectedClient, 0)
+	// Root defines a single instance of our user as we currently do not have
+	// I use that to get the rest of the code to think about multi tanentcy
+	Root = &UserID{0}
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -49,8 +50,8 @@ type Hub struct {
 	// Registered clients.
 	clients map[*ConnectedClient]bool
 
-	// Inbound messages from the clients.
-	broadcast chan *AddressableMessage
+	// Message that should be send to specific connections
+	broadcast chan *envelop
 
 	// Register requests from the clients.
 	register chan *ConnectedClient
@@ -59,22 +60,25 @@ type Hub struct {
 	unregister chan *ConnectedClient
 }
 
-type AddressableMessage struct {
-	u *UserID
-	m []byte
+// Envelop functions as an addressable message that is only sent to
+// specific users and their connections
+type envelop struct {
+	reciever *UserID
+	message  []byte
 }
 
 func newHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan *AddressableMessage),
+		broadcast:  make(chan *envelop),
 		register:   make(chan *ConnectedClient),
 		unregister: make(chan *ConnectedClient),
 		clients:    make(map[*ConnectedClient]bool),
 	}
 }
 
+// send a message to single user on all his connections
 func (h *Hub) broadCastTo(u *UserID, m string) {
-	h.broadcast <- &AddressableMessage{u, []byte(m)}
+	h.broadcast <- &envelop{u, []byte(m)}
 }
 
 func (h *Hub) run() {
@@ -89,11 +93,15 @@ func (h *Hub) run() {
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
-				if client.userID != message.u {
+				// this might become PINA as iterating all clients to find only those which we want to address
+				// could get expensive
+				if client.userID != message.reciever {
 					return
 				}
+				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other end
+				// What happens if there is reciever? We can assume this connection has been dropped/closed.
 				select {
-				case client.send <- message.m:
+				case client.send <- message.message:
 				default:
 					close(client.send)
 					delete(h.clients, client)
@@ -144,10 +152,14 @@ func (s *Server) AddWebsocket(path string) {
 	s.ctx = &newCtx
 }
 
-func simpleReader(ws *websocket.Conn) {
+func simpleReader(c *ConnectedClient) {
+	ws := c.websocket
 	newline := []byte{'\n'}
 	space := []byte{' '}
-	defer ws.Close()
+	defer func() {
+		c.hub.unregister <- c
+	}()
+
 	ws.SetReadLimit(maxMessageSize)
 	ws.SetReadDeadline(time.Now().Add(pongWait))
 	ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -196,13 +208,23 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// if the user is connected append the websocket
-	backChannel := make(chan []byte)
-	client := &ConnectedClient{hub, ws, user, backChannel}
+	// create a new client for each connection we recieve
+	// attaching the user makes it possible to send message to multiple
+	// open browsers that are accociated with the user.
+	client := &ConnectedClient{hub, ws, user, make(chan []byte)}
 	hub.register <- client
+
+	// Part of the RFC is this Ping<>Pong thing which we need to have both in the writer and reader of the
+	// socket connection.
+	// see -> https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#Pings_and_Pongs_The_Heartbeat_of_WebSockets
+	// Apart from just playing ping pong this go routine waits on messages from the `hub` that it can forward to the connected client
 	go writer(client)
+
 	// we keep this around for now as it serves the websocket ping<>pong
-	go simpleReader(ws)
+	// if we want to allow the UI to control the daemon via websockets, this is the place.
+	go simpleReader(client)
+
+	// so basically only returns if the ping pong fails or there is another error.
 }
 
 func (s *Server) mountWebServices() {

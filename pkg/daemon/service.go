@@ -23,7 +23,7 @@ type contextKey string
 const StorageKey contextKey = "storage"
 
 func GetStorage(r *http.Request) storage.Storage {
-	return contextGet(r, StorageKey).(storage.Storage)
+	return *contextGet(r, StorageKey).(*storage.Storage)
 }
 
 func SetStorage(ctx context.Context, st *storage.Storage) context.Context {

@@ -16,8 +16,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var SlangVersion string
-
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -33,6 +31,9 @@ const (
 )
 
 var (
+	SlangVersion string
+	// currently the `gorilla/websocket` library feels rather verbose (ping<>pong)- which is ok for ATM
+	// as long as we keep the implementation small enough.
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -67,6 +68,35 @@ type envelop struct {
 	message  []byte
 }
 
+type Server struct {
+	Host   string
+	Port   int
+	router *mux.Router
+	ctx    *context.Context
+}
+
+// ConnectedClient holds everything we need to know about a connection that
+// was made with a websocket
+type ConnectedClient struct {
+	hub       *Hub
+	websocket *websocket.Conn
+	userID    *UserID
+	// Send data through this channel in order to get it send through the websocket
+	// currently this is what the `hub` uses to send it's recieved message through a websocket.
+	send chan []byte
+}
+
+// UserID represents an Identifier for a user of the system
+type UserID struct {
+	id int
+}
+
+func addContext(ctx context.Context, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func newHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan *envelop),
@@ -76,7 +106,8 @@ func newHub() *Hub {
 	}
 }
 
-// send a message to single user on all his connections
+// Send a message to single user on all his connections
+// This API is probably a little volatile so use with caution and don't reach deep into it.
 func (h *Hub) broadCastTo(u *UserID, m string) {
 	h.broadcast <- &envelop{u, []byte(m)}
 }
@@ -99,7 +130,7 @@ func (h *Hub) run() {
 					return
 				}
 				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other end
-				// What happens if there is reciever? We can assume this connection has been dropped/closed.
+				// What happens if there is no reciever? We can assume this connection has been dropped/closed.
 				select {
 				case client.send <- message.message:
 				default:
@@ -111,48 +142,7 @@ func (h *Hub) run() {
 	}
 }
 
-type Server struct {
-	Host   string
-	Port   int
-	router *mux.Router
-	ctx    *context.Context
-}
-
-type ConnectedClient struct {
-	hub       *Hub
-	websocket *websocket.Conn
-	userID    *UserID
-	send      chan []byte
-}
-
-type UserID struct {
-	id int
-}
-
-func addContext(ctx context.Context, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func NewServer(ctx *context.Context, env *env.Environment) *Server {
-	r := mux.NewRouter().StrictSlash(true)
-	http.Handle("/", r)
-	srv := &Server{env.HTTP.Address, env.HTTP.Port, r, ctx}
-	srv.mountWebServices()
-	return srv
-}
-
-func (s *Server) AddWebsocket(path string) {
-	r := s.router.Path(path)
-	r.HandlerFunc(serveWs)
-	hub := newHub()
-	go hub.run()
-	newCtx := context.WithValue(*s.ctx, "hub", hub)
-	s.ctx = &newCtx
-}
-
-func simpleReader(c *ConnectedClient) {
+func (c *ConnectedClient) waitOnIncoming() {
 	ws := c.websocket
 	newline := []byte{'\n'}
 	space := []byte{' '}
@@ -177,7 +167,7 @@ func simpleReader(c *ConnectedClient) {
 	}
 }
 
-func writer(c *ConnectedClient) {
+func (c *ConnectedClient) waitOnOutgoing() {
 	ticker := time.NewTicker(pingPeriod)
 	ws := c.websocket
 	defer func() {
@@ -215,16 +205,38 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	hub.register <- client
 
 	// Part of the RFC is this Ping<>Pong thing which we need to have both in the writer and reader of the
-	// socket connection.
-	// see -> https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#Pings_and_Pongs_The_Heartbeat_of_WebSockets
-	// Apart from just playing ping pong this go routine waits on messages from the `hub` that it can forward to the connected client
-	go writer(client)
+	// socket connection. see -> https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#Pings_and_Pongs_The_Heartbeat_of_WebSockets
+	//
+	// Apart from just playing ping pong this go routine
+	// waits on messages from the `hub` that it can forward outwards to the connected client
+	go client.waitOnOutgoing()
 
 	// we keep this around for now as it serves the websocket ping<>pong
 	// if we want to allow the UI to control the daemon via websockets, this is the place.
-	go simpleReader(client)
+	go client.waitOnIncoming()
 
 	// so basically only returns if the ping pong fails or there is another error.
+}
+
+func NewServer(ctx *context.Context, env *env.Environment) *Server {
+	r := mux.NewRouter().StrictSlash(true)
+	http.Handle("/", r)
+	srv := &Server{env.HTTP.Address, env.HTTP.Port, r, ctx}
+	srv.mountWebServices()
+	return srv
+}
+
+func (s *Server) AddWebsocket(path string) {
+	r := s.router.Path(path)
+	r.HandlerFunc(serveWs)
+	hub := newHub()
+
+	// Don't know yet if that is good idea
+	// Maybe should make the `hub` a singleton instead of shoving it
+	// into the context where it needs more typing to be safe
+	newCtx := context.WithValue(*s.ctx, "hub", hub)
+	s.ctx = &newCtx
+	go hub.run()
 }
 
 func (s *Server) mountWebServices() {

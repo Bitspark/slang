@@ -126,8 +126,6 @@ var RunnerService = &Service{map[string]*Endpoint{
 			op.Main().In().Push(nil) // Start server
 			hub.broadCastTo(Root, "Starting Operator")
 
-			//ConnectedClients[Root].C <- []byte("Starting operator")
-
 			data.Status = "success"
 			data.Handle = strconv.FormatInt(handle, 16)
 			data.URL = "/instance/" + strconv.FormatInt(handle, 16)

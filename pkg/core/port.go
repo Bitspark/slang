@@ -517,23 +517,24 @@ func (p *Port) Pull() interface{} {
 	if p.buf != nil {
 		if CHANNEL_DYNAMIC {
 			for {
-				p.mutex.Lock()
+				p.Lock()
 				select {
 				case i := <-p.buf:
-					p.mutex.Unlock()
+					p.Unlock()
 					return i
 				default:
-					p.mutex.Unlock()
+					p.Unlock()
 				}
 				time.Sleep(1 * time.Millisecond)
 			}
 		} else {
-			// if the channel was `closed`
-			// return nil -- not sure if this is optimal
-			// as it might break fruther down the line.
 			i, ok := <-p.buf
 			if !ok {
-				return nil
+				// the channel was activly closed
+				// but we still send the zero value
+				// we recievied - this solves a strange
+				// race condition detected with `go test -race ...`
+				return i
 			}
 			return i
 		}

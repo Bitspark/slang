@@ -308,12 +308,12 @@ func (p *Port) Close() {
 	if p.closed {
 		return
 	}
-
+	p.Lock()
 	p.closed = true
-
 	if p.buf != nil {
 		close(p.buf)
 	}
+	p.Unlock()
 
 	if p.sub != nil {
 		p.sub.Close()
@@ -413,7 +413,7 @@ func (p *Port) assertChannelSpace() {
 	c := cap(p.buf)
 	if len(p.buf) > c/2 {
 		newChan := make(chan interface{}, 2*c)
-		p.mutex.Lock()
+		p.Lock()
 		for {
 			select {
 			case i := <-p.buf:
@@ -424,23 +424,26 @@ func (p *Port) assertChannelSpace() {
 		}
 	end:
 		p.buf = newChan
-		p.mutex.Unlock()
+		p.Unlock()
 	}
 }
 
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
+	p.Lock()
 	if p.closed {
+		p.Unlock()
 		return
 	}
+	p.Unlock()
 
 	if p.buf != nil {
 		if CHANNEL_DYNAMIC {
 			p.assertChannelSpace()
 
-			p.mutex.Lock()
+			p.Lock()
 			p.buf <- item
-			p.mutex.Unlock()
+			p.Unlock()
 		} else {
 			p.buf <- item
 		}
@@ -676,9 +679,9 @@ func (p *Port) Poll() interface{} {
 
 	var i interface{}
 	if CHANNEL_DYNAMIC {
-		p.mutex.Lock()
+		p.Lock()
 		i = <-p.buf
-		p.mutex.Unlock()
+		p.Unlock()
 	} else {
 		i = <-p.buf
 	}

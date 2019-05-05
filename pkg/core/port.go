@@ -520,7 +520,14 @@ func (p *Port) Pull() interface{} {
 				time.Sleep(1 * time.Millisecond)
 			}
 		} else {
-			return <-p.buf
+			// if the channel was `closed`
+			// return nil -- not sure if this is optimal
+			// as it might break fruther down the line.
+			i, ok := <-p.buf
+			if !ok {
+				return nil
+			}
+			return i
 		}
 	}
 

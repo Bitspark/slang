@@ -162,6 +162,14 @@ func (p *Port) Map(name string) *Port {
 	return port
 }
 
+func (p *Port) Lock() {
+	p.mutex.Lock()
+}
+
+func (p *Port) Unlock() {
+	p.mutex.Unlock()
+}
+
 // Returns the length of the map ports
 func (p *Port) MapSize() int {
 	return len(p.subs)

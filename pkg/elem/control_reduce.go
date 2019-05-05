@@ -112,7 +112,9 @@ var controlReduceCfg = &builtinConfig{
 
 				i = in.Stream().Pull()
 				if in.OwnEOS(i) {
+					mutex.Lock()
 					done = true
+					mutex.Unlock()
 					break
 				}
 

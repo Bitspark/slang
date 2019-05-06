@@ -12,7 +12,7 @@ import (
 
 var DefinitionService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
-		st := getStorage(r)
+		st := GetStorage(r)
 		type operatorDefJSON struct {
 			Def  core.OperatorDef `json:"def"`
 			Type string           `json:"type"`
@@ -81,7 +81,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		}
 	}},
 	"/def/": {func(w http.ResponseWriter, r *http.Request) {
-		st := getStorage(r)
+		st := GetStorage(r)
 		fail := func(err *Error) {
 			sendFailure(w, &responseBad{err})
 		}

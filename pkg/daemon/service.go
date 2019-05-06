@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -21,8 +22,12 @@ type contextKey string
 
 const StorageKey contextKey = "storage"
 
-func getStorage(r *http.Request) storage.Storage {
-	return contextGet(r, StorageKey).(storage.Storage)
+func GetStorage(r *http.Request) storage.Storage {
+	return *contextGet(r, StorageKey).(*storage.Storage)
+}
+
+func SetStorage(ctx context.Context, st *storage.Storage) context.Context {
+	return context.WithValue(ctx, StorageKey, st)
 }
 
 func contextGet(r *http.Request, key interface{}) interface{} {

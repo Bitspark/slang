@@ -43,9 +43,9 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 
 var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
+		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			hub := r.Context().Value("hub").(*Hub)
 			type runInstructionJSON struct {
 				Id     string          `json:"id"`
 				Props  core.Properties `json:"props"`

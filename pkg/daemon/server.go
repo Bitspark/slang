@@ -189,7 +189,7 @@ func (c *ConnectedClient) waitOnOutgoing() {
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
-	hub := r.Context().Value("hub").(*Hub)
+	hub := GetHub(r)
 	user := Root
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -234,7 +234,7 @@ func (s *Server) AddWebsocket(path string) {
 	// Don't know yet if that is good idea
 	// Maybe should make the `hub` a singleton instead of shoving it
 	// into the context where it needs more typing to be safe
-	newCtx := context.WithValue(*s.ctx, "hub", hub)
+	newCtx := SetHub(*s.ctx, hub)
 	s.ctx = &newCtx
 	go hub.run()
 }

@@ -41,7 +41,7 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 
 func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
 	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(http.Dir(directory))))
+	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
 }
 
 func (s *Server) AddOperatorProxy(pathPrefix string) {

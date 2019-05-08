@@ -12,8 +12,8 @@ var encodingXLSXReadCfg = &builtinConfig{
 			Name: "read Excel",
 			ShortDescription: "decodes Excel data into a stream of sheets, each being a 2d-stream of cells",
 			Icon: "file-excel",
-			Tags: []string{"http", "encoding"},
-			DocURL: "https://bitspark.de/slang/docs/operator/encode-url",
+			Tags: []string{"excel", "encoding"},
+			DocURL: "https://bitspark.de/slang/docs/operator/read-excel",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

@@ -130,6 +130,7 @@ func init() {
 	Register(encodingJSONReadCfg)
 	Register(encodingJSONWriteCfg)
 	Register(encodingXLSXReadCfg)
+	Register(encodingXLSXWriteCfg)
 	Register(encodingURLWriteCfg)
 
 	Register(timeDelayCfg)

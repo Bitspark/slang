@@ -705,67 +705,6 @@ func (p *Port) Name() string {
 	}
 
 	return p.StringifyComplete()
-
-	var name string
-
-	if p.parMap != nil {
-		for pn, pt := range p.parMap.subs {
-			if pt == p {
-				name = "[" + pn + "]"
-			}
-		}
-	}
-
-	switch p.itemType {
-	case TYPE_GENERIC:
-		name += "_GENERIC"
-	case TYPE_PRIMITIVE:
-		name += "_PRIMITIVE"
-	case TYPE_TRIGGER:
-		name += "_TRIGGER"
-	case TYPE_NUMBER:
-		name += "_NUMBER"
-	case TYPE_STRING:
-		name += "_STRING"
-	case TYPE_BINARY:
-		name += "_BINARY"
-	case TYPE_BOOLEAN:
-		name += "_BOOLEAN"
-	case TYPE_MAP:
-		name += "_MAP"
-	case TYPE_STREAM:
-		name += "_STREAM"
-	}
-
-	if p.parMap != nil {
-		return p.parMap.Name() + name
-	}
-
-	if p.parStr != nil {
-		return p.parStr.Name() + name
-	}
-
-	if p.direction == DIRECTION_IN {
-		if p.operator != nil {
-			if p.delegate != nil {
-				return p.operator.name + "." + p.delegate.name + ":IN" + name
-			} else {
-				return p.operator.name + ":IN" + name
-			}
-		} else {
-			return "IN_" + name
-		}
-	} else {
-		if p.operator != nil {
-			if p.delegate != nil {
-				return p.operator.name + "." + p.delegate.name + ":OUT" + name
-			} else {
-				return p.operator.name + ":OUT" + name
-			}
-		} else {
-			return "OUT" + name
-		}
-	}
 }
 
 func (p *Port) Bufferize() {

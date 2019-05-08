@@ -115,9 +115,6 @@ func (dl *SlangComponentLoader) downloadArchiveAndUnpack(archiveURL string) erro
 	defer os.Remove(archiveFilePath)
 	defer os.RemoveAll(tmpDstDir)
 
-	if err != nil {
-		return err
-	}
 	if err = dl.replaceDirContentBy(tmpDstDir); err != nil {
 		return err
 	}

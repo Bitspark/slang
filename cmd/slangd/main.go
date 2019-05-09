@@ -66,7 +66,7 @@ func main() {
 		srv.AddStaticServer("/app", http.Dir(env.SLANG_UI))
 	}
 
-	startDaemonServer(ctx, srv)
+	startDaemonServer(srv)
 }
 
 func checkNewestVersion() {
@@ -113,7 +113,7 @@ func loadLocalComponents(e *env.Environment) {
 	}
 }
 
-func startDaemonServer(ctx context.Context, srv *daemon.Server) {
+func startDaemonServer(srv *daemon.Server) {
 	url := fmt.Sprintf("http://%s:%d/", srv.Host, srv.Port)
 	errors := make(chan error)
 	go informUser(url, errors)

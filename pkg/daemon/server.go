@@ -33,6 +33,7 @@ func New(host string, port int) *Server {
 func (s *Server) AddService(pathPrefix string, services *Service) {
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
+		path := path
 		(func(endpoint *Endpoint) {
 			r.HandleFunc(path, endpoint.Handle)
 		})(endpoint)

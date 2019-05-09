@@ -42,6 +42,7 @@ linters:
     - unused
     - unparam
     - scopelint
+    - structcheck
 
   disable-all: true
 

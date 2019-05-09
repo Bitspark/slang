@@ -1,19 +1,20 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var timeDateNowCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "808c7846-db9f-43ee-989b-37a08ce7e70d",
 		Meta: core.OperatorMetaDef{
-			Name: "now",
+			Name:             "now",
 			ShortDescription: "emits the current date and time",
-			Icon: "clock",
-			Tags: []string{"time"},
-			DocURL: "https://bitspark.de/slang/docs/operator/now",
+			Icon:             "clock",
+			Tags:             []string{"time"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/now",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

@@ -1,8 +1,9 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"os/exec"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var shellExecuteCfg = &builtinConfig{

@@ -1,20 +1,21 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"net/url"
 	"fmt"
+	"net/url"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var encodingURLWriteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "702a2036-a1cc-4783-8b83-b18494c5e9f1",
 		Meta: core.OperatorMetaDef{
-			Name: "encode URL",
+			Name:             "encode URL",
 			ShortDescription: "encodes a Slang map into the corresponding URL-encoded string",
-			Icon: "brackets",
-			Tags: []string{"http", "encoding"},
-			DocURL: "https://bitspark.de/slang/docs/operator/encode-url",
+			Icon:             "brackets",
+			Tags:             []string{"http", "encoding"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/encode-url",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

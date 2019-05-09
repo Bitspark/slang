@@ -21,6 +21,7 @@ linters:
     - deadcode
     - govet
     - unconvert
+    - gofmt
 
   disable-all: true
 

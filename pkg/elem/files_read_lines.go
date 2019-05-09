@@ -2,20 +2,21 @@ package elem
 
 import (
 	"bufio"
-	"github.com/Bitspark/slang/pkg/core"
 	"os"
 	"path/filepath"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var filesReadLinesCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "6124cd6b-5c23-4e17-a714-458d0f8ac1a7",
 		Meta: core.OperatorMetaDef{
-			Name: "lines from file",
+			Name:             "lines from file",
 			ShortDescription: "reads the contents of a file line by line and emits them as stream",
-			Icon: "file",
-			Tags: []string{"file"},
-			DocURL: "https://bitspark.de/slang/docs/operator/lines-from-file",
+			Icon:             "file",
+			Tags:             []string{"file"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/lines-from-file",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

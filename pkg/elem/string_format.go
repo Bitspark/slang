@@ -1,19 +1,20 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"fmt"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var stringFormatCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "21dbddf2-2d07-494e-8950-3ac0224a3ff5",
 		Meta: core.OperatorMetaDef{
-			Name: "format",
+			Name:             "format",
 			ShortDescription: "places values formatted in a C-like manner inside a string",
-			Icon: "edit",
-			Tags: []string{"string"},
-			DocURL: "https://bitspark.de/slang/docs/operator/format",
+			Icon:             "edit",
+			Tags:             []string{"string"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/format",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

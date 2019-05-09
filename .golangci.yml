@@ -15,13 +15,30 @@ run:
   # include test files or not, default is true
   tests: true
 
+issues:
+  # List of regexps of issue texts to exclude, empty list by default.
+  # But independently from this option we use default exclude patterns,
+  # it can be disabled by `exclude-use-default: false`. To list all
+  # excluded by default patterns execute `golangci-lint run --help`
+  # exclude:
+  #   - abcdef
+
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: cmd/makedocs/.*\.go
+      linters:
+        - unused
+
 # all available settings of specific linters
 linters:
   enable:
     - deadcode
     - govet
     - unconvert
+    - staticcheck
     - gofmt
+    - unused
 
   disable-all: true
 

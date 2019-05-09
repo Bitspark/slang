@@ -118,7 +118,7 @@ var shellExecuteCfg = &builtinConfig{
 			stderr, _ := c.StderrPipe()
 			stdin, _ := c.StdinPipe()
 
-			err := c.Start()
+			c.Start()
 			// Redirect stdout to out port
 			go func() {
 				user.Out().Map("stdout").PushBOS()
@@ -169,7 +169,7 @@ var shellExecuteCfg = &builtinConfig{
 					out.Map("stdin").Stream().Push(input)
 				}
 			}()
-			err = c.Wait()
+			err := c.Wait()
 			if err != nil {
 				out.Map("code").Push(err.Error())
 			} else {

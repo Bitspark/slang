@@ -104,6 +104,9 @@ func (dl *SlangComponentLoader) updateLocalVersionFile() error {
 
 func (dl *SlangComponentLoader) downloadArchiveAndUnpack(archiveURL string) error {
 	archiveFilePath, err := dl.download(archiveURL)
+	if err != nil {
+		return err
+	}
 	// Unpack archive into directory
 	tmpDstDir, err := ioutil.TempDir("", dl.repo)
 	if err != nil {
@@ -170,11 +173,11 @@ func (dl *SlangComponentLoader) GetLocalReleaseVersion() *version.Version {
 		return nil
 	}
 	versionFile, err := os.Open(dl.versionFilePath)
-	defer versionFile.Close()
-
 	if err != nil {
 		return nil
 	}
+
+	defer versionFile.Close()
 
 	versionReader := bufio.NewReader(versionFile)
 	currVersion, _, err := versionReader.ReadLine()

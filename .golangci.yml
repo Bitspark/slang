@@ -38,7 +38,9 @@ linters:
     - unconvert
     - staticcheck
     - gofmt
+    - varcheck
     - unused
+    - unparam
 
   disable-all: true
 

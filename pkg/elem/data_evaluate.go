@@ -25,7 +25,7 @@ func floatify(val interface{}) (float64, bool) {
 type mathFunc1 func(float64) float64
 type mathFunc2 func(float64, float64) float64
 
-func makeMathFunc1(f mathFunc1, args ...interface{}) govaluate.ExpressionFunction {
+func makeMathFunc1(f mathFunc1) govaluate.ExpressionFunction {
 	return func(args ...interface{}) (interface{}, error) {
 		if fval, ok := floatify(args[0]); ok {
 			return f(fval), nil
@@ -34,7 +34,7 @@ func makeMathFunc1(f mathFunc1, args ...interface{}) govaluate.ExpressionFunctio
 	}
 }
 
-func makeMathFunc2(f mathFunc2, args ...interface{}) govaluate.ExpressionFunction {
+func makeMathFunc2(f mathFunc2) govaluate.ExpressionFunction {
 	return func(args ...interface{}) (interface{}, error) {
 		fval1, ok1 := floatify(args[0])
 		fval2, ok2 := floatify(args[1])

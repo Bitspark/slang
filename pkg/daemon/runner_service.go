@@ -43,6 +43,7 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 
 var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
+		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
 			type runInstructionJSON struct {
@@ -123,6 +124,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			op.Start()
 			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, strconv.FormatInt(handle, 16))
 			op.Main().In().Push(nil) // Start server
+			hub.broadCastTo(Root, "Starting Operator")
 
 			data.Status = "success"
 			data.Handle = strconv.FormatInt(handle, 16)
@@ -132,6 +134,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			go func() {
 				oprlt := op.Main().Out().Pull()
+				hub.broadCastTo(Root, "Stopping Operator")
 				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, strconv.FormatInt(handle, 16), oprlt)
 			}()
 		} else if r.Method == "DELETE" {

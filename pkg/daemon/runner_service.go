@@ -55,10 +55,6 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 }
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/alive": {func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-		}
-	}},
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 		hub := GetHub(r)
 		st := GetStorage(r)

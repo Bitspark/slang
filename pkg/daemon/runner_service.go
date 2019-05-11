@@ -14,6 +14,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type runInstructionJSON struct {
+	Id     string          `json:"id"`
+	Props  core.Properties `json:"props"`
+	Gens   core.Generics   `json:"gens"`
+	Stream bool            `json:"stream"`
+}
+type outJSON struct {
+	URL    string `json:"url,omitempty"`
+	Handle string `json:"handle,omitempty"`
+	Status string `json:"status"`
+	Error  *Error `json:"error,omitempty"`
+}
+
 var runningInstances = make(map[int64]struct {
 	port int
 	op   *core.Operator
@@ -42,23 +55,13 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 }
 
 var RunnerService = &Service{map[string]*Endpoint{
+	"/alive": {func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+		}
+	}},
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			type runInstructionJSON struct {
-				Id     string          `json:"id"`
-				Props  core.Properties `json:"props"`
-				Gens   core.Generics   `json:"gens"`
-				Stream bool            `json:"stream"`
-			}
-
-			type outJSON struct {
-				URL    string `json:"url,omitempty"`
-				Handle string `json:"handle,omitempty"`
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}
-
 			var data outJSON
 
 			decoder := json.NewDecoder(r.Body)

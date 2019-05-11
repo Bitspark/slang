@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Bitspark/slang/pkg/core"
@@ -21,20 +22,35 @@ func getTestServer() *Server {
 	env := env.New("localhost", 8000)
 	storage := storage.NewStorage().AddBackend(backend)
 	ctx := SetStorage(context.Background(), storage)
+	backend.Reload()
+	fmt.Println(backend.List())
 	return NewServer(&ctx, env)
 }
 func TestServer_operator_starting(t *testing.T) {
 	server := getTestServer()
-	data := runInstructionJSON{Id: "37ccdc28-67b0-4bb1-8591-4e0e813e3ec1",
+	data := runInstructionJSON{Id: "8b62495a-e482-4a3e-8020-0ab8a350ad2d",
 		Stream: false,
-		Props:  core.Properties{}, Gens: core.Generics{}}
+		Props:  core.Properties{"value": "slang"},
+		Gens: core.Generics{
+			"valueType": {
+				Type: "string",
+			},
+		},
+	}
 	body, _ := json.Marshal(&data)
 	request, _ := http.NewRequest("POST", "/run/", bytes.NewReader(body))
 	response := httptest.NewRecorder()
 	server.Handler().ServeHTTP(response, request)
-	a := response.Body.String()
-	fmt.Println(a)
+	decoder := json.NewDecoder(response.Body)
+	var out outJSON
+	decoder.Decode(&out)
 	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, "success", out.Status)
+
+	request, _ = http.NewRequest("POST", strings.Join([]string{"/instance/", out.Handle}, ""), bytes.NewReader([]byte{}))
+	response = httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	assert.Equal(t, "\"slang\"", response.Body.String())
 }
 
 func TestServer_operator(t *testing.T) {

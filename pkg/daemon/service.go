@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -19,10 +20,23 @@ type Endpoint struct {
 
 type contextKey string
 
-const StorageKey contextKey = "storage"
+const storageKey contextKey = "storage"
+const hubKey contextKey = "hub"
 
-func getStorage(r *http.Request) storage.Storage {
-	return contextGet(r, StorageKey).(storage.Storage)
+func GetStorage(r *http.Request) storage.Storage {
+	return *contextGet(r, storageKey).(*storage.Storage)
+}
+
+func SetHub(ctx context.Context, h *Hub) context.Context {
+	return context.WithValue(ctx, hubKey, h)
+}
+
+func GetHub(r *http.Request) *Hub {
+	return contextGet(r, hubKey).(*Hub)
+}
+
+func SetStorage(ctx context.Context, st *storage.Storage) context.Context {
+	return context.WithValue(ctx, storageKey, st)
 }
 
 func contextGet(r *http.Request, key interface{}) interface{} {

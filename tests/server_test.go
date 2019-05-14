@@ -26,7 +26,7 @@ func getTestServer() *daemon.Server {
 	return daemon.NewServer(&ctx, env)
 }
 
-func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstructionJSON) daemon.InstanceState {
+func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstruction) daemon.InstanceState {
 	var out daemon.InstanceState
 
 	body, _ := json.Marshal(&ri)
@@ -44,7 +44,7 @@ func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstructionJSON)
 func TestServer_operator_starting(t *testing.T) {
 	server := getTestServer()
 	id, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
-	data := daemon.RunInstructionJSON{Id: id,
+	data := daemon.RunInstruction{Id: id,
 		Stream: false,
 		Props:  core.Properties{"value": "slang"},
 		Gens: core.Generics{
@@ -64,7 +64,7 @@ func TestServer_operator(t *testing.T) {
 	server := getTestServer()
 	id := "8b62495a-e482-4a3e-8020-0ab8a350ad2d"
 	uuid, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
-	data := daemon.RunInstructionJSON{Id: uuid,
+	data := daemon.RunInstruction{Id: uuid,
 		Stream: false,
 		Props:  core.Properties{"value": "slang"},
 		Gens: core.Generics{

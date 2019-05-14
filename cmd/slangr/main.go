@@ -127,12 +127,15 @@ func (w *wrkCmds) Init(a string) (string, error) {
 	return w.PrtCfg()
 }
 
+//nolint:staticcheck
 func (w *wrkCmds) PrtCfg() (string, error) {
 	if w.op == nil {
 		return "", fmt.Errorf("runner is not initialized: provide valid operator")
 	}
 
 	// todo timeout to prevent infinite loop
+	// this us a race condition because `w.sp` changes outside of
+	// the current function - better use channels here.
 	for w.sp == nil {
 	}
 

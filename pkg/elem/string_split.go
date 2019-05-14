@@ -1,19 +1,20 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
 	"strings"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var stringSplitCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "c02bc7ad-65e5-4a43-a2a3-7d86b109915d",
 		Meta: core.OperatorMetaDef{
-			Name: "split string",
+			Name:             "split string",
 			ShortDescription: "splits a string at a given separator and emits its pieces as stream",
-			Icon: "cut",
-			Tags: []string{"string"},
-			DocURL: "https://bitspark.de/slang/docs/operator/split-string",
+			Icon:             "cut",
+			Tags:             []string{"string"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/split-string",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

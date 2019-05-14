@@ -1,20 +1,21 @@
 package elem
 
 import (
+	"time"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/go-redis/redis"
-	"time"
 )
 
 var databaseRedisSetCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "cdbf3e0d-1ce0-4565-9df6-d0e829c730e5",
 		Meta: core.OperatorMetaDef{
-			Name: "Redis Set",
+			Name:             "Redis Set",
 			ShortDescription: "executes a Set command at the specified Redis server",
-			Icon: "database",
-			Tags: []string{"database", "redis"},
-			DocURL: "https://bitspark.de/slang/docs/operator/redis-set",
+			Icon:             "database",
+			Tags:             []string{"database", "redis"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/redis-set",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

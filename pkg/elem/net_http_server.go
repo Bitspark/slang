@@ -10,8 +10,6 @@ import (
 )
 
 type requestHandler struct {
-	hOut *core.Port
-	hIn  *core.Port
 	sync *core.Synchronizer
 }
 

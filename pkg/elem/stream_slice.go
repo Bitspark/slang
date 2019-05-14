@@ -8,11 +8,11 @@ var streamSliceCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "2471a7aa-c5b9-4392-b23f-d0c7bcdb3f39",
 		Meta: core.OperatorMetaDef{
-			Name: "slice",
+			Name:             "slice",
 			ShortDescription: "emits a sub-stream of another stream",
-			Icon: "cut",
-			Tags: []string{"stream"},
-			DocURL: "https://bitspark.de/slang/docs/operator/slice",
+			Icon:             "cut",
+			Tags:             []string{"stream"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/slice",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -22,19 +22,19 @@ var streamSliceCfg = &builtinConfig{
 						"offset": {
 							Type: "stream",
 							Stream: &core.TypeDef{
-								Type:    "number",
+								Type: "number",
 							},
 						},
 						"length": {
 							Type: "stream",
 							Stream: &core.TypeDef{
-								Type:    "number",
+								Type: "number",
 							},
 						},
 						"step": {
 							Type: "stream",
 							Stream: &core.TypeDef{
-								Type:    "number",
+								Type: "number",
 							},
 						},
 						"stream": {
@@ -79,7 +79,7 @@ var streamSliceCfg = &builtinConfig{
 			step := int(im["step"].(float64))
 
 			until := len(stream)
-			if until > offset + length {
+			if until > offset+length {
 				until = offset + length
 			}
 

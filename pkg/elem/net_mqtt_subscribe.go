@@ -2,18 +2,18 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 var netMQTTSubscribeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "fd51e295-3483-4558-9b26-8c16d579c4ef",
 		Meta: core.OperatorMetaDef{
-			Name: "MQTT subscribe",
+			Name:             "MQTT subscribe",
 			ShortDescription: "subscribes at a given topic, behaves like an MQTT client",
-			Icon: "chart-network",
-			Tags: []string{"network", "mqtt"},
-			DocURL: "https://bitspark.de/slang/docs/operator/mqtt-subscribe",
+			Icon:             "chart-network",
+			Tags:             []string{"network", "mqtt"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/mqtt-subscribe",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

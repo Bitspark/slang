@@ -5,10 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/Bitspark/go-version"
@@ -21,10 +18,8 @@ type manifest struct {
 	TimeUnix     int64  `yaml:"timeUnix"`
 }
 
-/* TODO re-implemet this service
+/* TODO re-implements this service
  */
-
-var suffixes = []string{"_visual.yaml"}
 
 var SharingService = &Service{map[string]*Endpoint{
 	"/export": {func(w http.ResponseWriter, r *http.Request) {
@@ -124,25 +119,6 @@ var SharingService = &Service{map[string]*Endpoint{
 
 			fail(&Error{Msg: "not implemented yet", Code: "E000X"})
 			return
-
-			baseDir := "" // st.WorkingDir()
-			for _, file := range zipReader.File {
-				if file.Name == "manifest.yaml" {
-					continue
-				}
-
-				fileReader, _ := file.Open()
-				buf := new(bytes.Buffer)
-				buf.ReadFrom(fileReader)
-				fpath := filepath.Join(baseDir, filepath.FromSlash(file.Name))
-				os.MkdirAll(filepath.Dir(fpath), os.ModePerm)
-				ioutil.WriteFile(fpath, buf.Bytes(), os.ModePerm)
-				fileReader.Close()
-			}
-
-			writeJSON(w, &struct {
-				Success bool `json:"success"`
-			}{true})
 		}
 	}},
 }}

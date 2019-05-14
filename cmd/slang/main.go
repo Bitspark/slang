@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/Bitspark/slang/pkg/api"
-	"github.com/Bitspark/slang/pkg/core"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +12,9 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var printPorts bool
@@ -65,6 +66,7 @@ func printPortDef(slFile *core.SlangFileDef) error {
 	mainBpId := slFile.Main
 	var opDef *core.OperatorDef
 	for _, bp := range slFile.Blueprints {
+		bp := bp
 		if mainBpId == bp.Id {
 			opDef = &bp
 		}

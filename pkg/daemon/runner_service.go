@@ -14,13 +14,13 @@ import (
 	"github.com/google/uuid"
 )
 
-type RunInstructionJSON struct {
+type RunInstruction struct {
 	Id     uuid.UUID       `json:"id"`
 	Props  core.Properties `json:"props"`
 	Gens   core.Generics   `json:"gens"`
 	Stream bool            `json:"stream"`
 }
-type InstanceStateJSON struct {
+type InstanceState struct {
 	URL    string `json:"url,omitempty"`
 	Handle string `json:"handle,omitempty"`
 	Status string `json:"status"`
@@ -71,13 +71,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			var data InstanceStateJSON
+			var data InstanceState
 
 			decoder := json.NewDecoder(r.Body)
-			var ri RunInstructionJSON
+			var ri RunInstruction
 			err := decoder.Decode(&ri)
 			if err != nil {
-				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -98,7 +98,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			opId := ri.Id
 
 			if err != nil {
-				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -111,7 +111,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			if err != nil {
-				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -120,7 +120,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			httpDefId, _ := uuid.Parse(httpDef.Id)
 			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
 			if err != nil {
-				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}

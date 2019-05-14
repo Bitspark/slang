@@ -26,8 +26,8 @@ func getTestServer() *daemon.Server {
 	return daemon.NewServer(&ctx, env)
 }
 
-func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstructionJSON) daemon.InstanceStateJSON {
-	var out daemon.InstanceStateJSON
+func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstructionJSON) daemon.InstanceState {
+	var out daemon.InstanceState
 
 	body, _ := json.Marshal(&ri)
 	request, _ := http.NewRequest("POST", "/run/", bytes.NewReader(body))

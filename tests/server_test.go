@@ -13,12 +13,12 @@ import (
 	"github.com/Bitspark/slang/pkg/daemon"
 	"github.com/Bitspark/slang/pkg/env"
 	"github.com/Bitspark/slang/pkg/storage"
-	"github.com/Bitspark/slang/tests"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func getTestServer() *daemon.Server {
-	backend := tests.NewTestLoader("./")
+	backend := NewTestLoader("./")
 	env := env.New("localhost", 8000)
 	storage := storage.NewStorage().AddBackend(backend)
 	ctx := daemon.SetStorage(context.Background(), storage)

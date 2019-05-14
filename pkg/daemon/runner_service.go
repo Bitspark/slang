@@ -32,7 +32,7 @@ type runningInstance struct {
 	Op   *core.Operator `json:"omit"`
 }
 
-var runningInstances = make(map[int64]runningInstance)
+var runningInstances = make(map[string]runningInstance)
 var rnd = rand.New(rand.NewSource(99))
 
 type httpDefLoader struct {
@@ -124,25 +124,25 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			handle := rnd.Int63()
-			runningInstances[handle] = runningInstance{port, op}
+			handle := strconv.FormatInt(rnd.Int63(), 16)
+			runningInstances[handle] = runningInstance{port, ri.Id, op}
 
 			op.Main().Out().Bufferize()
 			op.Start()
-			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, strconv.FormatInt(handle, 16))
+			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, handle)
 			op.Main().In().Push(nil) // Start server
 			hub.broadCastTo(Root, "Starting Operator")
 
 			data.Status = "success"
-			data.Handle = strconv.FormatInt(handle, 16)
-			data.URL = "/instance/" + strconv.FormatInt(handle, 16)
+			data.Handle = handle
+			data.URL = "/instance/" + handle
 
 			writeJSON(w, &data)
 
 			go func() {
 				oprlt := op.Main().Out().Pull()
 				hub.broadCastTo(Root, "Stopping Operator")
-				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, strconv.FormatInt(handle, 16), oprlt)
+				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, handle, oprlt)
 			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
@@ -165,15 +165,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			handle, _ := strconv.ParseInt(si.Handle, 16, 64)
-
-			if ii, ok := runningInstances[handle]; !ok {
+			if ii, ok := runningInstances[si.Handle]; !ok {
 				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			} else {
 				go ii.Op.Stop()
-				delete(runningInstances, handle)
+				delete(runningInstances, si.Handle)
 
 				data.Status = "success"
 				writeJSON(w, &data)

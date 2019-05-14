@@ -29,13 +29,7 @@ func proxyRequestToOperator(w http.ResponseWriter, r *http.Request) {
 		newPath = path[sp:]
 	}
 
-	handleID, err := strconv.ParseInt(handle, 16, 64)
-	if err != nil {
-		w.WriteHeader(400)
-		return
-	}
-
-	operator, ok := runningInstances[handleID]
+	operator, ok := runningInstances[handle]
 	if !ok {
 		w.WriteHeader(404)
 		return

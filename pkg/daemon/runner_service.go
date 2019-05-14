@@ -15,7 +15,7 @@ import (
 )
 
 type RunInstructionJSON struct {
-	Id     string          `json:"id"`
+	Id     uuid.UUID       `json:"id"`
 	Props  core.Properties `json:"props"`
 	Gens   core.Generics   `json:"gens"`
 	Stream bool            `json:"stream"`
@@ -29,7 +29,8 @@ type InstanceStateJSON struct {
 
 type runningInstance struct {
 	Port int            `json:"port"`
-	Op   *core.Operator `json:"omit"`
+	OpId uuid.UUID      `json:"id"`
+	Op   *core.Operator `json:"Op"`
 }
 
 var runningInstances = make(map[string]runningInstance)
@@ -94,7 +95,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				}
 			}
 
-			opId, err := uuid.Parse(ri.Id)
+			opId := ri.Id
 
 			if err != nil {
 				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}

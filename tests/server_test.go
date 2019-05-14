@@ -43,7 +43,8 @@ func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstructionJSON)
 }
 func TestServer_operator_starting(t *testing.T) {
 	server := getTestServer()
-	data := daemon.RunInstructionJSON{Id: "8b62495a-e482-4a3e-8020-0ab8a350ad2d",
+	id, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
+	data := daemon.RunInstructionJSON{Id: id,
 		Stream: false,
 		Props:  core.Properties{"value": "slang"},
 		Gens: core.Generics{
@@ -61,7 +62,9 @@ func TestServer_operator_starting(t *testing.T) {
 
 func TestServer_operator(t *testing.T) {
 	server := getTestServer()
-	data := daemon.RunInstructionJSON{Id: "8b62495a-e482-4a3e-8020-0ab8a350ad2d",
+	id := "8b62495a-e482-4a3e-8020-0ab8a350ad2d"
+	uuid, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
+	data := daemon.RunInstructionJSON{Id: uuid,
 		Stream: false,
 		Props:  core.Properties{"value": "slang"},
 		Gens: core.Generics{
@@ -75,4 +78,5 @@ func TestServer_operator(t *testing.T) {
 	response := httptest.NewRecorder()
 	server.Handler().ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code)
+	assert.Contains(t, response.Body.String(), id)
 }

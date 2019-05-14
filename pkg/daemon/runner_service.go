@@ -14,13 +14,13 @@ import (
 	"github.com/google/uuid"
 )
 
-type runInstructionJSON struct {
+type RunInstructionJSON struct {
 	Id     string          `json:"id"`
 	Props  core.Properties `json:"props"`
 	Gens   core.Generics   `json:"gens"`
 	Stream bool            `json:"stream"`
 }
-type outJSON struct {
+type InstanceStateJSON struct {
 	URL    string `json:"url,omitempty"`
 	Handle string `json:"handle,omitempty"`
 	Status string `json:"status"`
@@ -59,13 +59,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			var data outJSON
+			var data InstanceStateJSON
 
 			decoder := json.NewDecoder(r.Body)
-			var ri runInstructionJSON
+			var ri RunInstructionJSON
 			err := decoder.Decode(&ri)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -86,7 +86,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			opId, err := uuid.Parse(ri.Id)
 
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -99,7 +99,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -108,7 +108,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			httpDefId, _ := uuid.Parse(httpDef.Id)
 			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceStateJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}

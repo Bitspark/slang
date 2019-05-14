@@ -248,6 +248,7 @@ func (s *Server) mountWebServices() {
 	s.AddService("/operator", DefinitionService)
 	s.AddService("/run", RunnerService)
 	s.AddService("/share", SharingService)
+	s.AddService("/instances", InstanceService)
 	s.AddOperatorProxy("/instance")
 	s.AddWebsocket("/ws")
 }

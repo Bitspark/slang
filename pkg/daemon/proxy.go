@@ -41,7 +41,7 @@ func proxyRequestToOperator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newPort := operator.port
+	newPort := operator.Port
 	newURL := url.URL{}
 	newURL.Scheme = "http"
 	newURL.Host = "localhost:" + strconv.Itoa(newPort)

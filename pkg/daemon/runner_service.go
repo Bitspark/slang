@@ -27,10 +27,12 @@ type InstanceStateJSON struct {
 	Error  *Error `json:"error,omitempty"`
 }
 
-var runningInstances = make(map[int64]struct {
-	port int
-	op   *core.Operator
-})
+type runningInstance struct {
+	Port int            `json:"port"`
+	Op   *core.Operator `json:"omit"`
+}
+
+var runningInstances = make(map[int64]runningInstance)
 var rnd = rand.New(rand.NewSource(99))
 
 type httpDefLoader struct {
@@ -53,6 +55,15 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	}
 	return l.httpDef, nil
 }
+
+var InstanceService = &Service{map[string]*Endpoint{
+	"/": {func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			data := runningInstances
+			writeJSON(w, &data)
+		}
+	}},
+}}
 
 var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
@@ -114,10 +125,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			handle := rnd.Int63()
-			runningInstances[handle] = struct {
-				port int
-				op   *core.Operator
-			}{port, op}
+			runningInstances[handle] = runningInstance{port, op}
 
 			op.Main().Out().Bufferize()
 			op.Start()
@@ -164,7 +172,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				writeJSON(w, &data)
 				return
 			} else {
-				go ii.op.Stop()
+				go ii.Op.Stop()
 				delete(runningInstances, handle)
 
 				data.Status = "success"

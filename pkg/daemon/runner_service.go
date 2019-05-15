@@ -14,10 +14,26 @@ import (
 	"github.com/google/uuid"
 )
 
-var runningInstances = make(map[int64]struct {
-	port int
-	op   *core.Operator
-})
+type RunInstruction struct {
+	Id     uuid.UUID       `json:"id"`
+	Props  core.Properties `json:"props"`
+	Gens   core.Generics   `json:"gens"`
+	Stream bool            `json:"stream"`
+}
+type InstanceState struct {
+	URL    string `json:"url,omitempty"`
+	Handle string `json:"handle,omitempty"`
+	Status string `json:"status"`
+	Error  *Error `json:"error,omitempty"`
+}
+
+type runningInstance struct {
+	Port int            `json:"port"`
+	OpId uuid.UUID      `json:"id"`
+	Op   *core.Operator `json:"Op"`
+}
+
+var runningInstances = make(map[string]runningInstance)
 var rnd = rand.New(rand.NewSource(99))
 
 type httpDefLoader struct {
@@ -41,32 +57,27 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	return l.httpDef, nil
 }
 
+var InstanceService = &Service{map[string]*Endpoint{
+	"/": {func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			data := runningInstances
+			writeJSON(w, &data)
+		}
+	}},
+}}
+
 var RunnerService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			type runInstructionJSON struct {
-				Id     string          `json:"id"`
-				Props  core.Properties `json:"props"`
-				Gens   core.Generics   `json:"gens"`
-				Stream bool            `json:"stream"`
-			}
-
-			type outJSON struct {
-				URL    string `json:"url,omitempty"`
-				Handle string `json:"handle,omitempty"`
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}
-
-			var data outJSON
+			var data InstanceState
 
 			decoder := json.NewDecoder(r.Body)
-			var ri runInstructionJSON
+			var ri RunInstruction
 			err := decoder.Decode(&ri)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -84,10 +95,10 @@ var RunnerService = &Service{map[string]*Endpoint{
 				}
 			}
 
-			opId, err := uuid.Parse(ri.Id)
+			opId := ri.Id
 
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -100,7 +111,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
@@ -109,33 +120,30 @@ var RunnerService = &Service{map[string]*Endpoint{
 			httpDefId, _ := uuid.Parse(httpDef.Id)
 			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
 			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
 
-			handle := rnd.Int63()
-			runningInstances[handle] = struct {
-				port int
-				op   *core.Operator
-			}{port, op}
+			handle := strconv.FormatInt(rnd.Int63(), 16)
+			runningInstances[handle] = runningInstance{port, ri.Id, op}
 
 			op.Main().Out().Bufferize()
 			op.Start()
-			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, strconv.FormatInt(handle, 16))
+			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, handle)
 			op.Main().In().Push(nil) // Start server
 			hub.broadCastTo(Root, "Starting Operator")
 
 			data.Status = "success"
-			data.Handle = strconv.FormatInt(handle, 16)
-			data.URL = "/instance/" + strconv.FormatInt(handle, 16)
+			data.Handle = handle
+			data.URL = "/instance/" + handle
 
 			writeJSON(w, &data)
 
 			go func() {
 				oprlt := op.Main().Out().Pull()
 				hub.broadCastTo(Root, "Stopping Operator")
-				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, strconv.FormatInt(handle, 16), oprlt)
+				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, handle, oprlt)
 			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
@@ -158,15 +166,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			handle, _ := strconv.ParseInt(si.Handle, 16, 64)
-
-			if ii, ok := runningInstances[handle]; !ok {
+			if ii, ok := runningInstances[si.Handle]; !ok {
 				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			} else {
-				go ii.op.Stop()
-				delete(runningInstances, handle)
+				go ii.Op.Stop()
+				delete(runningInstances, si.Handle)
 
 				data.Status = "success"
 				writeJSON(w, &data)

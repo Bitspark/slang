@@ -220,10 +220,15 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 func NewServer(ctx *context.Context, env *env.Environment) *Server {
 	r := mux.NewRouter().StrictSlash(true)
-	http.Handle("/", r)
 	srv := &Server{env.HTTP.Address, env.HTTP.Port, r, ctx}
 	srv.mountWebServices()
 	return srv
+}
+func (s *Server) Handler() http.Handler {
+	handler := cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "DELETE"},
+	}).Handler(s.router)
+	return addContext(*s.ctx, handler)
 }
 
 func (s *Server) AddWebsocket(path string) {
@@ -243,6 +248,7 @@ func (s *Server) mountWebServices() {
 	s.AddService("/operator", DefinitionService)
 	s.AddService("/run", RunnerService)
 	s.AddService("/share", SharingService)
+	s.AddService("/instances", InstanceService)
 	s.AddOperatorProxy("/instance")
 	s.AddWebsocket("/ws")
 }
@@ -274,8 +280,5 @@ func (s *Server) AddRedirect(path string, redirectTo string) {
 }
 
 func (s *Server) Run() error {
-	handler := cors.New(cors.Options{
-		AllowedMethods: []string{"GET", "POST", "DELETE"},
-	}).Handler(s.router)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), addContext(*s.ctx, handler))
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), s.Handler())
 }

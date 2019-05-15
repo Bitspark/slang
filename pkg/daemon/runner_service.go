@@ -31,11 +31,11 @@ type InstanceState struct {
 
 type runningInstance struct {
 	// todo remove .Port
-	Port     int            `json:"port"`
-	OpId     uuid.UUID      `json:"id"`
-	Op       *core.Operator `json:"Op"`
-	Incoming chan interface{}
-	Outgoing chan portMessage
+	Port     int              `json:"port"`
+	OpId     uuid.UUID        `json:"id"`
+	Op       *core.Operator   `json:"Op"`
+	Incoming chan interface{} `json:"-"`
+	Outgoing chan portMessage `json:"-"`
 }
 
 type portMessage struct {
@@ -102,7 +102,6 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 			runningIns.Incoming <- idat
 
 			writeJSON(w, &runningIns)
-			return
 		}
 
 	}},
@@ -277,12 +276,11 @@ var RunnerService = &Service{map[string]*Endpoint{
 					i := p.Pull()
 
 					fmt.Println("// %v", i)
+					fmt.Println("// outgoing %v", i)
 
-					if core.IsMarker(i) {
-						return
+					if !core.IsMarker(i) {
+						runningIns.Outgoing <- portMessage{p, i}
 					}
-
-					runningIns.Outgoing <- portMessage{p, i}
 				})
 			}()
 			// --- Running operator Instance [END]

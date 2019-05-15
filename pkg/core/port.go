@@ -435,6 +435,9 @@ func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
 		p.Map(pname).WalkPrimitivePorts(handle)
 	}
 }
+func (p *Port) Closed() bool {
+	return p.closed
+}
 
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {

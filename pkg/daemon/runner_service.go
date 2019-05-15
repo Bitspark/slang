@@ -36,6 +36,8 @@ type runningInstance struct {
 	Op       *core.Operator   `json:"Op"`
 	Incoming chan interface{} `json:"-"`
 	Outgoing chan portMessage `json:"-"`
+	InStop   chan bool        `json:"-"`
+	OutStop  chan bool        `json:"-"`
 }
 
 type portMessage struct {
@@ -167,7 +169,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			handle := strconv.FormatInt(rnd.Int63(), 16)
-			runningInstances[handle] = runningInstance{port, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0)}
+			runningInstances[handle] = runningInstance{port, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0), make(chan bool, 0), make(chan bool, 0)}
 
 			op.Main().Out().Bufferize()
 			op.Start()
@@ -223,6 +225,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			} else {
 				go ii.Op.Stop()
+				ii.InStop <- true
+				ii.OutStop <- true
 				delete(runningInstances, si.Handle)
 
 				data.Status = "success"
@@ -255,31 +259,40 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			// --- Running operator Instance
 			handle := strconv.FormatInt(rnd.Int63(), 16)
-			runningIns := runningInstance{0, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0)}
+			runningIns := runningInstance{0, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0), make(chan bool, 0), make(chan bool, 0)}
 			runningInstances[handle] = runningIns
 
 			op.Main().Out().Bufferize()
 			op.Start()
 			go func() {
 				log.Printf("operator %s (id: %s) started", op.Name(), handle)
-
+			loop:
 				for {
 					select {
 					case incoming := <-runningIns.Incoming:
+						fmt.Println("// incoming %v", incoming)
 						op.Main().In().Push(incoming)
+					case <-runningIns.InStop:
+						fmt.Println("// stopping %v", op.Name())
+						break loop
 					}
 				}
 			}()
 
 			go func() {
 				op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-					i := p.Pull()
+					for {
+						if p.Closed() {
+							break
+						}
+						i := p.Pull()
 
-					fmt.Println("// %v", i)
-					fmt.Println("// outgoing %v", i)
+						fmt.Println("// %v", i)
 
-					if !core.IsMarker(i) {
-						runningIns.Outgoing <- portMessage{p, i}
+						if !core.IsMarker(i) {
+							fmt.Println("// outgoing %v", i)
+							runningIns.Outgoing <- portMessage{p, i}
+						}
 					}
 				})
 			}()
@@ -287,10 +300,15 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			// --- Handle Incoming and Outgoing data
 			go func() {
+			loop:
 				for {
 					select {
 					case outgoing := <-runningIns.Outgoing:
+						fmt.Println("// outgoing to websocket %v", outgoing)
 						hub.broadCastTo(Root, fmt.Sprintf("%v", outgoing))
+					case <-runningIns.OutStop:
+						fmt.Println("// stopping forward %v", op.Name())
+						break loop
 					}
 				}
 			}()

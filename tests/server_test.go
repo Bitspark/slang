@@ -41,6 +41,7 @@ func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstruction) dae
 	assert.Equal(t, "success", out.Status)
 	return out
 }
+
 func TestServer_operator_starting(t *testing.T) {
 	server := getTestServer()
 	id, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")

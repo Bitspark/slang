@@ -420,6 +420,22 @@ func (p *Port) assertChannelSpace() {
 	}
 }
 
+func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
+	if p.Primitive() {
+		go func() {
+			handle(p)
+		}()
+	}
+
+	if p.Stream() != nil {
+		p.Stream().WalkPrimitivePorts(handle)
+	}
+
+	for _, pname := range p.MapEntries() {
+		p.Map(pname).WalkPrimitivePorts(handle)
+	}
+}
+
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
 	if p.closed {

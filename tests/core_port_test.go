@@ -2,6 +2,7 @@ package tests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/tests/assertions"
@@ -262,6 +263,87 @@ func TestPort_Type__Stream(t *testing.T) {
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 	a.Equal(core.TYPE_STREAM, p.Type(), "wrong type")
 	a.Equal(core.TYPE_STRING, p.Stream().Type(), "wrong type")
+}
+
+// Port.WalkPrimitives
+
+func TestPort_WalkPrimitives__Simple_Primitive(t *testing.T) {
+	a := assertions.New(t)
+	def := core.ParseTypeDef(`{"type":"primitive"}`)
+	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
+
+	ports := make(chan string)
+	portNames := make([]string, 0)
+
+	p.WalkPrimitivePorts(func(p *core.Port) {
+		ports <- p.Name()
+	})
+
+outer:
+	for {
+		select {
+		case portName := <-ports:
+			portNames = append(portNames, portName)
+		case <-time.After(1 * time.Millisecond):
+			break outer
+		}
+	}
+
+	a.Len(portNames, 1)
+	a.Equal(portNames[0], "(")
+}
+
+func TestPort_WalkPrimitives__Stream(t *testing.T) {
+	a := assertions.New(t)
+	def := core.ParseTypeDef(`{"type":"stream","stream":{"type":"string"}}`)
+	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
+
+	ports := make(chan string)
+	portNames := make([]string, 0)
+
+	p.WalkPrimitivePorts(func(p *core.Port) {
+		ports <- p.Name()
+	})
+
+outer:
+	for {
+		select {
+		case portName := <-ports:
+			portNames = append(portNames, portName)
+		case <-time.After(1 * time.Millisecond):
+			break outer
+		}
+	}
+
+	a.Len(portNames, 1)
+	a.Equal(portNames[0], "~(")
+}
+
+func TestPort_WalkPrimitives__Stream_Map(t *testing.T) {
+	a := assertions.New(t)
+	def := core.ParseTypeDef(`{"type":"map","map":{"p":{"type":"primitive"},"sp":{"type":"stream","stream":{"type":"primitive"}}}}`)
+	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
+
+	ports := make(chan string)
+	portNames := make([]string, 0)
+
+	p.WalkPrimitivePorts(func(p *core.Port) {
+		ports <- p.Name()
+	})
+
+outer:
+	for {
+		select {
+		case portName := <-ports:
+			portNames = append(portNames, portName)
+		case <-time.After(1 * time.Millisecond):
+			break outer
+		}
+	}
+
+	a.Len(portNames, 2)
+	a.Contains(portNames, "p(")
+	a.Contains(portNames, "sp.~(")
 }
 
 // Port.Connect (6 tests)

@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type RunInstruction struct {
@@ -28,9 +30,17 @@ type InstanceState struct {
 }
 
 type runningInstance struct {
-	Port int            `json:"port"`
-	OpId uuid.UUID      `json:"id"`
-	Op   *core.Operator `json:"Op"`
+	// todo remove .Port
+	Port     int            `json:"port"`
+	OpId     uuid.UUID      `json:"id"`
+	Op       *core.Operator `json:"Op"`
+	Incoming chan interface{}
+	Outgoing chan portMessage
+}
+
+type portMessage struct {
+	Port *core.Port
+	Msg  interface{}
 }
 
 var runningInstances = make(map[string]runningInstance)
@@ -63,6 +73,38 @@ var InstanceService = &Service{map[string]*Endpoint{
 			data := runningInstances
 			writeJSON(w, &data)
 		}
+	}},
+}}
+
+var RunningInstanceService = &Service{map[string]*Endpoint{
+	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
+		handle := mux.Vars(r)["handle"]
+
+		runningIns, ok := runningInstances[handle]
+		if !ok {
+			w.WriteHeader(404)
+			return
+		}
+
+		if r.Method == "POST" {
+			r.ParseForm()
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(r.Body)
+
+			var idat interface{}
+			err := json.Unmarshal(buf.Bytes(), &idat)
+
+			if err != nil {
+				w.WriteHeader(400)
+				return
+			}
+
+			runningIns.Incoming <- idat
+
+			writeJSON(w, &runningIns)
+			return
+		}
+
 	}},
 }}
 
@@ -126,7 +168,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			handle := strconv.FormatInt(rnd.Int63(), 16)
-			runningInstances[handle] = runningInstance{port, ri.Id, op}
+			runningInstances[handle] = runningInstance{port, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0)}
 
 			op.Main().Out().Bufferize()
 			op.Start()
@@ -139,6 +181,16 @@ var RunnerService = &Service{map[string]*Endpoint{
 			data.URL = "/instance/" + handle
 
 			writeJSON(w, &data)
+
+			op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
+				i := p.Pull()
+
+				if core.IsMarker(i) {
+					return
+				}
+
+				hub.broadCastTo(Root, fmt.Sprintf("%s:%v", p.Name(), i))
+			})
 
 			go func() {
 				oprlt := op.Main().Out().Pull()
@@ -177,6 +229,81 @@ var RunnerService = &Service{map[string]*Endpoint{
 				data.Status = "success"
 				writeJSON(w, &data)
 			}
+		}
+	}},
+	"/ws/": {func(w http.ResponseWriter, r *http.Request) {
+		hub := GetHub(r)
+		st := GetStorage(r)
+		if r.Method == "POST" {
+			var data InstanceState
+
+			decoder := json.NewDecoder(r.Body)
+			var ri RunInstruction
+			err := decoder.Decode(&ri)
+			if err != nil {
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				writeJSON(w, &data)
+				return
+			}
+
+			opId := ri.Id
+			op, err := api.BuildAndCompile(opId, ri.Gens, ri.Props, st)
+			if err != nil {
+				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				writeJSON(w, &data)
+				return
+			}
+
+			// --- Running operator Instance
+			handle := strconv.FormatInt(rnd.Int63(), 16)
+			runningIns := runningInstance{0, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0)}
+			runningInstances[handle] = runningIns
+
+			op.Main().Out().Bufferize()
+			op.Start()
+			go func() {
+				log.Printf("operator %s (id: %s) started", op.Name(), handle)
+
+				for {
+					select {
+					case incoming := <-runningIns.Incoming:
+						op.Main().In().Push(incoming)
+					}
+				}
+			}()
+
+			go func() {
+				op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
+					i := p.Pull()
+
+					fmt.Println("// %v", i)
+
+					if core.IsMarker(i) {
+						return
+					}
+
+					runningIns.Outgoing <- portMessage{p, i}
+				})
+			}()
+			// --- Running operator Instance [END]
+
+			// --- Handle Incoming and Outgoing data
+			go func() {
+				for {
+					select {
+					case outgoing := <-runningIns.Outgoing:
+						hub.broadCastTo(Root, fmt.Sprintf("%v", outgoing))
+					}
+				}
+			}()
+			// --- Handle Incoming and Outgoing data [END]
+
+			data.Status = "success"
+			data.Handle = handle
+			data.URL = "/instance/" + handle + "/"
+
+			writeJSON(w, &data)
+
 		}
 	}},
 }}

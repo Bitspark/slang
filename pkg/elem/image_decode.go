@@ -2,19 +2,20 @@ package elem
 
 import (
 	"bytes"
-	"github.com/Bitspark/slang/pkg/core"
 	"image"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var imageDecodeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "4b082c52-9a99-472f-9277-f5ca9651dbfb",
 		Meta: core.OperatorMetaDef{
-			Name: "decode image",
+			Name:             "decode image",
 			ShortDescription: "reads an encoded image binary and emits its pixels as stream of rgb values",
-			Icon: "file-image",
-			Tags: []string{"image"},
-			DocURL: "https://bitspark.de/slang/docs/operator/decode-image",
+			Icon:             "file-image",
+			Tags:             []string{"image"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/decode-image",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

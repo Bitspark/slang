@@ -495,6 +495,7 @@ func (dg *DocGenerator) saveURLs() {
 		opDocURL.Path = path.Join(opDocURL.Path, opInfo.Slug)
 		opDocURLStr := opDocURL.String()
 
+		//nolint:staticcheck
 		if opDef.Meta.DocURL == opDocURLStr {
 			// continue
 		}

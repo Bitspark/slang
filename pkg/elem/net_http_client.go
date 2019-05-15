@@ -2,20 +2,21 @@ package elem
 
 import (
 	"bytes"
-	"github.com/Bitspark/slang/pkg/core"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var netHTTPClientCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "f7f5907d-758b-4892-8a3e-ae86b877b869",
 		Meta: core.OperatorMetaDef{
-			Name: "HTTP client",
+			Name:             "HTTP client",
 			ShortDescription: "sends an HTTP request",
-			Icon: "browser",
-			Tags: []string{"network", "http"},
-			DocURL: "https://bitspark.de/slang/docs/operator/http-client",
+			Icon:             "browser",
+			Tags:             []string{"network", "http"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/http-client",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

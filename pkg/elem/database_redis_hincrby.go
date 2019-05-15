@@ -9,11 +9,11 @@ var databaseRedisHIncrByCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "8d9e4c6e-20a2-44b1-8d51-ed98f4d3b4d8",
 		Meta: core.OperatorMetaDef{
-			Name: "Redis HIncr",
+			Name:             "Redis HIncr",
 			ShortDescription: "executes an HIncr command at the specified Redis server",
-			Icon: "database",
-			Tags: []string{"database", "redis"},
-			DocURL: "https://bitspark.de/slang/docs/operator/redis-hincrby",
+			Icon:             "database",
+			Tags:             []string{"database", "redis"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/redis-hincrby",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {

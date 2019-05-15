@@ -48,7 +48,7 @@ func proxyRequestToOperator(w http.ResponseWriter, r *http.Request) {
 	newURL.Path = newPath
 	newURL.RawQuery = r.URL.RawQuery
 
-	req, err := http.NewRequest(r.Method, newURL.String(), r.Body)
+	req, _ := http.NewRequest(r.Method, newURL.String(), r.Body)
 	for key := range r.Header {
 		req.Header.Set(key, r.Header.Get(key))
 	}

@@ -8,11 +8,11 @@ var streamConcatenateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "fb174c53-80bd-4e29-955a-aafe33ebfb30",
 		Meta: core.OperatorMetaDef{
-			Name: "concatenate",
+			Name:             "concatenate",
 			ShortDescription: "concatenates two streams",
-			Icon: "layer-plus",
-			Tags: []string{"stream"},
-			DocURL: "https://bitspark.de/slang/docs/operator/concatenate",
+			Icon:             "layer-plus",
+			Tags:             []string{"stream"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/concatenate",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -22,7 +22,7 @@ var streamConcatenateCfg = &builtinConfig{
 						"stream_{streams}": {
 							Type: "stream",
 							Stream: &core.TypeDef{
-								Type: "generic",
+								Type:    "generic",
 								Generic: "itemType",
 							},
 						},
@@ -31,7 +31,7 @@ var streamConcatenateCfg = &builtinConfig{
 				Out: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
-						Type: "generic",
+						Type:    "generic",
 						Generic: "itemType",
 					},
 				},
@@ -52,7 +52,7 @@ var streamConcatenateCfg = &builtinConfig{
 		indexesProp := op.Property("streams").([]interface{})
 		streams := make([]*core.Port, len(indexesProp))
 		for i, idxProp := range indexesProp {
-			streams[i] = in.Map("stream_"+idxProp.(string))
+			streams[i] = in.Map("stream_" + idxProp.(string))
 		}
 		for !op.CheckStop() {
 			item := streams[0].Stream().Pull()

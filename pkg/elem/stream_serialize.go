@@ -1,20 +1,21 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/core"
-	"strings"
 	"strconv"
+	"strings"
+
+	"github.com/Bitspark/slang/pkg/core"
 )
 
 var streamSerializeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: "13257172-b05d-497c-be23-da7c86577c1e",
 		Meta: core.OperatorMetaDef{
-			Name: "serialize",
+			Name:             "serialize",
 			ShortDescription: "takes a map of items and serializes them into a stream",
-			Icon: "ellipsis-h",
-			Tags: []string{"stream", "convert"},
-			DocURL: "https://bitspark.de/slang/docs/operator/serialize",
+			Icon:             "ellipsis-h",
+			Tags:             []string{"stream", "convert"},
+			DocURL:           "https://bitspark.de/slang/docs/operator/serialize",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
@@ -69,7 +70,7 @@ var streamSerializeCfg = &builtinConfig{
 				}
 			}
 
-			stream := make([]interface{}, maxIndex + 1)
+			stream := make([]interface{}, maxIndex+1)
 			for k, v := range im {
 				index, _ := strconv.Atoi(k[3:])
 				stream[index] = v

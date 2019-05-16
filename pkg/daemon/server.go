@@ -120,7 +120,6 @@ func (h *Hub) run() {
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
-				close(client.send)
 			}
 		case message := <-h.broadcast:
 			fmt.Println(" 1) <-h.broadcast //", string(message.message))
@@ -133,16 +132,7 @@ func (h *Hub) run() {
 
 				fmt.Println("    2) client", client)
 
-				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other end
-				// What happens if there is no reciever? We can assume this connection has been dropped/closed.
-				select {
-				case client.send <- message.message:
-					fmt.Println("SEND <- MSG")
-				default:
-					// @kk3g: is default case really necessary?
-					close(client.send)
-					delete(h.clients, client)
-				}
+				client.send <- message.message
 			}
 		}
 	}

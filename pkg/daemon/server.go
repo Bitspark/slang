@@ -123,17 +123,23 @@ func (h *Hub) run() {
 				close(client.send)
 			}
 		case message := <-h.broadcast:
+			fmt.Println(" 1) <-h.broadcast //", string(message.message))
 			for client := range h.clients {
 				// this might become PINA as iterating all clients to find only those which we want to address
 				// could get expensive
 				if client.userID != message.reciever {
-					return
+					continue
 				}
+
+				fmt.Println("    2) client", client)
+
 				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other end
 				// What happens if there is no reciever? We can assume this connection has been dropped/closed.
 				select {
 				case client.send <- message.message:
+					fmt.Println("SEND <- MSG")
 				default:
+					// @kk3g: is default case really necessary?
 					close(client.send)
 					delete(h.clients, client)
 				}

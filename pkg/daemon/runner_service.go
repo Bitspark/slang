@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net"
 	"net/http"
 	"strconv"
 
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
@@ -22,22 +22,25 @@ type RunInstruction struct {
 	Gens   core.Generics   `json:"gens"`
 	Stream bool            `json:"stream"`
 }
-type InstanceState struct {
-	URL    string `json:"url,omitempty"`
+
+type RunState struct {
 	Handle string `json:"handle,omitempty"`
+	URL    string `json:"url,omitempty"`
 	Status string `json:"status"`
 	Error  *Error `json:"error,omitempty"`
 }
 
-type runningInstance struct {
-	// todo remove .Port
-	Port     int              `json:"port"`
-	OpId     uuid.UUID        `json:"id"`
-	Op       *core.Operator   `json:"Op"`
-	Incoming chan interface{} `json:"-"`
-	Outgoing chan portMessage `json:"-"`
-	InStop   chan bool        `json:"-"`
-	OutStop  chan bool        `json:"-"`
+type runningOperator struct {
+	// JSON
+	Op     uuid.UUID
+	Handle string
+	URL    string
+
+	op       *core.Operator
+	incoming chan interface{}
+	outgoing chan portMessage
+	inStop   chan bool
+	outStop  chan bool
 }
 
 type portMessage struct {
@@ -45,11 +48,84 @@ type portMessage struct {
 	Msg  interface{}
 }
 
-var runningInstances = make(map[string]runningInstance)
+type runningOperatorManager struct {
+	ops map[string]*runningOperator
+}
+
 var rnd = rand.New(rand.NewSource(99))
+var runningOperators = &runningOperatorManager{make(map[string]*runningOperator)}
 
 type httpDefLoader struct {
 	httpDef *core.OperatorDef
+}
+
+func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
+	handle := strconv.FormatInt(rnd.Int63(), 16)
+	url := "/instance/" + handle + "/"
+	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portMessage, 0), make(chan bool, 0), make(chan bool, 0)}
+	rom.ops[handle] = runningOp
+	op.Main().Out().Bufferize()
+	op.Start()
+	log.Printf("operator %s (id: %s) started", op.Name(), handle)
+	return runningOp
+}
+
+func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
+	runningOp := rom.newRunningOperator(op)
+	go func() {
+	loop:
+		for {
+			select {
+			case incoming := <-runningOp.incoming:
+				fmt.Println("// incoming", incoming)
+				op.Main().In().Push(incoming)
+			case <-runningOp.inStop:
+				fmt.Println("// stopping", op.Name())
+				break loop
+			}
+		}
+	}()
+
+	go func() {
+		op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
+			for {
+				if p.Closed() {
+					break
+				}
+				i := p.Pull()
+
+				fmt.Println("// PULL", i)
+
+				if !core.IsMarker(i) {
+					fmt.Println("// outgoing", i)
+					runningOp.outgoing <- portMessage{p, i}
+				}
+			}
+		})
+	}()
+	return runningOp
+}
+
+func (rom *runningOperatorManager) Halt(handle string) error {
+	ro, err := runningOperators.Get(handle)
+
+	if err != nil {
+		return err
+	}
+
+	go ro.op.Stop()
+	ro.inStop <- true
+	ro.outStop <- true
+	delete(rom.ops, handle)
+
+	return nil
+}
+
+func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
+	if runningOp, ok := rom.ops[handle]; ok {
+		return runningOp, nil
+	}
+	return nil, fmt.Errorf("unknown handle value: %s", handle)
 }
 
 func (l *httpDefLoader) List() ([]uuid.UUID, error) {
@@ -71,9 +147,15 @@ func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 
 var InstanceService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
+
+		type outJSON struct {
+			Objects []runningOperator `json:"objects"`
+			Status  string            `json:"status"`
+			Error   *Error            `json:"error,omitempty"`
+		}
+
 		if r.Method == "GET" {
-			data := runningInstances
-			writeJSON(w, &data)
+			writeJSON(w, funk.Values(runningOperators.ops))
 		}
 	}},
 }}
@@ -82,8 +164,8 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
 		handle := mux.Vars(r)["handle"]
 
-		runningIns, ok := runningInstances[handle]
-		if !ok {
+		runningIns, err := runningOperators.Get(handle)
+		if err != nil {
 			w.WriteHeader(404)
 			return
 		}
@@ -101,7 +183,7 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			runningIns.Incoming <- idat
+			runningIns.incoming <- idat
 
 			writeJSON(w, &runningIns)
 		}
@@ -110,94 +192,53 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 }}
 
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(w http.ResponseWriter, r *http.Request) {
+	"/": {Handle: func(w http.ResponseWriter, r *http.Request) {
 		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			var data InstanceState
+			var data RunState
 
 			decoder := json.NewDecoder(r.Body)
 			var ri RunInstruction
 			err := decoder.Decode(&ri)
 			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
-			}
-
-			port := 50000
-			portUsed := true
-			for portUsed {
-				port++
-				portUsed = false
-				ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
-				if err != nil {
-					portUsed = true
-				} else {
-					ln.Close()
-				}
 			}
 
 			opId := ri.Id
-
+			op, err := api.BuildAndCompile(opId, ri.Gens, ri.Props, st)
 			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
 
-			var httpDef *core.OperatorDef
-			if ri.Stream {
-				httpDef, err = constructHttpStreamEndpoint(st, port, opId, ri.Gens, ri.Props)
-			} else {
-				httpDef, err = constructHttpEndpoint(st, port, opId, ri.Gens, ri.Props)
-			}
+			runOp := runningOperators.Run(op)
 
-			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			st.AddBackend(&httpDefLoader{httpDef})
-			httpDefId, _ := uuid.Parse(httpDef.Id)
-			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
-			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			handle := strconv.FormatInt(rnd.Int63(), 16)
-			runningInstances[handle] = runningInstance{port, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0), make(chan bool, 0), make(chan bool, 0)}
-
-			op.Main().Out().Bufferize()
-			op.Start()
-			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, handle)
-			op.Main().In().Push(nil) // Start server
-			hub.broadCastTo(Root, "Starting Operator")
+			// --- Handle incoming and outgoing data
+			go func() {
+			loop:
+				for {
+					select {
+					case outgoing := <-runOp.outgoing:
+						fmt.Println("// outgoing to websocket", outgoing)
+						hub.broadCastTo(Root, fmt.Sprintf("====> %v", outgoing))
+					case <-runOp.outStop:
+						fmt.Println("// stopping forward", op.Name())
+						break loop
+					}
+				}
+			}()
+			// --- Handle incoming and outgoing data [END]
 
 			data.Status = "success"
-			data.Handle = handle
-			data.URL = "/instance/" + handle
+			data.Handle = runOp.Handle
+			data.URL = runOp.URL
 
 			writeJSON(w, &data)
 
-			op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-				i := p.Pull()
-
-				if core.IsMarker(i) {
-					return
-				}
-
-				hub.broadCastTo(Root, fmt.Sprintf("%s:%v", p.Name(), i))
-			})
-
-			go func() {
-				oprlt := op.Main().Out().Pull()
-				hub.broadCastTo(Root, "Stopping Operator")
-				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, handle, oprlt)
-			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
 				Handle string `json:"handle"`
@@ -219,107 +260,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			if ii, ok := runningInstances[si.Handle]; !ok {
-				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			} else {
-				go ii.Op.Stop()
-				ii.InStop <- true
-				ii.OutStop <- true
-				delete(runningInstances, si.Handle)
-
+			if err := runningOperators.Halt(si.Handle); err == nil {
 				data.Status = "success"
-				writeJSON(w, &data)
+			} else {
+				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
 			}
-		}
-	}},
-	"/ws/": {func(w http.ResponseWriter, r *http.Request) {
-		hub := GetHub(r)
-		st := GetStorage(r)
-		if r.Method == "POST" {
-			var data InstanceState
-
-			decoder := json.NewDecoder(r.Body)
-			var ri RunInstruction
-			err := decoder.Decode(&ri)
-			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			opId := ri.Id
-			op, err := api.BuildAndCompile(opId, ri.Gens, ri.Props, st)
-			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			// --- Running operator Instance
-			handle := strconv.FormatInt(rnd.Int63(), 16)
-			runningIns := runningInstance{0, ri.Id, op, make(chan interface{}, 0), make(chan portMessage, 0), make(chan bool, 0), make(chan bool, 0)}
-			runningInstances[handle] = runningIns
-
-			op.Main().Out().Bufferize()
-			op.Start()
-			go func() {
-				log.Printf("operator %s (id: %s) started", op.Name(), handle)
-			loop:
-				for {
-					select {
-					case incoming := <-runningIns.Incoming:
-						fmt.Println("// incoming %v", incoming)
-						op.Main().In().Push(incoming)
-					case <-runningIns.InStop:
-						fmt.Println("// stopping %v", op.Name())
-						break loop
-					}
-				}
-			}()
-
-			go func() {
-				op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-					for {
-						if p.Closed() {
-							break
-						}
-						i := p.Pull()
-
-						fmt.Println("// %v", i)
-
-						if !core.IsMarker(i) {
-							fmt.Println("// outgoing %v", i)
-							runningIns.Outgoing <- portMessage{p, i}
-						}
-					}
-				})
-			}()
-			// --- Running operator Instance [END]
-
-			// --- Handle Incoming and Outgoing data
-			go func() {
-			loop:
-				for {
-					select {
-					case outgoing := <-runningIns.Outgoing:
-						fmt.Println("// outgoing to websocket %v", outgoing)
-						hub.broadCastTo(Root, fmt.Sprintf("%v", outgoing))
-					case <-runningIns.OutStop:
-						fmt.Println("// stopping forward %v", op.Name())
-						break loop
-					}
-				}
-			}()
-			// --- Handle Incoming and Outgoing data [END]
-
-			data.Status = "success"
-			data.Handle = handle
-			data.URL = "/instance/" + handle + "/"
 
 			writeJSON(w, &data)
-
 		}
 	}},
 }}

@@ -268,12 +268,6 @@ func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
 	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
 }
 
-func (s *Server) AddOperatorProxy(pathPrefix string) {
-	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix,
-		r.HandlerFunc(proxyRequestToOperator).GetHandler()))
-}
-
 func (s *Server) AddRedirect(path string, redirectTo string) {
 	r := s.router.Path(path)
 	r.Handler(http.RedirectHandler(redirectTo, http.StatusSeeOther))

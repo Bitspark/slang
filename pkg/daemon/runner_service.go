@@ -84,23 +84,17 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 		}
 	}()
 
-	go func() {
-		op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-			for {
-				if p.Closed() {
-					break
-				}
-				i := p.Pull()
-
-				fmt.Println("// PULL", i)
-
-				if !core.IsMarker(i) {
-					fmt.Println("// outgoing", i)
-					runningOp.outgoing <- portMessage{p, i}
-				}
+	op.Main().Out().AsyncWalkPrimitivePorts(func(p *core.Port) {
+		for {
+			if p.Closed() {
+				break
 			}
-		})
-	}()
+			i := p.Pull()
+			if !core.IsMarker(i) {
+				runningOp.outgoing <- portMessage{p, i}
+			}
+		}
+	})
 	return runningOp
 }
 

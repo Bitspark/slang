@@ -84,25 +84,14 @@ func TestServer_operator_starting(t *testing.T) {
 	response := getResponse(server, "POST", instance.URL, bytes.NewBuffer(body))
 	assert.Equal(t, 200, response.StatusCode)
 
-	done := make(chan bool, 0)
-	go func() {
-		for {
-			_, message, err := wsc.ReadMessage()
-			if err != nil {
-				return
-			}
-			assert.Contains(t, string(message), "test")
-			done <- true
-			return
-		}
-	}()
-	<-done
+	_, message, _ := wsc.ReadMessage()
+	assert.Contains(t, string(message), "test")
 }
 
 func TestServer_operator(t *testing.T) {
 	server := getTestServer()
 	id := "8b62495a-e482-4a3e-8020-0ab8a350ad2d"
-	uuid, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
+	uuid, _ := uuid.Parse(id)
 	data := daemon.RunInstruction{Id: uuid,
 		Stream: false,
 		Props:  core.Properties{"value": "slang"},

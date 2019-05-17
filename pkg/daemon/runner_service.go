@@ -149,19 +149,19 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 			return
 		}
 
+		var idat interface{}
 		if r.Method == "POST" {
 			r.ParseForm()
 			buf := new(bytes.Buffer)
 			buf.ReadFrom(r.Body)
 
-			var idat interface{}
-			err := json.Unmarshal(buf.Bytes(), &idat)
-
-			if err != nil {
-				w.WriteHeader(400)
-				return
+			if buf.Len() > 0 {
+				err := json.Unmarshal(buf.Bytes(), &idat)
+				if err != nil {
+					w.WriteHeader(400)
+					return
+				}
 			}
-
 			runningIns.incoming <- idat
 
 			writeJSON(w, &runningIns)

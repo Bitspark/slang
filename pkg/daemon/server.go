@@ -129,8 +129,8 @@ func (h *Hub) run() {
 				if client.userID != message.receiver {
 					continue
 				}
-				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no receiver on the other reading off the channel.
-				// the channel is buffered meaning that we can successfully write into it as long as a receiver is pulling data from the other end.
+				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
+				// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
 				select {
 				case client.send <- message.message:
 					// message written
@@ -181,9 +181,10 @@ func (c *ConnectedClient) waitOnOutgoing() {
 		case msg, ok := <-c.send:
 			if !ok {
 				// This happens if there was a call to `close(c.send)`,
-				// which means the client was disconnect from the hub via `unregister <- c` or otherwise closed
-				// And actually we should never reach this - otherwise we would be reading an endless amount of <nil>.
-				log.Printf("Client channel is closed")
+				// which means the client was disconnect from the hub via `unregister <- c` or otherwise closed.
+				//
+				// And actually we should never reach in normal execution this as the client should no
+				// longer be in the list of registered client, otherwise we would be reading an endless amount of <nil>.
 				return
 			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
@@ -253,6 +254,8 @@ func (s *Server) AddWebsocket(path string) {
 	// Don't know yet if that is good idea
 	// Maybe should make the `hub` a singleton instead of shoving it
 	// into the context where it needs more typing to be safe
+	// What we want is for the hub to be available in everywhare we might want to send messages
+	// to a connected client.
 	newCtx := SetHub(*s.ctx, hub)
 	s.ctx = &newCtx
 	go hub.run()

@@ -275,7 +275,7 @@ func TestPort_WalkPrimitives__Simple_Primitive(t *testing.T) {
 	ports := make(chan string)
 	portNames := make([]string, 0)
 
-	p.WalkPrimitivePorts(func(p *core.Port) {
+	p.AsyncWalkPrimitivePorts(func(p *core.Port) {
 		ports <- p.Name()
 	})
 
@@ -301,7 +301,7 @@ func TestPort_WalkPrimitives__Stream(t *testing.T) {
 	ports := make(chan string)
 	portNames := make([]string, 0)
 
-	p.WalkPrimitivePorts(func(p *core.Port) {
+	p.AsyncWalkPrimitivePorts(func(p *core.Port) {
 		ports <- p.Name()
 	})
 
@@ -327,7 +327,7 @@ func TestPort_WalkPrimitives__Stream_Map(t *testing.T) {
 	ports := make(chan string)
 	portNames := make([]string, 0)
 
-	p.WalkPrimitivePorts(func(p *core.Port) {
+	p.AsyncWalkPrimitivePorts(func(p *core.Port) {
 		ports <- p.Name()
 	})
 

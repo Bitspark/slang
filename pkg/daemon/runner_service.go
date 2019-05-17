@@ -55,10 +55,6 @@ type runningOperatorManager struct {
 var rnd = rand.New(rand.NewSource(99))
 var runningOperators = &runningOperatorManager{make(map[string]*runningOperator)}
 
-type httpDefLoader struct {
-	httpDef *core.OperatorDef
-}
-
 func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
 	handle := strconv.FormatInt(rnd.Int63(), 16)
 	url := "/instance/" + handle + "/"
@@ -120,23 +116,6 @@ func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
 		return runningOp, nil
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
-}
-
-func (l *httpDefLoader) List() ([]uuid.UUID, error) {
-	httpDefId, _ := uuid.Parse(l.httpDef.Id)
-	return []uuid.UUID{httpDefId}, nil
-}
-
-func (l *httpDefLoader) Has(opId uuid.UUID) bool {
-	httpDefId, _ := uuid.Parse(l.httpDef.Id)
-	return httpDefId == opId
-}
-
-func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	if !l.Has(opId) {
-		return nil, fmt.Errorf("")
-	}
-	return l.httpDef, nil
 }
 
 var InstanceService = &Service{map[string]*Endpoint{

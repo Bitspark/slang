@@ -123,23 +123,19 @@ func (h *Hub) run() {
 				close(client.send)
 			}
 		case message := <-h.broadcast:
-			fmt.Println(" 1) <-h.broadcast //", string(message.message))
 			for client := range h.clients {
 				// this might become PINA as iterating all clients to find only those which we want to address
 				// could get expensive
 				if client.userID != message.reciever {
 					continue
 				}
-
-				fmt.Println("    2) client", client)
-
-				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other end
-				// What happens if there is no reciever? We can assume this connection has been dropped/closed.
+				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
+				// the channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
 				select {
 				case client.send <- message.message:
-					fmt.Println("SEND <- MSG")
+					// message written
 				default:
-					// @kk3g: is default case really necessary?
+					// buffer of channel full - no one reading? Let's disconnect them.
 					close(client.send)
 					delete(h.clients, client)
 				}
@@ -182,13 +178,20 @@ func (c *ConnectedClient) waitOnOutgoing() {
 	}()
 	for {
 		select {
-		case msg := <-c.send:
+		case msg, ok := <-c.send:
+			if !ok {
+				// This happens if there was a call to `close(c.send)`,
+				// which means the client was disconnect from the hub via `unregister <- c` or otherwise closed
+				// And actually we should never reach this - otherwise we would be reading an endless amount of <nil>.
+				log.Printf("Client channel is closed")
+				return
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			ws.WriteMessage(websocket.TextMessage, msg)
 		case <-ticker.C:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := ws.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
+				return // websocket likly closed
 			}
 		}
 	}
@@ -204,10 +207,15 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// create a new client for each connection we recieve
+	// Create a new client for each connection we recieve
 	// attaching the user makes it possible to send message to multiple
 	// open browsers that are accociated with the user.
-	client := &ConnectedClient{hub, ws, user, make(chan []byte)}
+	//
+	// Then channel is a bytes channel with the size of 256, I am unsure of
+	// wether this is enough and what happends if we have message greater than that.
+	// Might be a better idea to make channel of a type with a smaller size the get the same effect.
+	// Without the uncertainty.
+	client := &ConnectedClient{hub, ws, user, make(chan []byte, 256)}
 	hub.register <- client
 
 	// Part of the RFC is this Ping<>Pong thing which we need to have both in the writer and reader of the

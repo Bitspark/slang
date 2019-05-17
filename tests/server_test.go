@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,27 +19,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestServer() *daemon.Server {
+func getTestServer() *httptest.Server {
 	backend := NewTestLoader("./")
 	env := env.New("localhost", 8000)
 	storage := storage.NewStorage().AddBackend(backend)
 	ctx := daemon.SetStorage(context.Background(), storage)
 	backend.Reload()
-	return daemon.NewServer(&ctx, env)
+	s := daemon.NewServer(&ctx, env)
+	return httptest.NewServer(s.Handler())
 }
 
-func startOperator(t *testing.T, s *daemon.Server, ri daemon.RunInstruction) daemon.RunState {
+func startOperator(t *testing.T, s *httptest.Server, ri daemon.RunInstruction) daemon.RunState {
 	var out daemon.RunState
 
 	body, _ := json.Marshal(&ri)
-	request, _ := http.NewRequest("POST", "/run/", bytes.NewReader(body))
-	response := httptest.NewRecorder()
-	s.Handler().ServeHTTP(response, request)
+	request, _ := http.NewRequest("POST", s.URL+"/run/", bytes.NewReader(body))
+	response, err := s.Client().Do(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+	body, _ = ioutil.ReadAll(response.Body)
+	json.Unmarshal(body, &out)
 
-	decoder := json.NewDecoder(response.Body)
-	decoder.Decode(&out)
-
-	assert.Equal(t, 200, response.Code)
+	assert.Equal(t, 200, response.StatusCode)
 	assert.Equal(t, "success", out.Status)
 	return out
 }
@@ -56,9 +60,9 @@ func TestServer_operator_starting(t *testing.T) {
 	}
 	instance := startOperator(t, server, data)
 	request, _ := http.NewRequest("POST", strings.Join([]string{"/instance/", instance.Handle}, ""), bytes.NewReader([]byte{}))
-	response := httptest.NewRecorder()
-	server.Handler().ServeHTTP(response, request)
-	assert.Equal(t, "\"slang\"", response.Body.String())
+	c := server.Client()
+	response, _ := c.Do(request)
+	assert.Equal(t, "\"slang\"", response.Body)
 }
 
 func TestServer_operator(t *testing.T) {
@@ -75,9 +79,9 @@ func TestServer_operator(t *testing.T) {
 		},
 	}
 	startOperator(t, server, data)
-	request, _ := http.NewRequest("GET", "/instances/", nil)
-	response := httptest.NewRecorder()
-	server.Handler().ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code)
-	assert.Contains(t, response.Body.String(), id)
+	request, _ := http.NewRequest("GET", server.URL+"/instances/", nil)
+	response, _ := server.Client().Do(request)
+	assert.Equal(t, 200, response.StatusCode)
+	body, _ := ioutil.ReadAll(response.Body)
+	assert.Contains(t, string(body), id)
 }

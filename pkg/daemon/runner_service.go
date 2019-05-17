@@ -77,10 +77,8 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 		for {
 			select {
 			case incoming := <-runningOp.incoming:
-				fmt.Println("// incoming", incoming)
 				op.Main().In().Push(incoming)
 			case <-runningOp.inStop:
-				fmt.Println("// stopping", op.Name())
 				break loop
 			}
 		}
@@ -223,10 +221,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 				for {
 					select {
 					case outgoing := <-runOp.outgoing:
-						fmt.Println("// outgoing to websocket", outgoing)
 						hub.broadCastTo(Root, fmt.Sprintf("====> %v", outgoing))
 					case <-runOp.outStop:
-						fmt.Println("// stopping forward", op.Name())
 						break loop
 					}
 				}

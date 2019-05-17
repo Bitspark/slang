@@ -38,14 +38,20 @@ type runningOperator struct {
 
 	op       *core.Operator
 	incoming chan interface{}
-	outgoing chan portMessage
+	outgoing chan portOutput
 	inStop   chan bool
 	outStop  chan bool
 }
 
-type portMessage struct {
-	Port *core.Port
-	Msg  interface{}
+type portOutput struct {
+	Handle string
+	Port   *core.Port
+	Data   interface{}
+}
+
+func (pm *portOutput) String() string {
+	j, _ := json.Marshal(pm)
+	return string(j)
 }
 
 type runningOperatorManager struct {
@@ -58,7 +64,7 @@ var runningOperators = &runningOperatorManager{make(map[string]*runningOperator)
 func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
 	handle := strconv.FormatInt(rnd.Int63(), 16)
 	url := "/instance/" + handle + "/"
-	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portMessage, 0), make(chan bool, 0), make(chan bool, 0)}
+	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portOutput, 0), make(chan bool, 0), make(chan bool, 0)}
 	rom.ops[handle] = runningOp
 	op.Main().Out().Bufferize()
 	op.Start()
@@ -87,7 +93,7 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 			}
 			i := p.Pull()
 			if !core.IsMarker(i) {
-				runningOp.outgoing <- portMessage{p, i}
+				runningOp.outgoing <- portOutput{runningOp.Handle, p, i}
 			}
 		}
 	})
@@ -196,7 +202,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				for {
 					select {
 					case outgoing := <-runOp.outgoing:
-						hub.broadCastTo(Root, fmt.Sprintf("====> %v", outgoing))
+						hub.broadCastTo(Root, outgoing.String())
 					case <-runOp.outStop:
 						break loop
 					}

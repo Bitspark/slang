@@ -64,7 +64,7 @@ type Hub struct {
 // Envelop functions as an addressable message that is only sent to
 // specific users and their connections
 type envelop struct {
-	reciever *UserID
+	receiver *UserID
 	message  []byte
 }
 
@@ -126,11 +126,11 @@ func (h *Hub) run() {
 			for client := range h.clients {
 				// this might become PINA as iterating all clients to find only those which we want to address
 				// could get expensive
-				if client.userID != message.reciever {
+				if client.userID != message.receiver {
 					continue
 				}
-				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
-				// the channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
+				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no receiver on the other reading off the channel.
+				// the channel is buffered meaning that we can successfully write into it as long as a receiver is pulling data from the other end.
 				select {
 				case client.send <- message.message:
 					// message written

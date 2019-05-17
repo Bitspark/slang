@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/Bitspark/slang/pkg/core"
@@ -16,20 +17,32 @@ import (
 	"github.com/Bitspark/slang/pkg/env"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 )
 
 func getTestServer() *httptest.Server {
-	backend := NewTestLoader("./")
 	env := env.New("localhost", 8000)
-	storage := storage.NewStorage().AddBackend(backend)
-	ctx := daemon.SetStorage(context.Background(), storage)
-	backend.Reload()
+	st := storage.NewStorage().
+		AddBackend(storage.NewReadOnlyFileSystem("../fixtures"))
+
+	ctx := daemon.SetStorage(context.Background(), st)
 	s := daemon.NewServer(&ctx, env)
 	return httptest.NewServer(s.Handler())
 }
 
+func getWebsocketClient(server *httptest.Server) *websocket.Conn {
+	serverAddr := server.Listener.Addr().String()
+	wsurl := fmt.Sprintf("ws://%s%s", serverAddr, "/ws")
+	wsc, _, err := websocket.DefaultDialer.Dial(wsurl, nil)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
+	return wsc
+}
+
 func startOperator(t *testing.T, s *httptest.Server, ri daemon.RunInstruction) daemon.RunState {
+	t.Helper()
 	var out daemon.RunState
 
 	body, _ := json.Marshal(&ri)
@@ -46,23 +59,44 @@ func startOperator(t *testing.T, s *httptest.Server, ri daemon.RunInstruction) d
 	return out
 }
 
-func TestServer_operator_starting(t *testing.T) {
-	server := getTestServer()
-	id, _ := uuid.Parse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
-	data := daemon.RunInstruction{Id: id,
-		Stream: false,
-		Props:  core.Properties{"value": "slang"},
-		Gens: core.Generics{
-			"valueType": {
-				Type: "string",
-			},
-		},
-	}
-	instance := startOperator(t, server, data)
-	request, _ := http.NewRequest("POST", strings.Join([]string{"/instance/", instance.Handle}, ""), bytes.NewReader([]byte{}))
+func getResponse(server *httptest.Server, method string, url string, body io.Reader) *http.Response {
+	request, _ := http.NewRequest(method, server.URL+url, body)
 	c := server.Client()
 	response, _ := c.Do(request)
-	assert.Equal(t, "\"slang\"", response.Body)
+	return response
+}
+
+func TestServer_operator_starting(t *testing.T) {
+	server := getTestServer()
+	wsc := getWebsocketClient(server)
+	defer wsc.Close()
+	defer server.Close()
+
+	id, _ := uuid.Parse("3ceccd71-0ea5-4aeb-957a-4dff1a419071")
+	data := daemon.RunInstruction{Id: id,
+		Stream: false,
+		Props:  core.Properties{},
+		Gens:   core.Generics{},
+	}
+
+	instance := startOperator(t, server, data)
+	body, _ := json.Marshal(map[string]interface{}{"input": "test"})
+	response := getResponse(server, "POST", instance.URL, bytes.NewBuffer(body))
+	assert.Equal(t, 200, response.StatusCode)
+
+	done := make(chan bool, 0)
+	go func() {
+		for {
+			_, message, err := wsc.ReadMessage()
+			if err != nil {
+				return
+			}
+			assert.Contains(t, string(message), "test")
+			done <- true
+			return
+		}
+	}()
+	<-done
 }
 
 func TestServer_operator(t *testing.T) {
@@ -79,8 +113,7 @@ func TestServer_operator(t *testing.T) {
 		},
 	}
 	startOperator(t, server, data)
-	request, _ := http.NewRequest("GET", server.URL+"/instances/", nil)
-	response, _ := server.Client().Do(request)
+	response := getResponse(server, "GET", "/instances/", nil)
 	assert.Equal(t, 200, response.StatusCode)
 	body, _ := ioutil.ReadAll(response.Body)
 	assert.Contains(t, string(body), id)

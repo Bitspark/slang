@@ -1,0 +1,45 @@
+id: 3ceccd71-0ea5-4aeb-957a-4dff1a419071
+services:
+  main:
+    in:
+      type: map
+      map:
+        input:
+          type: primitive
+    out:
+      type: map
+      map:
+        gen__90:
+          type: primitive
+    geometry:
+      in:
+        position: 0
+      out:
+        position: 0
+operators:
+  evaluate:
+    operator: 37ccdc28-67b0-4bb1-8591-4e0e813e3ec1
+    properties:
+      expression: a
+      variables:
+      - a
+    geometry:
+      position:
+        x: -5
+        "y": 17.5
+connections:
+  evaluate):
+  - )gen__90
+  input(:
+  - a(evaluate
+meta:
+  name: eval_pass_through
+  icon: ""
+  shortDescription: ""
+  description: ""
+  docUrl: ""
+  tags: []
+geometry:
+  size:
+    width: 250
+    height: 205

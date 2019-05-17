@@ -84,8 +84,17 @@ func TestServer_operator_starting(t *testing.T) {
 	response := getResponse(server, "POST", instance.URL, bytes.NewBuffer(body))
 	assert.Equal(t, 200, response.StatusCode)
 
-	_, message, _ := wsc.ReadMessage()
-	assert.Contains(t, string(message), "test")
+	_, m, _ := wsc.ReadMessage()
+	type message struct {
+		Topic string
+		Data  interface{}
+	}
+
+	var out message
+	json.Unmarshal(m, &out)
+	assert.Equal(t, out.Topic, "port")
+	assert.Equal(t, out.Data, map[string]interface{}{"Data": "test", "Handle": instance.Handle, "Port": map[string]interface{}{}})
+
 }
 
 func TestServer_operator(t *testing.T) {

@@ -3,6 +3,7 @@ package daemon
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -65,7 +66,16 @@ type Hub struct {
 // specific users and their connections
 type envelop struct {
 	receiver *UserID
-	message  []byte
+	message  message
+}
+type message struct {
+	Topic string
+	Data  interface{}
+}
+
+func (m *message) Bytes() []byte {
+	body, _ := json.Marshal(m)
+	return body
 }
 
 type Server struct {
@@ -108,8 +118,8 @@ func newHub() *Hub {
 
 // Send a message to single user on all his connections
 // This API is probably a little volatile so use with caution and don't reach deep into it.
-func (h *Hub) broadCastTo(u *UserID, m string) {
-	h.broadcast <- &envelop{u, []byte(m)}
+func (h *Hub) broadCastTo(u *UserID, topic string, data interface{}) {
+	h.broadcast <- &envelop{u, message{topic, data}}
 }
 
 func (h *Hub) run() {
@@ -132,7 +142,7 @@ func (h *Hub) run() {
 				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
 				// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
 				select {
-				case client.send <- message.message:
+				case client.send <- message.message.Bytes():
 					// message written
 				default:
 					// buffer of channel full - no one reading? Let's disconnect them.

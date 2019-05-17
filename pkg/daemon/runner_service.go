@@ -99,6 +99,8 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 }
 
 func (rom *runningOperatorManager) Halt(handle string) error {
+	// `Halt` to me suggest that there is a way to resume operations
+	// which is not the case.
 	ro, err := runningOperators.Get(handle)
 
 	if err != nil {
@@ -189,9 +191,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 		st := GetStorage(r)
 		if r.Method == "POST" {
 			var data RunState
+			var ri RunInstruction
 
 			decoder := json.NewDecoder(r.Body)
-			var ri RunInstruction
 			err := decoder.Decode(&ri)
 			if err != nil {
 				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}

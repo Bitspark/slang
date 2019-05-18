@@ -422,9 +422,7 @@ func (p *Port) assertChannelSpace() {
 
 func (p *Port) AsyncWalkPrimitivePorts(handle func(p *Port)) {
 	if p.Primitive() {
-		go func() {
-			handle(p)
-		}()
+		go handle(p)
 	}
 
 	if p.Stream() != nil {

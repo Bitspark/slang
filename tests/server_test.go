@@ -66,7 +66,7 @@ func getResponse(server *httptest.Server, method string, url string, body io.Rea
 	return response
 }
 
-func TestServer_operator_starting(t *testing.T) {
+func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 	server := getTestServer()
 	wsc := getWebsocketClient(server)
 	defer wsc.Close()
@@ -92,12 +92,12 @@ func TestServer_operator_starting(t *testing.T) {
 
 	var out message
 	json.Unmarshal(m, &out)
-	assert.Equal(t, out.Topic, "port")
+	assert.Equal(t, out.Topic, "Port")
 	assert.Equal(t, out.Data, map[string]interface{}{"Data": "test", "Handle": instance.Handle, "Port": map[string]interface{}{}})
 
 }
 
-func TestServer_operator(t *testing.T) {
+func TestServer_List_Running_Instances(t *testing.T) {
 	server := getTestServer()
 	id := "8b62495a-e482-4a3e-8020-0ab8a350ad2d"
 	uuid, _ := uuid.Parse(id)

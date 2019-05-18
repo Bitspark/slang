@@ -68,6 +68,9 @@ type envelop struct {
 	receiver *UserID
 	message  message
 }
+
+// A message is holding data and a topic - we do this so the interface can listen on different topics
+// instead and discard recieved data easier or better decide where to route the information.
 type message struct {
 	Topic Topic
 	Data  interface{}
@@ -92,6 +95,10 @@ type ConnectedClient struct {
 }
 
 // UserID represents an Identifier for a user of the system
+// This is also intended to deliver `envelops` to the correct `ConnectedClients`
+// instead of sending a message to all connected clients. Currently we do not have real users.
+// The variable acts more as a placeholder and thinking vehicle to reminde oneself that the system
+// might have more than one user in the future - I know, YAGNI.
 type UserID struct {
 	id int
 }
@@ -147,17 +154,17 @@ func (h *Hub) run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case message := <-h.broadcast:
+		case letter := <-h.broadcast:
 			for client := range h.clients {
 				// this might become PINA as iterating all clients to find only those which we want to address
 				// could get expensive
-				if client.userID != message.receiver {
+				if client.userID != letter.receiver {
 					continue
 				}
 				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
 				// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
 				select {
-				case client.send <- message.message.Bytes():
+				case client.send <- letter.message.Bytes():
 					// message written
 				default:
 					// buffer of channel full - no one reading? Let's disconnect them.

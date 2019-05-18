@@ -63,7 +63,7 @@ type Hub struct {
 }
 
 // Envelop functions as an addressable message that is only sent to
-// specific users and their connections
+// specific user and their connections
 type envelop struct {
 	receiver *UserID
 	message  message
@@ -103,17 +103,23 @@ type UserID struct {
 	id int
 }
 
+// We want types around the topic as this makes it easier to work with.
+// A Topic in this case is meant for easier distinction of what type of message is being send.
+// Basically we attach type information for the other end of the connected client.
 type Topic int
 
 const (
-	Port Topic = iota
-	Operator
+	Port     Topic = iota
+	Operator       // currently unused but displays the intended usage
 )
 
+// Since we can't send proper type information over the wire, we send a string
+// representation instead.
 func (t Topic) String() string {
 	return [...]string{"Port", "Operator"}[t]
 }
 
+// This encodes a `Topic` to Json using it's string representation
 func (t Topic) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.String())
 }
@@ -133,6 +139,9 @@ func newHub() *Hub {
 	}
 }
 
+// In the end we need to represent a message we want to send to a connected client.
+// The only sensible way we can achive that without loosing too much information is to encode the entire
+// object as json.
 func (m *message) Bytes() []byte {
 	body, _ := json.Marshal(m)
 	return body
@@ -215,7 +224,7 @@ func (c *ConnectedClient) waitOnOutgoing() {
 				// This happens if there was a call to `close(c.send)`,
 				// which means the client was disconnect from the hub via `unregister <- c` or otherwise closed.
 				//
-				// And actually we should never reach in normal execution this as the client should no
+				// And actually we should never reach this in normal execution, as the client should no
 				// longer be in the list of registered client, otherwise we would be reading an endless amount of <nil>.
 				return
 			}
@@ -271,6 +280,7 @@ func NewServer(ctx *context.Context, env *env.Environment) *Server {
 	srv.mountWebServices()
 	return srv
 }
+
 func (s *Server) Handler() http.Handler {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},

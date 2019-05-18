@@ -72,8 +72,8 @@ type envelop struct {
 // A message is holding data and a topic - we do this so the interface can listen on different topics
 // instead and discard recieved data easier or better decide where to route the information.
 type message struct {
-	Topic Topic
-	Data  interface{}
+	Topic   Topic
+	Payload interface{}
 }
 
 type Server struct {

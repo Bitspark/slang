@@ -156,6 +156,8 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 			buf := new(bytes.Buffer)
 			buf.ReadFrom(r.Body)
 
+			// An empty buffer would result into an error that is why we check the length
+			// and only than try to encode, because an empty POST is still valid and treated as trigger.
 			if buf.Len() > 0 {
 				err := json.Unmarshal(buf.Bytes(), &idat)
 				if err != nil {
@@ -197,19 +199,22 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			runOp := runningOperators.Run(op)
 
-			// --- Handle incoming and outgoing data
+			// Move into the background and wait on message from the operator resp. ports
+			// and relay them through the `hub`
 			go func() {
 			loop:
 				for {
 					select {
 					case outgoing := <-runOp.outgoing:
+						// I don't know what happens when Root would be a dynamically changing variable.
+						// Is root's value bound to the scope or is the reference bound to the scope.
+						// I would suspect the latter, which means this is could turn into a race condition.
 						hub.broadCastTo(Root, Port, outgoing)
 					case <-runOp.outStop:
 						break loop
 					}
 				}
 			}()
-			// --- Handle incoming and outgoing data [END]
 
 			data.Status = "success"
 			data.Handle = runOp.Handle

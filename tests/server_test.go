@@ -21,8 +21,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestServer() *httptest.Server {
+type message struct {
+	Topic string
+	Data  interface{}
+}
+
+func newTestServer() *httptest.Server {
 	env := env.New("localhost", 8000)
+	// This storage allows us to load prebuilt operators for tests,
+	// it's also useful to have regressions there.
 	st := storage.NewStorage().
 		AddBackend(storage.NewReadOnlyFileSystem("../fixtures"))
 
@@ -31,44 +38,69 @@ func getTestServer() *httptest.Server {
 	return httptest.NewServer(s.Handler())
 }
 
-func getWebsocketClient(server *httptest.Server) *websocket.Conn {
+func newWebsocketClient(t *testing.T, server *httptest.Server) *websocket.Conn {
 	serverAddr := server.Listener.Addr().String()
 	wsurl := fmt.Sprintf("ws://%s%s", serverAddr, "/ws")
 	wsc, _, err := websocket.DefaultDialer.Dial(wsurl, nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		t.Fatal(err)
 	}
 	return wsc
 }
 
+func readOneMessage(t *testing.T, wsc *websocket.Conn) message {
+	var out message
+	var err error
+
+	// This reads exactly one message that was send via the websocket
+	_, m, err := wsc.ReadMessage()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal(m, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return out
+}
+
 func startOperator(t *testing.T, s *httptest.Server, ri daemon.RunInstruction) daemon.RunState {
-	t.Helper()
+	t.Helper() // this allows fail asserts to actually mark the calling function as a failure
 	var out daemon.RunState
+	var err error
 
 	body, _ := json.Marshal(&ri)
 	request, _ := http.NewRequest("POST", s.URL+"/run/", bytes.NewReader(body))
 	response, err := s.Client().Do(request)
 	if err != nil {
-		fmt.Println(err)
+		t.Fatal(err)
 	}
 	body, _ = ioutil.ReadAll(response.Body)
-	json.Unmarshal(body, &out)
-
+	err = json.Unmarshal(body, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Equal(t, "success", out.Status)
 	return out
 }
 
-func getResponse(server *httptest.Server, method string, url string, body io.Reader) *http.Response {
+func getResponse(t *testing.T, server *httptest.Server, method string, url string, body io.Reader) *http.Response {
 	request, _ := http.NewRequest(method, server.URL+url, body)
 	c := server.Client()
-	response, _ := c.Do(request)
+	response, err := c.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return response
 }
 
 func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
-	server := getTestServer()
-	wsc := getWebsocketClient(server)
+	server := newTestServer()
+	wsc := newWebsocketClient(t, server)
 	defer wsc.Close()
 	defer server.Close()
 
@@ -81,24 +113,16 @@ func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 
 	instance := startOperator(t, server, data)
 	body, _ := json.Marshal(map[string]interface{}{"input": "test"})
-	response := getResponse(server, "POST", instance.URL, bytes.NewBuffer(body))
+	response := getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
 	assert.Equal(t, 200, response.StatusCode)
-
-	_, m, _ := wsc.ReadMessage()
-	type message struct {
-		Topic string
-		Data  interface{}
-	}
-
-	var out message
-	json.Unmarshal(m, &out)
+	out := readOneMessage(t, wsc)
 	assert.Equal(t, out.Topic, "Port")
 	assert.Equal(t, out.Data, map[string]interface{}{"Data": "test", "Handle": instance.Handle, "IsBOS": false, "IsEOS": false, "Port": map[string]interface{}{}})
 
 }
 
 func TestServer_List_Running_Instances(t *testing.T) {
-	server := getTestServer()
+	server := newTestServer()
 	id := "8b62495a-e482-4a3e-8020-0ab8a350ad2d"
 	uuid, _ := uuid.Parse(id)
 	data := daemon.RunInstruction{Id: uuid,
@@ -111,7 +135,7 @@ func TestServer_List_Running_Instances(t *testing.T) {
 		},
 	}
 	startOperator(t, server, data)
-	response := getResponse(server, "GET", "/instances/", nil)
+	response := getResponse(t, server, "GET", "/instances/", nil)
 	assert.Equal(t, 200, response.StatusCode)
 	body, _ := ioutil.ReadAll(response.Body)
 	assert.Contains(t, string(body), id)

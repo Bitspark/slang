@@ -69,13 +69,8 @@ type envelop struct {
 	message  message
 }
 type message struct {
-	Topic string
+	Topic Topic
 	Data  interface{}
-}
-
-func (m *message) Bytes() []byte {
-	body, _ := json.Marshal(m)
-	return body
 }
 
 type Server struct {
@@ -101,6 +96,21 @@ type UserID struct {
 	id int
 }
 
+type Topic int
+
+const (
+	Port Topic = iota
+	Operator
+)
+
+func (t Topic) String() string {
+	return [...]string{"Port", "Operator"}[t]
+}
+
+func (t Topic) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
 func addContext(ctx context.Context, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -116,9 +126,14 @@ func newHub() *Hub {
 	}
 }
 
+func (m *message) Bytes() []byte {
+	body, _ := json.Marshal(m)
+	return body
+}
+
 // Send a message to single user on all his connections
 // This API is probably a little volatile so use with caution and don't reach deep into it.
-func (h *Hub) broadCastTo(u *UserID, topic string, data interface{}) {
+func (h *Hub) broadCastTo(u *UserID, topic Topic, data interface{}) {
 	h.broadcast <- &envelop{u, message{topic, data}}
 }
 

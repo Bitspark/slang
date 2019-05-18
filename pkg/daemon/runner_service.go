@@ -47,6 +47,8 @@ type portOutput struct {
 	Handle string
 	Port   *core.Port
 	Data   interface{}
+	IsEOS  bool
+	IsBOS  bool
 }
 
 func (pm *portOutput) String() string {
@@ -92,9 +94,8 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 				break
 			}
 			i := p.Pull()
-			if !core.IsMarker(i) {
-				runningOp.outgoing <- portOutput{runningOp.Handle, p, i}
-			}
+			po := portOutput{runningOp.Handle, p, i, core.IsBOS(i), core.IsEOS(i)}
+			runningOp.outgoing <- po
 		}
 	})
 	return runningOp

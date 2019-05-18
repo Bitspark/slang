@@ -93,7 +93,7 @@ func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 	var out message
 	json.Unmarshal(m, &out)
 	assert.Equal(t, out.Topic, "Port")
-	assert.Equal(t, out.Data, map[string]interface{}{"Data": "test", "Handle": instance.Handle, "Port": map[string]interface{}{}})
+	assert.Equal(t, out.Data, map[string]interface{}{"Data": "test", "Handle": instance.Handle, "IsBOS": false, "IsEOS": false, "Port": map[string]interface{}{}})
 
 }
 

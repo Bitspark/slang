@@ -22,8 +22,8 @@ import (
 )
 
 type message struct {
-	Topic   string
-	Payload interface{}
+	Topic   string      `json:"topic"`
+	Payload interface{} `json:"payload"`
 }
 
 func newTestServer() *httptest.Server {

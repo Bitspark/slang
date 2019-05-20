@@ -45,11 +45,11 @@ type runningOperator struct {
 
 type portOutput struct {
 	// JSON
-	Handle string
-	Port   string
-	Data   interface{}
-	IsEOS  bool
-	IsBOS  bool
+	Handle string      `json:"handle"`
+	Port   string      `json:"port"`
+	Data   interface{} `json:"data"`
+	IsEOS  bool        `json:"isEOS"`
+	IsBOS  bool        `json:"isBOS"`
 
 	port *core.Port
 }

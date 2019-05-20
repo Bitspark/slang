@@ -32,9 +32,9 @@ type RunState struct {
 
 type runningOperator struct {
 	// JSON
-	Op     uuid.UUID
-	Handle string
-	URL    string
+	Operator uuid.UUID `json:"operator"`
+	Handle   string    `json:"handle"`
+	URL      string    `json:"url"`
 
 	op       *core.Operator
 	incoming chan interface{}

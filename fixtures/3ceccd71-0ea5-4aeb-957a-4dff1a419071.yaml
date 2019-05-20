@@ -9,7 +9,7 @@ services:
     out:
       type: map
       map:
-        gen__90:
+        output:
           type: primitive
     geometry:
       in:
@@ -29,7 +29,7 @@ operators:
         "y": 17.5
 connections:
   evaluate):
-  - )gen__90
+  - )output
   input(:
   - a(evaluate
 meta:

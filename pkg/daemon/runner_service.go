@@ -44,11 +44,14 @@ type runningOperator struct {
 }
 
 type portOutput struct {
+	// JSON
 	Handle string
-	Port   *core.Port
+	Port   string
 	Data   interface{}
 	IsEOS  bool
 	IsBOS  bool
+
+	port *core.Port
 }
 
 func (pm *portOutput) String() string {
@@ -94,7 +97,8 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 				break
 			}
 			i := p.Pull()
-			po := portOutput{runningOp.Handle, p, i, core.IsBOS(i), core.IsEOS(i)}
+
+			po := portOutput{runningOp.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
 			runningOp.outgoing <- po
 		}
 	})

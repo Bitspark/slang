@@ -420,17 +420,17 @@ func (p *Port) assertChannelSpace() {
 	}
 }
 
-func (p *Port) AsyncWalkPrimitivePorts(handle func(p *Port)) {
+func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
 	if p.Primitive() {
-		go handle(p)
+		handle(p)
 	}
 
 	if p.Stream() != nil {
-		p.Stream().AsyncWalkPrimitivePorts(handle)
+		p.Stream().WalkPrimitivePorts(handle)
 	}
 
 	for _, pname := range p.MapEntries() {
-		p.Map(pname).AsyncWalkPrimitivePorts(handle)
+		p.Map(pname).WalkPrimitivePorts(handle)
 	}
 }
 func (p *Port) Closed() bool {

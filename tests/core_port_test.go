@@ -272,10 +272,10 @@ func TestPort_WalkPrimitives__Simple_Primitive(t *testing.T) {
 	def := core.ParseTypeDef(`{"type":"primitive"}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 
-	ports := make(chan string)
+	ports := make(chan string, 100)
 	portNames := make([]string, 0)
 
-	p.AsyncWalkPrimitivePorts(func(p *core.Port) {
+	p.WalkPrimitivePorts(func(p *core.Port) {
 		ports <- p.Name()
 	})
 
@@ -298,10 +298,10 @@ func TestPort_WalkPrimitives__Stream(t *testing.T) {
 	def := core.ParseTypeDef(`{"type":"stream","stream":{"type":"string"}}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 
-	ports := make(chan string)
+	ports := make(chan string, 100)
 	portNames := make([]string, 0)
 
-	p.AsyncWalkPrimitivePorts(func(p *core.Port) {
+	p.WalkPrimitivePorts(func(p *core.Port) {
 		ports <- p.Name()
 	})
 
@@ -324,10 +324,10 @@ func TestPort_WalkPrimitives__Stream_Map(t *testing.T) {
 	def := core.ParseTypeDef(`{"type":"map","map":{"p":{"type":"primitive"},"sp":{"type":"stream","stream":{"type":"primitive"}}}}`)
 	p, _ := core.NewPort(nil, nil, def, core.DIRECTION_IN)
 
-	ports := make(chan string)
+	ports := make(chan string, 100)
 	portNames := make([]string, 0)
 
-	p.AsyncWalkPrimitivePorts(func(p *core.Port) {
+	p.WalkPrimitivePorts(func(p *core.Port) {
 		ports <- p.Name()
 	})
 

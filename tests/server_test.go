@@ -117,7 +117,7 @@ func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 	assert.Equal(t, 200, response.StatusCode)
 	out := readOneMessage(t, wsc)
 	assert.Equal(t, out.Topic, "Port")
-	assert.Equal(t, out.Payload, map[string]interface{}{"Data": "test", "Handle": instance.Handle, "IsBOS": false, "IsEOS": false, "Port": ")output"})
+	assert.Equal(t, out.Payload, map[string]interface{}{"data": "test", "handle": instance.Handle, "isBOS": false, "isEOS": false, "port": ")output"})
 }
 
 func TestServer_List_Running_Instances(t *testing.T) {

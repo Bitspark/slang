@@ -12,8 +12,8 @@ import (
 
 // Holds configuration for the web parts
 type httpCfg struct {
-	Address string
-	Port    int
+	Address string `json:"address"`
+	Port    int    `json:"port"`
 }
 
 type Environment struct {

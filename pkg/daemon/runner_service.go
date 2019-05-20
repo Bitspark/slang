@@ -1,17 +1,19 @@
 package daemon
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
-	"net"
 	"net/http"
 	"strconv"
 
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type RunInstruction struct {
@@ -20,131 +22,212 @@ type RunInstruction struct {
 	Gens   core.Generics   `json:"gens"`
 	Stream bool            `json:"stream"`
 }
-type InstanceState struct {
-	URL    string `json:"url,omitempty"`
+
+type RunState struct {
 	Handle string `json:"handle,omitempty"`
+	URL    string `json:"url,omitempty"`
 	Status string `json:"status"`
 	Error  *Error `json:"error,omitempty"`
 }
 
-type runningInstance struct {
-	Port int            `json:"port"`
-	OpId uuid.UUID      `json:"id"`
-	Op   *core.Operator `json:"Op"`
+type runningOperator struct {
+	// JSON
+	Op     uuid.UUID
+	Handle string
+	URL    string
+
+	op       *core.Operator
+	incoming chan interface{}
+	outgoing chan portOutput
+	inStop   chan bool
+	outStop  chan bool
 }
 
-var runningInstances = make(map[string]runningInstance)
+type portOutput struct {
+	// JSON
+	Handle string      `json:"handle"`
+	Port   string      `json:"port"`
+	Data   interface{} `json:"data"`
+	IsEOS  bool        `json:"isEOS"`
+	IsBOS  bool        `json:"isBOS"`
+
+	port *core.Port
+}
+
+func (pm *portOutput) String() string {
+	j, _ := json.Marshal(pm)
+	return string(j)
+}
+
+type runningOperatorManager struct {
+	ops map[string]*runningOperator
+}
+
 var rnd = rand.New(rand.NewSource(99))
+var runningOperators = &runningOperatorManager{make(map[string]*runningOperator)}
 
-type httpDefLoader struct {
-	httpDef *core.OperatorDef
+func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
+	handle := strconv.FormatInt(rnd.Int63(), 16)
+	url := "/instance/" + handle + "/"
+	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portOutput, 0), make(chan bool, 0), make(chan bool, 0)}
+	rom.ops[handle] = runningOp
+	op.Main().Out().Bufferize()
+	op.Start()
+	log.Printf("operator %s (id: %s) started", op.Name(), handle)
+	return runningOp
 }
 
-func (l *httpDefLoader) List() ([]uuid.UUID, error) {
-	httpDefId, _ := uuid.Parse(l.httpDef.Id)
-	return []uuid.UUID{httpDefId}, nil
+func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
+	runningOp := rom.newRunningOperator(op)
+	go func() {
+	loop:
+		for {
+			select {
+			case incoming := <-runningOp.incoming:
+				op.Main().In().Push(incoming)
+			case <-runningOp.inStop:
+				break loop
+			}
+		}
+	}()
+
+	op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
+		go func() {
+			for {
+				if p.Closed() {
+					break
+				}
+				i := p.Pull()
+
+				po := portOutput{runningOp.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
+				runningOp.outgoing <- po
+			}
+		}()
+	})
+	return runningOp
 }
 
-func (l *httpDefLoader) Has(opId uuid.UUID) bool {
-	httpDefId, _ := uuid.Parse(l.httpDef.Id)
-	return httpDefId == opId
-}
+func (rom *runningOperatorManager) Halt(handle string) error {
+	// `Halt` to me suggest that there is a way to resume operations
+	// which is not the case.
+	ro, err := runningOperators.Get(handle)
 
-func (l *httpDefLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	if !l.Has(opId) {
-		return nil, fmt.Errorf("")
+	if err != nil {
+		return err
 	}
-	return l.httpDef, nil
+
+	go ro.op.Stop()
+	ro.inStop <- true
+	ro.outStop <- true
+	delete(rom.ops, handle)
+
+	return nil
+}
+
+func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
+	if runningOp, ok := rom.ops[handle]; ok {
+		return runningOp, nil
+	}
+	return nil, fmt.Errorf("unknown handle value: %s", handle)
 }
 
 var InstanceService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
+
+		type outJSON struct {
+			Objects []runningOperator `json:"objects"`
+			Status  string            `json:"status"`
+			Error   *Error            `json:"error,omitempty"`
+		}
+
 		if r.Method == "GET" {
-			data := runningInstances
-			writeJSON(w, &data)
+			writeJSON(w, funk.Values(runningOperators.ops))
 		}
 	}},
 }}
 
+var RunningInstanceService = &Service{map[string]*Endpoint{
+	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
+		handle := mux.Vars(r)["handle"]
+
+		runningIns, err := runningOperators.Get(handle)
+		if err != nil {
+			w.WriteHeader(404)
+			return
+		}
+
+		var idat interface{}
+		if r.Method == "POST" {
+			r.ParseForm()
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(r.Body)
+
+			// An empty buffer would result into an error that is why we check the length
+			// and only than try to encode, because an empty POST is still valid and treated as trigger.
+			if buf.Len() > 0 {
+				err := json.Unmarshal(buf.Bytes(), &idat)
+				if err != nil {
+					w.WriteHeader(400)
+					return
+				}
+			}
+			runningIns.incoming <- idat
+
+			writeJSON(w, &runningIns)
+		}
+
+	}},
+}}
+
 var RunnerService = &Service{map[string]*Endpoint{
-	"/": {func(w http.ResponseWriter, r *http.Request) {
+	"/": {Handle: func(w http.ResponseWriter, r *http.Request) {
 		hub := GetHub(r)
 		st := GetStorage(r)
 		if r.Method == "POST" {
-			var data InstanceState
+			var data RunState
+			var ri RunInstruction
 
 			decoder := json.NewDecoder(r.Body)
-			var ri RunInstruction
 			err := decoder.Decode(&ri)
 			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
-			}
-
-			port := 50000
-			portUsed := true
-			for portUsed {
-				port++
-				portUsed = false
-				ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
-				if err != nil {
-					portUsed = true
-				} else {
-					ln.Close()
-				}
 			}
 
 			opId := ri.Id
-
+			op, err := api.BuildAndCompile(opId, ri.Gens, ri.Props, st)
 			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
+				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 				writeJSON(w, &data)
 				return
 			}
 
-			var httpDef *core.OperatorDef
-			if ri.Stream {
-				httpDef, err = constructHttpStreamEndpoint(st, port, opId, ri.Gens, ri.Props)
-			} else {
-				httpDef, err = constructHttpEndpoint(st, port, opId, ri.Gens, ri.Props)
-			}
+			runOp := runningOperators.Run(op)
 
-			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			st.AddBackend(&httpDefLoader{httpDef})
-			httpDefId, _ := uuid.Parse(httpDef.Id)
-			op, err := api.BuildAndCompile(httpDefId, nil, nil, st)
-			if err != nil {
-				data = InstanceState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			handle := strconv.FormatInt(rnd.Int63(), 16)
-			runningInstances[handle] = runningInstance{port, ri.Id, op}
-
-			op.Main().Out().Bufferize()
-			op.Start()
-			log.Printf("operator %s (port: %d, id: %s) started", op.Name(), port, handle)
-			op.Main().In().Push(nil) // Start server
-			hub.broadCastTo(Root, "Starting Operator")
+			// Move into the background and wait on message from the operator resp. ports
+			// and relay them through the `hub`
+			go func() {
+			loop:
+				for {
+					select {
+					case outgoing := <-runOp.outgoing:
+						// I don't know what happens when Root would be a dynamically changing variable.
+						// Is root's value bound to the scope or is the reference bound to the scope.
+						// I would suspect the latter, which means this is could turn into a race condition.
+						hub.broadCastTo(Root, Port, outgoing)
+					case <-runOp.outStop:
+						break loop
+					}
+				}
+			}()
 
 			data.Status = "success"
-			data.Handle = handle
-			data.URL = "/instance/" + handle
+			data.Handle = runOp.Handle
+			data.URL = runOp.URL
 
 			writeJSON(w, &data)
 
-			go func() {
-				oprlt := op.Main().Out().Pull()
-				hub.broadCastTo(Root, "Stopping Operator")
-				log.Printf("operator %s (port: %d, id: %s) terminated: %v", op.Name(), port, handle, oprlt)
-			}()
 		} else if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
 				Handle string `json:"handle"`
@@ -166,17 +249,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			if ii, ok := runningInstances[si.Handle]; !ok {
-				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			} else {
-				go ii.Op.Stop()
-				delete(runningInstances, si.Handle)
-
+			if err := runningOperators.Halt(si.Handle); err == nil {
 				data.Status = "success"
-				writeJSON(w, &data)
+			} else {
+				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
 			}
+
+			writeJSON(w, &data)
 		}
 	}},
 }}

@@ -339,7 +339,7 @@ func (sp *SocketPort) OnOutput(hndl func(op *core.Operator, p *core.Port, conn n
 func (sp *SocketPort) String() string {
 	paddr := make(map[string]string)
 	for a, p := range sp.pmap {
-		paddr[p.StringifyComplete()] = a.String()
+		paddr[p.String()] = a.String()
 	}
 
 	j, _ := json.Marshal(paddr)

@@ -3,6 +3,7 @@ package daemon
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -62,10 +63,17 @@ type Hub struct {
 }
 
 // Envelop functions as an addressable message that is only sent to
-// specific users and their connections
+// specific user and their connections
 type envelop struct {
-	reciever *UserID
-	message  []byte
+	receiver *UserID
+	message  message
+}
+
+// A message is holding data and a topic - we do this so the interface can listen on different topics
+// instead and discard recieved data easier or better decide where to route the information.
+type message struct {
+	Topic   Topic
+	Payload interface{}
 }
 
 type Server struct {
@@ -87,8 +95,33 @@ type ConnectedClient struct {
 }
 
 // UserID represents an Identifier for a user of the system
+// This is also intended to deliver `envelops` to the correct `ConnectedClients`
+// instead of sending a message to all connected clients. Currently we do not have real users.
+// The variable acts more as a placeholder and thinking vehicle to reminde oneself that the system
+// might have more than one user in the future - I know, YAGNI.
 type UserID struct {
 	id int
+}
+
+// We want types around the topic as this makes it easier to work with.
+// A Topic in this case is meant for easier distinction of what type of message is being send.
+// Basically we attach type information for the other end of the connected client.
+type Topic int
+
+const (
+	Port     Topic = iota
+	Operator       // currently unused but displays the intended usage
+)
+
+// Since we can't send proper type information over the wire, we send a string
+// representation instead.
+func (t Topic) String() string {
+	return [...]string{"Port", "Operator"}[t]
+}
+
+// This encodes a `Topic` to Json using it's string representation
+func (t Topic) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
 }
 
 func addContext(ctx context.Context, next http.Handler) http.Handler {
@@ -106,10 +139,18 @@ func newHub() *Hub {
 	}
 }
 
+// In the end we need to represent a message we want to send to a connected client.
+// The only sensible way we can achive that without loosing too much information is to encode the entire
+// object as json.
+func (m *message) Bytes() []byte {
+	body, _ := json.Marshal(m)
+	return body
+}
+
 // Send a message to single user on all his connections
 // This API is probably a little volatile so use with caution and don't reach deep into it.
-func (h *Hub) broadCastTo(u *UserID, m string) {
-	h.broadcast <- &envelop{u, []byte(m)}
+func (h *Hub) broadCastTo(u *UserID, topic Topic, data interface{}) {
+	h.broadcast <- &envelop{u, message{topic, data}}
 }
 
 func (h *Hub) run() {
@@ -122,18 +163,20 @@ func (h *Hub) run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case message := <-h.broadcast:
+		case letter := <-h.broadcast:
 			for client := range h.clients {
 				// this might become PINA as iterating all clients to find only those which we want to address
 				// could get expensive
-				if client.userID != message.reciever {
-					return
+				if client.userID != letter.receiver {
+					continue
 				}
-				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other end
-				// What happens if there is no reciever? We can assume this connection has been dropped/closed.
+				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
+				// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
 				select {
-				case client.send <- message.message:
+				case client.send <- letter.message.Bytes():
+					// message written
 				default:
+					// buffer of channel full - no one reading? Let's disconnect them.
 					close(client.send)
 					delete(h.clients, client)
 				}
@@ -176,13 +219,21 @@ func (c *ConnectedClient) waitOnOutgoing() {
 	}()
 	for {
 		select {
-		case msg := <-c.send:
+		case msg, ok := <-c.send:
+			if !ok {
+				// This happens if there was a call to `close(c.send)`,
+				// which means the client was disconnect from the hub via `unregister <- c` or otherwise closed.
+				//
+				// And actually we should never reach this in normal execution, as the client should no
+				// longer be in the list of registered client, otherwise we would be reading an endless amount of <nil>.
+				return
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			ws.WriteMessage(websocket.TextMessage, msg)
 		case <-ticker.C:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := ws.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
+				return // websocket likly closed
 			}
 		}
 	}
@@ -198,10 +249,15 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// create a new client for each connection we recieve
+	// Create a new client for each connection we recieve
 	// attaching the user makes it possible to send message to multiple
 	// open browsers that are accociated with the user.
-	client := &ConnectedClient{hub, ws, user, make(chan []byte)}
+	//
+	// Then channel is a bytes channel with the size of 256, I am unsure of
+	// wether this is enough and what happends if we have message greater than that.
+	// Might be a better idea to make channel of a type with a smaller size the get the same effect.
+	// Without the uncertainty.
+	client := &ConnectedClient{hub, ws, user, make(chan []byte, 256)}
 	hub.register <- client
 
 	// Part of the RFC is this Ping<>Pong thing which we need to have both in the writer and reader of the
@@ -224,6 +280,7 @@ func NewServer(ctx *context.Context, env *env.Environment) *Server {
 	srv.mountWebServices()
 	return srv
 }
+
 func (s *Server) Handler() http.Handler {
 	handler := cors.New(cors.Options{
 		AllowedMethods: []string{"GET", "POST", "DELETE"},
@@ -239,6 +296,8 @@ func (s *Server) AddWebsocket(path string) {
 	// Don't know yet if that is good idea
 	// Maybe should make the `hub` a singleton instead of shoving it
 	// into the context where it needs more typing to be safe
+	// What we want is for the hub to be available in everywhare we might want to send messages
+	// to a connected client.
 	newCtx := SetHub(*s.ctx, hub)
 	s.ctx = &newCtx
 	go hub.run()
@@ -249,7 +308,7 @@ func (s *Server) mountWebServices() {
 	s.AddService("/run", RunnerService)
 	s.AddService("/share", SharingService)
 	s.AddService("/instances", InstanceService)
-	s.AddOperatorProxy("/instance")
+	s.AddService("/instance", RunningInstanceService)
 	s.AddWebsocket("/ws")
 }
 
@@ -266,12 +325,6 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 func (s *Server) AddStaticServer(pathPrefix string, directory http.Dir) {
 	r := s.router.PathPrefix(pathPrefix)
 	r.Handler(http.StripPrefix(pathPrefix, http.FileServer(directory)))
-}
-
-func (s *Server) AddOperatorProxy(pathPrefix string) {
-	r := s.router.PathPrefix(pathPrefix)
-	r.Handler(http.StripPrefix(pathPrefix,
-		r.HandlerFunc(proxyRequestToOperator).GetHandler()))
 }
 
 func (s *Server) AddRedirect(path string, redirectTo string) {

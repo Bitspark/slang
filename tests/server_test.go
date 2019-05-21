@@ -48,8 +48,8 @@ func newWebsocketClient(t *testing.T, server *httptest.Server) *websocket.Conn {
 	return wsc
 }
 
-func readOneMessage(t *testing.T, wsc *websocket.Conn) message {
-	var out message
+func readOneMessage(t *testing.T, wsc *websocket.Conn) []message {
+	var out []message
 	var err error
 
 	// This reads exactly one message that was send via the websocket
@@ -116,8 +116,10 @@ func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 	response := getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
 	assert.Equal(t, 200, response.StatusCode)
 	out := readOneMessage(t, wsc)
-	assert.Equal(t, out.Topic, "Port")
-	assert.Equal(t, out.Payload, map[string]interface{}{"data": "test", "handle": instance.Handle, "isBOS": false, "isEOS": false, "port": ")output"})
+	assert.Len(t, out, 1)
+	msg := out[0]
+	assert.Equal(t, msg.Topic, "Port")
+	assert.Equal(t, msg.Payload, map[string]interface{}{"data": "test", "handle": instance.Handle, "isBOS": false, "isEOS": false, "port": ")output"})
 }
 
 func TestServer_List_Running_Instances(t *testing.T) {

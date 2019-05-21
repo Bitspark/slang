@@ -62,15 +62,19 @@ type Hub struct {
 	unregister chan *ConnectedClient
 }
 
-// Envelop functions as an addressable message that is only sent to
-// specific user and their connections
+// Envelop functions as an addressable pack of messages that is only sent to
+// specific user and their connections. We use an array here, so we can send multiple message
+// to a single user at once. This comes in handy when implementing burst protection.
+// Imagine we where to send 10k message per second over a single websocket - not such a good idea.
+// What we want instead is collect most of them inside a timeframe and send them together.
+// Receiving end must of course know that message can hold 1+N message and dispatch accordingly.
 type envelop struct {
 	receiver *UserID
-	message  message
+	messages []message
 }
 
 // A message is holding data and a topic - we do this so the interface can listen on different topics
-// instead and discard recieved data easier or better decide where to route the information.
+// and discard recieved data easier or better decide where to route the information.
 type message struct {
 	Topic   Topic
 	Payload interface{}
@@ -141,16 +145,19 @@ func newHub() *Hub {
 
 // In the end we need to represent a message we want to send to a connected client.
 // The only sensible way we can achive that without loosing too much information is to encode the entire
-// object as json.
-func (m *message) Bytes() []byte {
-	body, _ := json.Marshal(m)
+// array of messages as json array.
+func (e *envelop) Bytes() []byte {
+	body, _ := json.Marshal(e.messages)
 	return body
 }
 
 // Send a message to single user on all his connections
 // This API is probably a little volatile so use with caution and don't reach deep into it.
 func (h *Hub) broadCastTo(u *UserID, topic Topic, data interface{}) {
-	h.broadcast <- &envelop{u, message{topic, data}}
+	var messages []message
+	messages = append(messages, message{topic, data})
+	e := &envelop{u, messages}
+	h.broadcast <- e
 }
 
 func (h *Hub) run() {
@@ -173,7 +180,7 @@ func (h *Hub) run() {
 				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
 				// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
 				select {
-				case client.send <- letter.message.Bytes():
+				case client.send <- letter.Bytes():
 					// message written
 				default:
 					// buffer of channel full - no one reading? Let's disconnect them.

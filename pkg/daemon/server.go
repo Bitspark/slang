@@ -156,8 +156,7 @@ func (e *envelop) Bytes() []byte {
 func (h *Hub) broadCastTo(u *UserID, topic Topic, data interface{}) {
 	var messages []message
 	messages = append(messages, message{topic, data})
-	e := &envelop{u, messages}
-	h.broadcast <- e
+	h.broadcast <- &envelop{u, messages}
 }
 
 func (h *Hub) run() {

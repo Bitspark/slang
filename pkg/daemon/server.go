@@ -73,6 +73,20 @@ type envelop struct {
 	messages []*message
 }
 
+// In the end we need to represent a message we want to send to a connected client.
+// The only sensible way we can achive that without loosing too much information is to encode the entire
+// array of messages as json array.
+func (e *envelop) Bytes() []byte {
+	body, _ := json.Marshal(e.messages)
+	return body
+}
+
+// An Envelop is able to hold an unlimited amount of messages intended for one
+// receiver e.g. UserID, this is a variadic method that allows appending *message(s).
+func (e *envelop) append(m ...*message) {
+	e.messages = append(e.messages, m...)
+}
+
 // A message is holding data and a topic - we do this so the interface can listen on different topics
 // and discard recieved data easier or better decide where to route the information.
 type message struct {
@@ -141,20 +155,6 @@ func newHub() *Hub {
 		unregister: make(chan *ConnectedClient),
 		clients:    make(map[*ConnectedClient]bool),
 	}
-}
-
-// In the end we need to represent a message we want to send to a connected client.
-// The only sensible way we can achive that without loosing too much information is to encode the entire
-// array of messages as json array.
-func (e *envelop) Bytes() []byte {
-	body, _ := json.Marshal(e.messages)
-	return body
-}
-
-// An Envelop is able to hold an unlimited amount of messages intended for one
-// receiver e.g. UserID, this is a variadic method that allows appending *message(s).
-func (e *envelop) append(m ...*message) {
-	e.messages = append(e.messages, m...)
 }
 
 // Send a message to single user on all his connections

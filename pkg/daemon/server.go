@@ -70,14 +70,28 @@ type Hub struct {
 // Receiving end must of course know that message can hold 1+N message and dispatch accordingly.
 type envelop struct {
 	receiver *UserID
-	messages []message
+	messages []*message
+}
+
+// In the end we need to represent a message we want to send to a connected client.
+// The only sensible way we can achive that without loosing too much information is to encode the entire
+// array of messages as json array.
+func (e *envelop) Bytes() []byte {
+	body, _ := json.Marshal(e.messages)
+	return body
+}
+
+// An Envelop is able to hold an unlimited amount of messages intended for one
+// receiver e.g. UserID, this is a variadic method that allows appending *message(s).
+func (e *envelop) append(m ...*message) {
+	e.messages = append(e.messages, m...)
 }
 
 // A message is holding data and a topic - we do this so the interface can listen on different topics
 // and discard recieved data easier or better decide where to route the information.
 type message struct {
-	Topic   Topic
-	Payload interface{}
+	Topic   Topic       `json:"topic"`
+	Payload interface{} `json:"payload"`
 }
 
 type Server struct {
@@ -143,50 +157,95 @@ func newHub() *Hub {
 	}
 }
 
-// In the end we need to represent a message we want to send to a connected client.
-// The only sensible way we can achive that without loosing too much information is to encode the entire
-// array of messages as json array.
-func (e *envelop) Bytes() []byte {
-	body, _ := json.Marshal(e.messages)
-	return body
-}
-
 // Send a message to single user on all his connections
 // This API is probably a little volatile so use with caution and don't reach deep into it.
 func (h *Hub) broadCastTo(u *UserID, topic Topic, data interface{}) {
-	var messages []message
-	messages = append(messages, message{topic, data})
+	var messages []*message
+	messages = append(messages, &message{topic, data})
 	h.broadcast <- &envelop{u, messages}
 }
 
 func (h *Hub) run() {
+	var (
+		incomingEnvelop *envelop
+		ok              bool
+		minTimer        <-chan time.Time
+		maxTimer        <-chan time.Time
+	)
+	min := 100 * time.Millisecond
+	max := 500 * time.Millisecond
+	postBox := make(map[*UserID]*envelop)
+
+	actualSend := func(letter *envelop) {
+		for client := range h.clients {
+			// this might become PINA as iterating all clients to find only those which we want to address
+			// could get expensive - maybe look up the clients by `userID` in the first place.
+			if client.userID != letter.receiver {
+				continue
+			}
+			// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
+			// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
+			select {
+			case client.send <- letter.Bytes():
+				// message written
+			default:
+				// buffer of channel full - no one reading? Let's disconnect them.
+				close(client.send)
+				delete(h.clients, client)
+			}
+		}
+	}
+
+	// This implementation is flawed as minTimer and maxTimer introduce a global tick for sending messages.
+	// Meaning that as long as any UserID is sent a message from the backend all other outgoing messages are
+	// collected so that no other UserID might get their message. Before either `minTimer` or `maxTimer` is up.
+	// As consequence message for all UserIDs are blocked for `maxTimer`.
+	//
+	// One way around this would be to use dynamic `select` with `reflect.Select` and `reflect.SelectCase`
+	// Wher we could build up per UserID timer. But for now we live with the lag between `minTimer` and `maxTimer`
 	for {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
 		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
+			if _, ok = h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case letter := <-h.broadcast:
-			for client := range h.clients {
-				// this might become PINA as iterating all clients to find only those which we want to address
-				// could get expensive
-				if client.userID != letter.receiver {
-					continue
-				}
-				// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
-				// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
-				select {
-				case client.send <- letter.Bytes():
-					// message written
-				default:
-					// buffer of channel full - no one reading? Let's disconnect them.
-					close(client.send)
-					delete(h.clients, client)
-				}
+		case incomingEnvelop = <-h.broadcast:
+			// Keep adding messages from other envelop for at least `min` amount of time to the postbox.
+			minTimer = time.After(min)
+			// We only want to set the how long we are going to keep adding messages once.
+			if maxTimer == nil {
+				maxTimer = time.After(max)
 			}
+			// If we already have a envelop for that user, appened the contents of the current envelop
+			// to the one that is already scheduled to be sent.
+			if _, ok := postBox[incomingEnvelop.receiver]; ok {
+				// What we do here is to grow the single envelop`s messages.
+				postBox[incomingEnvelop.receiver].append(incomingEnvelop.messages...)
+			} else {
+				// If do not yet have a letter to be sent create one for the current receiver.
+				postBox[incomingEnvelop.receiver] = incomingEnvelop
+			}
+
+		case <-minTimer:
+			// We have not seen new letters since `min` time which means we can now send
+			// send the letters to all users.
+			minTimer, maxTimer = nil, nil
+			for _, e := range postBox {
+				actualSend(e)
+			}
+			// we also need to clear reset our letters since we have sent them all
+			postBox = make(map[*UserID]*envelop)
+		case <-maxTimer:
+			// Enough time has now passed and we should now send what we have already collected.
+			// This useful in scenarios where we send just enough data to
+			minTimer, maxTimer = nil, nil
+			for _, e := range postBox {
+				actualSend(e)
+			}
+			postBox = make(map[*UserID]*envelop)
 		}
 	}
 }

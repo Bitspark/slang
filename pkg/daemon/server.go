@@ -196,6 +196,13 @@ func (h *Hub) run() {
 		}
 	}
 
+	// This implementation is flawed as minTimer and maxTimer introduce a global tick for sending messages.
+	// Meaning that as long as any UserID is sent a message from the backend all other outgoing messages are
+	// collected so that no other UserID might get their message. Before either `minTimer` or `maxTimer` is up.
+	// As consequence message for all UserIDs are blocked for `maxTimer`.
+	//
+	// One way around this would be to use dynamic `select` with `reflect.Select` and `reflect.SelectCase`
+	// Wher we could build up per UserID timer. But for now we live with the lag between `minTimer` and `maxTimer`
 	for {
 		select {
 		case client := <-h.register:

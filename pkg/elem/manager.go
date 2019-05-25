@@ -129,6 +129,7 @@ func init() {
 	Register("slang.image.Encode", imageEncodeCfg)
 
 	Register("slang.system.Execute", systemExecuteCfg)
+	Register("slang.system.BrowserOpenURL", systemBrowserOpenURLCfg)
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}

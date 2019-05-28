@@ -23,7 +23,9 @@ func Test_WriteableFilesystem(t *testing.T) {
 func Test_cleanPath__AppendSlash(t *testing.T) {
 	a := assertions.New(t)
 	path := cleanPath("/tmp/folder")
-	a.Equal(path, "/tmp/folder/")
+	abspath, err := filepath.Abs("/tmp/folder")
+	a.NoError(err)
+	a.Equal(abspath+string(filepath.Separator), path)
 }
 
 func Test_cleanPath__ExpandRelativePath(t *testing.T) {
@@ -31,5 +33,5 @@ func Test_cleanPath__ExpandRelativePath(t *testing.T) {
 	a := assertions.New(t)
 	path := cleanPath("folder")
 	// filepath.join stips trailing slash
-	a.Equal(path, filepath.Join(cwd, "folder")+"/")
+	a.Equal(filepath.Join(cwd, "folder")+string(filepath.Separator), path)
 }

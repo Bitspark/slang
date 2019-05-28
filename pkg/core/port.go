@@ -201,7 +201,7 @@ func (p *Port) Connect(q *Port) (err error) {
 		if q.src == p {
 			return nil
 		}
-		return fmt.Errorf("%s -> %s: already connected", p.StringifyComplete(), q.StringifyComplete())
+		return fmt.Errorf("%s -> %s: already connected", p.String(), q.String())
 	}
 
 	if q.itemType == TYPE_PRIMITIVE {
@@ -428,6 +428,23 @@ func (p *Port) assertChannelSpace() {
 	}
 }
 
+func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
+	if p.Primitive() {
+		handle(p)
+	}
+
+	if p.Stream() != nil {
+		p.Stream().WalkPrimitivePorts(handle)
+	}
+
+	for _, pname := range p.MapEntries() {
+		p.Map(pname).WalkPrimitivePorts(handle)
+	}
+}
+func (p *Port) Closed() bool {
+	return p.closed
+}
+
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
 	p.Lock()
@@ -652,7 +669,7 @@ func (p *Port) PullBinary() (Binary, interface{}) {
 func (p *Port) PullBOS() bool {
 	i := p.sub.Pull()
 	if !p.OwnBOS(i) {
-		panic(p.operator.Name() + ": expected own BOS: " + i.(BOS).src.StringifyComplete() + " != " + p.strSrc.StringifyComplete())
+		panic(p.operator.Name() + ": expected own BOS: " + i.(BOS).src.String() + " != " + p.strSrc.String())
 	}
 	return true
 }
@@ -723,7 +740,7 @@ func (p *Port) Name() string {
 		return "<nil>"
 	}
 
-	return p.StringifyComplete()
+	return p.String()
 }
 
 func (p *Port) Bufferize() {
@@ -907,7 +924,7 @@ func (p *Port) stringify() string {
 	return ""
 }
 
-func (p *Port) StringifyComplete() string {
+func (p *Port) String() string {
 	opStr := ""
 	if p.operator != nil {
 		opStr = p.operator.name
@@ -932,12 +949,12 @@ func (p *Port) StringifyComplete() string {
 }
 
 func (p *Port) defineConnections(def *OperatorDef) {
-	portStr := p.StringifyComplete()
+	portStr := p.String()
 
 	if def.Connections[portStr] == nil {
 		def.Connections[portStr] = make([]string, 0)
 		for dst := range p.dests {
-			def.Connections[portStr] = append(def.Connections[portStr], dst.StringifyComplete())
+			def.Connections[portStr] = append(def.Connections[portStr], dst.String())
 			dst.operator.defineConnections(def)
 		}
 	}

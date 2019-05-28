@@ -82,7 +82,7 @@ func (tl *TestLoader) Reload() {
 }
 
 func GetOperatorName(dir string, path string) string {
-	relPath := strings.TrimSuffix(strings.TrimPrefix(path, dir), filepath.Ext(path))
+	relPath := filepath.Clean(strings.TrimSuffix(strings.TrimPrefix(path, dir), filepath.Ext(path)))
 	return strings.Replace(relPath, string(filepath.Separator), ".", -1)
 }
 

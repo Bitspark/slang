@@ -107,17 +107,17 @@ func main() {
 	docURL := "https://bitspark.de/slang/docs/"
 
 	flag.BoolVar(&clean, "clean", false, "Clean folders before recreation")
-	flag.BoolVar(&genIdx, "index", false, "Generate Index")
-	flag.BoolVar(&saveUrls, "save-urls", false, "Save back doc urls into stdlib")
-	flag.BoolVar(&showHelp, "-help", false, "Show this dialog")
+	flag.BoolVar(&genIdx, "index", false, "Generate a single index file")
+	flag.BoolVar(&saveUrls, "save-urls", false, "Save back doc urls into standard library")
+	flag.BoolVar(&showHelp, "help", false, "Show this dialog")
 
-	flag.StringVar(&libDir, "libdir", "missing/", "Stdlib Location")
+	flag.StringVar(&libDir, "libdir", "./", "Location of the standard library")
 
-	flag.StringVar(&idxOut, "index-target", "missing/", "Where to write the index to")
-	flag.StringVar(&idxTpl, "index-template", "missing/", "Index template")
+	flag.StringVar(&idxOut, "index-target", "./", "Where to write the index to")
+	flag.StringVar(&idxTpl, "index-template", "./", "Index template")
 
-	flag.StringVar(&opTpl, "operator-template", "missing/", "Operator template")
-	flag.StringVar(&opOutDir, "operator-output-dir", "missing/", "Where to write the operators to")
+	flag.StringVar(&opTpl, "operator-template", "./", "Operator template")
+	flag.StringVar(&opOutDir, "operator-output-dir", "./", "Where to write the operators to")
 	flag.StringVar(&opExt, "operator-ext", "json", "What extension should the files have")
 	flag.Parse()
 

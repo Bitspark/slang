@@ -1,0 +1,116 @@
+# Deployment
+
+This is the deployment service for starting operators and controlling running operators.
+
+## API
+
+### Get deployment plans
+
+`GET /v1/plans`
+
+#### RESPONSE
+
+```
+{
+    plans: [string], 
+}
+```
+
+### List running operators
+
+`GET /v1/instances`
+
+#### RESPONSE
+
+```
+{
+    instances: [
+        {
+            instance:   UUID.
+            domain:     string,
+            state:      ("spawning"|"running"|"stopped"),
+        }
+    ]
+}
+```
+
+#### PARAMS
+
+- `state=`
+    - `running`
+    - `stopped` 
+    
+    
+#### EXAMPLES
+
+- `GET /v1/instances?state=stopped`
+- `GET /v1/instances?state=running|spawing`
+
+### Deploy/start operator
+
+`POST /v1/instances`
+
+#### REQUEST
+
+```
+{
+    slangFile: SlangFile,
+    plan:      string
+}
+```
+
+#### RESPONSE
+
+```
+{
+    instance: UUID.
+    domain:   string,
+    state:    ("spawning"|"running"|"stopped"),
+    plan:     string
+}
+```
+
+### Get info about running operator
+
+`GET /v1/instances/{instance}`
+
+#### RESPONSE
+
+```
+{
+    instance:   UUID.
+    domain:     string,
+    state:      ("spawning"|"running"|"stopped"),
+    plan:       string
+}
+```
+
+### Restart running operator
+
+`PUT /v1/instances/{instance}`
+
+#### RESPONSE
+
+```
+{
+    instance:   UUID.
+    domain:     string,
+    state:      ("spawning"|"running"|"stopped"),
+    plan:       string
+}
+```
+
+### Stop running operator
+
+`DELETE /v1/instances/{instance}`
+
+#### RESPONSE
+
+```
+{
+    instance:   UUID.
+    domain:     string,
+    state:      ("spawning"|"running"|"stopped"),
+    plan:       string
+}
+```

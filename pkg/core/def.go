@@ -878,7 +878,7 @@ func (p Properties) Clean() {
 }
 
 type SlangFileDef struct {
-	Main string `json:"main" yaml:"main"`
+	Main uuid.UUID `json:"main" yaml:"main"`
 
 	Args struct {
 		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
@@ -895,14 +895,6 @@ func (sf SlangFileDef) Valid() bool {
 }
 
 func (sf *SlangFileDef) Validate() error {
-	if sf.Main == "" {
-		return fmt.Errorf(`missing main blueprint id`)
-	}
-
-	if _, err := uuid.Parse(sf.Main); err != nil {
-		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
-	}
-
 	if len(sf.Blueprints) == 0 {
 		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
 

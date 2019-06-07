@@ -4,31 +4,45 @@ This is the deployment service for starting operators and controlling running op
 
 ## API
 
-### Get deployment plans
+### List deployment modes
 
-`GET /v1/plans`
+`GET /api/v1/modes`
 
 #### RESPONSE
 
 ```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
-    plans: [string], 
+    modes: [
+        {
+            mode:        ID,
+            title:       string,
+            description: string,
+        
+        }
+    ] 
 }
 ```
 
 ### List running operators
 
-`GET /v1/instances`
+`GET /api/v1/instances`
 
 #### RESPONSE
 
 ```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
     instances: [
         {
             instance:   UUID.
-            domain:     string,
+            operator:   UUID,
             state:      ("spawning"|"running"|"stopped"),
+            mode:       ID,
         }
     ]
 }
@@ -37,80 +51,82 @@ This is the deployment service for starting operators and controlling running op
 #### PARAMS
 
 - `state=`
+    - `spawning`
     - `running`
     - `stopped` 
+- `mode=`
+- `operator=`
     
     
 #### EXAMPLES
 
-- `GET /v1/instances?state=stopped`
-- `GET /v1/instances?state=running|spawing`
+- `GET /api/v1/instances?state=stopped`
+- `GET /api/v1/instances?state=running|spawing`
+- `GET /api/v1/instances?state=running|spawing&operator=21b88d35-8d82-4a38-b275-23527dffaf70`
 
 ### Deploy/start operator
 
-`POST /v1/instances`
+`POST /api/v1/instances`
 
 #### REQUEST
 
 ```
 {
     slangFile: SlangFile,
-    plan:      string
+    mode:      string
 }
 ```
 
 #### RESPONSE
 
 ```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
-    instance: UUID.
-    domain:   string,
-    state:    ("spawning"|"running"|"stopped"),
-    plan:     string
+    instance:   UUID.
+    operator:   UUID,
+    state:      ("spawning"|"running"|"stopped"),
+    mode:       ID,
 }
 ```
 
 ### Get info about running operator
 
-`GET /v1/instances/{instance}`
+`GET /api/v1/instances/{instance}`
 
 #### RESPONSE
 
 ```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
     instance:   UUID.
-    domain:     string,
+    operator:   UUID,
     state:      ("spawning"|"running"|"stopped"),
-    plan:       string
+    mode:       ID,
 }
 ```
 
 ### Restart running operator
 
-`PUT /v1/instances/{instance}`
+`PUT /api/v1/instances/{instance}`
 
 #### RESPONSE
 
 ```
-{
-    instance:   UUID.
-    domain:     string,
-    state:      ("spawning"|"running"|"stopped"),
-    plan:       string
-}
+HTTP/1.1 200 OK
 ```
 
-### Stop running operator
 
-`DELETE /v1/instances/{instance}`
+### Shutdown running operator
+
+`DELETE /api/v1/instances/{instance}`
 
 #### RESPONSE
 
 ```
-{
-    instance:   UUID.
-    domain:     string,
-    state:      ("spawning"|"running"|"stopped"),
-    plan:       string
-}
+HTTP/1.1 200 OK
 ```
+

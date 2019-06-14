@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/Bitspark/go-funk"
@@ -22,7 +23,7 @@ func (m testInstanceManager) List() []InstanceDef {
 	}).([]InstanceDef)
 }
 
-func (m testInstanceManager) Start(instance uuid.UUID, mode DeploymentMode, def core.SlangFileDef) (InstanceDef, error) {
+func (m testInstanceManager) Start(instance uuid.UUID, mode T_DeploymentMode, def core.SlangFileDef) (InstanceDef, error) {
 	ins := InstanceDef{uuid.New(), def.Main, Running, mode}
 	m.list = append(m.list, &ins)
 	return ins, nil
@@ -45,12 +46,16 @@ func (m testInstanceManager) Info(instance uuid.UUID) (InstanceDef, error) {
 	return InstanceDef{uuid.Nil, uuid.Nil, "", ""}, fmt.Errorf("unknown instance")
 }
 
-func newTestDeploymentHandler() DeploymentHandler {
-	return newDeploymentHandler(&testInstanceManager{})
+func newTestDeployer() Deployer {
+	return newDeployer(&testInstanceManager{})
 }
 
-func TestDeploymentHandler_Deploy(t *testing.T) {
-	dh := newTestDeploymentHandler()
+func newTestServer() *httptest.Server {
+	return httptest.NewServer(newRouter(newTestDeployer()))
+}
+
+func TestDeployer_Deploy(t *testing.T) {
+	dh := newTestDeployer()
 
 	assert.Empty(t, dh.List())
 	assert.NotEmpty(t, dh.List())

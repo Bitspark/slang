@@ -20,7 +20,6 @@ Content-Type: application/json
             mode:        ID,
             title:       string,
             description: string,
-        
         }
     ] 
 }

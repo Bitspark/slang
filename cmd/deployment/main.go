@@ -107,6 +107,8 @@ func newRouter(deployer Deployer) http.Handler {
 }
 
 func registerHandler(r *mux.Router) {
-	r.PathPrefix("/api/v1/modes").Methods("GET").HandlerFunc(listDeploymentModes)
-	r.PathPrefix("/api/v1/instances").Methods("POST").HandlerFunc(deployInstance)
+	r.HandleFunc("/api/v1/modes", listDeploymentModes).Methods("GET")
+	r.HandleFunc("/api/v1/instances", deployInstance).Methods("POST")
+	r.HandleFunc("/api/v1/instances", listInstances).Methods("GET")
+	r.HandleFunc("/api/v1/instances/{instance}", getInstances).Methods("GET")
 }

@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 func responseWithError(w http.ResponseWriter, err error, status int) {
@@ -61,8 +63,6 @@ type DeployInstruction struct {
 }
 
 func deployInstance(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
 	body := getBodyBufferSafe(r)
 
 	var instruction DeployInstruction
@@ -81,4 +81,32 @@ func deployInstance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseWithOk(w, instDef)
+}
+
+func getInstances(w http.ResponseWriter, r *http.Request) {
+	deployer := getDeployer(r)
+
+	vars := mux.Vars(r)
+	instance, err := uuid.Parse(vars["instance"])
+
+	if err != nil {
+		responseWithError(w, err, http.StatusBadRequest)
+	}
+
+	instDef, err := deployer.Get(instance)
+
+	if err != nil {
+		responseWithError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	responseWithOk(w, instDef)
+}
+
+func listInstances(w http.ResponseWriter, r *http.Request) {
+	deployer := getDeployer(r)
+
+	instances := deployer.List()
+
+	responseWithOk(w, instances)
 }

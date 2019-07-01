@@ -16,8 +16,8 @@ type Properties MapStr
 type Generics map[string]*TypeDef
 
 type InstanceDef struct {
-	Name     string `json:"-" yaml:"-"`
-	Operator string `json:"operator" yaml:"operator"`
+	Name     string    `json:"-" yaml:"-"`
+	Operator uuid.UUID `json:"operator" yaml:"operator"`
 
 	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
@@ -69,14 +69,14 @@ type OperatorMetaDef struct {
 }
 
 type OperatorDef struct {
-	Id string `json:"id" yaml:"id"`
+	Id uuid.UUID `json:"id" yaml:"id"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
 	InstanceDefs InstanceDefList         `json:"operators,omitempty" yaml:"operators,omitempty"`
 	PropertyDefs TypeDefMap              `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
-	Elementary   string                  `json:"-" yaml:"-"`
+	Elementary   uuid.UUID               `json:"-" yaml:"-"`
 
 	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
 	TestCases []TestCaseDef   `json:"tests,omitempty" yaml:"tests,omitempty"`
@@ -134,16 +134,8 @@ func (d *InstanceDef) Validate() error {
 		return fmt.Errorf(`operator instance name may not contain spaces: "%s"`, d.Name)
 	}
 
-	if d.Operator == "" {
-		return errors.New(`operator may not be empty`)
-	}
-
-	if strings.Contains(d.Operator, " ") {
-		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
-	}
-
-	if _, err := uuid.Parse(d.Operator); err != nil {
-		return fmt.Errorf(`operator id is not a valid UUID v4: "%s" --> "%s"`, d.Operator, err)
+	if d.Operator == uuid.Nil {
+		return errors.New(`operator may not be unset`)
 	}
 
 	d.valid = true
@@ -194,8 +186,8 @@ func (d OperatorDef) Valid() bool {
 func (d *OperatorDef) Validate() error {
 	d.valid = false
 
-	if _, err := uuid.Parse(d.Id); err != nil {
-		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
+	if d.Id == uuid.Nil {
+		return fmt.Errorf(`operator id not set: %s`, d.Id)
 	}
 
 	for _, srv := range d.ServiceDefs {
@@ -320,7 +312,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 	var connDefs map[string][]string = nil
 	var insDefs InstanceDefList = nil
 
-	if d.Elementary == "" {
+	if d.Elementary == uuid.Nil {
 		connDefs = make(map[string][]string)
 		for k, v := range d.Connections {
 			c := make([]string, 0)
@@ -878,7 +870,7 @@ func (p Properties) Clean() {
 }
 
 type SlangFileDef struct {
-	Main string `json:"main" yaml:"main"`
+	Main uuid.UUID `json:"main" yaml:"main"`
 
 	Args struct {
 		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
@@ -895,12 +887,8 @@ func (sf SlangFileDef) Valid() bool {
 }
 
 func (sf *SlangFileDef) Validate() error {
-	if sf.Main == "" {
+	if sf.Main == uuid.Nil {
 		return fmt.Errorf(`missing main blueprint id`)
-	}
-
-	if _, err := uuid.Parse(sf.Main); err != nil {
-		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
 	}
 
 	if len(sf.Blueprints) == 0 {

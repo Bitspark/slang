@@ -26,7 +26,7 @@ type Operator struct {
 	generics    Generics
 	properties  Properties
 	connectFunc CFunc
-	elementary  string
+	elementary  uuid.UUID
 	stopChannel chan bool
 	stopped     bool
 }
@@ -50,7 +50,7 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 
 	o := &Operator{}
 	o.defMeta = def.Meta
-	o.defId, _ = uuid.Parse(def.Id)
+	o.defId = def.Id
 	o.function = f
 	o.connectFunc = c
 	o.name = name
@@ -288,7 +288,7 @@ func (o *Operator) defineConnections(def *OperatorDef) {
 
 func (o *Operator) Define() (OperatorDef, error) {
 	var def OperatorDef
-	def.Id = o.defId.String()
+	def.Id = o.defId
 	def.Meta = o.defMeta
 	def.ServiceDefs = make(map[string]*ServiceDef)
 	def.DelegateDefs = make(map[string]*DelegateDef)

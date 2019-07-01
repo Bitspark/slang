@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
-	"strings"
 )
 
 func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
@@ -126,7 +127,7 @@ func Build(opId uuid.UUID, gens core.Generics, props core.Properties, st storage
 		return nil, err
 	}
 
-	err = specifyOperator(opDef, gens, props, st, []string{})
+	err = specifyOperator(opDef, gens, props, st, []uuid.UUID{})
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +166,7 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	return flatOp, nil
 }
 
-func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []string) error {
+func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []uuid.UUID) error {
 	if err := def.SpecifyOperator(gens, props); err != nil {
 		return err
 	}
@@ -174,8 +175,8 @@ func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Prope
 	for _, childInsDef := range def.InstanceDefs {
 
 		// Load OperatorDef for childInsDef
-		if childInsDef.OperatorDef.Id == "" {
-			childOpId, _ := uuid.Parse(childInsDef.Operator)
+		if childInsDef.OperatorDef.Id == uuid.Nil {
+			childOpId := childInsDef.Operator
 			if childOpDef, err := st.Load(childOpId); err == nil {
 				childInsDef.OperatorDef = *childOpDef
 			} else {
@@ -183,7 +184,7 @@ func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Prope
 			}
 		}
 
-		if funk.ContainsString(dependenyChain, childInsDef.Operator) {
+		if funk.Contains(dependenyChain, childInsDef.Operator) {
 			return fmt.Errorf("recursion in %s", def.Id)
 		}
 

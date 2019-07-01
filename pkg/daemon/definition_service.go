@@ -35,7 +35,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 
 			// Gather builtin/elementary opDefs
 			for _, opId := range builtinOpIds {
-				opDef, err := elem.GetOperatorDef(opId.String())
+				opDef, err := elem.GetOperatorDef(opId)
 
 				if err != nil {
 					break

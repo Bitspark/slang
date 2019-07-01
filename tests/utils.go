@@ -50,23 +50,15 @@ func (tl *TestLoader) Reload() {
 	}
 
 	for _, opDef := range opDefList {
-		opId := uuid.New()
-		opDef.Id = opId.String()
-		tl.storage[opDef.Id] = opDef
+		tl.storage[opDef.Id.String()] = opDef
 		tl.storage[opDef.Meta.Name] = opDef
+
+		fmt.Println("-->", opDef.Id.String(), opDef.Meta.Name)
 	}
 
-	// Replace instance operator names by ids
 	for _, opDef := range opDefList {
 		for _, childInsDef := range opDef.InstanceDefs {
-			insOpId, err := uuid.Parse(childInsDef.Operator)
-
-			if err == nil {
-				childInsDef.Operator = insOpId.String()
-				continue
-			}
-
-			insOpDef, ok := tl.storage[childInsDef.Operator]
+			insOpDef, ok := tl.storage[childInsDef.Operator.String()]
 
 			if ok {
 				childInsDef.Operator = insOpDef.Id
@@ -128,8 +120,7 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 
 func (tl *TestLoader) GetUUId(opName string) (uuid.UUID, bool) {
 	opDef, ok := tl.storage[opName]
-	id, _ := uuid.Parse(opDef.Id)
-	return id, ok
+	return opDef.Id, ok
 }
 
 func (tl *TestLoader) Has(opId uuid.UUID) bool {

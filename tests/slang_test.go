@@ -21,12 +21,6 @@ func TestOperator_ReadOperator_1_OuterOperator(t *testing.T) {
 	a.PortPushesAll([]interface{}{"hallo"}, o.Main().Out())
 }
 
-func TestOperator_ReadOperator_UnknownOperator(t *testing.T) {
-	a := assertions.New(t)
-	_, err := Test.CompileFile(`test_data/unknownOp.json`, nil, nil)
-	a.Error(err)
-}
-
 func TestOperator_ReadOperator_1_BuiltinOperator_Eval(t *testing.T) {
 	a := assertions.New(t)
 	o, err := Test.CompileFile("test_data/usingBuiltinOp.json", nil, nil)

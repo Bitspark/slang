@@ -1,3 +1,4 @@
+id: a43a419d-af3d-4ffe-9974-229518787f05
 tests:
   - name: Value 1
     properties:
@@ -47,14 +48,14 @@ properties:
 
 operators:
   p1:
-    operator: test_data.properties.prop_op
+    operator: 1bb98c76-70a2-43a6-b75d-137e2bf12bd4
     properties:
       val: $v
     generics:
       valueType:
         type: primitive
   p2:
-    operator: test_data.properties.prop_op
+    operator: 1bb98c76-70a2-43a6-b75d-137e2bf12bd4
     properties:
       val: 3
     generics:

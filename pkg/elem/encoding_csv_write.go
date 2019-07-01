@@ -10,9 +10,9 @@ import (
 
 var encodingCSVWriteId = uuid.MustParse("fdd1e8e5-6959-4511-bf44-54c1bcbebc12")
 var encodingCSVWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: encodingCSVWriteId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "write CSV",
 			ShortDescription: "encodes streams into a single string",
 			Icon:             "file-csv",

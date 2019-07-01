@@ -13,44 +13,44 @@ import (
 var DefinitionService = &Service{map[string]*Endpoint{
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 		st := GetStorage(r)
-		type operatorDefJSON struct {
-			Def  core.OperatorDef `json:"def"`
-			Type string           `json:"type"`
+		type blueprintJSON struct {
+			Def  core.Blueprint `json:"def"`
+			Type string         `json:"type"`
 		}
 
 		type outJSON struct {
-			Objects []operatorDefJSON `json:"objects"`
-			Status  string            `json:"status"`
-			Error   *Error            `json:"error,omitempty"`
+			Objects []blueprintJSON `json:"objects"`
+			Status  string          `json:"status"`
+			Error   *Error          `json:"error,omitempty"`
 		}
 
 		var dataOut outJSON
 		var err error
-		opDefList := make([]operatorDefJSON, 0)
+		blueprints := make([]blueprintJSON, 0)
 
 		opIds, err := st.List()
 
 		if err == nil {
 			builtinOpIds := elem.GetBuiltinIds()
 
-			// Gather builtin/elementary opDefs
+			// Gather builtin/elementary blueprints
 			for _, opId := range builtinOpIds {
-				opDef, err := elem.GetOperatorDef(opId)
+				blueprint, err := elem.GetBlueprint(opId)
 
 				if err != nil {
 					break
 				}
 
-				opDefList = append(opDefList, operatorDefJSON{
+				blueprints = append(blueprints, blueprintJSON{
 					Type: "elementary",
-					Def:  *opDef,
+					Def:  *blueprint,
 				})
 			}
 
 			if err == nil {
-				// Gather opDefs from local & lib
+				// Gather blueprints from local & lib
 				for _, opId := range opIds {
-					opDef, err := st.Load(opId)
+					blueprint, err := st.Load(opId)
 					if err != nil {
 						continue
 					}
@@ -60,16 +60,16 @@ var DefinitionService = &Service{map[string]*Endpoint{
 						opType = "local"
 					}
 
-					opDefList = append(opDefList, operatorDefJSON{
+					blueprints = append(blueprints, blueprintJSON{
 						Type: opType,
-						Def:  *opDef,
+						Def:  *blueprint,
 					})
 				}
 			}
 		}
 
 		if err == nil {
-			dataOut = outJSON{Status: "success", Objects: opDefList}
+			dataOut = outJSON{Status: "success", Objects: blueprints}
 		} else {
 			dataOut = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
 		}
@@ -93,7 +93,7 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			var def core.OperatorDef
+			var def core.Blueprint
 			err = json.Unmarshal(body, &def)
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})

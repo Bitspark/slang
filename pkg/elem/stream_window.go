@@ -7,9 +7,9 @@ import (
 
 var streamWindowId = uuid.MustParse("5b704038-9617-454a-b7a1-2091277cff69")
 var streamWindowCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: streamWindowId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "window",
 			ShortDescription: "cuts a stream into windows of a certain size and emits them",
 			Icon:             "window-restore",

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
+func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)
 	if err != nil {
@@ -29,7 +29,7 @@ func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool
 			return nil, err
 		}
 
-		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.OperatorDef, ordered)
+		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.Blueprint, ordered)
 		if err != nil {
 			return nil, err
 		}
@@ -121,19 +121,19 @@ func BuildAndCompile(opId uuid.UUID, gens core.Generics, props core.Properties, 
 func Build(opId uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
 	// Recursively replace generics by their actual types and propagate properties
 	// TODO SpecifyOperator should instantiate and return an Operator
-	opDef, err := st.Load(opId)
+	blueprint, err := st.Load(opId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = specifyOperator(opDef, gens, props, st, []uuid.UUID{})
+	err = specifyOperator(blueprint, gens, props, st, []uuid.UUID{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and connect the operator
-	op, err := CreateAndConnectOperator("", *opDef, false)
+	op, err := CreateAndConnectOperator("", *blueprint, false)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	return flatOp, nil
 }
 
-func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []uuid.UUID) error {
+func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []uuid.UUID) error {
 	if err := def.SpecifyOperator(gens, props); err != nil {
 		return err
 	}
@@ -174,11 +174,11 @@ func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Prope
 
 	for _, childInsDef := range def.InstanceDefs {
 
-		// Load OperatorDef for childInsDef
-		if childInsDef.OperatorDef.Id == uuid.Nil {
+		// Load Blueprint for childInsDef
+		if childInsDef.Blueprint.Id == uuid.Nil {
 			childOpId := childInsDef.Operator
-			if childOpDef, err := st.Load(childOpId); err == nil {
-				childInsDef.OperatorDef = *childOpDef
+			if childBlueprint, err := st.Load(childOpId); err == nil {
+				childInsDef.Blueprint = *childBlueprint
 			} else {
 				return err
 			}
@@ -210,7 +210,7 @@ func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Prope
 			gen.SpecifyGenerics(gens)
 		}
 
-		err := specifyOperator(&childInsDef.OperatorDef, childInsDef.Generics, childInsDef.Properties, st, dependenyChain)
+		err := specifyOperator(&childInsDef.Blueprint, childInsDef.Generics, childInsDef.Properties, st, dependenyChain)
 
 		if err != nil {
 			return err

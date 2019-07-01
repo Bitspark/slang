@@ -6,9 +6,9 @@ import (
 )
 
 var streamWindowReleaseCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("47b3f097-2043-42c6-aad5-0cfdb9004aef"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "release window",
 			ShortDescription: "releases windows of items collected before",
 			Icon:             "window-maximize",

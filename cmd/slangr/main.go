@@ -22,11 +22,11 @@ import (
 
 /*** (Loader *******/
 type runnerLoader struct {
-	blueprintById map[uuid.UUID]core.OperatorDef
+	blueprintById map[uuid.UUID]core.Blueprint
 }
 
-func newRunnerStorage(blueprints []core.OperatorDef) *storage.Storage {
-	m := make(map[uuid.UUID]core.OperatorDef)
+func newRunnerStorage(blueprints []core.Blueprint) *storage.Storage {
+	m := make(map[uuid.UUID]core.Blueprint)
 
 	for _, bp := range blueprints {
 		m[bp.Id] = bp
@@ -52,9 +52,9 @@ func (l *runnerLoader) List() ([]uuid.UUID, error) {
 	return uuidList, nil
 }
 
-func (l *runnerLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	if opDef, ok := l.blueprintById[opId]; ok {
-		return &opDef, nil
+func (l *runnerLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	if blueprint, ok := l.blueprintById[opId]; ok {
+		return &blueprint, nil
 	}
 	return nil, fmt.Errorf("unknown operator")
 }
@@ -100,12 +100,12 @@ func (w *wrkCmds) Init(a string) (string, error) {
 		return "", nil
 	}
 
-	cmpltOpDef := core.SlangFileDef{}
-	if err := json.Unmarshal([]byte(a), &cmpltOpDef); err != nil {
+	cmpltBlueprint := core.SlangFileDef{}
+	if err := json.Unmarshal([]byte(a), &cmpltBlueprint); err != nil {
 		return "", err
 	}
 
-	op, err := buildOperator(cmpltOpDef)
+	op, err := buildOperator(cmpltBlueprint)
 
 	if err != nil {
 		return "", err

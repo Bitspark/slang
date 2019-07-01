@@ -11,9 +11,9 @@ import (
 )
 
 var databaseQueryCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("ce3a3e0e-d579-4712-8573-713a645c2271"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "DB query",
 			ShortDescription: "queries an SQL query on a relational database and emits the result set",
 			Icon:             "database",

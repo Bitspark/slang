@@ -8,9 +8,9 @@ import (
 )
 
 var timeUNIXMillisCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("d58b458e-8b3a-49f3-a6e9-45e737354937"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "UNIX milliseconds",
 			ShortDescription: "emits the current UNIX timestamp in milliseconds",
 			Icon:             "stamp",

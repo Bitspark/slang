@@ -9,9 +9,9 @@ import (
 )
 
 var imageDecodeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("4b082c52-9a99-472f-9277-f5ca9651dbfb"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "decode image",
 			ShortDescription: "reads an encoded image binary and emits its pixels as stream of rgb values",
 			Icon:             "file-image",

@@ -30,9 +30,9 @@ func getVariableStore(store string) *variableStore {
 
 var dataVariableSetId = uuid.MustParse("3be41b5b-5a43-4f94-a7ae-7f0bacc4ae77")
 var dataVariableSetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: dataVariableSetId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "set value",
 			ShortDescription: "stores a value for later use",
 			Icon:             "inbox-in",

@@ -7,9 +7,9 @@ import (
 
 var controlSplitId = uuid.MustParse("fed72b41-2584-424c-8213-1978410ccab6")
 var controlSplitCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: controlSplitId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "split",
 			ShortDescription: "emits items of a stream to either outgoing stream depending on the control value",
 			Icon:             "code-merge",

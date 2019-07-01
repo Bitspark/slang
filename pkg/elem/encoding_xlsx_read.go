@@ -7,9 +7,9 @@ import (
 )
 
 var encodingXLSXReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("69db81cf-2a24-4470-863f-ceffaeb8b246"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "read Excel",
 			ShortDescription: "decodes Excel data into a stream of sheets, each being a 2d-stream of cells",
 			Icon:             "file-excel",

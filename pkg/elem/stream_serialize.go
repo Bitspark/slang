@@ -9,9 +9,9 @@ import (
 )
 
 var streamSerializeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("13257172-b05d-497c-be23-da7c86577c1e"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "serialize",
 			ShortDescription: "takes a map of items and serializes them into a stream",
 			Icon:             "ellipsis-h",

@@ -8,9 +8,9 @@ import (
 )
 
 var shellExecuteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("13cbad40-da00-40d7-bdcd-981b14ec346b"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "shell execute",
 			ShortDescription: "executes a shell command on the host system",
 			Icon:             "terminal",

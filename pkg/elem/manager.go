@@ -12,7 +12,7 @@ import (
 type builtinConfig struct {
 	opConnFunc core.CFunc
 	opFunc     core.OFunc
-	opDef      core.OperatorDef
+	blueprint  core.Blueprint
 }
 
 var cfgs map[uuid.UUID]*builtinConfig
@@ -25,11 +25,11 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	if err := def.OperatorDef.GenericsSpecified(); err != nil {
+	if err := def.Blueprint.GenericsSpecified(); err != nil {
 		return nil, err
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.OperatorDef)
+	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.Blueprint)
 	if err != nil {
 		return nil, err
 	}
@@ -37,15 +37,15 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetOperatorDef(id uuid.UUID) (*core.OperatorDef, error) {
+func GetBlueprint(id uuid.UUID) (*core.Blueprint, error) {
 	cfg, ok := cfgs[id]
 
 	if !ok {
 		return nil, errors.New("builtin operator not found")
 	}
 
-	opDef := cfg.opDef.Copy(true)
-	return &opDef, nil
+	blueprint := cfg.blueprint.Copy(true)
+	return &blueprint, nil
 }
 
 func IsRegistered(id uuid.UUID) bool {
@@ -54,11 +54,11 @@ func IsRegistered(id uuid.UUID) bool {
 }
 
 func Register(cfg *builtinConfig) {
-	cfg.opDef.Elementary = cfg.opDef.Id
+	cfg.blueprint.Elementary = cfg.blueprint.Id
 
-	id := cfg.opDef.Id
+	id := cfg.blueprint.Id
 	cfgs[id] = cfg
-	name2Id[cfg.opDef.Meta.Name] = id
+	name2Id[cfg.blueprint.Meta.Name] = id
 }
 
 func GetBuiltinIds() []uuid.UUID {
@@ -176,16 +176,16 @@ func getBuiltinCfg(id uuid.UUID) *builtinConfig {
 // Mainly for testing
 
 func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
-	opDef, err := GetOperatorDef(insDef.Operator)
+	blueprint, err := GetBlueprint(insDef.Operator)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if err = opDef.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
+	if err = blueprint.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
 		return nil, err
 	}
-	insDef.OperatorDef = *opDef
+	insDef.Blueprint = *blueprint
 
 	return MakeOperator(insDef)
 }

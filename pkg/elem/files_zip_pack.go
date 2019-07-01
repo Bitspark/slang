@@ -9,9 +9,9 @@ import (
 )
 
 var filesZIPPackCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("dc5325bc-a816-47c8-8a8a-f741497459f7"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "pack ZIP",
 			ShortDescription: "packs a stream of binary content into a zip archive",
 			Icon:             "file-archive",

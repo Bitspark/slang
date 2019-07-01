@@ -9,9 +9,9 @@ import (
 
 var dataVariableGetId = uuid.MustParse("b8771c73-cddf-4eb1-a10c-bf78c2552efe")
 var dataVariableGetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: dataVariableGetId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "get value",
 			ShortDescription: "emits a value previously saved for each item",
 			Icon:             "inbox-out",

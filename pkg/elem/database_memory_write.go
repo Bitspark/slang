@@ -7,9 +7,9 @@ import (
 
 var databaseMemoryWriteId = uuid.MustParse("78e92496-dd73-4422-bcd0-691fa549dccd")
 var databaseMemoryWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: databaseMemoryWriteId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "read from memory",
 			ShortDescription: "writes an item to memory and associates it with a key string",
 			Icon:             "memory",

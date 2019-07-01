@@ -7,9 +7,9 @@ import (
 )
 
 var databaseRedisHIncrByCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("8d9e4c6e-20a2-44b1-8d51-ed98f4d3b4d8"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis HIncr",
 			ShortDescription: "executes an HIncr command at the specified Redis server",
 			Icon:             "database",

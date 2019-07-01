@@ -10,9 +10,9 @@ import (
 
 var databaseExecuteId = uuid.MustParse("e5abeb01-3aad-47f3-a753-789a9fff0d50")
 var databaseExecuteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: databaseExecuteId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "DB execute",
 			ShortDescription: "executes an SQL query on a relational database",
 			Icon:             "database",

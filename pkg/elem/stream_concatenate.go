@@ -6,9 +6,9 @@ import (
 )
 
 var streamConcatenateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("fb174c53-80bd-4e29-955a-aafe33ebfb30"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "concatenate",
 			ShortDescription: "concatenates two streams",
 			Icon:             "layer-plus",

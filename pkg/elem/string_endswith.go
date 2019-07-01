@@ -8,9 +8,9 @@ import (
 )
 
 var stringEndswithCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("db8b1677-baaf-4072-8047-0359cd68be9e"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "ends with",
 			ShortDescription: "tells if a string ends with another string",
 			Icon:             "hand-point-right",

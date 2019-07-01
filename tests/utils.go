@@ -18,15 +18,15 @@ import (
 	"github.com/google/uuid"
 )
 
-func validateJSONOperatorDef(jsonDef string) (core.OperatorDef, error) {
+func validateJSONOperatorDef(jsonDef string) (core.Blueprint, error) {
 	def, _ := core.ParseJSONOperatorDef(jsonDef)
 	return def, def.Validate()
 }
 
 type TestLoader struct {
-	// makes OperatorDef accessible by operator ID or operator Name
+	// makes Blueprint accessible by operator ID or operator Name
 	dir     string
-	storage map[string]core.OperatorDef
+	storage map[string]core.Blueprint
 }
 
 func NewTestLoader(dir string) *TestLoader {
@@ -36,37 +36,37 @@ func NewTestLoader(dir string) *TestLoader {
 		dir += pathSep
 	}
 
-	s := &TestLoader{dir, make(map[string]core.OperatorDef)}
+	s := &TestLoader{dir, make(map[string]core.Blueprint)}
 	s.Reload()
 	return s
 }
 
 func (tl *TestLoader) Reload() {
-	tl.storage = make(map[string]core.OperatorDef)
-	opDefList, err := readAllFiles(tl.dir)
+	tl.storage = make(map[string]core.Blueprint)
+	blueprints, err := readAllFiles(tl.dir)
 
 	if err != nil {
 		panic(err)
 	}
 
-	for _, opDef := range opDefList {
-		tl.storage[opDef.Id.String()] = opDef
-		tl.storage[opDef.Meta.Name] = opDef
+	for _, blueprint := range blueprints {
+		tl.storage[blueprint.Id.String()] = blueprint
+		tl.storage[blueprint.Meta.Name] = blueprint
 
-		fmt.Println("-->", opDef.Id.String(), opDef.Meta.Name)
+		fmt.Println("-->", blueprint.Id.String(), blueprint.Meta.Name)
 	}
 
-	for _, opDef := range opDefList {
-		for _, childInsDef := range opDef.InstanceDefs {
-			insOpDef, ok := tl.storage[childInsDef.Operator.String()]
+	for _, blueprint := range blueprints {
+		for _, childInsDef := range blueprint.InstanceDefs {
+			insBlueprint, ok := tl.storage[childInsDef.Operator.String()]
 
 			if ok {
-				childInsDef.Operator = insOpDef.Id
+				childInsDef.Operator = insBlueprint.Id
 				continue
 			}
 
-			if elemOpDef, err := elem.GetOperatorDef(childInsDef.Operator); err == nil {
-				childInsDef.Operator = elemOpDef.Id
+			if elemBlueprint, err := elem.GetBlueprint(childInsDef.Operator); err == nil {
+				childInsDef.Operator = elemBlueprint.Id
 				continue
 			}
 		}
@@ -78,8 +78,8 @@ func GetOperatorName(dir string, path string) string {
 	return strings.Replace(relPath, string(filepath.Separator), ".", -1)
 }
 
-func readAllFiles(dir string) ([]core.OperatorDef, error) {
-	var opDefList []core.OperatorDef
+func readAllFiles(dir string) ([]core.Blueprint, error) {
+	var blueprints []core.Blueprint
 	outerErr := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -96,12 +96,12 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 			return errors.New("could not read operator file " + path)
 		}
 
-		var opDef core.OperatorDef
+		var blueprint core.Blueprint
 		// Parse the file, just read it in
 		if utils.IsYAML(path) {
-			opDef, err = core.ParseYAMLOperatorDef(string(b))
+			blueprint, err = core.ParseYAMLOperatorDef(string(b))
 		} else if utils.IsJSON(path) {
-			opDef, err = core.ParseJSONOperatorDef(string(b))
+			blueprint, err = core.ParseJSONOperatorDef(string(b))
 		} else {
 			err = errors.New("unsupported file ending")
 		}
@@ -109,18 +109,18 @@ func readAllFiles(dir string) ([]core.OperatorDef, error) {
 			return err
 		}
 
-		opDef.Meta.Name = GetOperatorName(dir, path)
-		opDefList = append(opDefList, opDef)
+		blueprint.Meta.Name = GetOperatorName(dir, path)
+		blueprints = append(blueprints, blueprint)
 
 		return nil
 	})
 
-	return opDefList, outerErr
+	return blueprints, outerErr
 }
 
 func (tl *TestLoader) GetUUId(opName string) (uuid.UUID, bool) {
-	opDef, ok := tl.storage[opName]
-	return opDef.Id, ok
+	blueprint, ok := tl.storage[opName]
+	return blueprint.Id, ok
 }
 
 func (tl *TestLoader) Has(opId uuid.UUID) bool {
@@ -140,9 +140,9 @@ func (tl *TestLoader) List() ([]uuid.UUID, error) {
 	return uuidList, nil
 }
 
-func (tl *TestLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	if opDef, ok := tl.storage[opId.String()]; ok {
-		return &opDef, nil
+func (tl *TestLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	if blueprint, ok := tl.storage[opId.String()]; ok {
+		return &blueprint, nil
 	}
 	return nil, fmt.Errorf("unknown operator")
 }

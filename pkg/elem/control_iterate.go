@@ -9,9 +9,9 @@ import (
 
 var controlIterateId = uuid.MustParse("e58624d4-5568-40d3-8b77-ab792ef620f1")
 var controlIterateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: controlIterateId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "iterate",
 			ShortDescription: "uses an iterator delegate to aggregate items of a stream",
 			Icon:             "compress-alt",

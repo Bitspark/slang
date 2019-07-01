@@ -12,9 +12,9 @@ import (
 
 var filesReadId = uuid.MustParse("f7eecf2c-6504-478f-b2fa-809bec71463c")
 var filesReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: filesReadId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "read file",
 			ShortDescription: "reads the contents of a file and emits them",
 			Icon:             "file",

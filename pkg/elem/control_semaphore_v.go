@@ -7,9 +7,9 @@ import (
 
 var controlSemaphoreVId = uuid.MustParse("dc9b35a3-bd0e-4ca3-99df-4e2689ea5097")
 var controlSemaphoreVCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: controlSemaphoreVId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "semaphore V",
 			ShortDescription: "frees a semaphore token",
 			Icon:             "traffic-light-go",

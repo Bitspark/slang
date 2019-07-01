@@ -7,9 +7,9 @@ import (
 )
 
 var databaseRedisHGetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("4b946e4a-e26b-45c7-9759-c60bd57d190d"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis HGet",
 			ShortDescription: "executes an HGet command at the specified Redis server",
 			Icon:             "database",

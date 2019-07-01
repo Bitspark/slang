@@ -29,9 +29,9 @@ func getWindowStore(store string) *windowStore {
 }
 
 var streamWindowCollectCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("14f5de1a-5e38-4f9c-a625-eff7a572078c"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "collect window",
 			ShortDescription: "collects items from a stream until released",
 			Icon:             "window",

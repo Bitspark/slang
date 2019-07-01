@@ -6,9 +6,9 @@ import (
 )
 
 var streamSliceCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("2471a7aa-c5b9-4392-b23f-d0c7bcdb3f39"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "slice",
 			ShortDescription: "emits a sub-stream of another stream",
 			Icon:             "cut",

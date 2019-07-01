@@ -9,9 +9,9 @@ import (
 
 var encodingJSONWriteId = uuid.MustParse("d4aabe2d-dee7-409f-b2bb-713ebc836672")
 var encodingJSONWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: encodingJSONWriteId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "encode JSON",
 			ShortDescription: "encodes Slang data into a JSON string",
 			Icon:             "brackets-curly",

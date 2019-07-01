@@ -9,9 +9,9 @@ import (
 
 var timeDelayId = uuid.MustParse("7d61b83a-9aa2-4875-9c21-1e11f6adbfae")
 var timeDelayCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: timeDelayId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "delay",
 			ShortDescription: "takes an item and emits it again after a given number of milliseconds has passed",
 			Icon:             "clock",

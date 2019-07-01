@@ -6,9 +6,9 @@ import (
 )
 
 var streamStreamToMapCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("42d0f961-4ce0-4a20-b1b0-3da46396ae66"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "stream to map",
 			ShortDescription: "takes a map and emits a stream of key-value pairs",
 			Icon:             "cubes",

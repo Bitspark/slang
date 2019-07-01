@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -84,12 +83,8 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 			return nil
 		}
 
-		if opId, err := uuid.Parse(opDef.Id); err == nil {
-			opsFilePathSet[opId] = true
-		} else {
-			log.Printf("invalid id in OperatorDef file %s: %s", path, err)
-			return nil
-		}
+		opsFilePathSet[opDef.Id] = true
+
 		return nil
 	})
 
@@ -117,17 +112,11 @@ func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 }
 
 func (fs *WritableFileSystem) Save(opDef core.OperatorDef) (uuid.UUID, error) {
-	opId, err := uuid.Parse(opDef.Id)
-
-	if err != nil {
-		return opId, fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, opDef.Id, err)
-	}
-
+	opId := opDef.Id
 	cwd := fs.root
-
 	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
 	absPath := filepath.Join(cwd, relPath+".yaml")
-	_, err = utils.EnsureDirExists(filepath.Dir(absPath))
+	_, err := utils.EnsureDirExists(filepath.Dir(absPath))
 
 	if err != nil {
 		return opId, err

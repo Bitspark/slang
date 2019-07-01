@@ -114,7 +114,7 @@ func (s *Storage) selectBackend(opId uuid.UUID) Backend {
 }
 
 func (s *Storage) getOpDef(opId uuid.UUID) (*core.OperatorDef, error) {
-	if opDef, err := elem.GetOperatorDef(opId.String()); err == nil {
+	if opDef, err := elem.GetOperatorDef(opId); err == nil {
 		return opDef, nil
 	}
 

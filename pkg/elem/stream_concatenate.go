@@ -2,11 +2,12 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamConcatenateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "fb174c53-80bd-4e29-955a-aafe33ebfb30",
+		Id: uuid.MustParse("fb174c53-80bd-4e29-955a-aafe33ebfb30"),
 		Meta: core.OperatorMetaDef{
 			Name:             "concatenate",
 			ShortDescription: "concatenates two streams",

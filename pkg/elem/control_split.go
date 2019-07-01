@@ -2,9 +2,10 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlSplitId = "fed72b41-2584-424c-8213-1978410ccab6"
+var controlSplitId = uuid.MustParse("fed72b41-2584-424c-8213-1978410ccab6")
 var controlSplitCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: controlSplitId,

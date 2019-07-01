@@ -2,10 +2,12 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+
 	"time"
 )
 
-var dataVariableGetId = "b8771c73-cddf-4eb1-a10c-bf78c2552efe"
+var dataVariableGetId = uuid.MustParse("b8771c73-cddf-4eb1-a10c-bf78c2552efe")
 var dataVariableGetCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: dataVariableGetId,

@@ -5,11 +5,12 @@ import (
 	"image"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var imageDecodeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "4b082c52-9a99-472f-9277-f5ca9651dbfb",
+		Id: uuid.MustParse("4b082c52-9a99-472f-9277-f5ca9651dbfb"),
 		Meta: core.OperatorMetaDef{
 			Name:             "decode image",
 			ShortDescription: "reads an encoded image binary and emits its pixels as stream of rgb values",

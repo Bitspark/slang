@@ -19,7 +19,7 @@ func Test_DataConstant__NoProps(t *testing.T) {
 	a := assertions.New(t)
 	co, err := MakeOperator(
 		core.InstanceDef{
-			Operator: "const",
+			Operator: dataValueId,
 			Generics: map[string]*core.TypeDef{
 				"valueType": {
 					Type: "number",
@@ -35,7 +35,7 @@ func TestBuiltinConst__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := MakeOperator(
 		core.InstanceDef{
-			Operator:   "const",
+			Operator:   dataValueId,
 			Properties: core.Properties{"value": 1.0},
 		},
 	)

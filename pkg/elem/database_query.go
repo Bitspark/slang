@@ -2,14 +2,17 @@ package elem
 
 import (
 	"database/sql"
+
 	"github.com/Bitspark/slang/pkg/core"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
+
 	"reflect"
 )
 
 var databaseQueryCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "ce3a3e0e-d579-4712-8573-713a645c2271",
+		Id: uuid.MustParse("ce3a3e0e-d579-4712-8573-713a645c2271"),
 		Meta: core.OperatorMetaDef{
 			Name:             "DB query",
 			ShortDescription: "queries an SQL query on a relational database and emits the result set",

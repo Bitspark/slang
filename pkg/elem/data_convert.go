@@ -6,9 +6,10 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var dataConvertId = "d1191456-3583-4eaf-8ec1-e486c3818c60"
+var dataConvertId = uuid.MustParse("d1191456-3583-4eaf-8ec1-e486c3818c60")
 var dataConvertCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: dataConvertId,

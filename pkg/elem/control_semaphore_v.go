@@ -2,9 +2,10 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlSemaphoreVId = "dc9b35a3-bd0e-4ca3-99df-4e2689ea5097"
+var controlSemaphoreVId = uuid.MustParse("dc9b35a3-bd0e-4ca3-99df-4e2689ea5097")
 var controlSemaphoreVCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: controlSemaphoreVId,

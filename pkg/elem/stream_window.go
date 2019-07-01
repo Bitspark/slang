@@ -2,9 +2,10 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var streamWindowId = "5b704038-9617-454a-b7a1-2091277cff69"
+var streamWindowId = uuid.MustParse("5b704038-9617-454a-b7a1-2091277cff69")
 var streamWindowCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: streamWindowId,

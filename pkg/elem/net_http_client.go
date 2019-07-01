@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var netHTTPClientCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "f7f5907d-758b-4892-8a3e-ae86b877b869",
+		Id: uuid.MustParse("f7f5907d-758b-4892-8a3e-ae86b877b869"),
 		Meta: core.OperatorMetaDef{
 			Name:             "HTTP client",
 			ShortDescription: "sends an HTTP request",

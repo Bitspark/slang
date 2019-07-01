@@ -4,9 +4,10 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var timeDelayId = "7d61b83a-9aa2-4875-9c21-1e11f6adbfae"
+var timeDelayId = uuid.MustParse("7d61b83a-9aa2-4875-9c21-1e11f6adbfae")
 var timeDelayCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: timeDelayId,

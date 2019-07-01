@@ -2,9 +2,10 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlLoopId = "0b8a1592-1368-44bc-92d5-692acc78b1d3"
+var controlLoopId = uuid.MustParse("0b8a1592-1368-44bc-92d5-692acc78b1d3")
 var controlLoopCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: controlLoopId,

@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var dataUUIDId = "a83bf9b2-cf1b-4b14-94c2-ea04d5cf70c0"
+var dataUUIDId = uuid.MustParse("a83bf9b2-cf1b-4b14-94c2-ea04d5cf70c0")
 var dataUUIDCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: dataUUIDId,

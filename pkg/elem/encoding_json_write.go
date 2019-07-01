@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var encodingJSONWriteId = "d4aabe2d-dee7-409f-b2bb-713ebc836672"
+var encodingJSONWriteId = uuid.MustParse("d4aabe2d-dee7-409f-b2bb-713ebc836672")
 var encodingJSONWriteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: encodingJSONWriteId,

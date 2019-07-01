@@ -6,11 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var filesWriteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "9b61597d-cfbc-42d1-9620-210081244ba1",
+		Id: uuid.MustParse("9b61597d-cfbc-42d1-9620-210081244ba1"),
 		Meta: core.OperatorMetaDef{
 			Name:             "write file",
 			ShortDescription: "creates or replaces a file and writes binary data to it",

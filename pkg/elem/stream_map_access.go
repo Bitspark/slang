@@ -4,9 +4,10 @@ import (
 	"reflect"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var streamMapAccessId = "618c4007-70fc-44ac-9443-184df77ab730"
+var streamMapAccessId = uuid.MustParse("618c4007-70fc-44ac-9443-184df77ab730")
 var streamMapAccessCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: streamMapAccessId,

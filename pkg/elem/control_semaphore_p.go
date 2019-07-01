@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 type semaphoreStore struct {
@@ -26,7 +27,7 @@ func getSemaphoreStore(semaphore string) *semaphoreStore {
 	return semStore
 }
 
-var controlSemaphorePId = "199f14c3-3e25-4813-aaba-7ec7fa3d94e2"
+var controlSemaphorePId = uuid.MustParse("199f14c3-3e25-4813-aaba-7ec7fa3d94e2")
 var controlSemaphorePCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: controlSemaphorePId,

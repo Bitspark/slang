@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamSerializeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "13257172-b05d-497c-be23-da7c86577c1e",
+		Id: uuid.MustParse("13257172-b05d-497c-be23-da7c86577c1e"),
 		Meta: core.OperatorMetaDef{
 			Name:             "serialize",
 			ShortDescription: "takes a map of items and serializes them into a stream",

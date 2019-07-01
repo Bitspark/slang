@@ -2,9 +2,10 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var streamMapToStreamId = "d099a1cd-69eb-43a2-b95b-239612c457fc"
+var streamMapToStreamId = uuid.MustParse("d099a1cd-69eb-43a2-b95b-239612c457fc")
 var streamMapToStreamCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: streamMapToStreamId,

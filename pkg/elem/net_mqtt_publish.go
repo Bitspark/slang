@@ -2,12 +2,13 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 )
 
 var netMQTTPublishCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "c6b5bef6-e93e-4bc1-8ded-49c90919f39d",
+		Id: uuid.MustParse("c6b5bef6-e93e-4bc1-8ded-49c90919f39d"),
 		Meta: core.OperatorMetaDef{
 			Name:             "MQTT publish",
 			ShortDescription: "publishes an MQTT message at a given topic",

@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var stringFormatCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "21dbddf2-2d07-494e-8950-3ac0224a3ff5",
+		Id: uuid.MustParse("21dbddf2-2d07-494e-8950-3ac0224a3ff5"),
 		Meta: core.OperatorMetaDef{
 			Name:             "format",
 			ShortDescription: "places values formatted in a C-like manner inside a string",

@@ -2,12 +2,13 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 	"github.com/robfig/cron"
 )
 
 var timeCrontabCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "60b849fd-ca5a-4206-8312-996e4e3f6c31",
+		Id: uuid.MustParse("60b849fd-ca5a-4206-8312-996e4e3f6c31"),
 		Meta: core.OperatorMetaDef{
 			Name:             "crontab",
 			ShortDescription: "takes a UNIX crontab string, sends triggers to its handler delegate accordingly",

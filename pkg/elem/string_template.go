@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var stringTemplateId = "3c39f999-b5c2-490d-aed1-19149d228b04"
+var stringTemplateId = uuid.MustParse("3c39f999-b5c2-490d-aed1-19149d228b04")
 var stringTemplateCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: stringTemplateId,

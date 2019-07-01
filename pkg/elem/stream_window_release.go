@@ -2,11 +2,12 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamWindowReleaseCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "47b3f097-2043-42c6-aad5-0cfdb9004aef",
+		Id: uuid.MustParse("47b3f097-2043-42c6-aad5-0cfdb9004aef"),
 		Meta: core.OperatorMetaDef{
 			Name:             "release window",
 			ShortDescription: "releases windows of items collected before",

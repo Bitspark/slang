@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var filesReadId = "f7eecf2c-6504-478f-b2fa-809bec71463c"
+var filesReadId = uuid.MustParse("f7eecf2c-6504-478f-b2fa-809bec71463c")
 var filesReadCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: filesReadId,

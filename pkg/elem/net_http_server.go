@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 type requestHandler struct {
@@ -79,7 +80,7 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 	})
 }
 
-var netHTTPServerId = "241cc7ef-c6d6-49c1-8729-c5e3c0be8188"
+var netHTTPServerId = uuid.MustParse("241cc7ef-c6d6-49c1-8729-c5e3c0be8188")
 var netHTTPServerCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: netHTTPServerId,

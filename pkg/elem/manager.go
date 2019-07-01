@@ -37,16 +37,8 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetId(idOrName string) uuid.UUID {
-	if id, ok := name2Id[idOrName]; ok {
-		return id
-	}
-	id, _ := uuid.Parse(idOrName)
-	return id
-}
-
-func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
-	cfg, ok := cfgs[GetId(idOrName)]
+func GetOperatorDef(id uuid.UUID) (*core.OperatorDef, error) {
+	cfg, ok := cfgs[id]
 
 	if !ok {
 		return nil, errors.New("builtin operator not found")
@@ -56,15 +48,15 @@ func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
 	return &opDef, nil
 }
 
-func IsRegistered(idOrName string) bool {
-	_, b := cfgs[GetId(idOrName)]
+func IsRegistered(id uuid.UUID) bool {
+	_, b := cfgs[id]
 	return b
 }
 
 func Register(cfg *builtinConfig) {
 	cfg.opDef.Elementary = cfg.opDef.Id
 
-	id := GetId(cfg.opDef.Id)
+	id := cfg.opDef.Id
 	cfgs[id] = cfg
 	name2Id[cfg.opDef.Meta.Name] = id
 }
@@ -176,8 +168,8 @@ func init() {
 	semaphoreMutex = &sync.Mutex{}
 }
 
-func getBuiltinCfg(id string) *builtinConfig {
-	c, _ := cfgs[GetId(id)]
+func getBuiltinCfg(id uuid.UUID) *builtinConfig {
+	c, _ := cfgs[id]
 	return c
 }
 

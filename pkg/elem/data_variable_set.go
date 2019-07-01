@@ -2,6 +2,8 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+
 	"sync"
 )
 
@@ -26,7 +28,7 @@ func getVariableStore(store string) *variableStore {
 	return ws
 }
 
-var dataVariableSetId = "3be41b5b-5a43-4f94-a7ae-7f0bacc4ae77"
+var dataVariableSetId = uuid.MustParse("3be41b5b-5a43-4f94-a7ae-7f0bacc4ae77")
 var dataVariableSetCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: dataVariableSetId,

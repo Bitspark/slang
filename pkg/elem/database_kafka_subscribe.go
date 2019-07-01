@@ -6,9 +6,10 @@ import (
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Shopify/sarama"
+	"github.com/google/uuid"
 )
 
-var databaseKafkaSubscribeId = "b6cb78ca-bbfd-475e-a11f-3593ce295e3c"
+var databaseKafkaSubscribeId = uuid.MustParse("b6cb78ca-bbfd-475e-a11f-3593ce295e3c")
 var databaseKafkaSubscribeCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: databaseKafkaSubscribeId,

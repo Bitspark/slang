@@ -2,9 +2,10 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var databaseMemoryWriteId = "78e92496-dd73-4422-bcd0-691fa549dccd"
+var databaseMemoryWriteId = uuid.MustParse("78e92496-dd73-4422-bcd0-691fa549dccd")
 var databaseMemoryWriteCfg = &builtinConfig{
 	opDef: core.OperatorDef{
 		Id: databaseMemoryWriteId,

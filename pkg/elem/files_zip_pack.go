@@ -5,11 +5,12 @@ import (
 	"bytes"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var filesZIPPackCfg = &builtinConfig{
 	opDef: core.OperatorDef{
-		Id: "dc5325bc-a816-47c8-8a8a-f741497459f7",
+		Id: uuid.MustParse("dc5325bc-a816-47c8-8a8a-f741497459f7"),
 		Meta: core.OperatorMetaDef{
 			Name:             "pack ZIP",
 			ShortDescription: "packs a stream of binary content into a zip archive",

@@ -30,7 +30,7 @@ type TagInfo struct {
 }
 
 type OperatorDefinition struct {
-	UUID string
+	ID   uuid.UUID
 	Type string
 	JSON string
 }
@@ -50,7 +50,7 @@ type TestCase struct {
 }
 
 type OperatorInfo struct {
-	UUID                string
+	ID                  uuid.UUID
 	Name                string
 	Type                string
 	Icon                string
@@ -66,8 +66,8 @@ type OperatorInfo struct {
 	OperatorsUsingCount  int
 	OperatorsUsingJSON   string
 
-	operatorContent map[string]*OperatorUsage
-	operatorsUsing  map[string]*OperatorUsage
+	operatorContent map[uuid.UUID]*OperatorUsage
+	operatorsUsing  map[uuid.UUID]*OperatorUsage
 
 	operatorDefinition *core.OperatorDef
 }
@@ -78,7 +78,7 @@ type DocGenerator struct {
 	docIndexPath   string
 	docOpURL       *url.URL
 	opTmpl         *template.Template
-	operatorInfos  map[string]*OperatorInfo
+	operatorInfos  map[uuid.UUID]*OperatorInfo
 	tagInfos       map[string]*TagInfo
 	slugs          map[string]*OperatorInfo
 	generatedInfos []*OperatorInfo
@@ -175,7 +175,7 @@ func makeDocumentGenerator(libDir string, idxOut string, opTpl string, opOutDir 
 		opTmpl:        opTmpl,
 		slugs:         make(map[string]*OperatorInfo),
 		tagInfos:      make(map[string]*TagInfo),
-		operatorInfos: make(map[string]*OperatorInfo),
+		operatorInfos: make(map[uuid.UUID]*OperatorInfo),
 	}
 }
 
@@ -188,22 +188,22 @@ func (dg *DocGenerator) collect(strict bool) {
 	log.Println("Begin collecting")
 	log.Printf("Library path: %s\n", dg.libDir)
 
-	elementaryUUIDs := elem.GetBuiltinIds()
+	elementaryIDs := elem.GetBuiltinIds()
 
 	store := storage.NewStorage().AddBackend(storage.NewReadOnlyFileSystem(dg.libDir))
 
-	libraryUUIDs, err := store.List()
+	libraryIDs, err := store.List()
 	if err != nil {
 		panic(err)
 	}
 
 	var uuids []uuid.UUID
 
-	for _, id := range elementaryUUIDs {
+	for _, id := range elementaryIDs {
 		uuids = append(uuids, id)
 	}
 
-	for _, id := range libraryUUIDs {
+	for _, id := range libraryIDs {
 		uuids = append(uuids, id)
 	}
 
@@ -228,10 +228,10 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		var opType string
-		if funk.Contains(libraryUUIDs, id) {
+		if funk.Contains(libraryIDs, id) {
 			libraries++
 			opType = "library"
-		} else if funk.Contains(elementaryUUIDs, id) {
+		} else if funk.Contains(elementaryIDs, id) {
 			elementaries++
 			opType = "elementary"
 		} else {
@@ -313,7 +313,7 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		*opInfo = OperatorInfo{
-			UUID:                id.String(),
+			ID:                  id,
 			Name:                opDef.Meta.Name,
 			Icon:                opIcon,
 			Description:         opDef.Meta.Description,
@@ -324,8 +324,8 @@ func (dg *DocGenerator) collect(strict bool) {
 			Tests:               opTests,
 			OperatorDefinitions: opJSONDefs,
 			operatorDefinition:  opDef,
-			operatorContent:     make(map[string]*OperatorUsage),
-			operatorsUsing:      make(map[string]*OperatorUsage),
+			operatorContent:     make(map[uuid.UUID]*OperatorUsage),
+			operatorsUsing:      make(map[uuid.UUID]*OperatorUsage),
 		}
 
 		dg.slugs[opSlug] = opInfo
@@ -374,10 +374,10 @@ func (dg *DocGenerator) usage() {
 				continue
 			}
 
-			if usage, ok := insInfo.operatorsUsing[info.UUID]; ok {
+			if usage, ok := insInfo.operatorsUsing[info.ID]; ok {
 				usage.Count++
 			} else {
-				insInfo.operatorsUsing[info.UUID] = &OperatorUsage{
+				insInfo.operatorsUsing[info.ID] = &OperatorUsage{
 					Count: 1,
 					Info:  info,
 				}
@@ -514,16 +514,16 @@ func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
 	}
 }
 
-func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[string]OperatorDefinition {
+func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[uuid.UUID]OperatorDefinition {
 	opDef, err := store.Load(id)
 	if err != nil {
 		panic(err)
 	}
 
-	defs := make(map[string]OperatorDefinition)
+	defs := make(map[uuid.UUID]OperatorDefinition)
 
 	var opType string
-	if opDef.Elementary == "" {
+	if opDef.Elementary == uuid.Nil {
 		opType = "library"
 	} else {
 		opType = "elementary"
@@ -538,12 +538,7 @@ func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[string]OperatorDe
 	defs[opDef.Id] = OperatorDefinition{opDef.Id, opType, buf.String()}
 
 	for _, ins := range opDef.InstanceDefs {
-		opUuid, err := uuid.Parse(ins.Operator)
-		if err != nil {
-			panic(err)
-		}
-		subDefs := dumpDefinitions(opUuid, store)
-
+		subDefs := dumpDefinitions(ins.Operator, store)
 		for id, def := range subDefs {
 			if _, ok := defs[id]; !ok {
 				defs[id] = def

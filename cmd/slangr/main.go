@@ -22,11 +22,11 @@ import (
 
 /*** (Loader *******/
 type runnerLoader struct {
-	blueprintbyId map[string]core.OperatorDef
+	blueprintById map[uuid.UUID]core.OperatorDef
 }
 
 func newRunnerStorage(blueprints []core.OperatorDef) *storage.Storage {
-	m := make(map[string]core.OperatorDef)
+	m := make(map[uuid.UUID]core.OperatorDef)
 
 	for _, bp := range blueprints {
 		m[bp.Id] = bp
@@ -36,14 +36,14 @@ func newRunnerStorage(blueprints []core.OperatorDef) *storage.Storage {
 }
 
 func (l *runnerLoader) Has(opId uuid.UUID) bool {
-	_, ok := l.blueprintbyId[opId.String()]
+	_, ok := l.blueprintById[opId]
 	return ok
 }
 
 func (l *runnerLoader) List() ([]uuid.UUID, error) {
 	var uuidList []uuid.UUID
 
-	for _, idOrName := range funk.Keys(l.blueprintbyId).([]string) {
+	for _, idOrName := range funk.Keys(l.blueprintById).([]string) {
 		if id, err := uuid.Parse(idOrName); err == nil {
 			uuidList = append(uuidList, id)
 		}
@@ -53,7 +53,7 @@ func (l *runnerLoader) List() ([]uuid.UUID, error) {
 }
 
 func (l *runnerLoader) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	if opDef, ok := l.blueprintbyId[opId.String()]; ok {
+	if opDef, ok := l.blueprintById[opId]; ok {
 		return &opDef, nil
 	}
 	return nil, fmt.Errorf("unknown operator")
@@ -181,8 +181,7 @@ func buildOperator(d core.SlangFileDef) (*core.Operator, error) {
 
 	stor := newRunnerStorage(d.Blueprints)
 
-	bpId, _ := uuid.Parse(d.Main)
-	return api.BuildAndCompile(bpId, d.Args.Generics, d.Args.Properties, *stor)
+	return api.BuildAndCompile(d.Main, d.Args.Generics, d.Args.Properties, *stor)
 }
 
 func eof(e error) bool {

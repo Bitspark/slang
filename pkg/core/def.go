@@ -380,7 +380,7 @@ func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	for prop, propDef := range def.PropertyDefs {
 		propVal, ok := props[prop]
 		if !ok {
-			return errors.New("Missing property " + prop)
+			return errors.New("missing property " + prop)
 		}
 		if err := propDef.VerifyData(propVal); err != nil {
 			return err

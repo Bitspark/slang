@@ -3,13 +3,12 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
-	"os/exec"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Bitspark/slang/pkg/api"
@@ -18,34 +17,53 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("USAGE: slang SLANGFILE.slang.json")
+	if err := checkStdin(); err != nil {
+		log.Fatal(err)
 	}
-	flag.Parse()
 
-	slFile, err := readSlangFile(flag.Arg(0))
+	slFileReader := bufio.NewReader(os.Stdin)
+	slFile, err := readSlangFile(slFileReader)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.SetOperatorId(slFile.Main)
+	operator, err := api.BuildOperator(slFile)
 
-	if err := run(slFile); err != nil {
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.SetOperator(operator.Id(), operator.Name())
+
+	if err := run(operator); err != nil {
 		log.Fatal(err)
 	}
 
 }
 
-func readSlangFile(slFilePath string) (*core.SlangFileDef, error) {
-	var slFile core.SlangFileDef
-
-	b, err := ioutil.ReadFile(slFilePath)
-
+func checkStdin() error {
+	info, err := os.Stdin.Stat()
 	if err != nil {
-		return &slFile, fmt.Errorf("could not read operator file: %s", slFilePath)
+		return err
 	}
-	err = json.Unmarshal(b, &slFile)
+
+	if info.Mode()&os.ModeCharDevice != 0 || info.Size() <= 0 {
+		return fmt.Errorf("needs slangFile via stdin")
+	}
+
+	return nil
+}
+
+func readSlangFile(reader *bufio.Reader) (*core.SlangFileDef, error) {
+	slFileContent, err := api.Rdbuf(reader)
+
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	var slFile core.SlangFileDef
+	err = json.Unmarshal([]byte(slFileContent), &slFile)
 	return &slFile, err
 }
 
@@ -70,83 +88,22 @@ func printPortDef(slFile *core.SlangFileDef) error {
 	return nil
 }
 
-func run(slFile *core.SlangFileDef) error {
+func run(operator *core.Operator) error {
+	operator.Main().Out().Bufferize()
+	operator.Start()
 
-	errors := make(chan error, 1)
-	done := make(chan bool, 1)
-	portcfgs := make(chan map[string]string, 1)
+	// Handle SIGTERM (CTRL-C)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
-	cmdr := api.NewCommander(":0")
-
-	go func() {
-		err := cmdr.Begin(func(c api.Commands) error {
-			var msg string
-			var err error
-
-			msg, err = c.Hello()
-
-			if err != nil {
-				return err
-			}
-
-			if msg == "" {
-				msg, err = c.Init(jsonString(slFile))
-			} else {
-				msg, err = c.PrtCfg()
-			}
-
-			if err != nil {
-				return err
-			}
-
-			var pcfg map[string]string
-			if err = json.Unmarshal([]byte(msg), &pcfg); err != nil {
-				return err
-			}
-
-			portcfgs <- pcfg
+	for {
+		select {
+		case <-quit:
 			return nil
-		})
-
-		if err != nil {
-			errors <- err
+		case <-time.After(5 * time.Second):
+			log.Ping()
 		}
-	}()
-
-	cmd := exec.Command("slangr", "--aggr-in", "--aggr-out", "--mgnt-addr", fmt.Sprintf("%s", cmdr.Addr()))
-
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Start()
-	if err != nil {
-		return err
 	}
-
-	go func() {
-		if err := cmd.Wait(); err != nil {
-			<-done
-		}
-		done <- true
-	}()
-
-	var portcfg map[string]string
-	select {
-	case err = <-errors:
-		return err
-	case portcfg = <-portcfgs:
-		break
-	}
-
-	pconn := api.NewPortConnHandler(portcfg)
-	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
-		return err
-	}
-	if err := pconn.ConnectTo(")", pullFromRnr); err != nil {
-		return err
-	}
-
-	<-done
-	return nil
 }
 
 func jsonString(j interface{}) string {

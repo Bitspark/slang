@@ -11,6 +11,57 @@ import (
 	"github.com/google/uuid"
 )
 
+// todo should be SlangFileDef method
+func BuildOperator(sf *core.SlangFileDef) (*core.Operator, error) {
+	if !sf.Valid() {
+		if err := sf.Validate(); err != nil {
+			return nil, err
+		}
+	}
+
+	stor := newSlangFileStorage(sf.Blueprints)
+
+	return BuildAndCompile(sf.Main, sf.Args.Generics, sf.Args.Properties, *stor)
+}
+
+type slangFileLoader struct {
+	blueprintById map[uuid.UUID]core.Blueprint
+}
+
+func newSlangFileStorage(blueprints []core.Blueprint) *storage.Storage {
+	m := make(map[uuid.UUID]core.Blueprint)
+
+	for _, bp := range blueprints {
+		m[bp.Id] = bp
+	}
+
+	return storage.NewStorage().AddBackend(&slangFileLoader{m})
+}
+
+func (l *slangFileLoader) Has(opId uuid.UUID) bool {
+	_, ok := l.blueprintById[opId]
+	return ok
+}
+
+func (l *slangFileLoader) List() ([]uuid.UUID, error) {
+	var uuidList []uuid.UUID
+
+	for _, idOrName := range funk.Keys(l.blueprintById).([]string) {
+		if id, err := uuid.Parse(idOrName); err == nil {
+			uuidList = append(uuidList, id)
+		}
+	}
+
+	return uuidList, nil
+}
+
+func (l *slangFileLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	if blueprint, ok := l.blueprintById[opId]; ok {
+		return &blueprint, nil
+	}
+	return nil, fmt.Errorf("unknown operator")
+}
+
 func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)

@@ -31,12 +31,17 @@ func getStats() logrus.Fields {
 
 var logger = newLogger()
 
-func SetOperatorId(operatorId uuid.UUID) {
-	logger.Data["operator"] = operatorId
+func SetOperator(operatorId uuid.UUID, operatorName string) {
+	logger.Data["operatorId"] = operatorId
+	logger.Data["operatorName"] = operatorName
+}
+
+func Ping() {
+	logger.Print("ping")
 }
 
 func Print(args ...interface{}) {
-	logger.Print(args)
+	logger.Print(args...)
 }
 
 func Printf(format string, args ...interface{}) {
@@ -44,7 +49,7 @@ func Printf(format string, args ...interface{}) {
 }
 
 func Warn(args ...interface{}) {
-	logger.Warn(args)
+	logger.Warn(args...)
 }
 
 func Warnf(format string, args ...interface{}) {
@@ -52,7 +57,7 @@ func Warnf(format string, args ...interface{}) {
 }
 
 func Error(args ...interface{}) {
-	logger.Error(args)
+	logger.Error(args...)
 }
 
 func Errorf(format string, args ...interface{}) {
@@ -60,7 +65,7 @@ func Errorf(format string, args ...interface{}) {
 }
 
 func Fatal(args ...interface{}) {
-	logger.Fatal(args)
+	logger.Fatal(args...)
 }
 
 func Fatalf(format string, args ...interface{}) {
@@ -68,7 +73,7 @@ func Fatalf(format string, args ...interface{}) {
 }
 
 func Panic(args ...interface{}) {
-	logger.Panic(args)
+	logger.Panic(args...)
 }
 
 func Panicf(format string, args ...interface{}) {

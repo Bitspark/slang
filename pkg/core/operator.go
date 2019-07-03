@@ -3,8 +3,8 @@ package core
 import (
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/Bitspark/slang/pkg/log"
 	"github.com/google/uuid"
 )
 

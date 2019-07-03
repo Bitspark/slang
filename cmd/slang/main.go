@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -15,20 +14,13 @@ import (
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/log"
 )
 
-var printPorts bool
-
 func main() {
-	flag.BoolVar(&printPorts, "print-ports", false, "display port def")
-
 	if len(os.Args) < 2 {
-		fmt.Println("USAGE: slang [OPTIONS] SLANGFILE.slang.json")
-		fmt.Println("OPTIONS:")
-		flag.PrintDefaults()
-		return
+		log.Fatal("USAGE: slang SLANGFILE.slang.json")
 	}
-
 	flag.Parse()
 
 	slFile, err := readSlangFile(flag.Arg(0))
@@ -37,12 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if printPorts {
-		if err := printPortDef(slFile); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
+	log.SetOperatorId(slFile.Main)
 
 	if err := run(slFile); err != nil {
 		log.Fatal(err)

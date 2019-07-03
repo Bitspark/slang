@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -67,27 +66,6 @@ func readSlangFile(reader *bufio.Reader) (*core.SlangFileDef, error) {
 	return &slFile, err
 }
 
-func printPortDef(slFile *core.SlangFileDef) error {
-	mainBpId := slFile.Main
-	var blueprint *core.Blueprint
-	for _, bp := range slFile.Blueprints {
-		bp := bp
-		if mainBpId == bp.Id {
-			blueprint = &bp
-		}
-	}
-
-	if blueprint == nil {
-		return fmt.Errorf("unknown blueprint: %s", mainBpId)
-	}
-
-	fmt.Printf("Ports:\n")
-	fmt.Printf("\tIn:\n\t\t%s\n", jsonString(blueprint.ServiceDefs["main"].In))
-	fmt.Printf("\tOut:\n\t\t%s\n", jsonString(blueprint.ServiceDefs["main"].Out))
-
-	return nil
-}
-
 func run(operator *core.Operator) error {
 	operator.Main().Out().Bufferize()
 	operator.Start()
@@ -104,69 +82,4 @@ func run(operator *core.Operator) error {
 			log.Ping()
 		}
 	}
-}
-
-func jsonString(j interface{}) string {
-	jb, _ := json.Marshal(j)
-	return string(jb)
-}
-
-func wrerr(err error) {
-	wrerr := bufio.NewWriter(os.Stderr)
-	wrerr.WriteString(err.Error() + "\n")
-	wrerr.Flush()
-}
-
-func pushToRnr(connRnr net.Conn) bool {
-	stdin := bufio.NewReader(os.Stdin)
-	wrRnr := bufio.NewWriter(connRnr)
-
-	defer connRnr.Close()
-
-	for {
-		m, err := api.Rdbuf(stdin)
-
-		time.Sleep(1 * time.Second)
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			wrerr(err)
-			continue
-		}
-
-		if err := api.Wrbuf(wrRnr, m); err != nil {
-			break
-		}
-	}
-
-	return false
-}
-
-func pullFromRnr(connRnr net.Conn) bool {
-	rdRnr := bufio.NewReader(connRnr)
-	stdout := bufio.NewWriter(os.Stdout)
-
-	defer connRnr.Close()
-
-	for {
-		m, err := api.Rdbuf(rdRnr)
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			wrerr(err)
-			continue
-		}
-
-		if err := api.Wrbuf(stdout, m); err != nil {
-			wrerr(err)
-			break
-		}
-	}
-	return false
 }

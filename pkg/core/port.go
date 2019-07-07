@@ -124,7 +124,7 @@ func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	}
 
-	if p.Primitive() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
+	if p.PrimitiveType() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	}
 
@@ -210,11 +210,11 @@ func (p *Port) Connect(q *Port) (err error) {
 		return p.connect(q, true)
 	}
 
-	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.Primitive() {
+	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.PrimitiveType() {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		return p.connect(q, true)
 	}
 
@@ -367,7 +367,7 @@ func (p *Port) DirectlyConnected() error {
 		return errors.New("can only check in ports")
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		if p.src == nil {
 			return errors.New(p.Name() + " not connected")
 		}
@@ -421,7 +421,7 @@ func (p *Port) assertChannelSpace() {
 }
 
 func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		handle(p)
 	}
 
@@ -456,12 +456,12 @@ func (p *Port) Push(item interface{}) {
 	}
 
 	for dest := range p.dests {
-		if dest.Type() == TYPE_TRIGGER || p.Primitive() {
+		if dest.Type() == TYPE_TRIGGER || p.PrimitiveType() {
 			dest.Push(item)
 		}
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		return
 	}
 
@@ -541,7 +541,7 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		panic("no buffer")
 	}
 
@@ -729,7 +729,7 @@ func (p *Port) Bufferize() {
 		return
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {
@@ -835,7 +835,7 @@ func (p *Port) connect(q *Port, original bool) error {
 	return nil
 }
 
-func (p *Port) Primitive() bool {
+func (p *Port) PrimitiveType() bool {
 	return p.itemType == TYPE_PRIMITIVE ||
 		p.itemType == TYPE_TRIGGER ||
 		p.itemType == TYPE_NUMBER ||

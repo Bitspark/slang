@@ -877,7 +877,11 @@ type SlangFileDef struct {
 		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
 	} `json:"args,omitempty" yaml:"args,omitempty"`
 
-	Blueprints []Blueprint `json:"blueprints" yaml:"blueprints"`
+	Blueprints struct {
+		Elementary []Blueprint
+		Library    []Blueprint
+		Local      []Blueprint
+	} `json:"blueprints" yaml:"blueprints"`
 
 	valid bool
 }
@@ -891,12 +895,23 @@ func (sf *SlangFileDef) Validate() error {
 		return fmt.Errorf(`missing main blueprint id`)
 	}
 
-	if len(sf.Blueprints) == 0 {
-		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
-
+	if len(sf.Blueprints.Elementary) == 0 && len(sf.Blueprints.Library) == 0 && len(sf.Blueprints.Local) == 0 {
+		return fmt.Errorf(`incomplete slang file: no Elementary blueprint definitions found`)
 	}
 
-	for _, bp := range sf.Blueprints {
+	for _, bp := range sf.Blueprints.Elementary {
+		if err := bp.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, bp := range sf.Blueprints.Library {
+		if err := bp.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, bp := range sf.Blueprints.Local {
 		if err := bp.Validate(); err != nil {
 			return err
 		}

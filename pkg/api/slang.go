@@ -19,7 +19,12 @@ func BuildOperator(sf *core.SlangFileDef) (*core.Operator, error) {
 		}
 	}
 
-	stor := newSlangFileStorage(sf.Blueprints)
+	blueprints := []core.Blueprint{}
+	blueprints = append(blueprints, sf.Blueprints.Elementary...)
+	blueprints = append(blueprints, sf.Blueprints.Library...)
+	blueprints = append(blueprints, sf.Blueprints.Local...)
+
+	stor := newSlangFileStorage(blueprints)
 
 	return BuildAndCompile(sf.Main, sf.Args.Generics, sf.Args.Properties, *stor)
 }

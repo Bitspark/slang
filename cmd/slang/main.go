@@ -20,19 +20,30 @@ import (
 var SupportedRunModes = []string{"process"}
 
 func main() {
-	runMode := *flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
+	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
+	slangFilePath := flag.String("file", "", fmt.Sprintf("Path to slangFile"))
 	flag.Parse()
 
-	if !funk.ContainsString(SupportedRunModes, runMode) {
+	if !funk.ContainsString(SupportedRunModes, *runMode) {
 		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
 	}
 
-	if err := checkStdin(); err != nil {
-		log.Fatal(err)
+	var slangFileReader io.Reader
+	var err error
+
+	if *slangFilePath != "" {
+		slangFileReader, err = os.Open(*slangFilePath)
+	} else {
+		err = checkStdin()
+		slangFileReader = os.Stdin
 	}
 
-	slFileReader := bufio.NewReader(os.Stdin)
-	slFile, err := readSlangFile(slFileReader)
+	if err != nil {
+		log.Fatalf("provide slangFile via stdin or via flag -file=slangFile")
+	}
+
+	slFileBufReader := bufio.NewReader(slangFileReader)
+	slFile, err := readSlangFile(slFileBufReader)
 
 	if err != nil {
 		log.Fatal(err)
@@ -46,7 +57,7 @@ func main() {
 
 	log.SetOperator(operator.Id(), operator.Name())
 
-	if err := run(operator, runMode); err != nil {
+	if err := run(operator, *runMode); err != nil {
 		log.Fatal(err)
 	}
 
@@ -59,7 +70,7 @@ func checkStdin() error {
 	}
 
 	if info.Mode()&os.ModeCharDevice != 0 || info.Size() <= 0 {
-		return fmt.Errorf("needs slangFile via stdin")
+		return fmt.Errorf("empty stdin")
 	}
 
 	return nil

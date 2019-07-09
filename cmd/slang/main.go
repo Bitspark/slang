@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -10,12 +11,22 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/log"
 )
 
+var SupportedRunModes = []string{"process"}
+
 func main() {
+	runMode := *flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
+	flag.Parse()
+
+	if !funk.ContainsString(SupportedRunModes, runMode) {
+		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
+	}
+
 	if err := checkStdin(); err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +46,7 @@ func main() {
 
 	log.SetOperator(operator.Id(), operator.Name())
 
-	if err := run(operator); err != nil {
+	if err := run(operator, runMode); err != nil {
 		log.Fatal(err)
 	}
 
@@ -66,9 +77,21 @@ func readSlangFile(reader *bufio.Reader) (*core.SlangFileDef, error) {
 	return &slFile, err
 }
 
-func run(operator *core.Operator) error {
-	operator.Main().Out().Bufferize()
-	operator.Start()
+func run(operator *core.Operator, mode string) error {
+	switch mode {
+	case "process":
+		operator.Main().Out().Bufferize()
+		operator.Start()
+
+		if operator.Main().In().TriggerType() {
+			log.Warnf("is a trigger input: %s", operator.Main().In())
+			operator.Main().In().Push(true)
+		} else {
+			log.Warnf("is NOT a trigger input: %s", operator.Main().In())
+		}
+	default:
+		log.Fatal("invalid or not implemented run mode: %s")
+	}
 
 	// Handle SIGTERM (CTRL-C)
 	quit := make(chan os.Signal, 1)

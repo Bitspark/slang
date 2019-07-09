@@ -844,6 +844,10 @@ func (p *Port) PrimitiveType() bool {
 		p.itemType == TYPE_BOOLEAN
 }
 
+func (p *Port) TriggerType() bool {
+	return p.itemType == TYPE_TRIGGER
+}
+
 func (p *Port) Define() TypeDef {
 	var def TypeDef
 

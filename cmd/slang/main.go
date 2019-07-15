@@ -91,15 +91,7 @@ func readSlangFile(reader *bufio.Reader) (*core.SlangFileDef, error) {
 func run(operator *core.Operator, mode string) error {
 	switch mode {
 	case "process":
-		operator.Main().Out().Bufferize()
-		operator.Start()
-
-		if operator.Main().In().TriggerType() {
-			log.Warnf("is a trigger input: %s", operator.Main().In())
-			operator.Main().In().Push(true)
-		} else {
-			log.Warnf("is NOT a trigger input: %s", operator.Main().In())
-		}
+		runProcess(operator)
 	default:
 		log.Fatal("invalid or not implemented run mode: %s")
 	}
@@ -115,5 +107,23 @@ func run(operator *core.Operator, mode string) error {
 		case <-time.After(5 * time.Second):
 			log.Ping()
 		}
+	}
+}
+
+func isQuasiTrigger(p *core.Port) bool {
+	// port is quasi a trigger,
+	// when it actually is a trigger port or
+	// it is a map with in total one sub-port of trigger type
+	return p.TriggerType() || p.MapType() && p.MapLength() == 1 && p.Map(p.MapEntryNames()[0]).TriggerType()
+}
+
+func runProcess(operator *core.Operator) {
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	log.Print("started")
+
+	if isQuasiTrigger(operator.Main().In()) {
+		log.Warn("auto trigger")
+		operator.Main().In().Push(true)
 	}
 }

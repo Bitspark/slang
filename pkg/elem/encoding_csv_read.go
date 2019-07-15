@@ -69,7 +69,7 @@ var encodingCSVReadCfg = &builtinConfig{
 			var mapping []string
 			colNames := op.Property("columns").([]interface{})
 
-			mapSize := outStream.MapSize()
+			mapSize := outStream.MapLength()
 
 			r := csv.NewReader(strings.NewReader(csvText))
 			r.Comma = rune(op.Property("delimiter").(string)[0])

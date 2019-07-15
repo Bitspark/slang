@@ -163,12 +163,12 @@ func (p *Port) Map(name string) *Port {
 }
 
 // Returns the length of the map ports
-func (p *Port) MapSize() int {
+func (p *Port) MapLength() int {
 	return len(p.subs)
 }
 
 // Returns all map entry names of this port
-func (p *Port) MapEntries() []string {
+func (p *Port) MapEntryNames() []string {
 	entries := []string{}
 	for entry := range p.subs {
 		entries = append(entries, entry)
@@ -429,7 +429,7 @@ func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
 		p.Stream().WalkPrimitivePorts(handle)
 	}
 
-	for _, pname := range p.MapEntries() {
+	for _, pname := range p.MapEntryNames() {
 		p.Map(pname).WalkPrimitivePorts(handle)
 	}
 }
@@ -846,6 +846,10 @@ func (p *Port) PrimitiveType() bool {
 
 func (p *Port) TriggerType() bool {
 	return p.itemType == TYPE_TRIGGER
+}
+
+func (p *Port) MapType() bool {
+	return p.itemType == TYPE_MAP
 }
 
 func (p *Port) Define() TypeDef {

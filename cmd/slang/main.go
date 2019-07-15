@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,9 +16,10 @@ import (
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/log"
+	"github.com/gorilla/mux"
 )
 
-var SupportedRunModes = []string{"process"}
+var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
@@ -92,6 +94,8 @@ func run(operator *core.Operator, mode string) error {
 	switch mode {
 	case "process":
 		runProcess(operator)
+	case "httpPost":
+		runHttpPost(operator)
 	default:
 		log.Fatal("invalid or not implemented run mode: %s")
 	}
@@ -110,6 +114,52 @@ func run(operator *core.Operator, mode string) error {
 	}
 }
 
+func runProcess(operator *core.Operator) {
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	log.Print("started")
+
+	if isQuasiTrigger(operator.Main().In()) {
+		operator.Main().In().Push(true)
+	}
+}
+
+func runHttpPost(operator *core.Operator) {
+	inDef := operator.Main().In().Define()
+
+	r := mux.NewRouter()
+	r.
+		Methods("POST").
+		HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			var incoming interface{}
+
+			if err := json.NewDecoder(req.Body).Decode(&incoming); err != nil {
+				responseWithError(resp, err, http.StatusBadRequest)
+				return
+			}
+
+			incoming = core.CleanValue(incoming)
+			if err := inDef.VerifyData(incoming); err != nil {
+				responseWithError(resp, err, http.StatusBadRequest)
+				return
+			}
+
+			operator.Main().In().Push(incoming)
+
+			outgoing := operator.Main().Out().Pull()
+
+			responseWithOk(resp, outgoing)
+		})
+
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	log.Print("started")
+
+	go func() {
+		log.Fatal(http.ListenAndServe("localhost:0", r))
+	}()
+}
+
 func isQuasiTrigger(p *core.Port) bool {
 	// port is quasi a trigger,
 	// when it actually is a trigger port or
@@ -117,13 +167,22 @@ func isQuasiTrigger(p *core.Port) bool {
 	return p.TriggerType() || p.MapType() && p.MapLength() == 1 && p.Map(p.MapEntryNames()[0]).TriggerType()
 }
 
-func runProcess(operator *core.Operator) {
-	operator.Main().Out().Bufferize()
-	operator.Start()
-	log.Print("started")
+func responseWithError(w http.ResponseWriter, err error, status int) {
+	log.Error(err)
 
-	if isQuasiTrigger(operator.Main().In()) {
-		log.Warn("auto trigger")
-		operator.Main().In().Push(true)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(err.Error()); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func responseWithOk(w http.ResponseWriter, m interface{}) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		log.Fatal(err)
 	}
 }

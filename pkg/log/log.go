@@ -33,7 +33,6 @@ var logger = newLogger()
 
 func SetOperator(operatorId uuid.UUID, operatorName string) {
 	logger.Data["operatorId"] = operatorId
-	logger.Data["operatorName"] = operatorName
 }
 
 func Ping() {

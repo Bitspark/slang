@@ -18,17 +18,7 @@ var outDir string
 
 type SlangBundle struct {
 	Main       string              `json:"main"`
-	Blueprints []*core.OperatorDef `json:"blueprints"`
-}
-
-func (sb *SlangBundle) contains(uuid string) bool {
-	for _, bp := range sb.Blueprints {
-		if bp.Id == uuid {
-			return true
-		}
-	}
-
-	return false
+	Blueprints map[string]*core.OperatorDef `json:"blueprints"`
 }
 
 func main() {
@@ -87,8 +77,8 @@ func main() {
 func makeBundle(def *core.OperatorDef, store *storage.Storage) error {
 	b := SlangBundle{
 		Main:       def.Id,
-		Blueprints: []*core.OperatorDef{def},
 	}
+	b.Blueprints = make(map[string]*core.OperatorDef)
 
 	gatherDependencies(def, &b, store)
 
@@ -107,16 +97,16 @@ func makeBundle(def *core.OperatorDef, store *storage.Storage) error {
 
 func gatherDependencies(def *core.OperatorDef, bundle *SlangBundle, store *storage.Storage) error {
 	for _, dep := range def.InstanceDefs {
-		if !bundle.contains(dep.Operator) {
-			id, err := uuid.Parse(dep.Operator)
-			if err != nil {
-				return err
-			}
+		id, err := uuid.Parse(dep.Operator)
+		if err != nil {
+			return err
+		}
+		if _, ok := bundle.Blueprints[id.String()]; !ok {
 			depDef, err := store.Load(id)
 			if err != nil {
 				return err
 			}
-			bundle.Blueprints = append(bundle.Blueprints, depDef)
+			bundle.Blueprints[id.String()] = depDef
 			err = gatherDependencies(depDef, bundle, store)
 			if err != nil {
 				return err

@@ -4,12 +4,13 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var timeDateNowCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "808c7846-db9f-43ee-989b-37a08ce7e70d",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("808c7846-db9f-43ee-989b-37a08ce7e70d"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "now",
 			ShortDescription: "emits the current date and time",
 			Icon:             "clock",

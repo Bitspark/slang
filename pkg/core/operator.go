@@ -16,7 +16,7 @@ var MAIN_SERVICE = "main"
 type Operator struct {
 	name        string
 	defId       uuid.UUID
-	defMeta     OperatorMetaDef
+	defMeta     BlueprintMetaDef
 	services    map[string]*Service
 	delegates   map[string]*Delegate
 	basePort    *Port
@@ -26,7 +26,7 @@ type Operator struct {
 	generics    Generics
 	properties  Properties
 	connectFunc CFunc
-	elementary  string
+	elementary  uuid.UUID
 	stopChannel chan bool
 	stopped     bool
 }
@@ -45,12 +45,12 @@ type Service struct {
 	outPort  *Port
 }
 
-func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def OperatorDef) (*Operator, error) {
+func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def Blueprint) (*Operator, error) {
 	props.Clean()
 
 	o := &Operator{}
 	o.defMeta = def.Meta
-	o.defId, _ = uuid.Parse(def.Id)
+	o.defId = def.Id
 	o.function = f
 	o.connectFunc = c
 	o.name = name
@@ -276,7 +276,7 @@ func (o *Operator) CorrectlyCompiled() error {
 	return nil
 }
 
-func (o *Operator) defineConnections(def *OperatorDef) {
+func (o *Operator) defineConnections(def *Blueprint) {
 	for _, srv := range o.services {
 		srv.outPort.defineConnections(def)
 	}
@@ -286,9 +286,9 @@ func (o *Operator) defineConnections(def *OperatorDef) {
 	}
 }
 
-func (o *Operator) Define() (OperatorDef, error) {
-	var def OperatorDef
-	def.Id = o.defId.String()
+func (o *Operator) Define() (Blueprint, error) {
+	var def Blueprint
+	def.Id = o.defId
 	def.Meta = o.defMeta
 	def.ServiceDefs = make(map[string]*ServiceDef)
 	def.DelegateDefs = make(map[string]*DelegateDef)
@@ -301,7 +301,7 @@ func (o *Operator) Define() (OperatorDef, error) {
 		insDef.Operator = child.elementary
 		insDef.Generics = child.generics
 		insDef.Properties = child.properties
-		insDef.OperatorDef, _ = child.Define()
+		insDef.Blueprint, _ = child.Define()
 		def.InstanceDefs = append(def.InstanceDefs, insDef)
 	}
 

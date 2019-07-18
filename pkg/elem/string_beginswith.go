@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var stringBeginswithCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "9f274995-2726-4513-ac7c-f15ac7b68720",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("9f274995-2726-4513-ac7c-f15ac7b68720"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "begins with",
 			ShortDescription: "tells if a string begins with another string",
 			Icon:             "hand-point-left",

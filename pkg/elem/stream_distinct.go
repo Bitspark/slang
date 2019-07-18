@@ -4,12 +4,13 @@ import (
 	"strconv"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamDistinctCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "d8914bae-2878-46f3-b468-9e7faea7a463",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("d8914bae-2878-46f3-b468-9e7faea7a463"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "distinct values",
 			ShortDescription: "takes a streams and emits distinct items",
 			Icon:             "shapes",

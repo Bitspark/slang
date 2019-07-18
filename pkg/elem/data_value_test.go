@@ -15,34 +15,6 @@ func Test_DataConstant__IsRegistered(t *testing.T) {
 	a.NotNil(ocConst)
 }
 
-func Test_DataConstant__NoProps(t *testing.T) {
-	a := assertions.New(t)
-	co, err := MakeOperator(
-		core.InstanceDef{
-			Operator: "const",
-			Generics: map[string]*core.TypeDef{
-				"valueType": {
-					Type: "number",
-				},
-			},
-		},
-	)
-	a.Error(err)
-	a.Nil(co)
-}
-
-func TestBuiltinConst__NoGenerics(t *testing.T) {
-	a := assertions.New(t)
-	ao, err := MakeOperator(
-		core.InstanceDef{
-			Operator:   "const",
-			Properties: core.Properties{"value": 1.0},
-		},
-	)
-	a.Error(err)
-	a.Nil(ao)
-}
-
 func TestBuiltinConst__Correct(t *testing.T) {
 	a := assertions.New(t)
 	ao, err := buildOperator(

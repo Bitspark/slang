@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var stringContainsCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "8a01dfe3-5dcf-4f40-9e54-f5b168148d2a",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("8a01dfe3-5dcf-4f40-9e54-f5b168148d2a"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "contains",
 			ShortDescription: "tells if a string contains another string",
 			Icon:             "search",

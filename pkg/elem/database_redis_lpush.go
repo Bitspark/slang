@@ -3,12 +3,13 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 var databaseRedisLPushCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "8f8a095c-9274-4d39-96d9-3ef463659426",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("8f8a095c-9274-4d39-96d9-3ef463659426"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis LPush",
 			ShortDescription: "executes an LPush command at the specified Redis server",
 			Icon:             "database",

@@ -24,13 +24,13 @@ func NewTestBench(stor *storage.Storage) *TestBench {
 // It returns the number of failed and succeeded tests and and error in case something went wrong.
 // Test failures do not lead to an error. Test failures are printed to the writer.
 func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, int, error) {
-	opDef, err := t.stor.Load(opId)
+	blueprint, err := t.stor.Load(opId)
 
 	if err != nil {
 		return 0, 0, err
 	}
 
-	if len(opDef.TestCases) == 0 {
+	if len(blueprint.TestCases) == 0 {
 		log.Println("no test cases found")
 		return 0, 0, nil
 	}
@@ -38,7 +38,7 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 	succs := 0
 	fails := 0
 
-	for i, tc := range opDef.TestCases {
+	for i, tc := range blueprint.TestCases {
 		if len(tc.Name) < 3 {
 			return 0, 0, errors.New("name too short")
 		}
@@ -48,7 +48,7 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 			return 0, 0, err
 		}
 
-		fmt.Fprintf(writer, "Test case %3d/%3d: %s (operators: %d, size: %d)\n", i+1, len(opDef.TestCases), tc.Name, len(o.Children()), len(tc.Data.In))
+		fmt.Fprintf(writer, "Test case %3d/%3d: %s (operators: %d, size: %d)\n", i+1, len(blueprint.TestCases), tc.Name, len(o.Children()), len(tc.Data.In))
 
 		if err := o.CorrectlyCompiled(); err != nil {
 			return 0, 0, err

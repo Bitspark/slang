@@ -4,13 +4,14 @@ import (
 	"sync"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlReduceId = "b95e6da8-9770-4a04-a73d-cdfe2081870f"
+var controlReduceId = uuid.MustParse("b95e6da8-9770-4a04-a73d-cdfe2081870f")
 var controlReduceCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: controlReduceId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "reduce",
 			ShortDescription: "reduces the items of a stream pairwise using a reducer delegate",
 			Icon:             "compress-alt",

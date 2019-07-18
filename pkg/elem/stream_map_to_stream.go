@@ -2,13 +2,14 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var streamMapToStreamId = "d099a1cd-69eb-43a2-b95b-239612c457fc"
+var streamMapToStreamId = uuid.MustParse("d099a1cd-69eb-43a2-b95b-239612c457fc")
 var streamMapToStreamCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: streamMapToStreamId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "map to stream",
 			ShortDescription: "takes a map and emits a stream of key-value pairs",
 			Icon:             "cubes",

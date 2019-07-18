@@ -2,13 +2,14 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlTakeId = "9bebc4bf-d512-4944-bcb1-5b2c3d5b5471"
+var controlTakeId = uuid.MustParse("9bebc4bf-d512-4944-bcb1-5b2c3d5b5471")
 var controlTakeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: controlTakeId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "take",
 			ShortDescription: "merges two streams using a compare delegate deciding which item has precedence",
 			Icon:             "hand-point-up",

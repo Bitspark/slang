@@ -3,12 +3,13 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 var databaseRedisHIncrByCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "8d9e4c6e-20a2-44b1-8d51-ed98f4d3b4d8",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("8d9e4c6e-20a2-44b1-8d51-ed98f4d3b4d8"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis HIncr",
 			ShortDescription: "executes an HIncr command at the specified Redis server",
 			Icon:             "database",

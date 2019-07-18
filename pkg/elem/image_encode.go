@@ -12,12 +12,13 @@ import (
 
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var imageEncodeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "bd4475af-795b-4be8-9e57-9fec9444e028",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("bd4475af-795b-4be8-9e57-9fec9444e028"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "encode image",
 			ShortDescription: "takes pixels as stream of rgb values and encodes it into an image binary",
 			Icon:             "file-image",

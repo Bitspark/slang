@@ -4,12 +4,13 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var timeUNIXMillisCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "d58b458e-8b3a-49f3-a6e9-45e737354937",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("d58b458e-8b3a-49f3-a6e9-45e737354937"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "UNIX milliseconds",
 			ShortDescription: "emits the current UNIX timestamp in milliseconds",
 			Icon:             "stamp",

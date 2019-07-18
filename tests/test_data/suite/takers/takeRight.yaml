@@ -1,4 +1,5 @@
 ---
+id: 3a88c81d-a75a-44fa-8e6b-ef20807851bd
 services:
   main:
     in:
@@ -15,4 +16,4 @@ services:
       generic: itemType
 connections:
   right(:
-  - )
+    - )

@@ -929,7 +929,7 @@ func (p *Port) String() string {
 	return ""
 }
 
-func (p *Port) defineConnections(def *OperatorDef) {
+func (p *Port) defineConnections(def *Blueprint) {
 	portStr := p.String()
 
 	if def.Connections[portStr] == nil {

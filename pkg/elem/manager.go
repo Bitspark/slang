@@ -12,7 +12,7 @@ import (
 type builtinConfig struct {
 	opConnFunc core.CFunc
 	opFunc     core.OFunc
-	opDef      core.OperatorDef
+	blueprint  core.Blueprint
 }
 
 var cfgs map[uuid.UUID]*builtinConfig
@@ -25,11 +25,11 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, errors.New("unknown builtin operator")
 	}
 
-	if err := def.OperatorDef.GenericsSpecified(); err != nil {
+	if err := def.Blueprint.GenericsSpecified(); err != nil {
 		return nil, err
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.OperatorDef)
+	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.Blueprint)
 	if err != nil {
 		return nil, err
 	}
@@ -37,36 +37,28 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetId(idOrName string) uuid.UUID {
-	if id, ok := name2Id[idOrName]; ok {
-		return id
-	}
-	id, _ := uuid.Parse(idOrName)
-	return id
-}
-
-func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
-	cfg, ok := cfgs[GetId(idOrName)]
+func GetBlueprint(id uuid.UUID) (*core.Blueprint, error) {
+	cfg, ok := cfgs[id]
 
 	if !ok {
 		return nil, errors.New("builtin operator not found")
 	}
 
-	opDef := cfg.opDef.Copy(true)
-	return &opDef, nil
+	blueprint := cfg.blueprint.Copy(true)
+	return &blueprint, nil
 }
 
-func IsRegistered(idOrName string) bool {
-	_, b := cfgs[GetId(idOrName)]
+func IsRegistered(id uuid.UUID) bool {
+	_, b := cfgs[id]
 	return b
 }
 
 func Register(cfg *builtinConfig) {
-	cfg.opDef.Elementary = cfg.opDef.Id
+	cfg.blueprint.Elementary = cfg.blueprint.Id
 
-	id := GetId(cfg.opDef.Id)
+	id := cfg.blueprint.Id
 	cfgs[id] = cfg
-	name2Id[cfg.opDef.Meta.Name] = id
+	name2Id[cfg.blueprint.Meta.Name] = id
 }
 
 func GetBuiltinIds() []uuid.UUID {
@@ -176,24 +168,24 @@ func init() {
 	semaphoreMutex = &sync.Mutex{}
 }
 
-func getBuiltinCfg(id string) *builtinConfig {
-	c, _ := cfgs[GetId(id)]
+func getBuiltinCfg(id uuid.UUID) *builtinConfig {
+	c, _ := cfgs[id]
 	return c
 }
 
 // Mainly for testing
 
 func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
-	opDef, err := GetOperatorDef(insDef.Operator)
+	blueprint, err := GetBlueprint(insDef.Operator)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if err = opDef.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
+	if err = blueprint.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
 		return nil, err
 	}
-	insDef.OperatorDef = *opDef
+	insDef.Blueprint = *blueprint
 
 	return MakeOperator(insDef)
 }

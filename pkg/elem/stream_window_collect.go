@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 type windowStore struct {
@@ -28,9 +29,9 @@ func getWindowStore(store string) *windowStore {
 }
 
 var streamWindowCollectCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "14f5de1a-5e38-4f9c-a625-eff7a572078c",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("14f5de1a-5e38-4f9c-a625-eff7a572078c"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "collect window",
 			ShortDescription: "collects items from a stream until released",
 			Icon:             "window",

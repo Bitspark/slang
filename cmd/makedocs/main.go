@@ -30,7 +30,7 @@ type TagInfo struct {
 }
 
 type OperatorDefinition struct {
-	UUID string
+	ID   uuid.UUID
 	Type string
 	JSON string
 }
@@ -50,7 +50,7 @@ type TestCase struct {
 }
 
 type OperatorInfo struct {
-	UUID                string
+	ID                  uuid.UUID
 	Name                string
 	Type                string
 	Icon                string
@@ -66,10 +66,10 @@ type OperatorInfo struct {
 	OperatorsUsingCount  int
 	OperatorsUsingJSON   string
 
-	operatorContent map[string]*OperatorUsage
-	operatorsUsing  map[string]*OperatorUsage
+	operatorContent map[uuid.UUID]*OperatorUsage
+	operatorsUsing  map[uuid.UUID]*OperatorUsage
 
-	operatorDefinition *core.OperatorDef
+	operatorDefinition *core.Blueprint
 }
 
 type DocGenerator struct {
@@ -78,7 +78,7 @@ type DocGenerator struct {
 	docIndexPath   string
 	docOpURL       *url.URL
 	opTmpl         *template.Template
-	operatorInfos  map[string]*OperatorInfo
+	operatorInfos  map[uuid.UUID]*OperatorInfo
 	tagInfos       map[string]*TagInfo
 	slugs          map[string]*OperatorInfo
 	generatedInfos []*OperatorInfo
@@ -175,7 +175,7 @@ func makeDocumentGenerator(libDir string, idxOut string, opTpl string, opOutDir 
 		opTmpl:        opTmpl,
 		slugs:         make(map[string]*OperatorInfo),
 		tagInfos:      make(map[string]*TagInfo),
-		operatorInfos: make(map[string]*OperatorInfo),
+		operatorInfos: make(map[uuid.UUID]*OperatorInfo),
 	}
 }
 
@@ -188,22 +188,22 @@ func (dg *DocGenerator) collect(strict bool) {
 	log.Println("Begin collecting")
 	log.Printf("Library path: %s\n", dg.libDir)
 
-	elementaryUUIDs := elem.GetBuiltinIds()
+	elementaryIDs := elem.GetBuiltinIds()
 
 	store := storage.NewStorage().AddBackend(storage.NewReadOnlyFileSystem(dg.libDir))
 
-	libraryUUIDs, err := store.List()
+	libraryIDs, err := store.List()
 	if err != nil {
 		panic(err)
 	}
 
 	var uuids []uuid.UUID
 
-	for _, id := range elementaryUUIDs {
+	for _, id := range elementaryIDs {
 		uuids = append(uuids, id)
 	}
 
-	for _, id := range libraryUUIDs {
+	for _, id := range libraryIDs {
 		uuids = append(uuids, id)
 	}
 
@@ -214,24 +214,24 @@ func (dg *DocGenerator) collect(strict bool) {
 	for _, id := range uuids {
 		tries++
 
-		opDef, err := store.Load(id)
+		blueprint, err := store.Load(id)
 		if err != nil {
-			log.Println(opDef.Id, opDef.Meta.Name, err)
+			log.Println(blueprint.Id, blueprint.Meta.Name, err)
 			continue
 		}
 
 		if strict {
-			if err := opDef.Meta.Validate(); err != nil {
-				log.Println(opDef.Id, opDef.Meta.Name, err)
+			if err := blueprint.Meta.Validate(); err != nil {
+				log.Println(blueprint.Id, blueprint.Meta.Name, err)
 				continue
 			}
 		}
 
 		var opType string
-		if funk.Contains(libraryUUIDs, id) {
+		if funk.Contains(libraryIDs, id) {
 			libraries++
 			opType = "library"
-		} else if funk.Contains(elementaryUUIDs, id) {
+		} else if funk.Contains(elementaryIDs, id) {
 			elementaries++
 			opType = "elementary"
 		} else {
@@ -239,10 +239,10 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		var opSlug string
-		if opDef.Meta.DocURL == "" {
-			opSlug = dg.findSlug(opDef, strcase.KebabCase(opDef.Meta.Name))
+		if blueprint.Meta.DocURL == "" {
+			opSlug = dg.findSlug(blueprint, strcase.KebabCase(blueprint.Meta.Name))
 		} else {
-			u, err := url.Parse(opDef.Meta.DocURL)
+			u, err := url.Parse(blueprint.Meta.DocURL)
 			if err != nil {
 				panic(err)
 			}
@@ -252,7 +252,7 @@ func (dg *DocGenerator) collect(strict bool) {
 		opInfo := &OperatorInfo{}
 
 		opTags := []*TagInfo{}
-		for _, tag := range opDef.Meta.Tags {
+		for _, tag := range blueprint.Meta.Tags {
 			kebabTag := strcase.KebabCase(tag)
 			opTag, ok := dg.tagInfos[kebabTag]
 			if !ok {
@@ -270,14 +270,14 @@ func (dg *DocGenerator) collect(strict bool) {
 			opJSONDefs = append(opJSONDefs, jsonDef)
 		}
 
-		opIcon := opDef.Meta.Icon
+		opIcon := blueprint.Meta.Icon
 		if opIcon == "" {
 			opIcon = "box"
 		}
 
 		opTests := []TestCase{}
 
-		for _, tc := range opDef.TestCases {
+		for _, tc := range blueprint.TestCases {
 			data := []struct {
 				In  string
 				Out string
@@ -313,23 +313,23 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		*opInfo = OperatorInfo{
-			UUID:                id.String(),
-			Name:                opDef.Meta.Name,
+			ID:                  id,
+			Name:                blueprint.Meta.Name,
 			Icon:                opIcon,
-			Description:         opDef.Meta.Description,
-			ShortDescription:    opDef.Meta.ShortDescription,
+			Description:         blueprint.Meta.Description,
+			ShortDescription:    blueprint.Meta.ShortDescription,
 			Type:                opType,
 			Slug:                opSlug,
 			Tags:                opTags,
 			Tests:               opTests,
 			OperatorDefinitions: opJSONDefs,
-			operatorDefinition:  opDef,
-			operatorContent:     make(map[string]*OperatorUsage),
-			operatorsUsing:      make(map[string]*OperatorUsage),
+			operatorDefinition:  blueprint,
+			operatorContent:     make(map[uuid.UUID]*OperatorUsage),
+			operatorsUsing:      make(map[uuid.UUID]*OperatorUsage),
 		}
 
 		dg.slugs[opSlug] = opInfo
-		dg.operatorInfos[opDef.Id] = opInfo
+		dg.operatorInfos[blueprint.Id] = opInfo
 	}
 
 	if len(dg.operatorInfos) == 0 {
@@ -374,10 +374,10 @@ func (dg *DocGenerator) usage() {
 				continue
 			}
 
-			if usage, ok := insInfo.operatorsUsing[info.UUID]; ok {
+			if usage, ok := insInfo.operatorsUsing[info.ID]; ok {
 				usage.Count++
 			} else {
-				insInfo.operatorsUsing[info.UUID] = &OperatorUsage{
+				insInfo.operatorsUsing[info.ID] = &OperatorUsage{
 					Count: 1,
 					Info:  info,
 				}
@@ -467,20 +467,20 @@ func (dg *DocGenerator) saveURLs() {
 			continue
 		}
 
-		opDef := opInfo.operatorDefinition.Copy(false)
+		blueprint := opInfo.operatorDefinition.Copy(false)
 
 		opDocURL, _ := url.Parse(dg.docOpURL.String())
 		opDocURL.Path = path.Join(opDocURL.Path, opInfo.Slug)
 		opDocURLStr := opDocURL.String()
 
 		//nolint:staticcheck
-		if opDef.Meta.DocURL == opDocURLStr {
+		if blueprint.Meta.DocURL == opDocURLStr {
 			// continue
 		}
 
-		opDef.Meta.DocURL = opDocURLStr
+		blueprint.Meta.DocURL = opDocURLStr
 
-		_, err := store.Save(opDef)
+		_, err := store.Save(blueprint)
 		if err != nil {
 			panic(err)
 		}
@@ -491,14 +491,14 @@ func (dg *DocGenerator) saveURLs() {
 	log.Printf("Updated %d URLs\n", written)
 }
 
-func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
+func (dg *DocGenerator) findSlug(blueprint *core.Blueprint, slug string) string {
 	if info, ok := dg.slugs[slug]; !ok {
 		return slug
 	} else {
 		otherTags := info.Tags
 		additionalTags := []string{}
 
-		for _, tag := range opDef.Meta.Tags {
+		for _, tag := range blueprint.Meta.Tags {
 			if !funk.Contains(otherTags, tag) {
 				additionalTags = append(additionalTags, tag)
 			}
@@ -510,40 +510,35 @@ func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
 
 		slug += "-" + additionalTags[0]
 
-		return dg.findSlug(opDef, slug)
+		return dg.findSlug(blueprint, slug)
 	}
 }
 
-func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[string]OperatorDefinition {
-	opDef, err := store.Load(id)
+func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[uuid.UUID]OperatorDefinition {
+	blueprint, err := store.Load(id)
 	if err != nil {
 		panic(err)
 	}
 
-	defs := make(map[string]OperatorDefinition)
+	defs := make(map[uuid.UUID]OperatorDefinition)
 
 	var opType string
-	if opDef.Elementary == "" {
+	if blueprint.Elementary == uuid.Nil {
 		opType = "library"
 	} else {
 		opType = "elementary"
 	}
 
 	buf := new(bytes.Buffer)
-	json.NewEncoder(buf).Encode(opDef)
+	json.NewEncoder(buf).Encode(blueprint)
 
 	// Remove newline at the end
 	buf.Truncate(buf.Len() - 1)
 
-	defs[opDef.Id] = OperatorDefinition{opDef.Id, opType, buf.String()}
+	defs[blueprint.Id] = OperatorDefinition{blueprint.Id, opType, buf.String()}
 
-	for _, ins := range opDef.InstanceDefs {
-		opUuid, err := uuid.Parse(ins.Operator)
-		if err != nil {
-			panic(err)
-		}
-		subDefs := dumpDefinitions(opUuid, store)
-
+	for _, ins := range blueprint.InstanceDefs {
+		subDefs := dumpDefinitions(ins.Operator, store)
 		for id, def := range subDefs {
 			if _, ok := defs[id]; !ok {
 				defs[id] = def

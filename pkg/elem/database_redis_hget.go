@@ -3,12 +3,13 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 var databaseRedisHGetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "4b946e4a-e26b-45c7-9759-c60bd57d190d",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("4b946e4a-e26b-45c7-9759-c60bd57d190d"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis HGet",
 			ShortDescription: "executes an HGet command at the specified Redis server",
 			Icon:             "database",

@@ -5,12 +5,13 @@ import (
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 var databaseRedisSetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "cdbf3e0d-1ce0-4565-9df6-d0e829c730e5",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("cdbf3e0d-1ce0-4565-9df6-d0e829c730e5"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis Set",
 			ShortDescription: "executes a Set command at the specified Redis server",
 			Icon:             "database",

@@ -4,12 +4,13 @@ import (
 	"os/exec"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var shellExecuteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "13cbad40-da00-40d7-bdcd-981b14ec346b",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("13cbad40-da00-40d7-bdcd-981b14ec346b"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "shell execute",
 			ShortDescription: "executes a shell command on the host system",
 			Icon:             "terminal",

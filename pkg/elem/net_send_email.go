@@ -8,12 +8,13 @@ import (
 	"net/smtp"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var netSendEmailCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "741b8a21-0b6d-40e5-a281-b179a49e9030",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("741b8a21-0b6d-40e5-a281-b179a49e9030"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "send email",
 			ShortDescription: "sends an email",
 			Icon:             "envelope",

@@ -7,13 +7,14 @@ import (
 
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var encodingCSVReadId = "77d60459-f8b5-4f4b-b293-740164c49a82"
+var encodingCSVReadId = uuid.MustParse("77d60459-f8b5-4f4b-b293-740164c49a82")
 var encodingCSVReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: encodingCSVReadId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "read CSV",
 			ShortDescription: "reads a CSV file and emits a stream of lines, separated into columns",
 			Icon:             "file-csv",

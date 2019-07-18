@@ -2,13 +2,14 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 	"github.com/tealeg/xlsx"
 )
 
 var encodingXLSXReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "69db81cf-2a24-4470-863f-ceffaeb8b246",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("69db81cf-2a24-4470-863f-ceffaeb8b246"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "read Excel",
 			ShortDescription: "decodes Excel data into a stream of sheets, each being a 2d-stream of cells",
 			Icon:             "file-excel",

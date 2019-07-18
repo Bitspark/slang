@@ -2,12 +2,13 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamTransformCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "dce082cb-7272-4e85-b4fa-740778e8ba8d",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("dce082cb-7272-4e85-b4fa-740778e8ba8d"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "transform stream",
 			ShortDescription: "transforms a stream by iterating it using an iterator delegate",
 			Icon:             "code-commit",

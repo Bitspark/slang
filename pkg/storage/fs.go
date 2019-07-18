@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -20,7 +19,7 @@ var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matter
 
 type FileSystem struct {
 	root  string
-	cache map[uuid.UUID]*core.OperatorDef
+	cache map[uuid.UUID]*core.Blueprint
 	uuids []uuid.UUID
 }
 
@@ -40,12 +39,12 @@ func cleanPath(p string) string {
 
 func NewWritableFileSystem(root string) *WritableFileSystem {
 	p := cleanPath(root)
-	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.OperatorDef), nil}}
+	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}}
 }
 
 func NewReadOnlyFileSystem(root string) *FileSystem {
 	p := cleanPath(root)
-	return &FileSystem{p, make(map[uuid.UUID]*core.OperatorDef), nil}
+	return &FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}
 }
 
 func (fs *FileSystem) Has(opId uuid.UUID) bool {
@@ -77,19 +76,15 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 			return nil
 		}
 
-		opDef, err := fs.readOpDefFile(path)
+		blueprint, err := fs.readBlueprintFile(path)
 
 		if err != nil {
 			log.Printf("cannot read file %s: %s", path, err)
 			return nil
 		}
 
-		if opId, err := uuid.Parse(opDef.Id); err == nil {
-			opsFilePathSet[opId] = true
-		} else {
-			log.Printf("invalid id in OperatorDef file %s: %s", path, err)
-			return nil
-		}
+		opsFilePathSet[blueprint.Id] = true
+
 		return nil
 	})
 
@@ -98,17 +93,17 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 	return fs.List()
 }
 
-func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
+func (fs *FileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
 	if def, ok := fs.cache[opId]; ok {
 		return def, nil
 	}
 
-	opDefFile, err := fs.getFilePath(opId)
+	blueprintFile, err := fs.getFilePath(opId)
 	if err != nil {
 		return nil, err
 	}
 
-	fs.cache[opId], err = fs.readOpDefFile(opDefFile)
+	fs.cache[opId], err = fs.readBlueprintFile(blueprintFile)
 	if err != nil {
 		return nil, err
 	}
@@ -116,18 +111,12 @@ func (fs *FileSystem) Load(opId uuid.UUID) (*core.OperatorDef, error) {
 	return fs.Load(opId)
 }
 
-func (fs *WritableFileSystem) Save(opDef core.OperatorDef) (uuid.UUID, error) {
-	opId, err := uuid.Parse(opDef.Id)
-
-	if err != nil {
-		return opId, fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, opDef.Id, err)
-	}
-
+func (fs *WritableFileSystem) Save(blueprint core.Blueprint) (uuid.UUID, error) {
+	opId := blueprint.Id
 	cwd := fs.root
-
 	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
 	absPath := filepath.Join(cwd, relPath+".yaml")
-	_, err = utils.EnsureDirExists(filepath.Dir(absPath))
+	_, err := utils.EnsureDirExists(filepath.Dir(absPath))
 
 	if err != nil {
 		return opId, err
@@ -136,13 +125,13 @@ func (fs *WritableFileSystem) Save(opDef core.OperatorDef) (uuid.UUID, error) {
 	delete(fs.cache, opId)
 	fs.uuids = nil
 
-	opDefYaml, err := yaml.Marshal(&opDef)
+	blueprintYaml, err := yaml.Marshal(&blueprint)
 
 	if err != nil {
 		return opId, err
 	}
 
-	err = ioutil.WriteFile(absPath, opDefYaml, os.ModePerm)
+	err = ioutil.WriteFile(absPath, blueprintYaml, os.ModePerm)
 	if err != nil {
 		return opId, err
 	}
@@ -154,25 +143,25 @@ func (fs *FileSystem) hasSupportedSuffix(filePath string) bool {
 	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
 }
 
-func (fs *FileSystem) getInstanceName(opDefFilePath string) string {
-	return strings.TrimSuffix(filepath.Base(opDefFilePath), filepath.Ext(opDefFilePath))
+func (fs *FileSystem) getInstanceName(blueprintFilePath string) string {
+	return strings.TrimSuffix(filepath.Base(blueprintFilePath), filepath.Ext(blueprintFilePath))
 }
 
 func (fs *FileSystem) getFilePath(opId uuid.UUID) (string, error) {
 	return utils.FileWithFileEnding(filepath.Join(fs.root, opId.String()), FILE_ENDINGS)
 }
 
-func (fs *FileSystem) readOpDefFile(opDefFile string) (*core.OperatorDef, error) {
-	b, err := ioutil.ReadFile(opDefFile)
+func (fs *FileSystem) readBlueprintFile(blueprintFile string) (*core.Blueprint, error) {
+	b, err := ioutil.ReadFile(blueprintFile)
 	if err != nil {
-		return nil, errors.New("could not read operator file " + opDefFile)
+		return nil, errors.New("could not read operator file " + blueprintFile)
 	}
 
-	var def core.OperatorDef
+	var def core.Blueprint
 	// Parse the file, just read it in
-	if utils.IsYAML(opDefFile) {
+	if utils.IsYAML(blueprintFile) {
 		def, err = core.ParseYAMLOperatorDef(string(b))
-	} else if utils.IsJSON(opDefFile) {
+	} else if utils.IsJSON(blueprintFile) {
 		def, err = core.ParseJSONOperatorDef(string(b))
 	} else {
 		err = errors.New("unsupported file ending")

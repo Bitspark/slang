@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 func parseDate(dateStr string) (time.Time, error) {
@@ -22,9 +23,9 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 var timeParseDateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "2a9da2d5-2684-4d2f-8a37-9560d0f2de29",
-		Meta: core.OperatorMetaDef{
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("2a9da2d5-2684-4d2f-8a37-9560d0f2de29"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "to date",
 			ShortDescription: "takes a string containing date and time and emits its parsed values",
 			Icon:             "calendar-week",

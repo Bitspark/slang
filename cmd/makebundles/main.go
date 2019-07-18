@@ -4,21 +4,22 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
-	"io/ioutil"
-	"os"
-	"path"
 )
 
 var libDir string
 var outDir string
 
 type SlangBundle struct {
-	Main       string              `json:"main"`
-	Blueprints map[string]*core.OperatorDef `json:"blueprints"`
+	Main       string                     `json:"main"`
+	Blueprints map[string]*core.Blueprint `json:"blueprints"`
 }
 
 func main() {
@@ -74,11 +75,11 @@ func main() {
 	fmt.Printf("%d blueprints have been bundled\n", len(uuids))
 }
 
-func makeBundle(def *core.OperatorDef, store *storage.Storage) error {
+func makeBundle(def *core.Blueprint, store *storage.Storage) error {
 	b := SlangBundle{
-		Main:       def.Id,
+		Main: def.Id.String(),
 	}
-	b.Blueprints = make(map[string]*core.OperatorDef)
+	b.Blueprints = make(map[string]*core.Blueprint)
 
 	gatherDependencies(def, &b, store)
 
@@ -87,7 +88,7 @@ func makeBundle(def *core.OperatorDef, store *storage.Storage) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(path.Join(outDir, def.Id+".bundle.json"), opDefJson, os.ModePerm)
+	err = ioutil.WriteFile(path.Join(outDir, def.Id.String()+".bundle.json"), opDefJson, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -95,12 +96,9 @@ func makeBundle(def *core.OperatorDef, store *storage.Storage) error {
 	return nil
 }
 
-func gatherDependencies(def *core.OperatorDef, bundle *SlangBundle, store *storage.Storage) error {
+func gatherDependencies(def *core.Blueprint, bundle *SlangBundle, store *storage.Storage) error {
 	for _, dep := range def.InstanceDefs {
-		id, err := uuid.Parse(dep.Operator)
-		if err != nil {
-			return err
-		}
+		id := dep.Operator
 		if _, ok := bundle.Blueprints[id.String()]; !ok {
 			depDef, err := store.Load(id)
 			if err != nil {

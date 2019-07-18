@@ -114,9 +114,9 @@ func (s store) resetIndexes() {
 
 var metaStoreId = uuid.MustParse("cf20bcec-2028-45b4-a00c-0ce348c381c4")
 var metaStoreCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: metaStoreId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name: "meta store",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

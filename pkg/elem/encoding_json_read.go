@@ -9,9 +9,9 @@ import (
 
 var encodingJSONReadId = uuid.MustParse("b79b019f-5efe-4012-9a1d-1f61549ede25")
 var encodingJSONReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: encodingJSONReadId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "decode JSON",
 			ShortDescription: "decodes a JSON string and emits the corresponding Slang data",
 			Icon:             "brackets-curly",

@@ -10,9 +10,9 @@ import (
 
 var stringTemplateId = uuid.MustParse("3c39f999-b5c2-490d-aed1-19149d228b04")
 var stringTemplateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: stringTemplateId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "template",
 			ShortDescription: "replaces placeholders in a given string with given values",
 			Icon:             "stamp",

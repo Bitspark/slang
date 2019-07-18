@@ -7,9 +7,9 @@ import (
 )
 
 var databaseRedisSubscribeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("eb3fd302-f6b0-4c2a-b353-ff0a01e49d09"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis Subscribe",
 			ShortDescription: "executes an subscribe command at the specified Redis server",
 			Icon:             "database",

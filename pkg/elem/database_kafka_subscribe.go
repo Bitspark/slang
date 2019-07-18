@@ -11,9 +11,9 @@ import (
 
 var databaseKafkaSubscribeId = uuid.MustParse("b6cb78ca-bbfd-475e-a11f-3593ce295e3c")
 var databaseKafkaSubscribeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: databaseKafkaSubscribeId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "Kafka subscribe",
 			ShortDescription: "subscribes at a Kafka topic",
 			Icon:             "",

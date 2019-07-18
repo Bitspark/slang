@@ -10,9 +10,9 @@ import (
 )
 
 var filesWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("9b61597d-cfbc-42d1-9620-210081244ba1"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "write file",
 			ShortDescription: "creates or replaces a file and writes binary data to it",
 			Icon:             "file-signature",

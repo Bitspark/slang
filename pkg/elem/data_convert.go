@@ -11,9 +11,9 @@ import (
 
 var dataConvertId = uuid.MustParse("d1191456-3583-4eaf-8ec1-e486c3818c60")
 var dataConvertCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: dataConvertId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "convert",
 			ShortDescription: "converts the type of a value",
 			Icon:             "arrow-alt-right",

@@ -42,7 +42,7 @@ func Test_CtrlIterate__PassOtherMarkers(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		core.OperatorDef{
+		core.Blueprint{
 			ServiceDefs: map[string]*core.ServiceDef{
 				"main": {
 					In: core.TypeDef{Type: "stream",
@@ -118,7 +118,7 @@ func Test_CtrlIterate__SimpleAggregation(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		core.OperatorDef{
+		core.Blueprint{
 			ServiceDefs: map[string]*core.ServiceDef{
 				"main": {
 					In:  core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"state": {Type: "number"}, "item": {Type: "number"}}},

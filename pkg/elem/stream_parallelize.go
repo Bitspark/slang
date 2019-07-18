@@ -10,9 +10,9 @@ import (
 
 var streamParallelizeId = uuid.MustParse("b8428777-7667-4012-b76a-a5b7f4d1e433")
 var streamParallelizeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: streamParallelizeId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "parallelize",
 			ShortDescription: "takes a stream and emits a map of items, selected by given indices",
 			Icon:             "align-justify",

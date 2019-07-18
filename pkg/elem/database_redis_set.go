@@ -9,9 +9,9 @@ import (
 )
 
 var databaseRedisSetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("cdbf3e0d-1ce0-4565-9df6-d0e829c730e5"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis Set",
 			ShortDescription: "executes a Set command at the specified Redis server",
 			Icon:             "database",

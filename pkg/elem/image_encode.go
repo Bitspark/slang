@@ -16,9 +16,9 @@ import (
 )
 
 var imageEncodeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("bd4475af-795b-4be8-9e57-9fec9444e028"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "encode image",
 			ShortDescription: "takes pixels as stream of rgb values and encodes it into an image binary",
 			Icon:             "file-image",

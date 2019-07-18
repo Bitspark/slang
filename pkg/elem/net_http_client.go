@@ -10,9 +10,9 @@ import (
 )
 
 var netHTTPClientCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("f7f5907d-758b-4892-8a3e-ae86b877b869"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "HTTP client",
 			ShortDescription: "sends an HTTP request",
 			Icon:             "browser",

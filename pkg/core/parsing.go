@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 func ParseTypeDef(defStr string) TypeDef {
@@ -14,14 +15,14 @@ func ParseTypeDef(defStr string) TypeDef {
 	return def
 }
 
-func ParseJSONOperatorDef(defStr string) (OperatorDef, error) {
-	def := OperatorDef{}
+func ParseJSONOperatorDef(defStr string) (Blueprint, error) {
+	def := Blueprint{}
 	err := json.Unmarshal([]byte(defStr), &def)
 	return def, err
 }
 
-func ParseYAMLOperatorDef(defStr string) (OperatorDef, error) {
-	def := OperatorDef{}
+func ParseYAMLOperatorDef(defStr string) (Blueprint, error) {
+	def := Blueprint{}
 	err := yaml.Unmarshal([]byte(defStr), &def)
 
 	for _, id := range def.InstanceDefs {

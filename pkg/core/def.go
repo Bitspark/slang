@@ -29,8 +29,8 @@ type InstanceDef struct {
 		} `json:"position" yaml:"position"`
 	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 
-	valid       bool
-	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
+	valid     bool
+	Blueprint Blueprint `json:"-" yaml:"definition,omitempty"`
 }
 
 type PortGeometryDef struct {
@@ -57,7 +57,7 @@ type TestCaseDef struct {
 	valid bool
 }
 
-type OperatorMetaDef struct {
+type BlueprintMetaDef struct {
 	Name             string   `json:"name" yaml:"name"`
 	Icon             string   `json:"icon" yaml:"icon"`
 	ShortDescription string   `json:"shortDescription" yaml:"shortDescription"`
@@ -68,7 +68,7 @@ type OperatorMetaDef struct {
 	valid bool
 }
 
-type OperatorDef struct {
+type Blueprint struct {
 	Id uuid.UUID `json:"id" yaml:"id"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
@@ -78,8 +78,8 @@ type OperatorDef struct {
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   uuid.UUID               `json:"-" yaml:"-"`
 
-	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
-	TestCases []TestCaseDef   `json:"tests,omitempty" yaml:"tests,omitempty"`
+	Meta      BlueprintMetaDef `json:"meta" yaml:"meta"`
+	TestCases []TestCaseDef    `json:"tests,omitempty" yaml:"tests,omitempty"`
 
 	Geometry *struct {
 		Size struct {
@@ -160,9 +160,9 @@ func (d InstanceDef) Copy(recursive bool) InstanceDef {
 		}
 	}
 
-	opDef := OperatorDef{}
+	blueprint := Blueprint{}
 	if recursive {
-		opDef = d.OperatorDef.Copy(recursive)
+		blueprint = d.Blueprint.Copy(recursive)
 	}
 
 	cpy := InstanceDef{
@@ -172,18 +172,18 @@ func (d InstanceDef) Copy(recursive bool) InstanceDef {
 		generics,
 		d.Geometry,
 		d.valid,
-		opDef,
+		blueprint,
 	}
 	return cpy
 }
 
 // OPERATOR DEFINITION
 
-func (d OperatorDef) Valid() bool {
+func (d Blueprint) Valid() bool {
 	return d.valid
 }
 
-func (d *OperatorDef) Validate() error {
+func (d *Blueprint) Validate() error {
 	d.valid = false
 
 	if d.Id == uuid.Nil {
@@ -227,7 +227,7 @@ func (d *OperatorDef) Validate() error {
 // SpecifyGenerics replaces generic types in the operator definition with the types given in the generics map.
 // The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy.
-func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
+func (d *Blueprint) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	srvs := make(map[string]*ServiceDef)
 	for srvName := range d.ServiceDefs {
 		srv := d.ServiceDefs[srvName].Copy()
@@ -263,7 +263,7 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	return nil
 }
 
-func (d OperatorDef) GenericsSpecified() error {
+func (d Blueprint) GenericsSpecified() error {
 	for _, srv := range d.ServiceDefs {
 		if err := srv.In.GenericsSpecified(); err != nil {
 			return err
@@ -290,7 +290,7 @@ func (d OperatorDef) GenericsSpecified() error {
 	return nil
 }
 
-func (d OperatorDef) Copy(recursive bool) OperatorDef {
+func (d Blueprint) Copy(recursive bool) Blueprint {
 	srvDefs := make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
 		c := v.Copy()
@@ -329,7 +329,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 		}
 	}
 
-	return OperatorDef{
+	return Blueprint{
 		d.Id,
 		srvDefs,
 		dlgDefs,
@@ -344,7 +344,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 	}
 }
 
-func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
+func (def *Blueprint) SpecifyOperator(gens Generics, props Properties) error {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -362,7 +362,7 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 	return nil
 }
 
-func (def *OperatorDef) specifyGenericsOnPortGroups(gens Generics) {
+func (def *Blueprint) specifyGenericsOnPortGroups(gens Generics) {
 	for _, srv := range def.ServiceDefs {
 		srv.In.SpecifyGenerics(gens)
 		srv.Out.SpecifyGenerics(gens)
@@ -374,7 +374,7 @@ func (def *OperatorDef) specifyGenericsOnPortGroups(gens Generics) {
 	def.PropertyDefs.SpecifyGenerics(gens)
 }
 
-func (def *OperatorDef) applyPropertiesOnPortGroups(props Properties) error {
+func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
 	for prop, propDef := range def.PropertyDefs {
@@ -420,11 +420,11 @@ func (def *OperatorDef) applyPropertiesOnPortGroups(props Properties) error {
 
 // OPERATOR META DEFINITION
 
-func (d *OperatorMetaDef) Valid() bool {
+func (d *BlueprintMetaDef) Valid() bool {
 	return d.valid
 }
 
-func (d *OperatorMetaDef) Validate() error {
+func (d *BlueprintMetaDef) Validate() error {
 	d.valid = false
 
 	if len(d.Name) < 2 {
@@ -877,7 +877,7 @@ type SlangFileDef struct {
 		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
 	} `json:"args,omitempty" yaml:"args,omitempty"`
 
-	Blueprints []OperatorDef `json:"blueprints" yaml:"blueprints"`
+	Blueprints []Blueprint `json:"blueprints" yaml:"blueprints"`
 
 	valid bool
 }

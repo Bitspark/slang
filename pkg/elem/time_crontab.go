@@ -7,9 +7,9 @@ import (
 )
 
 var timeCrontabCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("60b849fd-ca5a-4206-8312-996e4e3f6c31"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "crontab",
 			ShortDescription: "takes a UNIX crontab string, sends triggers to its handler delegate accordingly",
 			Icon:             "calendar-alt",

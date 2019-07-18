@@ -82,9 +82,9 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 
 var netHTTPServerId = uuid.MustParse("241cc7ef-c6d6-49c1-8729-c5e3c0be8188")
 var netHTTPServerCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: netHTTPServerId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "HTTP server",
 			ShortDescription: "starts an HTTP server, uses a handler delegate to process requests",
 			Icon:             "server",

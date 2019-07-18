@@ -64,21 +64,21 @@ func readSlangFile(slFilePath string) (*core.SlangFileDef, error) {
 
 func printPortDef(slFile *core.SlangFileDef) error {
 	mainBpId := slFile.Main
-	var opDef *core.OperatorDef
+	var blueprint *core.Blueprint
 	for _, bp := range slFile.Blueprints {
 		bp := bp
 		if mainBpId == bp.Id {
-			opDef = &bp
+			blueprint = &bp
 		}
 	}
 
-	if opDef == nil {
+	if blueprint == nil {
 		return fmt.Errorf("unknown blueprint: %s", mainBpId)
 	}
 
 	fmt.Printf("Ports:\n")
-	fmt.Printf("\tIn:\n\t\t%s\n", jsonString(opDef.ServiceDefs["main"].In))
-	fmt.Printf("\tOut:\n\t\t%s\n", jsonString(opDef.ServiceDefs["main"].Out))
+	fmt.Printf("\tIn:\n\t\t%s\n", jsonString(blueprint.ServiceDefs["main"].In))
+	fmt.Printf("\tOut:\n\t\t%s\n", jsonString(blueprint.ServiceDefs["main"].Out))
 
 	return nil
 }

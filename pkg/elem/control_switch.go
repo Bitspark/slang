@@ -9,9 +9,9 @@ import (
 
 var controlSwitchId = uuid.MustParse("cd6fc5c8-5b64-4b1a-9885-59ede141b398")
 var controlSwitchCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: controlSwitchId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "switch",
 			ShortDescription: "emits a constant value for each item",
 			Icon:             "code-merge",

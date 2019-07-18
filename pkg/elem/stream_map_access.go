@@ -9,9 +9,9 @@ import (
 
 var streamMapAccessId = uuid.MustParse("618c4007-70fc-44ac-9443-184df77ab730")
 var streamMapAccessCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: streamMapAccessId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "access map",
 			ShortDescription: "takes a stream of key-value pairs and emits the value with the given key",
 			Icon:             "envelope",

@@ -7,9 +7,9 @@ import (
 )
 
 var databaseRedisLPushCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("8f8a095c-9274-4d39-96d9-3ef463659426"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis LPush",
 			ShortDescription: "executes an LPush command at the specified Redis server",
 			Icon:             "database",

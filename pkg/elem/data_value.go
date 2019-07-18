@@ -7,9 +7,9 @@ import (
 
 var dataValueId = uuid.MustParse("8b62495a-e482-4a3e-8020-0ab8a350ad2d")
 var dataValueCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: dataValueId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "value",
 			ShortDescription: "emits a constant value for each item",
 			Icon:             "box-full",

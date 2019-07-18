@@ -9,9 +9,9 @@ import (
 )
 
 var encodingURLWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("702a2036-a1cc-4783-8b83-b18494c5e9f1"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "encode URL",
 			ShortDescription: "encodes a Slang map into the corresponding URL-encoded string",
 			Icon:             "brackets",

@@ -8,9 +8,9 @@ import (
 )
 
 var stringFormatCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("21dbddf2-2d07-494e-8950-3ac0224a3ff5"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "format",
 			ShortDescription: "places values formatted in a C-like manner inside a string",
 			Icon:             "edit",

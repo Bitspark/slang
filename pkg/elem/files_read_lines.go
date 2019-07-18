@@ -10,9 +10,9 @@ import (
 )
 
 var filesReadLinesCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	blueprint: core.Blueprint{
 		Id: uuid.MustParse("6124cd6b-5c23-4e17-a714-458d0f8ac1a7"),
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "lines from file",
 			ShortDescription: "reads the contents of a file line by line and emits them as stream",
 			Icon:             "file",

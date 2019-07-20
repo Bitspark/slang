@@ -23,28 +23,28 @@ var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
-	slangFilePath := flag.String("file", "", fmt.Sprintf("Path to slangFile"))
+	slangBundlePath := flag.String("file", "", fmt.Sprintf("Path to slangBundle"))
 	flag.Parse()
 
 	if !funk.ContainsString(SupportedRunModes, *runMode) {
 		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
 	}
 
-	var slangFileReader io.Reader
+	var slangBundleReader io.Reader
 	var err error
 
-	if *slangFilePath != "" {
-		slangFileReader, err = os.Open(*slangFilePath)
+	if *slangBundlePath != "" {
+		slangBundleReader, err = os.Open(*slangBundlePath)
 	} else {
 		err = checkStdin()
-		slangFileReader = os.Stdin
+		slangBundleReader = os.Stdin
 	}
 
 	if err != nil {
-		log.Fatalf("provide slangFile via stdin or via flag -file=slangFile")
+		log.Fatalf("provide slangBundle via stdin or via flag -file=slangBundle")
 	}
 
-	slFileBufReader := bufio.NewReader(slangFileReader)
+	slFileBufReader := bufio.NewReader(slangBundleReader)
 	slFile, err := readSlangFile(slFileBufReader)
 
 	if err != nil {
@@ -78,14 +78,14 @@ func checkStdin() error {
 	return nil
 }
 
-func readSlangFile(reader *bufio.Reader) (*core.SlangFileDef, error) {
+func readSlangFile(reader *bufio.Reader) (*core.SlangBundle, error) {
 	slFileContent, err := api.Rdbuf(reader)
 
 	if err != nil && err != io.EOF {
 		return nil, err
 	}
 
-	var slFile core.SlangFileDef
+	var slFile core.SlangBundle
 	err = json.Unmarshal([]byte(slFileContent), &slFile)
 	return &slFile, err
 }

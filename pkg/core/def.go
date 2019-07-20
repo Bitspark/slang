@@ -869,55 +869,35 @@ func (p Properties) Clean() {
 	}
 }
 
-type SlangFileDef struct {
+type SlangBundle struct {
 	Main uuid.UUID `json:"main" yaml:"main"`
 
 	Args struct {
 		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
-	} `json:"args,omitempty" yaml:"args,omitempty"`
+	} `json:"args,omitempty"`
 
-	Blueprints struct {
-		Elementary []Blueprint
-		Library    []Blueprint
-		Local      []Blueprint
-	} `json:"blueprints" yaml:"blueprints"`
+	Blueprints map[uuid.UUID]Blueprint `json:"blueprints"`
 
 	valid bool
 }
 
-func (sf SlangFileDef) Valid() bool {
-	return sf.valid
+func (sb SlangBundle) Valid() bool {
+	return sb.valid
 }
 
-func (sf *SlangFileDef) Validate() error {
-	if sf.Main == uuid.Nil {
+func (sb *SlangBundle) Validate() error {
+	if sb.Main == uuid.Nil {
 		return fmt.Errorf(`missing main blueprint id`)
 	}
 
-	if len(sf.Blueprints.Elementary) == 0 && len(sf.Blueprints.Library) == 0 && len(sf.Blueprints.Local) == 0 {
-		return fmt.Errorf(`incomplete slang file: no Elementary blueprint definitions found`)
-	}
-
-	for _, bp := range sf.Blueprints.Elementary {
+	for _, bp := range sb.Blueprints {
 		if err := bp.Validate(); err != nil {
 			return err
 		}
 	}
 
-	for _, bp := range sf.Blueprints.Library {
-		if err := bp.Validate(); err != nil {
-			return err
-		}
-	}
-
-	for _, bp := range sf.Blueprints.Local {
-		if err := bp.Validate(); err != nil {
-			return err
-		}
-	}
-
-	sf.valid = true
+	sb.valid = true
 	return nil
 }
 

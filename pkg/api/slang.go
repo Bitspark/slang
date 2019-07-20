@@ -11,44 +11,70 @@ import (
 	"github.com/google/uuid"
 )
 
-// todo should be SlangFileDef method
-func BuildOperator(sf *core.SlangFileDef) (*core.Operator, error) {
-	if !sf.Valid() {
-		if err := sf.Validate(); err != nil {
+// todo should be SlangBundle method
+func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
+	if !bundle.Valid() {
+		if err := bundle.Validate(); err != nil {
 			return nil, err
 		}
 	}
 
-	blueprints := []core.Blueprint{}
-	blueprints = append(blueprints, sf.Blueprints.Elementary...)
-	blueprints = append(blueprints, sf.Blueprints.Library...)
-	blueprints = append(blueprints, sf.Blueprints.Local...)
+	stor := newSlangBundleStorage(funk.Values(bundle.Blueprints).([]core.Blueprint))
 
-	stor := newSlangFileStorage(blueprints)
-
-	return BuildAndCompile(sf.Main, sf.Args.Generics, sf.Args.Properties, *stor)
+	return BuildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor)
 }
 
-type slangFileLoader struct {
+func gatherDependencies(def *core.Blueprint, bundle *core.SlangBundle, store *storage.Storage) error {
+	for _, dep := range def.InstanceDefs {
+		id := dep.Operator
+		if _, ok := bundle.Blueprints[id]; !ok {
+			depDef, err := store.Load(id)
+			if err != nil {
+				return err
+			}
+			bundle.Blueprints[id] = *depDef
+			err = gatherDependencies(depDef, bundle, store)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func CreateBundle(bp *core.Blueprint, st *storage.Storage) (*core.SlangBundle, error) {
+	bundle := &core.SlangBundle{
+		Main:       bp.Id,
+		Blueprints: make(map[uuid.UUID]core.Blueprint),
+	}
+
+	if err := gatherDependencies(bp, bundle, st); err != nil {
+		return bundle, err
+	}
+
+	return bundle, bundle.Validate()
+}
+
+type slangBundleLoader struct {
 	blueprintById map[uuid.UUID]core.Blueprint
 }
 
-func newSlangFileStorage(blueprints []core.Blueprint) *storage.Storage {
+func newSlangBundleStorage(blueprints []core.Blueprint) *storage.Storage {
 	m := make(map[uuid.UUID]core.Blueprint)
 
 	for _, bp := range blueprints {
 		m[bp.Id] = bp
 	}
 
-	return storage.NewStorage().AddBackend(&slangFileLoader{m})
+	return storage.NewStorage().AddBackend(&slangBundleLoader{m})
 }
 
-func (l *slangFileLoader) Has(opId uuid.UUID) bool {
+func (l *slangBundleLoader) Has(opId uuid.UUID) bool {
 	_, ok := l.blueprintById[opId]
 	return ok
 }
 
-func (l *slangFileLoader) List() ([]uuid.UUID, error) {
+func (l *slangBundleLoader) List() ([]uuid.UUID, error) {
 	var uuidList []uuid.UUID
 
 	for _, idOrName := range funk.Keys(l.blueprintById).([]string) {
@@ -60,7 +86,7 @@ func (l *slangFileLoader) List() ([]uuid.UUID, error) {
 	return uuidList, nil
 }
 
-func (l *slangFileLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
+func (l *slangBundleLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
 	if blueprint, ok := l.blueprintById[opId]; ok {
 		return &blueprint, nil
 	}

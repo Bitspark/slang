@@ -1,11 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,35 +22,31 @@ var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
-	slangBundlePath := flag.String("file", "", fmt.Sprintf("Path to slangBundle"))
+	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
+
+	if *help {
+		fmt.Println("slang OPTIONS SLANG_BUNDLE")
+		flag.PrintDefaults()
+	}
+
+	slangBundlePath := flag.Arg(0)
+
+	if slangBundlePath == "" {
+		log.Fatal("missing slang bundle file")
+	}
 
 	if !funk.ContainsString(SupportedRunModes, *runMode) {
 		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
 	}
 
-	var slangBundleReader io.Reader
-	var err error
-
-	if *slangBundlePath != "" {
-		slangBundleReader, err = os.Open(*slangBundlePath)
-	} else {
-		err = checkStdin()
-		slangBundleReader = os.Stdin
-	}
-
-	if err != nil {
-		log.Fatalf("provide slangBundle via stdin or via flag -file=slangBundle")
-	}
-
-	slFileBufReader := bufio.NewReader(slangBundleReader)
-	slFile, err := readSlangFile(slFileBufReader)
+	slBundle, err := readSlangBundleJSON(slangBundlePath)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	operator, err := api.BuildOperator(slFile)
+	operator, err := api.BuildOperator(slBundle)
 
 	if err != nil {
 		log.Fatal(err)
@@ -65,28 +60,15 @@ func main() {
 
 }
 
-func checkStdin() error {
-	info, err := os.Stdin.Stat()
+func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
+	slBundleContent, err := ioutil.ReadFile(slBundlePath)
+
 	if err != nil {
-		return err
-	}
-
-	if info.Mode()&os.ModeCharDevice != 0 || info.Size() <= 0 {
-		return fmt.Errorf("empty stdin")
-	}
-
-	return nil
-}
-
-func readSlangFile(reader *bufio.Reader) (*core.SlangBundle, error) {
-	slFileContent, err := api.Rdbuf(reader)
-
-	if err != nil && err != io.EOF {
 		return nil, err
 	}
 
 	var slFile core.SlangBundle
-	err = json.Unmarshal([]byte(slFileContent), &slFile)
+	err = json.Unmarshal([]byte(slBundleContent), &slFile)
 	return &slFile, err
 }
 

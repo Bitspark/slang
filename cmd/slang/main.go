@@ -22,7 +22,7 @@ var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
-	bind := flag.String("bind", "localhost:0", "To which address to httpPost should bind")
+	bind := flag.String("bind", "localhost:0", "To which address httpPost should bind")
 	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 

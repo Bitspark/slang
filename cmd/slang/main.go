@@ -22,6 +22,7 @@ var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
+	bind := flag.String("bind", "localhost:0", "To which address httpPost should bind")
 	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
@@ -37,7 +38,7 @@ func main() {
 	}
 
 	if !funk.ContainsString(SupportedRunModes, *runMode) {
-		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
+		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
 	}
 
 	slBundle, err := readSlangBundleJSON(slangBundlePath)
@@ -54,7 +55,7 @@ func main() {
 
 	log.SetOperator(operator.Id(), operator.Name())
 
-	if err := run(operator, *runMode); err != nil {
+	if err := run(operator, *runMode, *bind); err != nil {
 		log.Fatal(err)
 	}
 
@@ -72,12 +73,12 @@ func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
 	return &slFile, err
 }
 
-func run(operator *core.Operator, mode string) error {
+func run(operator *core.Operator, mode string, bind string) error {
 	switch mode {
 	case "process":
 		runProcess(operator)
 	case "httpPost":
-		runHttpPost(operator)
+		runHttpPost(operator, bind)
 	default:
 		log.Fatal("invalid or not implemented run mode: %s")
 	}
@@ -99,14 +100,14 @@ func run(operator *core.Operator, mode string) error {
 func runProcess(operator *core.Operator) {
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Print("started")
+	log.Print("started as process mode")
 
 	if isQuasiTrigger(operator.Main().In()) {
 		operator.Main().In().Push(true)
 	}
 }
 
-func runHttpPost(operator *core.Operator) {
+func runHttpPost(operator *core.Operator, bind string) {
 	inDef := operator.Main().In().Define()
 
 	r := mux.NewRouter()
@@ -135,10 +136,9 @@ func runHttpPost(operator *core.Operator) {
 
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Print("started")
-
+	log.Print("started as httpPost")
 	go func() {
-		log.Fatal(http.ListenAndServe("localhost:0", r))
+		log.Fatal(http.ListenAndServe(bind, r))
 	}()
 }
 

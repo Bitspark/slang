@@ -380,7 +380,7 @@ func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	for prop, propDef := range def.PropertyDefs {
 		propVal, ok := props[prop]
 		if !ok {
-			return errors.New("Missing property " + prop)
+			return errors.New("missing property " + prop)
 		}
 		if err := propDef.VerifyData(propVal); err != nil {
 			return err
@@ -869,40 +869,35 @@ func (p Properties) Clean() {
 	}
 }
 
-type SlangFileDef struct {
+type SlangBundle struct {
 	Main uuid.UUID `json:"main" yaml:"main"`
 
 	Args struct {
 		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
-	} `json:"args,omitempty" yaml:"args,omitempty"`
+	} `json:"args,omitempty"`
 
-	Blueprints []Blueprint `json:"blueprints" yaml:"blueprints"`
+	Blueprints map[uuid.UUID]Blueprint `json:"blueprints"`
 
 	valid bool
 }
 
-func (sf SlangFileDef) Valid() bool {
-	return sf.valid
+func (sb SlangBundle) Valid() bool {
+	return sb.valid
 }
 
-func (sf *SlangFileDef) Validate() error {
-	if sf.Main == uuid.Nil {
+func (sb *SlangBundle) Validate() error {
+	if sb.Main == uuid.Nil {
 		return fmt.Errorf(`missing main blueprint id`)
 	}
 
-	if len(sf.Blueprints) == 0 {
-		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
-
-	}
-
-	for _, bp := range sf.Blueprints {
+	for _, bp := range sb.Blueprints {
 		if err := bp.Validate(); err != nil {
 			return err
 		}
 	}
 
-	sf.valid = true
+	sb.valid = true
 	return nil
 }
 

@@ -15,7 +15,7 @@ type store map[*core.Port]*storePipe
 // attachPort attaches an interface array to the port and starts one or multiple go routine for this port which listen
 // at the port
 func (s store) attachPort(p *core.Port) {
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		s[p] = &storePipe{
 			index: 0,
 			items: []interface{}{},
@@ -26,7 +26,7 @@ func (s store) attachPort(p *core.Port) {
 			}
 		}()
 	} else if p.Type() == core.TYPE_MAP {
-		for _, sub := range p.MapEntries() {
+		for _, sub := range p.MapEntryNames() {
 			s.attachPort(p.Map(sub))
 		}
 	} else if p.Type() == core.TYPE_STREAM {
@@ -44,11 +44,11 @@ func (p *storePipe) next() interface{} {
 }
 
 func (s store) pull(p *core.Port) interface{} {
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		return s[p].next()
 	} else if p.Type() == core.TYPE_MAP {
 		obj := make(map[string]interface{})
-		for _, sub := range p.MapEntries() {
+		for _, sub := range p.MapEntryNames() {
 			obj[sub] = s.pull(p.Map(sub))
 		}
 		newObj := false

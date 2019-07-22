@@ -1,228 +1,170 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"log"
-	"net"
+	"net/http"
 	"os"
-	"os/exec"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/log"
+	"github.com/gorilla/mux"
 )
 
-var printPorts bool
+var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
-	flag.BoolVar(&printPorts, "print-ports", false, "display port def")
-
-	if len(os.Args) < 2 {
-		fmt.Println("USAGE: slang [OPTIONS] SLANGFILE.slang.json")
-		fmt.Println("OPTIONS:")
-		flag.PrintDefaults()
-		return
-	}
-
+	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
+	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
-	slFile, err := readSlangFile(flag.Arg(0))
+	if *help {
+		fmt.Println("slang OPTIONS SLANG_BUNDLE")
+		flag.PrintDefaults()
+	}
+
+	slangBundlePath := flag.Arg(0)
+
+	if slangBundlePath == "" {
+		log.Fatal("missing slang bundle file")
+	}
+
+	if !funk.ContainsString(SupportedRunModes, *runMode) {
+		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
+	}
+
+	slBundle, err := readSlangBundleJSON(slangBundlePath)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if printPorts {
-		if err := printPortDef(slFile); err != nil {
-			log.Fatal(err)
-		}
-		return
+	operator, err := api.BuildOperator(slBundle)
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if err := run(slFile); err != nil {
+	log.SetOperator(operator.Id(), operator.Name())
+
+	if err := run(operator, *runMode); err != nil {
 		log.Fatal(err)
 	}
 
 }
 
-func readSlangFile(slFilePath string) (*core.SlangFileDef, error) {
-	var slFile core.SlangFileDef
-
-	b, err := ioutil.ReadFile(slFilePath)
+func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
+	slBundleContent, err := ioutil.ReadFile(slBundlePath)
 
 	if err != nil {
-		return &slFile, fmt.Errorf("could not read operator file: %s", slFilePath)
+		return nil, err
 	}
-	err = json.Unmarshal(b, &slFile)
+
+	var slFile core.SlangBundle
+	err = json.Unmarshal([]byte(slBundleContent), &slFile)
 	return &slFile, err
 }
 
-func printPortDef(slFile *core.SlangFileDef) error {
-	mainBpId := slFile.Main
-	var blueprint *core.Blueprint
-	for _, bp := range slFile.Blueprints {
-		bp := bp
-		if mainBpId == bp.Id {
-			blueprint = &bp
+func run(operator *core.Operator, mode string) error {
+	switch mode {
+	case "process":
+		runProcess(operator)
+	case "httpPost":
+		runHttpPost(operator)
+	default:
+		log.Fatal("invalid or not implemented run mode: %s")
+	}
+
+	// Handle SIGTERM (CTRL-C)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	for {
+		select {
+		case <-quit:
+			return nil
+		case <-time.After(5 * time.Second):
+			log.Ping()
 		}
 	}
-
-	if blueprint == nil {
-		return fmt.Errorf("unknown blueprint: %s", mainBpId)
-	}
-
-	fmt.Printf("Ports:\n")
-	fmt.Printf("\tIn:\n\t\t%s\n", jsonString(blueprint.ServiceDefs["main"].In))
-	fmt.Printf("\tOut:\n\t\t%s\n", jsonString(blueprint.ServiceDefs["main"].Out))
-
-	return nil
 }
 
-func run(slFile *core.SlangFileDef) error {
+func runProcess(operator *core.Operator) {
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	log.Print("started")
 
-	errors := make(chan error, 1)
-	done := make(chan bool, 1)
-	portcfgs := make(chan map[string]string, 1)
+	if isQuasiTrigger(operator.Main().In()) {
+		operator.Main().In().Push(true)
+	}
+}
 
-	cmdr := api.NewCommander(":0")
+func runHttpPost(operator *core.Operator) {
+	inDef := operator.Main().In().Define()
 
-	go func() {
-		err := cmdr.Begin(func(c api.Commands) error {
-			var msg string
-			var err error
+	r := mux.NewRouter()
+	r.
+		Methods("POST").
+		HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			var incoming interface{}
 
-			msg, err = c.Hello()
-
-			if err != nil {
-				return err
+			if err := json.NewDecoder(req.Body).Decode(&incoming); err != nil {
+				responseWithError(resp, err, http.StatusBadRequest)
+				return
 			}
 
-			if msg == "" {
-				msg, err = c.Init(jsonString(slFile))
-			} else {
-				msg, err = c.PrtCfg()
+			incoming = core.CleanValue(incoming)
+			if err := inDef.VerifyData(incoming); err != nil {
+				responseWithError(resp, err, http.StatusBadRequest)
+				return
 			}
 
-			if err != nil {
-				return err
-			}
+			operator.Main().In().Push(incoming)
 
-			var pcfg map[string]string
-			if err = json.Unmarshal([]byte(msg), &pcfg); err != nil {
-				return err
-			}
+			outgoing := operator.Main().Out().Pull()
 
-			portcfgs <- pcfg
-			return nil
+			responseWithOk(resp, outgoing)
 		})
 
-		if err != nil {
-			errors <- err
-		}
-	}()
-
-	cmd := exec.Command("slangr", "--aggr-in", "--aggr-out", "--mgnt-addr", fmt.Sprintf("%s", cmdr.Addr()))
-
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Start()
-	if err != nil {
-		return err
-	}
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	log.Print("started")
 
 	go func() {
-		if err := cmd.Wait(); err != nil {
-			<-done
-		}
-		done <- true
+		log.Fatal(http.ListenAndServe("localhost:0", r))
 	}()
-
-	var portcfg map[string]string
-	select {
-	case err = <-errors:
-		return err
-	case portcfg = <-portcfgs:
-		break
-	}
-
-	pconn := api.NewPortConnHandler(portcfg)
-	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
-		return err
-	}
-	if err := pconn.ConnectTo(")", pullFromRnr); err != nil {
-		return err
-	}
-
-	<-done
-	return nil
 }
 
-func jsonString(j interface{}) string {
-	jb, _ := json.Marshal(j)
-	return string(jb)
+func isQuasiTrigger(p *core.Port) bool {
+	// port is quasi a trigger,
+	// when it actually is a trigger port or
+	// it is a map with in total one sub-port of trigger type
+	return p.TriggerType() || p.MapType() && p.MapLength() == 1 && p.Map(p.MapEntryNames()[0]).TriggerType()
 }
 
-func wrerr(err error) {
-	wrerr := bufio.NewWriter(os.Stderr)
-	wrerr.WriteString(err.Error() + "\n")
-	wrerr.Flush()
-}
+func responseWithError(w http.ResponseWriter, err error, status int) {
+	log.Error(err)
 
-func pushToRnr(connRnr net.Conn) bool {
-	stdin := bufio.NewReader(os.Stdin)
-	wrRnr := bufio.NewWriter(connRnr)
-
-	defer connRnr.Close()
-
-	for {
-		m, err := api.Rdbuf(stdin)
-
-		time.Sleep(1 * time.Second)
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			wrerr(err)
-			continue
-		}
-
-		if err := api.Wrbuf(wrRnr, m); err != nil {
-			break
-		}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(err.Error()); err != nil {
+		log.Fatal(err)
 	}
-
-	return false
 }
 
-func pullFromRnr(connRnr net.Conn) bool {
-	rdRnr := bufio.NewReader(connRnr)
-	stdout := bufio.NewWriter(os.Stdout)
-
-	defer connRnr.Close()
-
-	for {
-		m, err := api.Rdbuf(rdRnr)
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			wrerr(err)
-			continue
-		}
-
-		if err := api.Wrbuf(stdout, m); err != nil {
-			wrerr(err)
-			break
-		}
+func responseWithOk(w http.ResponseWriter, m interface{}) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		log.Fatal(err)
 	}
-	return false
 }

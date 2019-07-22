@@ -11,6 +11,89 @@ import (
 	"github.com/google/uuid"
 )
 
+// todo should be SlangBundle method
+func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
+	if !bundle.Valid() {
+		if err := bundle.Validate(); err != nil {
+			return nil, err
+		}
+	}
+
+	stor := newSlangBundleStorage(funk.Values(bundle.Blueprints).([]core.Blueprint))
+
+	return BuildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor)
+}
+
+func gatherDependencies(def *core.Blueprint, bundle *core.SlangBundle, store *storage.Storage) error {
+	bundle.Blueprints[def.Id] = *def
+	for _, dep := range def.InstanceDefs {
+		id := dep.Operator
+		if _, ok := bundle.Blueprints[id]; !ok {
+			depDef, err := store.Load(id)
+			if err != nil {
+				return err
+			}
+			bundle.Blueprints[id] = *depDef
+			err = gatherDependencies(depDef, bundle, store)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func CreateBundle(bp *core.Blueprint, st *storage.Storage) (*core.SlangBundle, error) {
+	bundle := &core.SlangBundle{
+		Main:       bp.Id,
+		Blueprints: make(map[uuid.UUID]core.Blueprint),
+	}
+
+	if err := gatherDependencies(bp, bundle, st); err != nil {
+		return bundle, err
+	}
+
+	return bundle, bundle.Validate()
+}
+
+type slangBundleLoader struct {
+	blueprintById map[uuid.UUID]core.Blueprint
+}
+
+func newSlangBundleStorage(blueprints []core.Blueprint) *storage.Storage {
+	m := make(map[uuid.UUID]core.Blueprint)
+
+	for _, bp := range blueprints {
+		m[bp.Id] = bp
+	}
+
+	return storage.NewStorage().AddBackend(&slangBundleLoader{m})
+}
+
+func (l *slangBundleLoader) Has(opId uuid.UUID) bool {
+	_, ok := l.blueprintById[opId]
+	return ok
+}
+
+func (l *slangBundleLoader) List() ([]uuid.UUID, error) {
+	var uuidList []uuid.UUID
+
+	for _, idOrName := range funk.Keys(l.blueprintById).([]string) {
+		if id, err := uuid.Parse(idOrName); err == nil {
+			uuidList = append(uuidList, id)
+		}
+	}
+
+	return uuidList, nil
+}
+
+func (l *slangBundleLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	if blueprint, ok := l.blueprintById[opId]; ok {
+		return &blueprint, nil
+	}
+	return nil, fmt.Errorf("unknown operator")
+}
+
 func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)

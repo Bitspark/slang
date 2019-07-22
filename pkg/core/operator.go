@@ -3,8 +3,8 @@ package core
 import (
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/Bitspark/slang/pkg/log"
 	"github.com/google/uuid"
 )
 
@@ -156,7 +156,7 @@ func (o *Operator) Start() {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("%s panicked: %s", o.Name(), r)
+					log.Errorf("%s:%s panicked: %s", o.Id(), o.Name(), r)
 					o.Stop()
 				}
 			}()

@@ -25,6 +25,7 @@ func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
 }
 
 func gatherDependencies(def *core.Blueprint, bundle *core.SlangBundle, store *storage.Storage) error {
+	bundle.Blueprints[def.Id] = *def
 	for _, dep := range def.InstanceDefs {
 		id := dep.Operator
 		if _, ok := bundle.Blueprints[id]; !ok {

@@ -36,7 +36,7 @@ func SetOperator(operatorId uuid.UUID, operatorName string) {
 }
 
 func Ping() {
-	logger.Print("ping")
+	logger.Debug("ping")
 }
 
 func Print(args ...interface{}) {

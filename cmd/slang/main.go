@@ -38,7 +38,7 @@ func main() {
 	}
 
 	if !funk.ContainsString(SupportedRunModes, *runMode) {
-		log.Fatalf("invalid run mode: %s must be one of following %s", runMode, SupportedRunModes)
+		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
 	}
 
 	slBundle, err := readSlangBundleJSON(slangBundlePath)

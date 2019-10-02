@@ -426,12 +426,32 @@ func (dg *DocGenerator) generateOperatorDocs(extension string) {
 	log.Printf("Generated %d operator doc files\n", generated)
 }
 
+func (dg *DocGenerator) prepareTags() {
+	for _, tagInfo := range dg.tagInfos {
+		// Remove JSON and tags to avoid recursion
+		for i, op := range tagInfo.operators {
+			opCpy := &OperatorInfo{}
+			*opCpy = *op
+			opCpy.OperatorContentJSON = ""
+			opCpy.OperatorsUsingJSON = ""
+			opCpy.OperatorDefinitions = nil
+			tagInfo.operators[i] = opCpy
+		}
+
+		buf := new(bytes.Buffer)
+		json.NewEncoder(buf).Encode(tagInfo.operators)
+		buf.Truncate(buf.Len() - 1)
+		tagInfo.OperatorsJSON = buf.String()
+	}
+}
+
 func (dg *DocGenerator) generateIndex(indexTmpl template.Template) {
 	log.Println("Begin generating doc index")
 
 	if len(dg.tagInfos) == 0 {
 		panic("No tags found")
 	}
+	dg.prepareTags()
 
 	os.MkdirAll(path.Dir(dg.docIndexPath), os.ModeDir)
 

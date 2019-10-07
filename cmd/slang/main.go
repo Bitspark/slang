@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -116,22 +118,34 @@ func runHttpPost(operator *core.Operator, bind string) {
 		HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			var incoming interface{}
 
-			if err := json.NewDecoder(req.Body).Decode(&incoming); err != nil {
+			err := json.NewDecoder(req.Body).Decode(&incoming)
+			switch {
+			// We do not have a POST-Body but we could still serve a result
+			// for the case when the `In` is a trigger.
+			case err == io.EOF:
+				if isQuasiTrigger(operator.Main().In()) {
+					operator.Main().In().Push(true)
+					outgoing := operator.Main().Out().Pull()
+					responseWithOk(resp, outgoing)
+				} else {
+					responseWithError(resp, errors.New("Missing data"), http.StatusBadRequest)
+				}
+			// We have an error while decoding the response
+			case err != nil:
 				responseWithError(resp, err, http.StatusBadRequest)
-				return
+
+			// Everything is fine, validate the values and pass it to the running operator
+			default:
+				incoming = core.CleanValue(incoming)
+				if err := inDef.VerifyData(incoming); err != nil {
+					responseWithError(resp, err, http.StatusBadRequest)
+					return
+				}
+				operator.Main().In().Push(incoming)
+				outgoing := operator.Main().Out().Pull()
+				responseWithOk(resp, outgoing)
 			}
 
-			incoming = core.CleanValue(incoming)
-			if err := inDef.VerifyData(incoming); err != nil {
-				responseWithError(resp, err, http.StatusBadRequest)
-				return
-			}
-
-			operator.Main().In().Push(incoming)
-
-			outgoing := operator.Main().Out().Pull()
-
-			responseWithOk(resp, outgoing)
 		})
 
 	operator.Main().Out().Bufferize()

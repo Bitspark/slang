@@ -132,6 +132,7 @@ func Test_CtrlIterate__SimpleAggregation(t *testing.T) {
 	// Connect
 	require.NoError(t, ao.Delegate("iterator").Out().Connect(fo.Main().In()))
 	require.NoError(t, fo.Main().Out().Connect(ao.Delegate("iterator").In()))
+	require.NoError(t, ao.Main().Out().FullyConnected())
 
 	ao.Main().Out().Bufferize()
 

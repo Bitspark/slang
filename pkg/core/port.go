@@ -740,6 +740,29 @@ func (p *Port) Bufferize() {
 	}
 }
 
+// Check port has a `src`
+// What is strange though for an operator with a connected delegate this would
+// return an error. For instance if you take `controlIterate` and connect the delegate.
+// And nothing more it would still work when you `push` and `pull` on `controlIterateId`
+func (p *Port) FullyConnected() error {
+	if p.PrimitiveType() {
+		if p.src == nil && p.strSrc.src == nil {
+			return fmt.Errorf("%v is not connected to a source", p.Name())
+		} else {
+			return nil
+		}
+	} else if p.itemType == TYPE_MAP {
+		for _, sub := range p.subs {
+			if err := sub.FullyConnected(); err != nil {
+				return err
+			}
+		}
+	} else if p.itemType == TYPE_STREAM {
+		return p.sub.FullyConnected()
+	}
+	return nil
+}
+
 // PRIVATE METHODS
 
 func setParentStreams(p *Port, parent *Port) {

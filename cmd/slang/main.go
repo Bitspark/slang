@@ -82,7 +82,7 @@ func run(operator *core.Operator, mode string, bind string) error {
 	case "httpPost":
 		runHttpPost(operator, bind)
 	default:
-		log.Fatal("Run mode not supported: %s")
+		log.Fatal("Run mode not supported: %s", mode)
 	}
 
 	// Handle SIGTERM (CTRL-C)

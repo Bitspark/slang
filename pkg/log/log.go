@@ -31,8 +31,14 @@ func getStats() logrus.Fields {
 
 var logger = newLogger()
 
+func SetBlueprint(blueprintId uuid.UUID, blueprintName string) {
+	logger.Data["blueprintId"] = blueprintId
+	logger.Data["blueprintName"] = blueprintName
+}
+
 func SetOperator(operatorId uuid.UUID, operatorName string) {
 	logger.Data["operatorId"] = operatorId
+	logger.Data["operatorName"] = operatorName
 }
 
 func Ping() {

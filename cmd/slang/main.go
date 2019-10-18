@@ -49,15 +49,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	operator, err := api.BuildOperator(slBundle)
+	blueprint, err := api.BuildOperator(slBundle)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.SetOperator(operator.Id(), operator.Name())
+	log.SetBlueprint(blueprint.Id(), blueprint.Name())
 
-	if err := run(operator, *runMode, *bind); err != nil {
+	if err := run(blueprint, *runMode, *bind); err != nil {
 		log.Fatal(err)
 	}
 

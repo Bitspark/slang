@@ -154,6 +154,7 @@ func init() {
 	Register(imageEncodeCfg)
 
 	Register(shellExecuteCfg)
+	Register(systemLogCfg)
 
 	variableStores = make(map[string]*variableStore)
 	variableMutex = &sync.Mutex{}

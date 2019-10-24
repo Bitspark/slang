@@ -148,6 +148,14 @@ func runHttpPost(operator *core.Operator, bind string) {
 
 		})
 
+	// In order to generate a response to a HTTP-Request we need to have
+	// the out port fully connected. In some cases the out port is a map of multiple
+	// types and we need them all connected to their `src`. Otherwise we `pull` on the port
+	// and wait forever to return something. Which would make the client timeout.
+	if err := operator.Main().Out().FullyConnected(); err != nil {
+		log.Fatal(err)
+	}
+
 	operator.Main().Out().Bufferize()
 	operator.Start()
 	log.Print("started as httpPost")

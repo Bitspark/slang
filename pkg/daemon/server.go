@@ -42,7 +42,7 @@ var (
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 	// Root defines a single instance of our user as we currently do not have
-	// I use that to get the rest of the code to think about multi tanentcy
+	// I use that to get the rest of the code to think about multi tenancy
 	Root = &UserID{0}
 )
 
@@ -74,7 +74,7 @@ type envelop struct {
 }
 
 // In the end we need to represent a message we want to send to a connected client.
-// The only sensible way we can achive that without loosing too much information is to encode the entire
+// The only sensible way we can achieve that without loosing too much information is to encode the entire
 // array of messages as json array.
 func (e *envelop) Bytes() []byte {
 	body, _ := json.Marshal(e.messages)
@@ -88,7 +88,7 @@ func (e *envelop) append(m ...*message) {
 }
 
 // A message is holding data and a topic - we do this so the interface can listen on different topics
-// and discard recieved data easier or better decide where to route the information.
+// and discard received data easier or better decide where to route the information.
 type message struct {
 	Topic   Topic       `json:"topic"`
 	Payload interface{} `json:"payload"`
@@ -108,14 +108,14 @@ type ConnectedClient struct {
 	websocket *websocket.Conn
 	userID    *UserID
 	// Send data through this channel in order to get it send through the websocket
-	// currently this is what the `hub` uses to send it's recieved message through a websocket.
+	// currently this is what the `hub` uses to send it's received message through a websocket.
 	send chan []byte
 }
 
 // UserID represents an Identifier for a user of the system
 // This is also intended to deliver `envelops` to the correct `ConnectedClients`
 // instead of sending a message to all connected clients. Currently we do not have real users.
-// The variable acts more as a placeholder and thinking vehicle to reminde oneself that the system
+// The variable acts more as a placeholder and thinking vehicle to remind oneself that the system
 // might have more than one user in the future - I know, YAGNI.
 type UserID struct {
 	id int
@@ -183,8 +183,8 @@ func (h *Hub) run() {
 			if client.userID != letter.receiver {
 				continue
 			}
-			// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no reciever on the other reading off the channel.
-			// The channel is buffered meaning that we can sucessfully write into it as long as a reciever is pulling data from the other end.
+			// wrapping `<-` with a `select` and `default` makes it non-blocking if there is no receiver on the other reading off the channel.
+			// The channel is buffered meaning that we can successfully write into it as long as a receiver is pulling data from the other end.
 			select {
 			case client.send <- letter.Bytes():
 				// message written
@@ -202,7 +202,7 @@ func (h *Hub) run() {
 	// As consequence message for all UserIDs are blocked for `maxTimer`.
 	//
 	// One way around this would be to use dynamic `select` with `reflect.Select` and `reflect.SelectCase`
-	// Wher we could build up per UserID timer. But for now we live with the lag between `minTimer` and `maxTimer`
+	// where we could build up a per UserID timer. But for now we live with the lag between `minTimer` and `maxTimer`
 	for {
 		select {
 		case client := <-h.register:
@@ -219,7 +219,7 @@ func (h *Hub) run() {
 			if maxTimer == nil {
 				maxTimer = time.After(max)
 			}
-			// If we already have a envelop for that user, appened the contents of the current envelop
+			// If we already have a envelop for that user, append the contents of the current envelop
 			// to the one that is already scheduled to be sent.
 			if _, ok := postBox[incomingEnvelop.receiver]; ok {
 				// What we do here is to grow the single envelop`s messages.
@@ -236,7 +236,7 @@ func (h *Hub) run() {
 			for _, e := range postBox {
 				actualSend(e)
 			}
-			// we also need to clear reset our letters since we have sent them all
+			// we also need to clear our letters since we have sent them all
 			postBox = make(map[*UserID]*envelop)
 		case <-maxTimer:
 			// Enough time has now passed and we should now send what we have already collected.
@@ -314,9 +314,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Create a new client for each connection we recieve
+	// Create a new client for each connection we receive
 	// attaching the user makes it possible to send message to multiple
-	// open browsers that are accociated with the user.
+	// open browsers that are associated with the user.
 	//
 	// Then channel is a bytes channel with the size of 256, I am unsure of
 	// wether this is enough and what happends if we have message greater than that.
@@ -361,7 +361,7 @@ func (s *Server) AddWebsocket(path string) {
 	// Don't know yet if that is good idea
 	// Maybe should make the `hub` a singleton instead of shoving it
 	// into the context where it needs more typing to be safe
-	// What we want is for the hub to be available in everywhare we might want to send messages
+	// What we want is for the hub to be available in everywhere we might want to send messages
 	// to a connected client.
 	newCtx := SetHub(*s.ctx, hub)
 	s.ctx = &newCtx

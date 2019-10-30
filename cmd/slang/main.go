@@ -18,6 +18,7 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/log"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 var SupportedRunModes = []string{"process", "httpPost"}
@@ -148,11 +149,15 @@ func runHttpPost(operator *core.Operator, bind string) {
 
 		})
 
+	handler := cors.New(cors.Options{
+		AllowedMethods: []string{"POST"},
+	}).Handler(r)
+
 	operator.Main().Out().Bufferize()
 	operator.Start()
 	log.Print("started as httpPost")
 	go func() {
-		log.Fatal(http.ListenAndServe(bind, r))
+		log.Fatal(http.ListenAndServe(bind, handler))
 	}()
 }
 

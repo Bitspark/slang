@@ -66,17 +66,18 @@ func Test_JsonPath__Invalid_Document(t *testing.T) {
 	o.Main().Out().Bufferize()
 	o.Start()
 	o.Main().In().Push(core.Binary(`{"test"`))
+	a.PortPushes(nil, o.Main().Out().Map("name.last"))
 	a.PortPushes(false, o.Main().Out().Map("valid"))
 }
 
-func Test_JsonPath__NonExistant_Path(t *testing.T) {
+func Test_JsonPath__NonExistent_Path(t *testing.T) {
 	a := assertions.New(t)
 
 	o, err := buildOperator(
 		core.InstanceDef{
 			Operator: encodingJSONPathId,
 			Properties: map[string]interface{}{
-				"paths": []interface{}{"name.asd", "name.last"},
+				"paths": []interface{}{"name.missing", "name.last"},
 			},
 		},
 	)
@@ -86,7 +87,7 @@ func Test_JsonPath__NonExistant_Path(t *testing.T) {
 	o.Start()
 	o.Main().In().Push(core.Binary(jsonDoc))
 	a.PortPushes("Anderson", o.Main().Out().Map("name.last"))
-	a.PortPushes(nil, o.Main().Out().Map("name.asd"))
+	a.PortPushes(nil, o.Main().Out().Map("name.missing"))
 	a.PortPushes(true, o.Main().Out().Map("valid"))
 }
 
@@ -107,4 +108,5 @@ func Test_JsonPath__Non_Primitive_Return(t *testing.T) {
 	o.Start()
 	o.Main().In().Push(core.Binary(jsonDoc))
 	a.PortPushes(`["Murphy","Craig","Fonder"]`, o.Main().Out().Map("friends.#.last"))
+	a.PortPushes(true, o.Main().Out().Map("valid"))
 }

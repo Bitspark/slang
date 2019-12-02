@@ -121,6 +121,7 @@ func init() {
 	Register(encodingCSVWriteCfg)
 	Register(encodingJSONReadCfg)
 	Register(encodingJSONWriteCfg)
+	Register(encodingJSONPathCfg)
 	Register(encodingXLSXReadCfg)
 	Register(encodingURLWriteCfg)
 

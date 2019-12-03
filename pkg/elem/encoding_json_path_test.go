@@ -36,7 +36,7 @@ func Test_JsonPath__String(t *testing.T) {
 		core.InstanceDef{
 			Operator: encodingJSONPathId,
 			Properties: map[string]interface{}{
-				"paths": []interface{}{"name.last"},
+				"path_names": []interface{}{"last_name"},
 			},
 		},
 	)
@@ -44,9 +44,9 @@ func Test_JsonPath__String(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-
-	o.Main().In().Push(core.Binary(jsonDoc))
-	a.PortPushes("Anderson", o.Main().Out().Map("name.last"))
+	data := map[string]interface{}{"last_name": "name.last", "document": core.Binary(jsonDoc)}
+	o.Main().In().Push(data)
+	a.PortPushes("Anderson", o.Main().Out().Map("last_name"))
 	a.PortPushes(true, o.Main().Out().Map("valid"))
 }
 
@@ -57,7 +57,7 @@ func Test_JsonPath__Invalid_Document(t *testing.T) {
 		core.InstanceDef{
 			Operator: encodingJSONPathId,
 			Properties: map[string]interface{}{
-				"paths": []interface{}{"name.last"},
+				"path_names": []interface{}{"last_name"},
 			},
 		},
 	)
@@ -65,8 +65,9 @@ func Test_JsonPath__Invalid_Document(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push(core.Binary(`{"test"`))
-	a.PortPushes(nil, o.Main().Out().Map("name.last"))
+	data := map[string]interface{}{"last_name": "name.last", "document": core.Binary(`{"test"`)}
+	o.Main().In().Push(data)
+	a.PortPushes(nil, o.Main().Out().Map("last_name"))
 	a.PortPushes(false, o.Main().Out().Map("valid"))
 }
 
@@ -77,7 +78,7 @@ func Test_JsonPath__NonExistent_Path(t *testing.T) {
 		core.InstanceDef{
 			Operator: encodingJSONPathId,
 			Properties: map[string]interface{}{
-				"paths": []interface{}{"name.missing", "name.last"},
+				"path_names": []interface{}{"name_missing", "name_last"},
 			},
 		},
 	)
@@ -85,9 +86,10 @@ func Test_JsonPath__NonExistent_Path(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push(core.Binary(jsonDoc))
-	a.PortPushes("Anderson", o.Main().Out().Map("name.last"))
-	a.PortPushes(nil, o.Main().Out().Map("name.missing"))
+	data := map[string]interface{}{"name_last": "name.last", "name_missing": "name.missing", "document": core.Binary(jsonDoc)}
+	o.Main().In().Push(data)
+	a.PortPushes("Anderson", o.Main().Out().Map("name_last"))
+	a.PortPushes(nil, o.Main().Out().Map("name_missing"))
 	a.PortPushes(true, o.Main().Out().Map("valid"))
 }
 
@@ -98,7 +100,7 @@ func Test_JsonPath__Non_Primitive_Return(t *testing.T) {
 		core.InstanceDef{
 			Operator: encodingJSONPathId,
 			Properties: map[string]interface{}{
-				"paths": []interface{}{"friends.#.last"},
+				"path_names": []interface{}{"friends_last"},
 			},
 		},
 	)
@@ -106,7 +108,8 @@ func Test_JsonPath__Non_Primitive_Return(t *testing.T) {
 
 	o.Main().Out().Bufferize()
 	o.Start()
-	o.Main().In().Push(core.Binary(jsonDoc))
-	a.PortPushes(`["Murphy","Craig","Fonder"]`, o.Main().Out().Map("friends.#.last"))
+	data := map[string]interface{}{"friends_last": "friends.#.last", "document": core.Binary(jsonDoc)}
+	o.Main().In().Push(data)
+	a.PortPushes(`["Murphy","Craig","Fonder"]`, o.Main().Out().Map("friends_last"))
 	a.PortPushes(true, o.Main().Out().Map("valid"))
 }

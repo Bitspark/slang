@@ -20,7 +20,15 @@ var encodingJSONPathCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "binary",
+					Type: "map",
+					Map: map[string]*core.TypeDef{
+						"document": {
+							Type: "binary",
+						},
+						"{path_names}": {
+							Type: "string",
+						},
+					},
 				},
 				Out: core.TypeDef{
 					Type: "map",
@@ -28,7 +36,7 @@ var encodingJSONPathCfg = &builtinConfig{
 						"valid": {
 							Type: "boolean",
 						},
-						"{paths}": {
+						"{path_names}": {
 							Type: "primitive",
 						},
 					},
@@ -37,7 +45,7 @@ var encodingJSONPathCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: map[string]*core.TypeDef{
-			"paths": {
+			"path_names": {
 				Type: "stream",
 				Stream: &core.TypeDef{
 					Type: "string",
@@ -48,7 +56,7 @@ var encodingJSONPathCfg = &builtinConfig{
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
-		paths := op.Property("paths").([]interface{})
+		path_names := op.Property("path_names").([]interface{})
 		for !op.CheckStop() {
 			in := in.Pull()
 			valid := true
@@ -57,22 +65,24 @@ var encodingJSONPathCfg = &builtinConfig{
 				continue
 			}
 
-			jsonDoc := []byte(in.(core.Binary))
+			data := in.(map[string]interface{})
+			jsonDoc := []byte(data["document"].(core.Binary))
+
 			if !gjson.ValidBytes(jsonDoc) {
-				for _, v := range paths {
-					out.Map(v.(string)).Push(nil)
+				for _, path_name := range path_names {
+					out.Map(path_name.(string)).Push(nil)
 				}
 				valid = false
 			} else {
-				for _, v := range paths {
-					res := gjson.GetBytes(jsonDoc, v.(string))
+				for _, path_name := range path_names {
+					res := gjson.GetBytes(jsonDoc, data[path_name.(string)].(string))
 					if !res.Exists() {
-						out.Map(v.(string)).Push(nil)
+						out.Map(path_name.(string)).Push(nil)
 					}
 					if res.IsArray() || res.IsObject() {
-						out.Map(v.(string)).Push(res.Raw)
+						out.Map(path_name.(string)).Push(res.Raw)
 					}
-					out.Map(v.(string)).Push(res.Value())
+					out.Map(path_name.(string)).Push(res.Value())
 				}
 			}
 			out.Map("valid").Push(valid)

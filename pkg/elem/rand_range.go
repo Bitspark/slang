@@ -50,8 +50,24 @@ var randRangeCfg = &builtinConfig{
 			}
 
 			data := i.(map[string]interface{})
-			max := data["max"].(int)
-			min := data["min"].(int)
+			maxF, ok := data["max"].(float64)
+			var (
+				max int
+				min int
+			)
+			if !ok {
+				// has to be int at this point
+				max = data["max"].(int)
+			} else {
+				max = int(maxF)
+			}
+			minF, ok := data["min"].(float64)
+			if !ok {
+				// has to be int at this point
+				min = data["max"].(int)
+			} else {
+				min = int(minF)
+			}
 			// This generates values for the following interval [min, max] e.g. {min <= x <= max}
 			out.Push(min + rand.Intn(max-min+1))
 		}

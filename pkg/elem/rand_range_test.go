@@ -39,15 +39,13 @@ func Test_Rand_Range(t *testing.T) {
 	o.Main().In().Push(map[string]interface{}{"min": 0, "max": 0})
 	a.PortPushes(0, o.Main().Out())
 
-	// this breaks type conversion
 	o = buildRandOperator(t)
 	o.Main().In().Push(map[string]interface{}{"min": 0.0, "max": 0})
-	a.PortPushes(nil, o.Main().Out())
+	a.PortPushes(0, o.Main().Out())
 
-	// this breaks type conversion
 	o = buildRandOperator(t)
 	o.Main().In().Push(map[string]interface{}{"min": "0.0", "max": 0})
-	a.PortPushes(nil, o.Main().Out())
+	a.PortPushes(0, o.Main().Out())
 }
 func Test_Rand_Range_Negative_Values(t *testing.T) {
 	a := assertions.New(t)

@@ -54,6 +54,6 @@ func Test_Rand_Range_Negative_Values(t *testing.T) {
 
 	o := buildRandOperator(t)
 
-	o.Main().In().Push(map[string]interface{}{"min": -2, "max": 10})
+	o.Main().In().Push(map[string]interface{}{"min": -2, "max": -2})
 	a.PortPushes(-2, o.Main().Out())
 }

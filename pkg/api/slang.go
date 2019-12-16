@@ -249,11 +249,11 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	return flatOp, nil
 }
 
-func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []uuid.UUID) error {
+func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage, dependencyChain []uuid.UUID) error {
 	if err := def.SpecifyOperator(gens, props); err != nil {
 		return err
 	}
-	dependenyChain = append(dependenyChain, def.Id)
+	dependencyChain = append(dependencyChain, def.Id)
 
 	for _, childInsDef := range def.InstanceDefs {
 
@@ -267,7 +267,7 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 			}
 		}
 
-		if funk.Contains(dependenyChain, childInsDef.Operator) {
+		if funk.Contains(dependencyChain, childInsDef.Operator) {
 			return fmt.Errorf("recursion in %s", def.Id)
 		}
 
@@ -293,7 +293,7 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 			gen.SpecifyGenerics(gens)
 		}
 
-		err := specifyOperator(&childInsDef.Blueprint, childInsDef.Generics, childInsDef.Properties, st, dependenyChain)
+		err := specifyOperator(&childInsDef.Blueprint, childInsDef.Generics, childInsDef.Properties, st, dependencyChain)
 
 		if err != nil {
 			return err

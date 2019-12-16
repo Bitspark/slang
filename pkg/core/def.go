@@ -736,8 +736,7 @@ func (d TypeDef) VerifyData(data interface{}) error {
 			return nil
 		}
 	}
-
-	return fmt.Errorf("exptected %s, got %v", d.Type, data)
+	return fmt.Errorf("expected %s, got %v", d.Type, data)
 }
 
 // TYPE DEF MAP

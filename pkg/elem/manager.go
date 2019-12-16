@@ -78,6 +78,7 @@ func init() {
 	Register(dataUUIDCfg)
 	Register(dataVariableSetCfg)
 	Register(dataVariableGetCfg)
+	Register(randRangeCfg)
 
 	// Flow control operators
 	Register(controlSplitCfg)

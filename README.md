@@ -28,7 +28,7 @@ If you rather want to compile it yourself, you first need to install [Go](https:
 
 After you have set up Go and cloned the repository, switch to the root directory and run
 
-`go get -v ./...`
+`go build ./...`
 
 This will fetch all the dependencies. After that, run
 

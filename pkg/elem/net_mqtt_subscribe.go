@@ -1,8 +1,10 @@
 package elem
 
 import (
+	"crypto/tls"
+
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 )
 
@@ -40,7 +42,7 @@ var netMQTTSubscribeCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.TypeDefMap{
 			"broker": {
 				Type: "string",
 			},
@@ -53,13 +55,33 @@ var netMQTTSubscribeCfg = &builtinConfig{
 			"topic": {
 				Type: "string",
 			},
+			"verifyCertificate": {
+				Type:     "boolean",
+				Optional: true,
+			},
+			"clientCertificate": {
+				Type:     "string",
+				Optional: true,
+			},
+			"clientKey": {
+				Type:     "string",
+				Optional: true,
+			},
+			"caCertificate": {
+				Type:     "string",
+				Optional: true,
+			},
 		},
 	},
 	opFunc: func(op *core.Operator) {
-		options := mqtt.NewClientOptions()
-		options.AddBroker(op.Property("broker").(string))
-		options.SetUsername(op.Property("username").(string))
-		options.SetPassword(op.Property("password").(string))
+		options := mqtt.NewClientOptions().
+			AddBroker(op.Property("broker").(string)).
+			SetUsername(op.Property("username").(string)).
+			SetPassword(op.Property("password").(string)).
+			SetTLSConfig(&tls.Config{
+				ClientAuth:         tls.NoClientCert,
+				InsecureSkipVerify: true,
+			})
 
 		topic := op.Property("topic").(string)
 

@@ -111,10 +111,11 @@ type ServiceDef struct {
 
 type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
-	Type    string              `json:"type" yaml:"type"`
-	Stream  *TypeDef            `json:"stream,omitempty" yaml:"stream,omitempty"`
-	Map     map[string]*TypeDef `json:"map,omitempty" yaml:"map,omitempty"`
-	Generic string              `json:"generic,omitempty" yaml:"generic,omitempty"`
+	Type     string     `json:"type" yaml:"type"`
+	Stream   *TypeDef   `json:"stream,omitempty" yaml:"stream,omitempty"`
+	Map      TypeDefMap `json:"map,omitempty" yaml:"map,omitempty"`
+	Generic  string     `json:"generic,omitempty" yaml:"generic,omitempty"`
+	Optional bool       `json:"optional,omitempty" yaml:"optional,omitempty"`
 
 	valid bool
 }
@@ -379,10 +380,10 @@ func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 
 	for prop, propDef := range def.PropertyDefs {
 		propVal, ok := props[prop]
-		if !ok {
+
+		if !ok && !propDef.Optional {
 			return errors.New("missing property " + prop)
-		}
-		if err := propDef.VerifyData(propVal); err != nil {
+		} else if err := propDef.VerifyData(propVal); err != nil {
 			return err
 		}
 	}
@@ -616,6 +617,7 @@ func (d TypeDef) Copy() TypeDef {
 		tStr,
 		tMap,
 		d.Generic,
+		d.Optional,
 		d.valid,
 	}
 }
@@ -902,10 +904,11 @@ func (sb *SlangBundle) Validate() error {
 
 // PROPERTY PARSING
 
-func expandExpressionPart(exprPart string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+func expandExpressionPart(exprPart string, props Properties, propDefs TypeDefMap) ([]string, error) {
 	var vals []string
 	prop, ok := props[exprPart]
 	if !ok {
+		// property is used in exppression but is not defined
 		return nil, errors.New("missing property " + exprPart)
 	}
 	propDef := propDefs[exprPart]
@@ -920,7 +923,7 @@ func expandExpressionPart(exprPart string, props Properties, propDefs map[string
 	return vals, nil
 }
 
-func ExpandExpression(expr string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+func ExpandExpression(expr string, props Properties, propDefs TypeDefMap) ([]string, error) {
 	re := regexp.MustCompile("{(.*?)}")
 	exprs := []string{expr}
 	for _, expr := range exprs {

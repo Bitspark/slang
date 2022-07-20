@@ -29,6 +29,7 @@ func getSemaphoreStore(semaphore string) *semaphoreStore {
 
 var controlSemaphorePId = uuid.MustParse("199f14c3-3e25-4813-aaba-7ec7fa3d94e2")
 var controlSemaphorePCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlSemaphorePId,
 		Meta: core.BlueprintMetaDef{

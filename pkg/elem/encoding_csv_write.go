@@ -10,6 +10,7 @@ import (
 
 var encodingCSVWriteId = uuid.MustParse("fdd1e8e5-6959-4511-bf44-54c1bcbebc12")
 var encodingCSVWriteCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: encodingCSVWriteId,
 		Meta: core.BlueprintMetaDef{

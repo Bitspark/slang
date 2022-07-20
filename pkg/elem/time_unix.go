@@ -8,6 +8,7 @@ import (
 )
 
 var timeUNIXMillisCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("d58b458e-8b3a-49f3-a6e9-45e737354937"),
 		Meta: core.BlueprintMetaDef{

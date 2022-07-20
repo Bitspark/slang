@@ -8,6 +8,7 @@ import (
 )
 
 var stringSplitCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("c02bc7ad-65e5-4a43-a2a3-7d86b109915d"),
 		Meta: core.BlueprintMetaDef{

@@ -10,6 +10,7 @@ import (
 
 var stringTemplateId = uuid.MustParse("3c39f999-b5c2-490d-aed1-19149d228b04")
 var stringTemplateCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: stringTemplateId,
 		Meta: core.BlueprintMetaDef{

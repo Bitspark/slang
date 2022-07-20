@@ -8,6 +8,7 @@ import (
 )
 
 var stringEndswithCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("db8b1677-baaf-4072-8047-0359cd68be9e"),
 		Meta: core.BlueprintMetaDef{

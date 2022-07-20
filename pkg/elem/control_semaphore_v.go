@@ -7,6 +7,7 @@ import (
 
 var controlSemaphoreVId = uuid.MustParse("dc9b35a3-bd0e-4ca3-99df-4e2689ea5097")
 var controlSemaphoreVCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlSemaphoreVId,
 		Meta: core.BlueprintMetaDef{

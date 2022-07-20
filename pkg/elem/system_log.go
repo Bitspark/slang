@@ -9,6 +9,7 @@ import (
 
 var systemLogId = uuid.MustParse("8f9c02df-da41-4266-b486-0c22173a6383")
 var systemLogCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: systemLogId,
 		Meta: core.BlueprintMetaDef{

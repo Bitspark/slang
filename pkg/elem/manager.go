@@ -13,6 +13,7 @@ type builtinConfig struct {
 	opConnFunc core.CFunc
 	opFunc     core.OFunc
 	blueprint  core.Blueprint
+	safe       bool
 }
 
 var cfgs map[uuid.UUID]*builtinConfig

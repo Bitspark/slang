@@ -9,6 +9,7 @@ import (
 
 var dataVariableGetId = uuid.MustParse("b8771c73-cddf-4eb1-a10c-bf78c2552efe")
 var dataVariableGetCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: dataVariableGetId,
 		Meta: core.BlueprintMetaDef{

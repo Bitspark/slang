@@ -6,6 +6,7 @@ import (
 )
 
 var streamSliceCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("2471a7aa-c5b9-4392-b23f-d0c7bcdb3f39"),
 		Meta: core.BlueprintMetaDef{

@@ -8,6 +8,7 @@ import (
 
 var encodingJSONPathId = uuid.MustParse("89571f57-4aad-4bb8-9d03-573343ff1202")
 var encodingJSONPathCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: encodingJSONPathId,
 		Meta: core.BlueprintMetaDef{

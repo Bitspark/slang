@@ -8,6 +8,7 @@ import (
 )
 
 var streamDistinctCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("d8914bae-2878-46f3-b468-9e7faea7a463"),
 		Meta: core.BlueprintMetaDef{

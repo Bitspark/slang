@@ -7,6 +7,7 @@ import (
 )
 
 var encodingXLSXReadCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("69db81cf-2a24-4470-863f-ceffaeb8b246"),
 		Meta: core.BlueprintMetaDef{

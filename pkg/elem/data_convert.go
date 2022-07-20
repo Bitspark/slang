@@ -50,6 +50,7 @@ func stringToBool(value string) bool {
 
 var dataConvertId = uuid.MustParse("d1191456-3583-4eaf-8ec1-e486c3818c60")
 var dataConvertCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: dataConvertId,
 		Meta: core.BlueprintMetaDef{

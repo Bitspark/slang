@@ -7,6 +7,7 @@ import (
 
 var controlTakeId = uuid.MustParse("9bebc4bf-d512-4944-bcb1-5b2c3d5b5471")
 var controlTakeCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlTakeId,
 		Meta: core.BlueprintMetaDef{

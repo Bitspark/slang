@@ -9,6 +9,7 @@ import (
 )
 
 var encodingURLWriteCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("702a2036-a1cc-4783-8b83-b18494c5e9f1"),
 		Meta: core.BlueprintMetaDef{

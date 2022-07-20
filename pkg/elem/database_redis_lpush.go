@@ -7,6 +7,7 @@ import (
 )
 
 var databaseRedisLPushCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("8f8a095c-9274-4d39-96d9-3ef463659426"),
 		Meta: core.BlueprintMetaDef{

@@ -9,6 +9,7 @@ import (
 )
 
 var netMQTTPublishCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("c6b5bef6-e93e-4bc1-8ded-49c90919f39d"),
 		Meta: core.BlueprintMetaDef{

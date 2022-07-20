@@ -16,6 +16,10 @@ type builtinConfig struct {
 	safe       bool
 }
 
+// easy way to control registering of unsafe elementary operators
+// set this global to true if slang should run in safe mode
+var SAFE bool = false
+
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
 
@@ -55,6 +59,12 @@ func IsRegistered(id uuid.UUID) bool {
 }
 
 func Register(cfg *builtinConfig) {
+	if SAFE && SAFE != cfg.safe {
+		// slang run in safe mode,
+		// unsafe elementary operators cannot be registered
+		return
+	}
+
 	cfg.blueprint.Elementary = cfg.blueprint.Id
 
 	id := cfg.blueprint.Id

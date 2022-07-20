@@ -10,7 +10,7 @@ import (
 )
 
 var filesWriteCfg = &builtinConfig{
-	safe: true,
+	safe: false,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("9b61597d-cfbc-42d1-9620-210081244ba1"),
 		Meta: core.BlueprintMetaDef{

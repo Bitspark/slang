@@ -9,7 +9,7 @@ import (
 )
 
 var filesZIPPackCfg = &builtinConfig{
-	safe: true,
+	safe: false,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("dc5325bc-a816-47c8-8a8a-f741497459f7"),
 		Meta: core.BlueprintMetaDef{

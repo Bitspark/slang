@@ -8,7 +8,7 @@ import (
 )
 
 var shellExecuteCfg = &builtinConfig{
-	safe: true,
+	safe: false,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("13cbad40-da00-40d7-bdcd-981b14ec346b"),
 		Meta: core.BlueprintMetaDef{

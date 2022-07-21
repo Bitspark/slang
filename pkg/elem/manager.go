@@ -16,9 +16,7 @@ type builtinConfig struct {
 	safe       bool
 }
 
-// easy way to control registering of unsafe elementary operators
-// set this global to true if slang should run in safe mode
-var SAFE bool = false
+var SAFE_MODE bool = false
 
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
@@ -59,7 +57,7 @@ func IsRegistered(id uuid.UUID) bool {
 }
 
 func Register(cfg *builtinConfig) {
-	if SAFE && SAFE != cfg.safe {
+	if SAFE_MODE && SAFE_MODE != cfg.safe {
 		// slang run in safe mode,
 		// unsafe elementary operators cannot be registered
 		return
@@ -76,7 +74,11 @@ func GetBuiltinIds() []uuid.UUID {
 	return funk.Keys(cfgs).([]uuid.UUID)
 }
 
-func init() {
+func SetSafeMode(safe bool) {
+	SAFE_MODE = safe
+}
+
+func Init() {
 	cfgs = make(map[uuid.UUID]*builtinConfig)
 	name2Id = make(map[string]uuid.UUID)
 

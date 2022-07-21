@@ -7,6 +7,7 @@ import (
 
 var dataUUIDId = uuid.MustParse("a83bf9b2-cf1b-4b14-94c2-ea04d5cf70c0")
 var dataUUIDCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: dataUUIDId,
 		Meta: core.BlueprintMetaDef{

@@ -9,6 +9,7 @@ import (
 
 var controlSwitchId = uuid.MustParse("cd6fc5c8-5b64-4b1a-9885-59ede141b398")
 var controlSwitchCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlSwitchId,
 		Meta: core.BlueprintMetaDef{

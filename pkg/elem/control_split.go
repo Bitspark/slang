@@ -7,6 +7,7 @@ import (
 
 var controlSplitId = uuid.MustParse("fed72b41-2584-424c-8213-1978410ccab6")
 var controlSplitCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlSplitId,
 		Meta: core.BlueprintMetaDef{

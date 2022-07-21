@@ -8,6 +8,7 @@ import (
 )
 
 var stringContainsCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("8a01dfe3-5dcf-4f40-9e54-f5b168148d2a"),
 		Meta: core.BlueprintMetaDef{

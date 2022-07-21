@@ -11,6 +11,7 @@ import (
 
 var databaseKafkaSubscribeId = uuid.MustParse("b6cb78ca-bbfd-475e-a11f-3593ce295e3c")
 var databaseKafkaSubscribeCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: databaseKafkaSubscribeId,
 		Meta: core.BlueprintMetaDef{

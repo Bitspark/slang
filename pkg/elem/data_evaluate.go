@@ -85,6 +85,7 @@ func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 
 var dataEvaluateId = uuid.MustParse("37ccdc28-67b0-4bb1-8591-4e0e813e3ec1")
 var dataEvaluateCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: dataEvaluateId,
 		Meta: core.BlueprintMetaDef{

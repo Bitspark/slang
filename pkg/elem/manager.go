@@ -13,7 +13,10 @@ type builtinConfig struct {
 	opConnFunc core.CFunc
 	opFunc     core.OFunc
 	blueprint  core.Blueprint
+	safe       bool
 }
+
+var SafeMode bool
 
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
@@ -54,6 +57,12 @@ func IsRegistered(id uuid.UUID) bool {
 }
 
 func Register(cfg *builtinConfig) {
+	if SafeMode && SafeMode != cfg.safe {
+		// slang run in safe mode,
+		// unsafe elementary operators cannot be registered
+		return
+	}
+
 	cfg.blueprint.Elementary = cfg.blueprint.Id
 
 	id := cfg.blueprint.Id
@@ -65,7 +74,7 @@ func GetBuiltinIds() []uuid.UUID {
 	return funk.Keys(cfgs).([]uuid.UUID)
 }
 
-func init() {
+func Init() {
 	cfgs = make(map[uuid.UUID]*builtinConfig)
 	name2Id = make(map[string]uuid.UUID)
 
@@ -174,6 +183,16 @@ func init() {
 func getBuiltinCfg(id uuid.UUID) *builtinConfig {
 	c, _ := cfgs[id]
 	return c
+}
+
+func getBuiltinCfgErr(id uuid.UUID) (*builtinConfig, error) {
+	cfg, ok := cfgs[id]
+
+	if !ok {
+		return nil, errors.New("builtin operator not found")
+	}
+
+	return cfg, nil
 }
 
 // Mainly for testing

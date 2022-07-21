@@ -9,6 +9,7 @@ import (
 
 var encodingJSONWriteId = uuid.MustParse("d4aabe2d-dee7-409f-b2bb-713ebc836672")
 var encodingJSONWriteCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: encodingJSONWriteId,
 		Meta: core.BlueprintMetaDef{

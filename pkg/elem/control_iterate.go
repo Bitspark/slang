@@ -9,6 +9,7 @@ import (
 
 var controlIterateId = uuid.MustParse("e58624d4-5568-40d3-8b77-ab792ef620f1")
 var controlIterateCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlIterateId,
 		Meta: core.BlueprintMetaDef{

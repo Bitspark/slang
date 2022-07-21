@@ -7,6 +7,7 @@ import (
 )
 
 var databaseRedisGetCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("362482c1-2021-4e5c-9463-b580a6c1967e"),
 		Meta: core.BlueprintMetaDef{

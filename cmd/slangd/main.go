@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/env"
 	"github.com/Bitspark/slang/pkg/storage"
 
@@ -31,12 +32,18 @@ var (
 var onlyDaemon bool
 var skipChecks bool
 var withoutUI bool
+var safeMode bool
 
 func main() {
+	flag.BoolVar(&safeMode, "safe", false, "Only support safe operator. Unsafe operators are handled as not existing.")
 	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Don't automatically open UI")
 	flag.BoolVar(&skipChecks, "skip-checks", false, "Skip checking and updating UI and Lib")
 	flag.BoolVar(&withoutUI, "without-ui", false, "Do not serve the UI found in SLANG_UI")
 	flag.Parse()
+
+	// init elementary operators in proper mode (safe mode oder unsafe mode)
+	elem.SafeMode = safeMode
+	elem.Init()
 
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
 	if buildTime != 0 {

@@ -10,6 +10,7 @@ import (
 )
 
 var netHTTPClientCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("f7f5907d-758b-4892-8a3e-ae86b877b869"),
 		Meta: core.BlueprintMetaDef{

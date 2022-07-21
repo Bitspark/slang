@@ -9,6 +9,7 @@ import (
 )
 
 var streamSerializeCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("13257172-b05d-497c-be23-da7c86577c1e"),
 		Meta: core.BlueprintMetaDef{

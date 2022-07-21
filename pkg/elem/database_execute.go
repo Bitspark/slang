@@ -10,6 +10,7 @@ import (
 
 var databaseExecuteId = uuid.MustParse("e5abeb01-3aad-47f3-a753-789a9fff0d50")
 var databaseExecuteCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: databaseExecuteId,
 		Meta: core.BlueprintMetaDef{

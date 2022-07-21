@@ -6,6 +6,7 @@ import (
 )
 
 var streamStreamToMapCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("42d0f961-4ce0-4a20-b1b0-3da46396ae66"),
 		Meta: core.BlueprintMetaDef{

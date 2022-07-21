@@ -10,6 +10,7 @@ import (
 
 var randRangeId = uuid.MustParse("30e3a788-b5ec-4c0f-9338-4a78fe63bd9f")
 var randRangeCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: randRangeId,
 		Meta: core.BlueprintMetaDef{

@@ -30,6 +30,7 @@ func getMemoryStore(store string) *memoryStore {
 
 var databaseMemoryReadId = uuid.MustParse("2fcd32f5-c83c-4fff-9ac2-ccd6d02139fa")
 var databaseMemoryReadCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: databaseMemoryReadId,
 		Meta: core.BlueprintMetaDef{

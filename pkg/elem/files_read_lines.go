@@ -10,6 +10,7 @@ import (
 )
 
 var filesReadLinesCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("6124cd6b-5c23-4e17-a714-458d0f8ac1a7"),
 		Meta: core.BlueprintMetaDef{

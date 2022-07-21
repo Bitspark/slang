@@ -9,6 +9,7 @@ import (
 
 var controlReduceId = uuid.MustParse("b95e6da8-9770-4a04-a73d-cdfe2081870f")
 var controlReduceCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: controlReduceId,
 		Meta: core.BlueprintMetaDef{

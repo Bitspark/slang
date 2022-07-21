@@ -6,6 +6,7 @@ import (
 )
 
 var streamConcatenateCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("fb174c53-80bd-4e29-955a-aafe33ebfb30"),
 		Meta: core.BlueprintMetaDef{

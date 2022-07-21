@@ -7,6 +7,7 @@ import (
 
 var streamWindowId = uuid.MustParse("5b704038-9617-454a-b7a1-2091277cff69")
 var streamWindowCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: streamWindowId,
 		Meta: core.BlueprintMetaDef{

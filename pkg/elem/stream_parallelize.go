@@ -10,6 +10,7 @@ import (
 
 var streamParallelizeId = uuid.MustParse("b8428777-7667-4012-b76a-a5b7f4d1e433")
 var streamParallelizeCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: streamParallelizeId,
 		Meta: core.BlueprintMetaDef{

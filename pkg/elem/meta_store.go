@@ -114,6 +114,7 @@ func (s store) resetIndexes() {
 
 var metaStoreId = uuid.MustParse("cf20bcec-2028-45b4-a00c-0ce348c381c4")
 var metaStoreCfg = &builtinConfig{
+	safe: true,
 	blueprint: core.Blueprint{
 		Id: metaStoreId,
 		Meta: core.BlueprintMetaDef{

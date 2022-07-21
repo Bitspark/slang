@@ -16,7 +16,7 @@ type builtinConfig struct {
 	safe       bool
 }
 
-var SAFE_MODE bool = false
+var SafeMode bool
 
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
@@ -57,7 +57,7 @@ func IsRegistered(id uuid.UUID) bool {
 }
 
 func Register(cfg *builtinConfig) {
-	if SAFE_MODE && SAFE_MODE != cfg.safe {
+	if SafeMode && SafeMode != cfg.safe {
 		// slang run in safe mode,
 		// unsafe elementary operators cannot be registered
 		return
@@ -72,10 +72,6 @@ func Register(cfg *builtinConfig) {
 
 func GetBuiltinIds() []uuid.UUID {
 	return funk.Keys(cfgs).([]uuid.UUID)
-}
-
-func SetSafeMode(safe bool) {
-	SAFE_MODE = safe
 }
 
 func Init() {
@@ -187,6 +183,16 @@ func Init() {
 func getBuiltinCfg(id uuid.UUID) *builtinConfig {
 	c, _ := cfgs[id]
 	return c
+}
+
+func getBuiltinCfgErr(id uuid.UUID) (*builtinConfig, error) {
+	cfg, ok := cfgs[id]
+
+	if !ok {
+		return nil, errors.New("builtin operator not found")
+	}
+
+	return cfg, nil
 }
 
 // Mainly for testing

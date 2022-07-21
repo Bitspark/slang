@@ -42,7 +42,7 @@ func main() {
 	flag.Parse()
 
 	// init elementary operators in proper mode (safe mode oder unsafe mode)
-	elem.SetSafeMode(safeMode)
+	elem.SafeMode = safeMode
 	elem.Init()
 
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)

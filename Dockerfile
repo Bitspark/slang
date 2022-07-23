@@ -19,11 +19,11 @@ RUN cd ui && \
 
 
 ### Build daemon
-FROM golang:1.11
+FROM golang:1.18
 WORKDIR /go/src/slang
 
 COPY . .
-RUN go get -d -v ./... && \
+RUN go mod tidy && \
     env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o slangd ./cmd/slangd
 
 
@@ -43,4 +43,4 @@ COPY --from=1 /go/src/slang/slangd .
 
 EXPOSE 5149
 
-ENTRYPOINT ["/root/slang/slangd", "--only-daemon", "--skip-checks"]
+ENTRYPOINT ["/root/slang/slangd", "--skip-checks"]

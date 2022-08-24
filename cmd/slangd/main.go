@@ -152,7 +152,7 @@ func startDaemonServer(srv *daemon.Server) {
 func informUser(url string, errors chan error) {
 	select {
 	case err := <-errors:
-		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
+		log.Fatalf("\n\n\t%v\n\n", err)
 	case <-time.After(500 * time.Millisecond):
 		if !onlyDaemon && !withoutUI {
 			log.Printf("\n\n\tOpen  %s  in your browser.\n\n", url)
@@ -161,6 +161,6 @@ func informUser(url string, errors chan error) {
 	}
 	select {
 	case err := <-errors:
-		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
+		log.Fatalf("\n\n\t%v\n\n", err)
 	}
 }

@@ -3,6 +3,7 @@ package daemon
 import (
 	"bytes"
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -94,11 +95,19 @@ type message struct {
 	Payload interface{} `json:"payload"`
 }
 
+type AuthHandleFunc func(w http.ResponseWriter, r *http.Request)
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
 type Server struct {
 	Host   string
 	Port   int
 	router *mux.Router
 	ctx    *context.Context
+
+	auth *BasicAuth
 }
 
 // ConnectedClient holds everything we need to know about a connection that
@@ -339,11 +348,32 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	// so basically only returns if the ping pong fails or there is another error.
 }
 
-func NewServer(ctx *context.Context, env *env.Environment) *Server {
+func NewServer(ctx *context.Context, env *env.Environment, auth *BasicAuth) *Server {
 	r := mux.NewRouter().StrictSlash(true)
-	srv := &Server{env.HTTP.Address, env.HTTP.Port, r, ctx}
+	srv := &Server{env.HTTP.Address, env.HTTP.Port, r, ctx, auth}
 	srv.mountWebServices()
 	return srv
+}
+
+func (s *Server) basicAuth(handler http.HandlerFunc) http.HandlerFunc {
+
+	if s.auth == nil {
+		return handler
+	}
+
+	username := s.auth.Username
+	passwd := s.auth.Password
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(passwd)) != 1 {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Authentication required."`)
+			w.WriteHeader(401)
+			w.Write([]byte("Unauthorised.\n"))
+			return
+		}
+		handler(w, r)
+	}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -382,7 +412,7 @@ func (s *Server) AddService(pathPrefix string, services *Service) {
 	for path, endpoint := range services.Routes {
 		path := path
 		(func(endpoint *Endpoint) {
-			r.HandleFunc(path, endpoint.Handle)
+			r.HandleFunc(path, s.basicAuth(endpoint.Handle))
 		})(endpoint)
 	}
 }

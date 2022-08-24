@@ -410,7 +410,6 @@ func (s *Server) mountWebServices() {
 func (s *Server) AddService(pathPrefix string, services *Service) {
 	r := s.router.PathPrefix(pathPrefix).Subrouter()
 	for path, endpoint := range services.Routes {
-		path := path
 		(func(endpoint *Endpoint) {
 			r.HandleFunc(path, s.basicAuth(endpoint.Handle))
 		})(endpoint)

@@ -8,6 +8,7 @@ import (
 type storePipe struct {
 	index int
 	items []interface{}
+	port  *core.Port
 }
 
 type store map[*core.Port]*storePipe
@@ -18,11 +19,15 @@ func (s store) attachPort(p *core.Port) {
 	if p.PrimitiveType() {
 		s[p] = &storePipe{
 			index: 0,
+			port:  p,
 			items: []interface{}{},
 		}
 		go func() {
 			for !p.Operator().Stopped() {
-				s[p].items = append(s[p].items, p.Pull())
+				i := p.Pull()
+				p.Lock()
+				s[p].items = append(s[p].items, i)
+				p.Unlock()
 			}
 		}()
 	} else if p.Type() == core.TYPE_MAP {
@@ -35,12 +40,16 @@ func (s store) attachPort(p *core.Port) {
 }
 
 func (p *storePipe) next() interface{} {
+	p.port.Lock()
 	if p.index >= len(p.items) {
+		p.port.Unlock()
 		return core.PHMultiple
 	}
 	index := p.index
 	p.index++
-	return p.items[index]
+	r := p.items[index]
+	p.port.Unlock()
+	return r
 }
 
 func (s store) pull(p *core.Port) interface{} {

@@ -178,9 +178,11 @@ func (o *Operator) Stop() {
 	o.stopped = true
 
 	for _, srv := range o.services {
+		srv.inPort.Close()
 		srv.outPort.Close()
 	}
 	for _, dlg := range o.delegates {
+		dlg.inPort.Close()
 		dlg.outPort.Close()
 	}
 

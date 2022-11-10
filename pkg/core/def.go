@@ -30,7 +30,7 @@ type InstanceDef struct {
 	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 
 	valid     bool
-	Blueprint Blueprint `json:"-" yaml:"definition,omitempty"`
+	Blueprint Blueprint `json:"-" yaml:"-"`
 }
 
 type PortGeometryDef struct {

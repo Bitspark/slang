@@ -559,7 +559,8 @@ func (d *TypeDef) Validate() error {
 		return errors.New("type must not be empty")
 	}
 
-	validTypes := []string{"generic", "primitive", "trigger", "number", "string", "binary", "boolean", "stream", "map"}
+	// type "unspecified" is only allowed when defining blueprint port types
+	validTypes := []string{"generic", "primitive", "trigger", "number", "string", "binary", "boolean", "stream", "map", "unspecified"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {

@@ -34,6 +34,10 @@ This will fetch all the dependencies. After that, run
 
 `go build -o slangd ./cmd/slangd` (on Windows: `go build -o slangd.exe ./cmd/slangd`)
 
+Alternatly you just can run the daemon without compiling
+
+`go run ./cmd/slangd`
+
 That's it! Now you just need to run `slangd` (on Windows: `slangd.exe`) and Slang will take care of the rest such as downloading the UI and standard library.
 
 ## Links

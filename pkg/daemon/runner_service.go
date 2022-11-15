@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
@@ -32,9 +31,9 @@ type RunState struct {
 
 type runningOperator struct {
 	// JSON
-	Operator uuid.UUID `json:"operator"`
-	Handle   string    `json:"handle"`
-	URL      string    `json:"url"`
+	Blueprint uuid.UUID `json:"operator"`
+	Handle    string    `json:"handle"`
+	URL       string    `json:"url"`
 
 	op       *core.Operator
 	incoming chan interface{}
@@ -59,16 +58,16 @@ func (pm *portOutput) String() string {
 	return string(j)
 }
 
-type runningOperatorManager struct {
+type _RunningOperatorManager struct {
 	ops map[string]*runningOperator
 }
 
 var rnd = rand.New(rand.NewSource(99))
-var runningOperators = &runningOperatorManager{make(map[string]*runningOperator)}
+var runningOperatorManager = &_RunningOperatorManager{make(map[string]*runningOperator)}
 
-func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
+func (rom *_RunningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
 	handle := strconv.FormatInt(rnd.Int63(), 16)
-	url := "/instance/" + handle + "/"
+	url := "/run/" + handle + "/"
 	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portOutput, 0), make(chan bool, 0), make(chan bool, 0)}
 	rom.ops[handle] = runningOp
 	op.Main().Out().Bufferize()
@@ -77,7 +76,7 @@ func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runnin
 	return runningOp
 }
 
-func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
+func (rom *_RunningOperatorManager) Run(op *core.Operator) *runningOperator {
 	runningOp := rom.newRunningOperator(op)
 	go func() {
 	loop:
@@ -107,10 +106,10 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	return runningOp
 }
 
-func (rom *runningOperatorManager) Halt(handle string) error {
+func (rom *_RunningOperatorManager) Halt(handle string) error {
 	// `Halt` to me suggest that there is a way to resume operations
 	// which is not the case.
-	ro, err := runningOperators.Get(handle)
+	ro, err := runningOperatorManager.Get(handle)
 
 	if err != nil {
 		return err
@@ -124,33 +123,21 @@ func (rom *runningOperatorManager) Halt(handle string) error {
 	return nil
 }
 
-func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
+func (rom _RunningOperatorManager) Get(handle string) (*runningOperator, error) {
 	if runningOp, ok := rom.ops[handle]; ok {
 		return runningOp, nil
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
 }
 
-var InstanceService = &Service{map[string]*Endpoint{
-	"/": {func(w http.ResponseWriter, r *http.Request) {
-
-		type outJSON struct {
-			Objects []runningOperator `json:"objects"`
-			Status  string            `json:"status"`
-			Error   *Error            `json:"error,omitempty"`
-		}
-
-		if r.Method == "GET" {
-			writeJSON(w, funk.Values(runningOperators.ops))
-		}
-	}},
-}}
-
 var RunningInstanceService = &Service{map[string]*Endpoint{
+	/*
+	 *	Pushing data into running operators in-port
+	 */
 	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
 		handle := mux.Vars(r)["handle"]
 
-		runningIns, err := runningOperators.Get(handle)
+		runningIns, err := runningOperatorManager.Get(handle)
 		if err != nil {
 			w.WriteHeader(404)
 			return
@@ -175,11 +162,14 @@ var RunningInstanceService = &Service{map[string]*Endpoint{
 
 			writeJSON(w, &runningIns)
 		}
-
 	}},
 }}
 
 var RunnerService = &Service{map[string]*Endpoint{
+	/*
+	 * Start and Stop operator
+	 */
+
 	"/": {Handle: func(w http.ResponseWriter, r *http.Request) {
 		hub := GetHub(r)
 		st := GetStorage(r)
@@ -203,7 +193,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			runOp := runningOperators.Run(op)
+			runOp := runningOperatorManager.Run(op)
 
 			// Move into the background and wait on message from the operator resp. ports
 			// and relay them through the `hub`
@@ -249,7 +239,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			if err := runningOperators.Halt(si.Handle); err == nil {
+			if err := runningOperatorManager.Halt(si.Handle); err == nil {
 				data.Status = "success"
 			} else {
 				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}

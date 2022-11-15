@@ -39,7 +39,7 @@ func cleanPath(p string) string {
 
 func NewWritableFileSystem(root string) *WritableFileSystem {
 	p := cleanPath(root)
-	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}}
+	return &WritableFileSystem{FileSystem: FileSystem{p, nil, nil}}
 }
 
 func NewReadOnlyFileSystem(root string) *FileSystem {
@@ -123,7 +123,7 @@ func (fs *WritableFileSystem) Save(blueprint core.Blueprint) (uuid.UUID, error) 
 	}
 
 	delete(fs.cache, opId)
-	fs.uuids = nil
+	fs.uuids = append(fs.uuids, opId)
 
 	blueprintYaml, err := yaml.Marshal(&blueprint)
 
@@ -137,6 +137,23 @@ func (fs *WritableFileSystem) Save(blueprint core.Blueprint) (uuid.UUID, error) 
 	}
 
 	return opId, nil
+}
+
+func (fs *WritableFileSystem) List() ([]uuid.UUID, error) {
+	// force to reload writable/local blueprints
+	fs.clearCache()
+	return fs.FileSystem.List()
+}
+
+func (fs *WritableFileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	// force to reload writable/local blueprints
+	delete(fs.cache, opId)
+	return fs.FileSystem.Load(opId)
+}
+
+func (fs *WritableFileSystem) clearCache() {
+	fs.cache = make(map[uuid.UUID]*core.Blueprint)
+	fs.uuids = nil
 }
 
 func (fs *FileSystem) hasSupportedSuffix(filePath string) bool {

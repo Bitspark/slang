@@ -9,29 +9,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
-type RunInstruction struct {
-	Id     uuid.UUID       `json:"id"`
-	Props  core.Properties `json:"props"`
-	Gens   core.Generics   `json:"gens"`
-	Stream bool            `json:"stream"`
-}
-
-type RunState struct {
-	Handle string `json:"handle,omitempty"`
-	URL    string `json:"url,omitempty"`
-	Status string `json:"status"`
-	Error  *Error `json:"error,omitempty"`
-}
-
 type runningOperator struct {
 	// JSON
-	Blueprint uuid.UUID `json:"operator"`
+	Blueprint uuid.UUID `json:"blueprint"`
 	Handle    string    `json:"handle"`
 	URL       string    `json:"url"`
 
@@ -171,54 +156,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 	 */
 
 	"/": {Handle: func(w http.ResponseWriter, r *http.Request) {
-		hub := GetHub(r)
-		st := GetStorage(r)
-		if r.Method == "POST" {
-			var data RunState
-			var ri RunInstruction
-
-			decoder := json.NewDecoder(r.Body)
-			err := decoder.Decode(&ri)
-			if err != nil {
-				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			opId := ri.Id
-			op, err := api.BuildAndCompile(opId, ri.Gens, ri.Props, st)
-			if err != nil {
-				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			runOp := runningOperatorManager.Run(op)
-
-			// Move into the background and wait on message from the operator resp. ports
-			// and relay them through the `hub`
-			go func() {
-			loop:
-				for {
-					select {
-					case outgoing := <-runOp.outgoing:
-						// I don't know what happens when Root would be a dynamically changing variable.
-						// Is root's value bound to the scope or is the reference bound to the scope.
-						// I would suspect the latter, which means this is could turn into a race condition.
-						hub.broadCastTo(Root, Port, outgoing)
-					case <-runOp.outStop:
-						break loop
-					}
-				}
-			}()
-
-			data.Status = "success"
-			data.Handle = runOp.Handle
-			data.URL = runOp.URL
-
-			writeJSON(w, &data)
-
-		} else if r.Method == "DELETE" {
+		if r.Method == "DELETE" {
 			type stopInstructionJSON struct {
 				Handle string `json:"handle"`
 			}

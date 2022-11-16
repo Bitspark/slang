@@ -68,9 +68,9 @@ func readOneMessage(t *testing.T, wsc *websocket.Conn) []message {
 	return out
 }
 
-func startOperator(t *testing.T, s *httptest.Server, ri daemon.RunInstruction) daemon.RunState {
+func startOperator(t *testing.T, s *httptest.Server, ri daemon.RunInstructionJSON) daemon.RunInstructionResponseJSON {
 	t.Helper() // this allows fail asserts to actually mark the calling function as a failure
-	var out daemon.RunState
+	var out daemon.RunInstructionResponseJSON
 	var err error
 
 	body, _ := json.Marshal(&ri)
@@ -106,7 +106,7 @@ func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 	defer server.Close()
 
 	id, _ := uuid.Parse("3ceccd71-0ea5-4aeb-957a-4dff1a419071")
-	data := daemon.RunInstruction{Id: id,
+	data := daemon.RunInstructionJSON{Id: id,
 		Stream: false,
 		Props:  core.Properties{},
 		Gens:   core.Generics{},
@@ -130,7 +130,7 @@ func TestServer_Websocket_Messages_Are_Collected_If_Sent_Rapidly(t *testing.T) {
 	defer server.Close()
 
 	id, _ := uuid.Parse("3ceccd71-0ea5-4aeb-957a-4dff1a419071")
-	data := daemon.RunInstruction{Id: id,
+	data := daemon.RunInstructionJSON{Id: id,
 		Stream: false,
 		Props:  core.Properties{},
 		Gens:   core.Generics{},
@@ -151,7 +151,7 @@ func TestServer_Websocket_Messages_Are_Not_Collected_If_Sent_With_Time_InBetween
 	defer server.Close()
 
 	id, _ := uuid.Parse("3ceccd71-0ea5-4aeb-957a-4dff1a419071")
-	data := daemon.RunInstruction{Id: id,
+	data := daemon.RunInstructionJSON{Id: id,
 		Stream: false,
 		Props:  core.Properties{},
 		Gens:   core.Generics{},
@@ -172,7 +172,7 @@ func TestServer_List_Running_Instances(t *testing.T) {
 	server := newTestServer()
 	id := "8b62495a-e482-4a3e-8020-0ab8a350ad2d"
 	uuid, _ := uuid.Parse(id)
-	data := daemon.RunInstruction{Id: uuid,
+	data := daemon.RunInstructionJSON{Id: uuid,
 		Stream: false,
 		Props:  core.Properties{"value": "slang"},
 		Gens: core.Generics{

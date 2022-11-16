@@ -39,7 +39,7 @@ func cleanPath(p string) string {
 
 func NewWritableFileSystem(root string) *WritableFileSystem {
 	p := cleanPath(root)
-	return &WritableFileSystem{FileSystem: FileSystem{p, nil, nil}}
+	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}}
 }
 
 func NewReadOnlyFileSystem(root string) *FileSystem {

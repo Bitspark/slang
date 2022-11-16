@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type runningOperator struct {
@@ -63,11 +61,14 @@ func (rom *_RunningOperatorManager) newRunningOperator(op *core.Operator) *runni
 
 func (rom *_RunningOperatorManager) Run(op *core.Operator) *runningOperator {
 	runningOp := rom.newRunningOperator(op)
+
+	// Handle incoming data
 	go func() {
 	loop:
 		for {
 			select {
 			case incoming := <-runningOp.incoming:
+				fmt.Println("Push data", incoming)
 				op.Main().In().Push(incoming)
 			case <-runningOp.inStop:
 				break loop
@@ -75,6 +76,7 @@ func (rom *_RunningOperatorManager) Run(op *core.Operator) *runningOperator {
 		}
 	}()
 
+	// Handle outgoing data
 	op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
 		go func() {
 			for {
@@ -114,41 +116,6 @@ func (rom _RunningOperatorManager) Get(handle string) (*runningOperator, error) 
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
 }
-
-var RunningInstanceService = &Service{map[string]*Endpoint{
-	/*
-	 *	Pushing data into running operators in-port
-	 */
-	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
-		handle := mux.Vars(r)["handle"]
-
-		runningIns, err := runningOperatorManager.Get(handle)
-		if err != nil {
-			w.WriteHeader(404)
-			return
-		}
-
-		var idat interface{}
-		if r.Method == "POST" {
-			r.ParseForm()
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(r.Body)
-
-			// An empty buffer would result into an error that is why we check the length
-			// and only than try to encode, because an empty POST is still valid and treated as trigger.
-			if buf.Len() > 0 {
-				err := json.Unmarshal(buf.Bytes(), &idat)
-				if err != nil {
-					w.WriteHeader(400)
-					return
-				}
-			}
-			runningIns.incoming <- idat
-
-			writeJSON(w, &runningIns)
-		}
-	}},
-}}
 
 var RunnerService = &Service{map[string]*Endpoint{
 	/*

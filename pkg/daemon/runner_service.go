@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
 	"strconv"
 
 	"github.com/Bitspark/slang/pkg/core"
@@ -93,19 +92,11 @@ func (rom *_RunningOperatorManager) Run(op *core.Operator) *runningOperator {
 	return runningOp
 }
 
-func (rom *_RunningOperatorManager) Halt(handle string) error {
-	// `Halt` to me suggest that there is a way to resume operations
-	// which is not the case.
-	ro, err := runningOperatorManager.Get(handle)
-
-	if err != nil {
-		return err
-	}
-
+func (rom *_RunningOperatorManager) Halt(ro *runningOperator) error {
 	go ro.op.Stop()
 	ro.inStop <- true
 	ro.outStop <- true
-	delete(rom.ops, handle)
+	delete(rom.ops, ro.Handle)
 
 	return nil
 }
@@ -116,41 +107,3 @@ func (rom _RunningOperatorManager) Get(handle string) (*runningOperator, error) 
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
 }
-
-var RunnerService = &Service{map[string]*Endpoint{
-	/*
-	 * Start and Stop operator
-	 */
-
-	"/": {Handle: func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "DELETE" {
-			type stopInstructionJSON struct {
-				Handle string `json:"handle"`
-			}
-
-			type outJSON struct {
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}
-
-			var data outJSON
-
-			decoder := json.NewDecoder(r.Body)
-			var si stopInstructionJSON
-			err := decoder.Decode(&si)
-			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			if err := runningOperatorManager.Halt(si.Handle); err == nil {
-				data.Status = "success"
-			} else {
-				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
-			}
-
-			writeJSON(w, &data)
-		}
-	}},
-}}

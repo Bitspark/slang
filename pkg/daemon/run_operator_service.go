@@ -134,19 +134,17 @@ var RunOperatorService = &Service{map[string]*Endpoint{
 
 			fmt.Println("Data pushed")
 
+			w.WriteHeader(http.StatusNoContent)
 		} else if r.Method == "DELETE" {
 			/*
 				Stop running operator
 			*/
-			type outJSON struct {
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}
-
 			runningOperatorManager.Halt(runningOp)
-		}
 
-		w.WriteHeader(200)
-		return
+			w.WriteHeader(http.StatusNoContent)
+		} else if r.Method == "OPTIONS" {
+
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}},
 }}

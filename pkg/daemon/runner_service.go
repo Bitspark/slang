@@ -97,7 +97,8 @@ func (rom *_RunningOperatorManager) Halt(ro *runningOperator) error {
 	ro.inStop <- true
 	ro.outStop <- true
 	delete(rom.ops, ro.Handle)
-
+	op := ro.op
+	log.Printf("operator %s (id: %s) stopped", op.Name(), ro.Handle)
 	return nil
 }
 

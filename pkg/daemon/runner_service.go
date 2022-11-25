@@ -14,10 +14,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RunInstructionJSON struct {
+type RequestRunOp struct {
 	Blueprint uuid.UUID       `json:"blueprint"`
 	Props     core.Properties `json:"props"`
 	Gens      core.Generics   `json:"gens"`
+}
+type ResponseRunOp struct {
+	Object *runningOperator `json:"object"`
+	Status string           `json:"status"`
+	Error  *Error           `json:"error,omitempty"`
 }
 
 var RunnerService = &Service{map[string]*Endpoint{
@@ -40,22 +45,16 @@ var RunnerService = &Service{map[string]*Endpoint{
 			/*
 				Start operator
 			*/
-			type responseSingleJSON struct {
-				Object *runningOperator `json:"object"`
-				Status string           `json:"status"`
-				Error  *Error           `json:"error,omitempty"`
-			}
-
 			//hub := GetHub(r)
 			st := GetStorage(r)
 
-			var requ RunInstructionJSON
-			var resp responseSingleJSON
+			var requ RequestRunOp
+			var resp ResponseRunOp
 
 			decoder := json.NewDecoder(r.Body)
 			err := decoder.Decode(&requ)
 			if err != nil {
-				resp = responseSingleJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
+				resp = ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
 				w.WriteHeader(400)
 				writeJSON(w, &resp)
 				return
@@ -63,7 +62,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			op, err := api.BuildAndCompile(requ.Blueprint, requ.Gens, requ.Props, st)
 			if err != nil {
-				resp = responseSingleJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
+				resp = ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
 				w.WriteHeader(400)
 				writeJSON(w, &resp)
 				return
@@ -93,7 +92,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			*/
 
 			resp.Status = "success"
-			resp = responseSingleJSON{Object: rop, Status: "success"}
+			resp = ResponseRunOp{Object: rop, Status: "success"}
 
 			writeJSON(w, &resp)
 

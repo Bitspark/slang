@@ -130,17 +130,22 @@ var RunnerService = &Service{map[string]*Endpoint{
 				}
 			}
 
-			fmt.Println("\tPOST", idat)
+			fmt.Println("\t-->", idat)
 			rop.incoming <- idat
-			fmt.Println("\tdata pushed")
-			select {
-			case odat := <-rop.outgoing:
-				fmt.Println("\tdata pulled", odat)
-				w.WriteHeader(200)
-				writeJSON(w, &odat)
-			case <-rop.outStop:
-				fmt.Println("\toperator stopped")
-				w.WriteHeader(http.StatusNoContent)
+
+		loop:
+			for {
+				select {
+				case odat := <-rop.outgoing:
+					fmt.Println("\t<--", odat)
+					w.WriteHeader(200)
+					writeJSON(w, &odat)
+					break loop
+				case <-rop.outStop:
+					fmt.Println("\toperator stopped")
+					w.WriteHeader(http.StatusNoContent)
+					break loop
+				}
 			}
 
 		} else if r.Method == "DELETE" {

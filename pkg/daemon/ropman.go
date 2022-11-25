@@ -77,7 +77,6 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 		for {
 			select {
 			case incoming := <-ro.incoming:
-				fmt.Println("Push data", incoming)
 				op.Main().In().Push(incoming)
 			case <-ro.inStop:
 				break loop
@@ -88,15 +87,19 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	// Handle outgoing data
 
 	go func() {
-		for {
-			p := ro.op.Main().Out()
+		p := ro.op.Main().Out()
 
-			if p.Closed() {
-				break
+		go func() {
+		loop:
+			for {
+				if p.Closed() {
+					break loop
+				}
+				ro.outgoing <- p.Pull()
 			}
+		}()
 
-			ro.outgoing <- p.Pull()
-		}
+		<-ro.outStop
 	}()
 
 	/*

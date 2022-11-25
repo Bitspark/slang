@@ -1,110 +1,159 @@
 package daemon
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
-	"strconv"
+	"net/http"
 
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
-type runningOperator struct {
-	// JSON
-	Blueprint uuid.UUID `json:"blueprint"`
-	Handle    string    `json:"handle"`
-	URL       string    `json:"url"`
-
-	op       *core.Operator
-	incoming chan interface{}
-	outgoing chan portOutput
-	inStop   chan bool
-	outStop  chan bool
+type RunInstructionJSON struct {
+	Blueprint uuid.UUID       `json:"blueprint"`
+	Props     core.Properties `json:"props"`
+	Gens      core.Generics   `json:"gens"`
 }
 
-type portOutput struct {
-	// JSON
-	Handle string      `json:"handle"`
-	Port   string      `json:"port"`
-	Data   interface{} `json:"data"`
-	IsEOS  bool        `json:"isEOS"`
-	IsBOS  bool        `json:"isBOS"`
+var RunnerService = &Service{map[string]*Endpoint{
+	"/": {func(w http.ResponseWriter, r *http.Request) {
 
-	port *core.Port
-}
-
-func (pm *portOutput) String() string {
-	j, _ := json.Marshal(pm)
-	return string(j)
-}
-
-type _RunningOperatorManager struct {
-	ops map[string]*runningOperator
-}
-
-var rnd = rand.New(rand.NewSource(99))
-var runningOperatorManager = &_RunningOperatorManager{make(map[string]*runningOperator)}
-
-func (rom *_RunningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
-	handle := strconv.FormatInt(rnd.Int63(), 16)
-	url := "/run/" + handle + "/"
-	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portOutput, 0), make(chan bool, 0), make(chan bool, 0)}
-	rom.ops[handle] = runningOp
-	op.Main().Out().Bufferize()
-	op.Start()
-	log.Printf("operator %s (id: %s) started", op.Name(), handle)
-	return runningOp
-}
-
-func (rom *_RunningOperatorManager) Run(op *core.Operator) *runningOperator {
-	runningOp := rom.newRunningOperator(op)
-
-	// Handle incoming data
-	go func() {
-	loop:
-		for {
-			select {
-			case incoming := <-runningOp.incoming:
-				fmt.Println("Push data", incoming)
-				op.Main().In().Push(incoming)
-			case <-runningOp.inStop:
-				break loop
+		if r.Method == "GET" {
+			/*
+				Get all running operators
+			*/
+			type responseListJSON struct {
+				Objects []*runningOperator `json:"objects"`
+				Status  string             `json:"status"`
+				Error   *Error             `json:"error,omitempty"`
 			}
+
+			resp := responseListJSON{Objects: funk.Values(romanager.ops).([]*runningOperator), Status: "success", Error: nil}
+			writeJSON(w, &resp)
+
+		} else if r.Method == "POST" {
+			/*
+				Start operator
+			*/
+			type responseSingleJSON struct {
+				Object *runningOperator `json:"object"`
+				Status string           `json:"status"`
+				Error  *Error           `json:"error,omitempty"`
+			}
+
+			//hub := GetHub(r)
+			st := GetStorage(r)
+
+			var requ RunInstructionJSON
+			var resp responseSingleJSON
+
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&requ)
+			if err != nil {
+				resp = responseSingleJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
+				w.WriteHeader(400)
+				writeJSON(w, &resp)
+				return
+			}
+
+			op, err := api.BuildAndCompile(requ.Blueprint, requ.Gens, requ.Props, st)
+			if err != nil {
+				resp = responseSingleJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
+				w.WriteHeader(400)
+				writeJSON(w, &resp)
+				return
+			}
+
+			rop := romanager.Run(op)
+			log.Printf("operator %s (id: %s) started", op.Name(), rop.Handle)
+
+			/*
+				// Move into the background and wait on message from the operator resp. ports
+				// and relay them through the `hub`
+				go func() {
+				loop:
+					for {
+						select {
+						case outgoing := <-runOp.outgoing:
+							// I don't know what happens when Root would be a dynamically changing variable.
+							// Is root's value bound to the scope or is the reference bound to the scope.
+							// I would suspect the latter, which means this is could turn into a race condition.
+							fmt.Println("Outgoing data", outgoing.Port, outgoing.Data)
+							hub.broadCastTo(Root, Port, outgoing)
+						case <-runOp.outStop:
+							break loop
+						}
+					}
+				}()
+			*/
+
+			resp.Status = "success"
+			resp = responseSingleJSON{Object: rop, Status: "success"}
+
+			writeJSON(w, &resp)
+
 		}
-	}()
+	}},
 
-	// Handle outgoing data
-	op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-		go func() {
-			for {
-				if p.Closed() {
-					break
+	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
+		handle := mux.Vars(r)["handle"]
+
+		rop, err := romanager.Get(handle)
+		if err != nil {
+			w.WriteHeader(404)
+			return
+		}
+
+		var idat interface{}
+		if r.Method == "POST" {
+			/*
+				Pushing data into running operator in-port
+			*/
+
+			r.ParseForm() // TODO why is this required
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(r.Body)
+
+			// An empty buffer would result into an error that is why we check the length
+			// and only than try to encode, because an empty POST is still valid and treated as trigger.
+			if buf.Len() > 0 {
+				// Unmarshal incoming data into a dataformat that is compatible with our operator
+				// TODO find out if json.NewDecoder
+				err := json.Unmarshal(buf.Bytes(), &idat)
+				if err != nil {
+					w.WriteHeader(400)
+					return
 				}
-				i := p.Pull()
-
-				po := portOutput{runningOp.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
-				runningOp.outgoing <- po
 			}
-		}()
-	})
-	return runningOp
-}
 
-func (rom *_RunningOperatorManager) Halt(ro *runningOperator) error {
-	go ro.op.Stop()
-	ro.inStop <- true
-	ro.outStop <- true
-	delete(rom.ops, ro.Handle)
-	op := ro.op
-	log.Printf("operator %s (id: %s) stopped", op.Name(), ro.Handle)
-	return nil
-}
+			fmt.Println("\tPOST", idat)
+			rop.incoming <- idat
+			fmt.Println("\tdata pushed")
+			select {
+			case odat := <-rop.outgoing:
+				fmt.Println("\tdata pulled", odat)
+				w.WriteHeader(200)
+				writeJSON(w, &odat)
+			case <-rop.outStop:
+				fmt.Println("\toperator stopped")
+				w.WriteHeader(http.StatusNoContent)
+			}
 
-func (rom _RunningOperatorManager) Get(handle string) (*runningOperator, error) {
-	if runningOp, ok := rom.ops[handle]; ok {
-		return runningOp, nil
-	}
-	return nil, fmt.Errorf("unknown handle value: %s", handle)
-}
+		} else if r.Method == "DELETE" {
+			/*
+				Stop running operator
+			*/
+			romanager.Halt(rop)
+			log.Printf("operator %s (id: %s) stopped", rop.op.Name(), rop.Handle)
+			w.WriteHeader(http.StatusNoContent)
+		} else if r.Method == "OPTIONS" {
+
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}},
+}}

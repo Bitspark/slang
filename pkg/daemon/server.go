@@ -400,7 +400,7 @@ func (s *Server) AddWebsocket(path string) {
 
 func (s *Server) mountWebServices() {
 	s.AddService("/operator", DefinitionService)
-	s.AddService("/run", RunOperatorService)
+	s.AddService("/run", RunnerService)
 	s.AddService("/share", SharingService)
 	s.AddWebsocket("/ws")
 }

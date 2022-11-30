@@ -17,10 +17,47 @@ type runningOperator struct {
 	URL       string    `json:"url"`
 
 	op       *core.Operator
+	inQueue  *dataQueue
+	outQueue *dataQueue
 	incoming chan interface{}
 	outgoing chan interface{}
 	inStop   chan bool
 	outStop  chan bool
+}
+
+type dataQueue struct {
+	consumed int
+	queue    []interface{}
+	enqueue  chan interface{}
+	dequeue  chan interface{}
+}
+
+func newDataQueue() *dataQueue {
+	dq := &dataQueue{
+		0,
+		make([]interface{}, 0),
+		make(chan interface{}),
+		make(chan interface{}),
+	}
+
+	// XXX need to stop this go routines
+	go func() {
+		for {
+			enqueued := <-dq.enqueue
+			dq.queue = append(dq.queue, enqueued)
+		}
+	}()
+
+	go func() {
+		for {
+			if len(dq.queue) > dq.consumed {
+				dq.dequeue <- dq.queue[dq.consumed]
+				dq.consumed++
+			}
+		}
+	}()
+
+	return dq
 }
 
 type portOutput struct {
@@ -54,6 +91,8 @@ func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runnin
 		handle,
 		url,
 		op,
+		newDataQueue(),
+		newDataQueue(),
 		make(chan interface{}),
 		make(chan interface{}),
 		make(chan bool),
@@ -76,8 +115,10 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	loop:
 		for {
 			select {
-			case incoming := <-ro.incoming:
-				op.Main().In().Push(incoming)
+			case inData := <-ro.incoming:
+				ro.inQueue.enqueue <- inData
+			case inData := <-ro.inQueue.dequeue:
+				op.Main().In().Push(inData)
 			case <-ro.inStop:
 				break loop
 			}
@@ -85,22 +126,67 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	}()
 
 	// Handle outgoing data
-
-	go func() {
-		p := ro.op.Main().Out()
+	op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
 
 		go func() {
-		loop:
 			for {
 				if p.Closed() {
-					break loop
+					break
 				}
-				ro.outgoing <- p.Pull()
+				// XXX Could it happen, that this goroutine will never finish?
+				i := p.Pull()
+				fmt.Println("OUT", map[string]interface{}{p.String(): i})
+				ro.outQueue.enqueue <- map[string]interface{}{p.String(): i}
+				//po := portOutput{ro.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
+				//ro.outgoing <- po
 			}
 		}()
 
-		<-ro.outStop
+	})
+
+	go func() {
+		var outgoings = make([]interface{}, 0)
+		go func() {
+		loop:
+			for {
+				select {
+				case outData := <-ro.outQueue.dequeue:
+					fmt.Println("OUTDATA")
+					outgoings = append(outgoings, outData)
+				case <-ro.outStop:
+					break loop
+				}
+			}
+		}()
+
+		go func() {
+			for {
+				if len(outgoings) > 0 {
+					fmt.Println("DEFAULT")
+					ro.outgoing <- outgoings
+					outgoings = make([]interface{}, 0)
+				}
+			}
+		}()
 	}()
+
+	/*
+		go func() {
+			p := ro.op.Main().Out()
+
+			go func() {
+			loop:
+				for {
+					if p.Closed() {
+						break loop
+					}
+					ro.outgoing <- p.Pull()
+				}
+			}()
+
+			<-ro.outStop
+		}()
+	*/
 
 	/*
 		op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {

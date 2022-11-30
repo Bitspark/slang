@@ -109,7 +109,40 @@ var RunnerService = &Service{map[string]*Endpoint{
 		}
 
 		var idat interface{}
-		if r.Method == "POST" {
+		if r.Method == "GET" {
+			/*
+				Get data that has been output from operator in meantime
+			*/
+			fmt.Println("GET DATA")
+
+			select {
+			case odat := <-rop.outgoing:
+				fmt.Println("\t<--", odat)
+				w.WriteHeader(200)
+				writeJSON(w, &odat)
+			default:
+				fmt.Println("\t--- no data")
+				w.WriteHeader(200)
+			}
+
+			/*
+				loop:
+					for {
+						select {
+						case odat := <-rop.outgoing:
+							fmt.Println("\t<--", odat)
+							w.WriteHeader(200)
+							writeJSON(w, &odat)
+							break loop
+						case <-rop.outStop:
+							fmt.Println("\toperator stopped")
+							w.WriteHeader(http.StatusNoContent)
+							break loop
+						}
+					}
+			*/
+
+		} else if r.Method == "POST" {
 			/*
 				Pushing data into running operator in-port
 			*/
@@ -133,20 +166,22 @@ var RunnerService = &Service{map[string]*Endpoint{
 			fmt.Println("\t-->", idat)
 			rop.incoming <- idat
 
-		loop:
-			for {
-				select {
-				case odat := <-rop.outgoing:
-					fmt.Println("\t<--", odat)
-					w.WriteHeader(200)
-					writeJSON(w, &odat)
-					break loop
-				case <-rop.outStop:
-					fmt.Println("\toperator stopped")
-					w.WriteHeader(http.StatusNoContent)
-					break loop
-				}
-			}
+			/*
+				loop:
+					for {
+						select {
+						case odat := <-rop.outgoing:
+							fmt.Println("\t<--", odat)
+							w.WriteHeader(200)
+							writeJSON(w, &odat)
+							break loop
+						case <-rop.outStop:
+							fmt.Println("\toperator stopped")
+							w.WriteHeader(http.StatusNoContent)
+							break loop
+						}
+					}
+			*/
 
 		} else if r.Method == "DELETE" {
 			/*

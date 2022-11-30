@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
@@ -18,9 +19,10 @@ import (
 var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matters!
 
 type FileSystem struct {
-	root  string
-	cache map[uuid.UUID]*core.Blueprint
-	uuids []uuid.UUID
+	root      string
+	uuids     []uuid.UUID
+	cache     map[uuid.UUID]*core.Blueprint
+	cacheLock sync.Mutex
 }
 
 type WritableFileSystem struct {
@@ -39,12 +41,30 @@ func cleanPath(p string) string {
 
 func NewWritableFileSystem(root string) *WritableFileSystem {
 	p := cleanPath(root)
-	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}}
+	return &WritableFileSystem{
+		FileSystem{
+			p,
+			nil,
+			make(map[uuid.UUID]*core.Blueprint),
+			sync.Mutex{},
+		},
+	}
 }
 
 func NewReadOnlyFileSystem(root string) *FileSystem {
 	p := cleanPath(root)
-	return &FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}
+	return &FileSystem{
+		p,
+		nil,
+		make(map[uuid.UUID]*core.Blueprint),
+		sync.Mutex{},
+	}
+}
+
+func (fs *FileSystem) cacheThis(blueprint *core.Blueprint) {
+	fs.cacheLock.Lock()
+	fs.cache[blueprint.Id] = blueprint
+	fs.cacheLock.Unlock()
 }
 
 func (fs *FileSystem) Has(opId uuid.UUID) bool {
@@ -90,7 +110,7 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 
 	fs.uuids = funk.Keys(opsFilePathSet).([]uuid.UUID)
 
-	return fs.List()
+	return fs.uuids, nil
 }
 
 func (fs *FileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
@@ -103,12 +123,15 @@ func (fs *FileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
 		return nil, err
 	}
 
-	fs.cache[opId], err = fs.readBlueprintFile(blueprintFile)
+	blueprint, err := fs.readBlueprintFile(blueprintFile)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return fs.Load(opId)
+	fs.cacheThis(blueprint)
+
+	return blueprint, nil
 }
 
 func (fs *WritableFileSystem) Save(blueprint core.Blueprint) (uuid.UUID, error) {

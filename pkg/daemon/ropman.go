@@ -26,6 +26,29 @@ type runningOperator struct {
 	outStop  chan bool
 }
 
+func (ro *runningOperator) Pull() datavalue {
+	var outgoing datavalue
+
+loop:
+	for {
+		select {
+		case odat := <-ro.outQueue.dequeue:
+			if outgoing == nil {
+				outgoing = make(datavalue)
+			}
+
+			for key, val := range odat.(map[string]interface{}) {
+				outgoing[key] = val
+			}
+		case <-time.After(500 * time.Millisecond):
+			break loop
+		}
+	}
+
+	return outgoing
+}
+
+type datavalue map[string]interface{}
 type dataQueue struct {
 	consumed int
 	queue    []interface{}
@@ -54,24 +77,24 @@ func newDataQueue() *dataQueue {
 				break loop
 			}
 		}
+		fmt.Println("L057 Stop")
 	}()
 
 	go func() {
 	loop:
 		for {
 			select {
-			case <-dq.stop:
-				dq.stop <- true
-				break loop
 			case <-time.After(1000 * time.Millisecond):
 				for len(dq.queue) > dq.consumed {
-					fmt.Println("DEQUEUE", dq.queue[dq.consumed])
 					dq.dequeue <- dq.queue[dq.consumed]
 					dq.consumed++
 				}
-				fmt.Println("DEQUEUE DONE ===")
+			case <-dq.stop:
+				dq.stop <- true
+				break loop
 			}
 		}
+		fmt.Println("L076 Stop")
 	}()
 
 	return dq
@@ -141,6 +164,7 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 				break loop
 			}
 		}
+		fmt.Println("L146 Stop")
 	}()
 
 	// Handle outgoing data
@@ -165,25 +189,14 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 					//ro.outgoing <- po
 				}
 			}
+			fmt.Println("L171 Stop")
 		}()
-
 	})
 
 	go func() {
-		go func() {
-		loop:
-			for {
-				select {
-				case outData := <-ro.outQueue.dequeue:
-					fmt.Println("OUT with you", outData)
-					ro.outgoing <- outData
-					fmt.Println("DID it", outData)
-				case <-ro.outStop:
-					ro.outQueue.stop <- true
-					break loop
-				}
-			}
-		}()
+		<-ro.outStop
+		ro.outQueue.stop <- true
+		fmt.Println("L201 Stop")
 	}()
 
 	/*

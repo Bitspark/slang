@@ -113,14 +113,14 @@ var RunnerService = &Service{map[string]*Endpoint{
 			/*
 				Get data that has been output from operator in meantime
 			*/
-			fmt.Println("GET DATA")
 
-			select {
-			case odat := <-ro.outgoing:
+			odat := ro.Pull()
+
+			if odat != nil {
 				fmt.Println("\t<--", odat)
 				w.WriteHeader(200)
 				writeJSON(w, &odat)
-			default:
+			} else {
 				fmt.Println("\t--- no data")
 				w.WriteHeader(http.StatusNoContent)
 			}

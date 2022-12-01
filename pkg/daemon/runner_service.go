@@ -102,7 +102,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
 		handle := mux.Vars(r)["handle"]
 
-		rop, err := romanager.Get(handle)
+		ro, err := romanager.Get(handle)
 		if err != nil {
 			w.WriteHeader(404)
 			return
@@ -116,13 +116,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 			fmt.Println("GET DATA")
 
 			select {
-			case odat := <-rop.outgoing:
+			case odat := <-ro.outgoing:
 				fmt.Println("\t<--", odat)
 				w.WriteHeader(200)
 				writeJSON(w, &odat)
 			default:
 				fmt.Println("\t--- no data")
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusNoContent)
 			}
 
 			/*
@@ -164,7 +164,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			fmt.Println("\t-->", idat)
-			rop.incoming <- idat
+			ro.incoming <- idat
 
 			/*
 				loop:
@@ -187,8 +187,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 			/*
 				Stop running operator
 			*/
-			romanager.Halt(rop)
-			log.Printf("operator %s (id: %s) stopped", rop.op.Name(), rop.Handle)
+			romanager.Halt(ro)
+			log.Printf("operator %s (id: %s) stopped", ro.op.Name(), ro.Handle)
 			w.WriteHeader(http.StatusNoContent)
 		} else if r.Method == "OPTIONS" {
 

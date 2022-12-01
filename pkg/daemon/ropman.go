@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
@@ -30,6 +31,7 @@ type dataQueue struct {
 	queue    []interface{}
 	enqueue  chan interface{}
 	dequeue  chan interface{}
+	stop     chan bool
 }
 
 func newDataQueue() *dataQueue {
@@ -38,21 +40,36 @@ func newDataQueue() *dataQueue {
 		make([]interface{}, 0),
 		make(chan interface{}),
 		make(chan interface{}),
+		make(chan bool, 2),
 	}
 
-	// XXX need to stop this go routines
 	go func() {
+	loop:
 		for {
-			enqueued := <-dq.enqueue
-			dq.queue = append(dq.queue, enqueued)
+			select {
+			case enqueued := <-dq.enqueue:
+				dq.queue = append(dq.queue, enqueued)
+			case <-dq.stop:
+				dq.stop <- true
+				break loop
+			}
 		}
 	}()
 
 	go func() {
+	loop:
 		for {
-			if len(dq.queue) > dq.consumed {
-				dq.dequeue <- dq.queue[dq.consumed]
-				dq.consumed++
+			select {
+			case <-dq.stop:
+				dq.stop <- true
+				break loop
+			case <-time.After(1000 * time.Millisecond):
+				for len(dq.queue) > dq.consumed {
+					fmt.Println("DEQUEUE", dq.queue[dq.consumed])
+					dq.dequeue <- dq.queue[dq.consumed]
+					dq.consumed++
+				}
+				fmt.Println("DEQUEUE DONE ===")
 			}
 		}
 	}()
@@ -120,6 +137,7 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 			case inData := <-ro.inQueue.dequeue:
 				op.Main().In().Push(inData)
 			case <-ro.inStop:
+				ro.inQueue.stop <- true
 				break loop
 			}
 		}
@@ -129,42 +147,40 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
 
 		go func() {
+		loop:
 			for {
-				if p.Closed() {
-					break
+				select {
+				case <-ro.outQueue.stop:
+					ro.outQueue.stop <- true
+					break loop
+				default:
+					if p.Closed() {
+						break
+					}
+					// XXX Could it happen, that this goroutine will never finish?
+					// XXX need some timeout
+					i := p.Pull()
+					ro.outQueue.enqueue <- map[string]interface{}{p.Name(): i}
+					//po := portOutput{ro.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
+					//ro.outgoing <- po
 				}
-				// XXX Could it happen, that this goroutine will never finish?
-				i := p.Pull()
-				fmt.Println("OUT", map[string]interface{}{p.String(): i})
-				ro.outQueue.enqueue <- map[string]interface{}{p.String(): i}
-				//po := portOutput{ro.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
-				//ro.outgoing <- po
 			}
 		}()
 
 	})
 
 	go func() {
-		var outgoings = make([]interface{}, 0)
 		go func() {
 		loop:
 			for {
 				select {
 				case outData := <-ro.outQueue.dequeue:
-					fmt.Println("OUTDATA")
-					outgoings = append(outgoings, outData)
+					fmt.Println("OUT with you", outData)
+					ro.outgoing <- outData
+					fmt.Println("DID it", outData)
 				case <-ro.outStop:
+					ro.outQueue.stop <- true
 					break loop
-				}
-			}
-		}()
-
-		go func() {
-			for {
-				if len(outgoings) > 0 {
-					fmt.Println("DEFAULT")
-					ro.outgoing <- outgoings
-					outgoings = make([]interface{}, 0)
 				}
 			}
 		}()

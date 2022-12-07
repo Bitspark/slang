@@ -16,6 +16,7 @@ import (
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/log"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -50,15 +51,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	blueprint, err := api.BuildOperator(slBundle)
+	elem.SafeMode = false
+	elem.Init()
+
+	operator, err := api.BuildOperator(slBundle)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.SetBlueprint(blueprint.Id(), blueprint.Name())
+	log.SetBlueprint(operator.Id(), operator.Name())
 
-	if err := run(blueprint, *runMode, *bind); err != nil {
+	if err := run(operator, *runMode, *bind); err != nil {
 		log.Fatal(err)
 	}
 
@@ -79,11 +83,11 @@ func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
 func run(operator *core.Operator, mode string, bind string) error {
 	switch mode {
 	case "process":
-		runProcess(operator)
+		go runProcess(operator)
 	case "httpPost":
-		runHttpPost(operator, bind)
+		go runHttpPost(operator, bind)
 	default:
-		log.Fatal("Run mode not supported: %s", mode)
+		log.Fatal("run mode not supported: %s", mode)
 	}
 
 	// Handle SIGTERM (CTRL-C)
@@ -129,7 +133,7 @@ func runHttpPost(operator *core.Operator, bind string) {
 					outgoing := operator.Main().Out().Pull()
 					responseWithOk(resp, outgoing)
 				} else {
-					responseWithError(resp, errors.New("Missing data"), http.StatusBadRequest)
+					responseWithError(resp, errors.New("missing data"), http.StatusBadRequest)
 				}
 			// We have an error while decoding the response
 			case err != nil:
@@ -143,7 +147,13 @@ func runHttpPost(operator *core.Operator, bind string) {
 					return
 				}
 				operator.Main().In().Push(incoming)
-				outgoing := operator.Main().Out().Pull()
+
+				p := operator.Main().Out()
+				if p.Closed() {
+					return
+				}
+
+				outgoing := p.Pull()
 				responseWithOk(resp, outgoing)
 			}
 
@@ -156,9 +166,7 @@ func runHttpPost(operator *core.Operator, bind string) {
 	operator.Main().Out().Bufferize()
 	operator.Start()
 	log.Print("started as httpPost")
-	go func() {
-		log.Fatal(http.ListenAndServe(bind, handler))
-	}()
+	log.Fatal(http.ListenAndServe(bind, handler))
 }
 
 func isQuasiTrigger(p *core.Port) bool {

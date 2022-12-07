@@ -202,6 +202,10 @@ func BuildAndCompile(opId uuid.UUID, gens core.Generics, props core.Properties, 
 }
 
 func Build(opId uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
+	if !elem.Initalized {
+		return nil, fmt.Errorf("call elem.Init() before api.Build() or api.BuildAndCompile()")
+	}
+
 	// Recursively replace generics by their actual types and propagate properties
 	// TODO SpecifyOperator should instantiate and return an Operator
 	blueprint, err := st.Load(opId)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
@@ -18,9 +19,9 @@ import (
 var FILE_ENDINGS = []string{".yaml", ".yml", ".json"} // Order of endings matters!
 
 type FileSystem struct {
-	root  string
-	cache map[uuid.UUID]*core.Blueprint
-	uuids []uuid.UUID
+	root      string
+	cache     map[uuid.UUID]*core.Blueprint
+	cacheLock sync.Mutex
 }
 
 type WritableFileSystem struct {
@@ -39,12 +40,22 @@ func cleanPath(p string) string {
 
 func NewWritableFileSystem(root string) *WritableFileSystem {
 	p := cleanPath(root)
-	return &WritableFileSystem{FileSystem: FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}}
+	return &WritableFileSystem{
+		FileSystem{
+			p,
+			make(map[uuid.UUID]*core.Blueprint),
+			sync.Mutex{},
+		},
+	}
 }
 
 func NewReadOnlyFileSystem(root string) *FileSystem {
 	p := cleanPath(root)
-	return &FileSystem{p, make(map[uuid.UUID]*core.Blueprint), nil}
+	return &FileSystem{
+		p,
+		make(map[uuid.UUID]*core.Blueprint),
+		sync.Mutex{},
+	}
 }
 
 func (fs *FileSystem) Has(opId uuid.UUID) bool {
@@ -53,12 +64,103 @@ func (fs *FileSystem) Has(opId uuid.UUID) bool {
 }
 
 func (fs *FileSystem) List() ([]uuid.UUID, error) {
-	if fs.uuids != nil {
-		return fs.uuids, nil
+	if len(fs.cache) == 0 {
+		fs.loadBlueprintFiles()
 	}
 
-	opsFilePathSet := make(map[uuid.UUID]bool)
+	return funk.Keys(fs.cache).([]uuid.UUID), nil
+}
 
+func (fs *FileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	if def, ok := fs.cache[opId]; ok {
+		return def, nil
+	}
+
+	blueprintFile, err := fs.getFilePath(opId)
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint, err := fs.readBlueprintFile(blueprintFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fs.cacheThis(blueprint)
+
+	return blueprint, nil
+}
+
+func (fs *WritableFileSystem) Save(blueprint core.Blueprint) (uuid.UUID, error) {
+	opId := blueprint.Id
+	cwd := fs.root
+	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
+	absPath := filepath.Join(cwd, relPath+".yaml")
+	_, err := utils.EnsureDirExists(filepath.Dir(absPath))
+
+	if err != nil {
+		return opId, err
+	}
+
+	fs.cacheThis(&blueprint)
+
+	blueprintYaml, err := yaml.Marshal(&blueprint)
+
+	if err != nil {
+		return opId, err
+	}
+
+	err = ioutil.WriteFile(absPath, blueprintYaml, os.ModePerm)
+	if err != nil {
+		return opId, err
+	}
+
+	return opId, nil
+}
+
+func (fs *WritableFileSystem) List() ([]uuid.UUID, error) {
+	// force to reload writable/local blueprints
+	fs.clearCache(nil)
+	return fs.FileSystem.List()
+}
+
+func (fs *WritableFileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	// force to reload writable/local blueprints
+	fs.clearCache(&opId)
+	return fs.FileSystem.Load(opId)
+}
+
+func (fs *FileSystem) cacheThis(blueprint *core.Blueprint) {
+	fs.cacheLock.Lock()
+	fs.cache[blueprint.Id] = blueprint
+	fs.cacheLock.Unlock()
+}
+
+func (fs *WritableFileSystem) clearCache(blueprintId *uuid.UUID) {
+	fs.cacheLock.Lock()
+	if blueprintId != nil {
+		delete(fs.cache, *blueprintId)
+		fs.cacheLock.Unlock()
+		return
+	}
+	fs.cache = make(map[uuid.UUID]*core.Blueprint)
+	fs.cacheLock.Unlock()
+}
+
+func (fs *FileSystem) hasSupportedSuffix(filePath string) bool {
+	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
+}
+
+func (fs *FileSystem) getInstanceName(blueprintFilePath string) string {
+	return strings.TrimSuffix(filepath.Base(blueprintFilePath), filepath.Ext(blueprintFilePath))
+}
+
+func (fs *FileSystem) getFilePath(opId uuid.UUID) (string, error) {
+	return utils.FileWithFileEnding(filepath.Join(fs.root, opId.String()), FILE_ENDINGS)
+}
+
+func (fs *FileSystem) loadBlueprintFiles() {
 	_ = filepath.Walk(fs.root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("cannot read file %s: %s", path, err)
@@ -83,89 +185,10 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 			return nil
 		}
 
-		opsFilePathSet[blueprint.Id] = true
+		fs.cacheThis(blueprint)
 
 		return nil
 	})
-
-	fs.uuids = funk.Keys(opsFilePathSet).([]uuid.UUID)
-
-	return fs.List()
-}
-
-func (fs *FileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
-	if def, ok := fs.cache[opId]; ok {
-		return def, nil
-	}
-
-	blueprintFile, err := fs.getFilePath(opId)
-	if err != nil {
-		return nil, err
-	}
-
-	fs.cache[opId], err = fs.readBlueprintFile(blueprintFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return fs.Load(opId)
-}
-
-func (fs *WritableFileSystem) Save(blueprint core.Blueprint) (uuid.UUID, error) {
-	opId := blueprint.Id
-	cwd := fs.root
-	relPath := strings.Replace(opId.String(), ".", string(filepath.Separator), -1)
-	absPath := filepath.Join(cwd, relPath+".yaml")
-	_, err := utils.EnsureDirExists(filepath.Dir(absPath))
-
-	if err != nil {
-		return opId, err
-	}
-
-	delete(fs.cache, opId)
-	fs.uuids = append(fs.uuids, opId)
-
-	blueprintYaml, err := yaml.Marshal(&blueprint)
-
-	if err != nil {
-		return opId, err
-	}
-
-	err = ioutil.WriteFile(absPath, blueprintYaml, os.ModePerm)
-	if err != nil {
-		return opId, err
-	}
-
-	return opId, nil
-}
-
-func (fs *WritableFileSystem) List() ([]uuid.UUID, error) {
-	// force to reload writable/local blueprints
-	fs.clearCache()
-	return fs.FileSystem.List()
-}
-
-func (fs *WritableFileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {
-	// force to reload writable/local blueprints
-	delete(fs.cache, opId)
-	return fs.FileSystem.Load(opId)
-}
-
-func (fs *WritableFileSystem) clearCache() {
-	fs.cache = make(map[uuid.UUID]*core.Blueprint)
-	fs.uuids = nil
-}
-
-func (fs *FileSystem) hasSupportedSuffix(filePath string) bool {
-	return utils.IsJSON(filePath) || utils.IsYAML(filePath)
-}
-
-func (fs *FileSystem) getInstanceName(blueprintFilePath string) string {
-	return strings.TrimSuffix(filepath.Base(blueprintFilePath), filepath.Ext(blueprintFilePath))
-}
-
-func (fs *FileSystem) getFilePath(opId uuid.UUID) (string, error) {
-	return utils.FileWithFileEnding(filepath.Join(fs.root, opId.String()), FILE_ENDINGS)
 }
 
 func (fs *FileSystem) readBlueprintFile(blueprintFile string) (*core.Blueprint, error) {

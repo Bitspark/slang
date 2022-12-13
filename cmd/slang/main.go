@@ -35,6 +35,18 @@ func main() {
 		flag.PrintDefaults()
 	}
 
+	fi, err := os.Stdin.Stat()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if fi.Mode()&os.ModeNamedPipe == 0 {
+		fmt.Println("slang command is intended to work with pipes")
+		fmt.Println("Usage: data-src | slang ... | data-sink")
+		os.Exit(1)
+	}
+
 	slangBundlePath := flag.Arg(0)
 
 	if slangBundlePath == "" {
@@ -109,8 +121,56 @@ func runProcess(operator *core.Operator) {
 	operator.Start()
 	log.Print("started as process mode")
 
-	if isQuasiTrigger(operator.Main().In()) {
-		operator.Main().In().Push(true)
+	/*
+		if isQuasiTrigger(operator.Main().In()) {
+			operator.Main().In().Push(true)
+		}
+	*/
+
+	incoming := make(chan interface{})
+	outgoing := make(chan interface{})
+	// expecting to read newline delimited json (ndjson) from stdin
+	jdeco := json.NewDecoder(os.Stdin)
+
+	// Read from stdin
+	go func() {
+	loop:
+		for jdeco.More() {
+			var jval interface{}
+			if err := jdeco.Decode(&jval); err != nil {
+				// as soon as decode error decoder cannot continue to read stream
+				// without break this line will be passed infinitly
+				log.Error("json decode error:", err)
+				break loop
+			}
+			jval = core.CleanValue(jval)
+			incoming <- jval
+		}
+	}()
+
+	// Write to stdout
+	go func() {
+		var jval interface{}
+		jenco := json.NewEncoder(os.Stdout)
+
+		for {
+			jval = <-outgoing
+			if err := jenco.Encode(jval); err != nil {
+				log.Error("json encode error:", err)
+			}
+		}
+	}()
+
+	for {
+		jval := <-incoming
+		operator.Main().In().Push(jval)
+
+		p := operator.Main().Out()
+		if p.Closed() {
+			return
+		}
+
+		outgoing <- p.Pull()
 	}
 }
 

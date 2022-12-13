@@ -35,45 +35,49 @@ func main() {
 		flag.PrintDefaults()
 	}
 
-	fi, err := os.Stdin.Stat()
+	// Check cmd args
 
+	// Expect slang file as 1st arg
+	slangBundlePath := flag.Arg(0)
+	if slangBundlePath == "" {
+		log.Fatal("missing slang bundle file")
+	}
+
+	// Expect supported runmode
+	if !funk.ContainsString(SupportedRunModes, *runMode) {
+		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
+	}
+
+	// Expect to read from stdin
+	fi, err := os.Stdin.Stat()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if fi.Mode()&os.ModeNamedPipe == 0 {
 		fmt.Println("slang command is intended to work with pipes")
 		fmt.Println("Usage: data-src | slang ... | data-sink")
 		os.Exit(1)
 	}
 
-	slangBundlePath := flag.Arg(0)
-
-	if slangBundlePath == "" {
-		log.Fatal("missing slang bundle file")
-	}
-
-	if !funk.ContainsString(SupportedRunModes, *runMode) {
-		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
-	}
-
+	// Read in slang file
 	slBundle, err := readSlangBundleJSON(slangBundlePath)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Init elementary operators
 	elem.SafeMode = false
 	elem.Init()
 
+	// Parse and Build blueprint
 	operator, err := api.BuildOperator(slBundle)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.SetBlueprint(operator.Id(), operator.Name())
 
+	// Run
 	if err := run(operator, *runMode, *bind); err != nil {
 		log.Fatal(err)
 	}

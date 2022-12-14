@@ -86,18 +86,24 @@ func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
 }
 
 func run(operator *core.Operator, mode string, bind string) error {
-	switch mode {
-	case "process":
-		go runProcess(operator)
-	case "httpPost":
-		go runHttpPost(operator, bind)
-	default:
-		log.Fatal("run mode not supported: %s", mode)
-	}
-
 	// Handle SIGTERM (CTRL-C)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	switch mode {
+	case "process":
+		go func() {
+			runProcess(operator)
+			quit <- syscall.SIGQUIT
+		}()
+	case "httpPost":
+		go func() {
+			runHttpPost(operator, bind)
+			quit <- syscall.SIGQUIT
+		}()
+	default:
+		log.Fatal("run mode not supported: %s", mode)
+	}
 
 	for {
 		select {
@@ -130,6 +136,7 @@ func runProcess(operator *core.Operator) {
 
 	incoming := make(chan interface{})
 	outgoing := make(chan interface{})
+	stopped := false
 	// expecting to read newline delimited json (ndjson) from stdin
 	jdeco := json.NewDecoder(os.Stdin)
 
@@ -141,12 +148,13 @@ func runProcess(operator *core.Operator) {
 			if err := jdeco.Decode(&jval); err != nil {
 				// as soon as decode error decoder cannot continue to read stream
 				// without break this line will be passed infinitly
-				log.Error("json decode error: %v", err)
+				log.Error("json decode error: ", err)
 				break loop
 			}
 			jval = core.CleanValue(jval)
 			incoming <- jval
 		}
+		stopped = true
 	}()
 
 	// Write to stdout
@@ -155,26 +163,32 @@ func runProcess(operator *core.Operator) {
 		jenco := json.NewEncoder(os.Stdout)
 
 	loop:
-		for {
+		for !stopped {
 			jval = <-outgoing
 			if err := jenco.Encode(jval); err != nil {
-				log.Error("json encode error: %v", err)
+				log.Error("json encode error: ", err)
 				break loop
 			}
 		}
+		operator.Stop()
 	}()
 
-	for {
-		jval := <-incoming
-		operator.Main().In().Push(jval)
+	go func() {
+	loop:
+		for {
+			jval := <-incoming
+			operator.Main().In().Push(jval)
 
-		p := operator.Main().Out()
-		if p.Closed() {
-			return
+			p := operator.Main().Out()
+			if p.Closed() {
+				break loop
+			}
+
+			outgoing <- p.Pull()
 		}
+	}()
 
-		outgoing <- p.Pull()
-	}
+	operator.WaitForStop()
 }
 
 func runHttpPost(operator *core.Operator, bind string) {

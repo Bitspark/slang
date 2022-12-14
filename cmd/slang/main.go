@@ -48,17 +48,6 @@ func main() {
 		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
 	}
 
-	// Expect to read from stdin
-	fi, err := os.Stdin.Stat()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if fi.Mode()&os.ModeNamedPipe == 0 {
-		fmt.Println("slang command is intended to work with pipes")
-		fmt.Println("Usage: data-src | slang ... | data-sink")
-		os.Exit(1)
-	}
-
 	// Read in slang file
 	slBundle, err := readSlangBundleJSON(slangBundlePath)
 	if err != nil {
@@ -121,9 +110,17 @@ func run(operator *core.Operator, mode string, bind string) error {
 }
 
 func runProcess(operator *core.Operator) {
+	// Expect to read from stdin
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if fi.Mode()&os.ModeNamedPipe == 0 {
+		log.Fatal("slang command is intended to work with pipes\nUsage: data-src | slang")
+	}
+
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Print("started as process mode")
 
 	/*
 		if isQuasiTrigger(operator.Main().In()) {
@@ -144,7 +141,7 @@ func runProcess(operator *core.Operator) {
 			if err := jdeco.Decode(&jval); err != nil {
 				// as soon as decode error decoder cannot continue to read stream
 				// without break this line will be passed infinitly
-				log.Error("json decode error:", err)
+				log.Error("json decode error: %v", err)
 				break loop
 			}
 			jval = core.CleanValue(jval)
@@ -157,10 +154,12 @@ func runProcess(operator *core.Operator) {
 		var jval interface{}
 		jenco := json.NewEncoder(os.Stdout)
 
+	loop:
 		for {
 			jval = <-outgoing
 			if err := jenco.Encode(jval); err != nil {
-				log.Error("json encode error:", err)
+				log.Error("json encode error: %v", err)
+				break loop
 			}
 		}
 	}()
@@ -229,7 +228,6 @@ func runHttpPost(operator *core.Operator, bind string) {
 
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Print("started as httpPost")
 	log.Fatal(http.ListenAndServe(bind, handler))
 }
 

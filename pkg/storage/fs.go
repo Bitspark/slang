@@ -68,7 +68,11 @@ func (fs *FileSystem) List() ([]uuid.UUID, error) {
 		fs.loadBlueprintFiles()
 	}
 
-	return funk.Keys(fs.cache).([]uuid.UUID), nil
+	fs.cacheLock.Lock()
+	uuids := funk.Keys(fs.cache).([]uuid.UUID)
+	fs.cacheLock.Unlock()
+
+	return uuids, nil
 }
 
 func (fs *FileSystem) Load(opId uuid.UUID) (*core.Blueprint, error) {

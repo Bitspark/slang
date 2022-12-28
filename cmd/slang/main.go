@@ -16,6 +16,7 @@ import (
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/log"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -34,31 +35,39 @@ func main() {
 		flag.PrintDefaults()
 	}
 
-	slangBundlePath := flag.Arg(0)
+	// Check cmd args
 
+	// Expect slang file as 1st arg
+	slangBundlePath := flag.Arg(0)
 	if slangBundlePath == "" {
 		log.Fatal("missing slang bundle file")
 	}
 
+	// Expect supported runmode
 	if !funk.ContainsString(SupportedRunModes, *runMode) {
 		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
 	}
 
+	// Read in slang file
 	slBundle, err := readSlangBundleJSON(slangBundlePath)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	blueprint, err := api.BuildOperator(slBundle)
+	// Init elementary operators
+	elem.SafeMode = false
+	elem.Init()
 
+	// Parse and Build blueprint
+	operator, err := api.BuildOperator(slBundle)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.SetBlueprint(blueprint.Id(), blueprint.Name())
+	log.SetBlueprint(operator.Id(), operator.Name())
 
-	if err := run(blueprint, *runMode, *bind); err != nil {
+	// Run
+	if err := run(operator, *runMode, *bind); err != nil {
 		log.Fatal(err)
 	}
 
@@ -77,18 +86,24 @@ func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
 }
 
 func run(operator *core.Operator, mode string, bind string) error {
-	switch mode {
-	case "process":
-		runProcess(operator)
-	case "httpPost":
-		runHttpPost(operator, bind)
-	default:
-		log.Fatal("Run mode not supported: %s", mode)
-	}
-
 	// Handle SIGTERM (CTRL-C)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	switch mode {
+	case "process":
+		go func() {
+			runProcess(operator)
+			quit <- syscall.SIGQUIT
+		}()
+	case "httpPost":
+		go func() {
+			runHttpPost(operator, bind)
+			quit <- syscall.SIGQUIT
+		}()
+	default:
+		log.Fatal("run mode not supported: %s", mode)
+	}
 
 	for {
 		select {
@@ -101,13 +116,79 @@ func run(operator *core.Operator, mode string, bind string) error {
 }
 
 func runProcess(operator *core.Operator) {
+	// Expect to read from stdin
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if fi.Mode()&os.ModeNamedPipe == 0 {
+		log.Fatal("slang command is intended to work with pipes\nUsage: data-src | slang")
+	}
+
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Print("started as process mode")
 
-	if isQuasiTrigger(operator.Main().In()) {
-		operator.Main().In().Push(true)
-	}
+	/*
+		if isQuasiTrigger(operator.Main().In()) {
+			operator.Main().In().Push(true)
+		}
+	*/
+
+	incoming := make(chan interface{})
+	outgoing := make(chan interface{})
+	stopped := false
+	// expecting to read newline delimited json (ndjson) from stdin
+	jdeco := json.NewDecoder(os.Stdin)
+
+	// Read from stdin
+	go func() {
+	loop:
+		for jdeco.More() {
+			var jval interface{}
+			if err := jdeco.Decode(&jval); err != nil {
+				// as soon as decode error decoder cannot continue to read stream
+				// without break this line will be passed infinitly
+				log.Error("json decode error: ", err)
+				break loop
+			}
+			jval = core.CleanValue(jval)
+			incoming <- jval
+		}
+		stopped = true
+	}()
+
+	// Write to stdout
+	go func() {
+		var jval interface{}
+		jenco := json.NewEncoder(os.Stdout)
+
+	loop:
+		for !stopped {
+			jval = <-outgoing
+			if err := jenco.Encode(jval); err != nil {
+				log.Error("json encode error: ", err)
+				break loop
+			}
+		}
+		operator.Stop()
+	}()
+
+	go func() {
+	loop:
+		for {
+			jval := <-incoming
+			operator.Main().In().Push(jval)
+
+			p := operator.Main().Out()
+			if p.Closed() {
+				break loop
+			}
+
+			outgoing <- p.Pull()
+		}
+	}()
+
+	operator.WaitForStop()
 }
 
 func runHttpPost(operator *core.Operator, bind string) {
@@ -129,7 +210,7 @@ func runHttpPost(operator *core.Operator, bind string) {
 					outgoing := operator.Main().Out().Pull()
 					responseWithOk(resp, outgoing)
 				} else {
-					responseWithError(resp, errors.New("Missing data"), http.StatusBadRequest)
+					responseWithError(resp, errors.New("missing data"), http.StatusBadRequest)
 				}
 			// We have an error while decoding the response
 			case err != nil:
@@ -143,7 +224,13 @@ func runHttpPost(operator *core.Operator, bind string) {
 					return
 				}
 				operator.Main().In().Push(incoming)
-				outgoing := operator.Main().Out().Pull()
+
+				p := operator.Main().Out()
+				if p.Closed() {
+					return
+				}
+
+				outgoing := p.Pull()
 				responseWithOk(resp, outgoing)
 			}
 
@@ -155,10 +242,7 @@ func runHttpPost(operator *core.Operator, bind string) {
 
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Print("started as httpPost")
-	go func() {
-		log.Fatal(http.ListenAndServe(bind, handler))
-	}()
+	log.Fatal(http.ListenAndServe(bind, handler))
 }
 
 func isQuasiTrigger(p *core.Port) bool {

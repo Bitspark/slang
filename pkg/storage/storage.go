@@ -65,7 +65,7 @@ func (s *Storage) Save(blueprint core.Blueprint) (uuid.UUID, error) {
 	// because if we need to make sure they all use the same identifier
 	writableBackends := s.writeableBackends()
 	if len(writableBackends) == 0 {
-		return opId, errors.New("No writable backend for saving found")
+		return opId, errors.New("no writable backend for saving found")
 	}
 	for _, backend := range writableBackends {
 		opId, err = backend.Save(blueprint)

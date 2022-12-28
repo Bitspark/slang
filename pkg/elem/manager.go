@@ -17,6 +17,7 @@ type builtinConfig struct {
 }
 
 var SafeMode bool
+var Initalized bool = false
 
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
@@ -25,7 +26,7 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	cfg := getBuiltinCfg(def.Operator)
 
 	if cfg == nil {
-		return nil, errors.New("unknown builtin operator")
+		return nil, errors.New("unknown elementary operator")
 	}
 
 	if err := def.Blueprint.GenericsSpecified(); err != nil {
@@ -44,7 +45,7 @@ func GetBlueprint(id uuid.UUID) (*core.Blueprint, error) {
 	cfg, ok := cfgs[id]
 
 	if !ok {
-		return nil, errors.New("builtin operator not found")
+		return nil, errors.New("elementary operator not found")
 	}
 
 	blueprint := cfg.blueprint.Copy(true)
@@ -75,6 +76,7 @@ func GetBuiltinIds() []uuid.UUID {
 }
 
 func Init() {
+	Initalized = true
 	cfgs = make(map[uuid.UUID]*builtinConfig)
 	name2Id = make(map[string]uuid.UUID)
 

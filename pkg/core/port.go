@@ -852,6 +852,10 @@ func (p *Port) MapType() bool {
 	return p.itemType == TYPE_MAP
 }
 
+func (p *Port) StreamType() bool {
+	return p.itemType == TYPE_STREAM
+}
+
 func (p *Port) Define() TypeDef {
 	var def TypeDef
 

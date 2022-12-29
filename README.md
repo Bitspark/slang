@@ -40,6 +40,12 @@ Alternatly you just can run the daemon without compiling
 
 That's it! Now you just need to run `slangd` (on Windows: `slangd.exe`) and Slang will take care of the rest such as downloading the UI and standard library.
 
+### Working on stdlib
+
+If you want to edit stdlib, just run 
+
+`SLANG_LIB=/tmp/ SLANG_DIR=<path-to-slang-lib>/slang go run ./cmd/slangd --only-daemon`
+
 ## About Slang runner
 
 Slang runner allows you to run a blueprint via cli. Input data must be passed through STDIN. Output will be written to STDOUT. Input and output data must be valid newline-delimited json (ndjson). As an argument you have to provide a slang file.

@@ -14,7 +14,7 @@ var controlTakeCfg = &builtinConfig{
 			Name:             "take",
 			ShortDescription: "merges two streams using a compare delegate deciding which item has precedence",
 			Icon:             "hand-point-up",
-			Tags:             []string{"control"},
+			Tags:             []string{"stream", "control"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/take",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

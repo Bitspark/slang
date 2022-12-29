@@ -89,7 +89,7 @@ var netHTTPServerCfg = &builtinConfig{
 			Name:             "HTTP server",
 			ShortDescription: "starts an HTTP server, uses a handler delegate to process requests",
 			Icon:             "server",
-			Tags:             []string{"network", "http"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/http-server",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -14,7 +14,7 @@ var streamMapToStreamCfg = &builtinConfig{
 			Name:             "map to stream",
 			ShortDescription: "takes a map and emits a stream of key-value pairs",
 			Icon:             "cubes",
-			Tags:             []string{"stream", "convert"},
+			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/map-to-stream",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

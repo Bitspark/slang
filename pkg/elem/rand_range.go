@@ -17,7 +17,7 @@ var randRangeCfg = &builtinConfig{
 			Name:             "random range",
 			ShortDescription: "generate a random number between two given values, including those values e.g. [a, b]",
 			Icon:             "random",
-			Tags:             []string{"data", "random"},
+			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/rand-range",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

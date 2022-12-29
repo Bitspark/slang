@@ -10,7 +10,7 @@ var streamTransformCfg = &builtinConfig{
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("dce082cb-7272-4e85-b4fa-740778e8ba8d"),
 		Meta: core.BlueprintMetaDef{
-			Name:             "transform stream",
+			Name:             "transform",
 			ShortDescription: "transforms a stream by iterating it using an iterator delegate",
 			Icon:             "code-commit",
 			Tags:             []string{"stream"},

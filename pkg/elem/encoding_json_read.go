@@ -16,7 +16,7 @@ var encodingJSONReadCfg = &builtinConfig{
 			Name:             "decode JSON",
 			ShortDescription: "decodes a JSON string and emits the corresponding Slang data",
 			Icon:             "brackets-curly",
-			Tags:             []string{"json", "encoding"},
+			Tags:             []string{"encoding"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/decode-json",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -16,7 +16,7 @@ var netMQTTSubscribeCfg = &builtinConfig{
 			Name:             "MQTT subscribe",
 			ShortDescription: "subscribes at a given topic, behaves like an MQTT client",
 			Icon:             "chart-network",
-			Tags:             []string{"network", "mqtt"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/mqtt-subscribe",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

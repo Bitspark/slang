@@ -23,7 +23,7 @@ var imageEncodeCfg = &builtinConfig{
 			Name:             "encode image",
 			ShortDescription: "takes pixels as stream of rgb values and encodes it into an image binary",
 			Icon:             "file-image",
-			Tags:             []string{"image"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/encode-image",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

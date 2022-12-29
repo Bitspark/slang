@@ -16,7 +16,7 @@ var systemLogCfg = &builtinConfig{
 			Name:             "log",
 			ShortDescription: "Logs any value passed through the configured logger",
 			Icon:             "align-center",
-			Tags:             []string{"system"},
+			Tags:             []string{"logging"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/log",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

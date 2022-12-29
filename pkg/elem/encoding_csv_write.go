@@ -17,7 +17,7 @@ var encodingCSVWriteCfg = &builtinConfig{
 			Name:             "write CSV",
 			ShortDescription: "encodes streams into a single string",
 			Icon:             "file-csv",
-			Tags:             []string{"csv", "encoding"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/write-csv",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

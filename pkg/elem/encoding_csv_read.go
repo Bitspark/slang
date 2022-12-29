@@ -19,7 +19,7 @@ var encodingCSVReadCfg = &builtinConfig{
 			Name:             "read CSV",
 			ShortDescription: "reads a CSV file and emits a stream of lines, separated into columns",
 			Icon:             "file-csv",
-			Tags:             []string{"csv", "encoding"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/read-csv",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

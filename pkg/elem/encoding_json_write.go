@@ -16,7 +16,7 @@ var encodingJSONWriteCfg = &builtinConfig{
 			Name:             "encode JSON",
 			ShortDescription: "encodes Slang data into a JSON string",
 			Icon:             "brackets-curly",
-			Tags:             []string{"json", "encoding"},
+			Tags:             []string{"encoding"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/encode-json",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

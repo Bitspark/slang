@@ -14,7 +14,7 @@ var controlLoopCfg = &builtinConfig{
 			Name:             "loop",
 			ShortDescription: "lets an iterator delegate process a state until the controller tells it to stop",
 			Icon:             "undo",
-			Tags:             []string{"data", "stream"},
+			Tags:             []string{"stream", "control"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/loop",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

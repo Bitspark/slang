@@ -16,7 +16,7 @@ var filesZIPPackCfg = &builtinConfig{
 			Name:             "pack ZIP",
 			ShortDescription: "packs a stream of binary content into a zip archive",
 			Icon:             "file-archive",
-			Tags:             []string{"zip", "compression"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/pack-zip",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

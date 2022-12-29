@@ -80,15 +80,15 @@ func Init() {
 	cfgs = make(map[uuid.UUID]*builtinConfig)
 	name2Id = make(map[string]uuid.UUID)
 
-	Register(metaStoreCfg)
+	//Register(metaStoreCfg)
 
 	// Data manipulating operators
 	Register(dataValueCfg)
 	Register(dataEvaluateCfg)
 	Register(dataConvertCfg)
 	Register(dataUUIDCfg)
-	Register(dataVariableSetCfg)
-	Register(dataVariableGetCfg)
+	//Register(dataVariableSetCfg)
+	//Register(dataVariableGetCfg)
 	Register(randRangeCfg)
 
 	// Flow control operators
@@ -98,8 +98,8 @@ func Init() {
 	Register(controlLoopCfg)
 	Register(controlIterateCfg)
 	Register(controlReduceCfg)
-	Register(controlSemaphorePCfg)
-	Register(controlSemaphoreVCfg)
+	//Register(controlSemaphorePCfg)
+	//Register(controlSemaphoreVCfg)
 
 	// Stream accessing and processing operators
 	Register(streamSerializeCfg)
@@ -152,21 +152,21 @@ func Init() {
 
 	Register(databaseQueryCfg)
 	Register(databaseExecuteCfg)
-	Register(databaseKafkaSubscribeCfg)
-	Register(databaseRedisGetCfg)
-	Register(databaseRedisSetCfg)
-	Register(databaseRedisHGetCfg)
-	Register(databaseRedisHSetCfg)
-	Register(databaseRedisLPushCfg)
-	Register(databaseRedisHIncrByCfg)
-	Register(databaseRedisSubscribeCfg)
+	//Register(databaseKafkaSubscribeCfg)
+	//Register(databaseRedisGetCfg)
+	//Register(databaseRedisSetCfg)
+	//Register(databaseRedisHGetCfg)
+	//Register(databaseRedisHSetCfg)
+	//Register(databaseRedisLPushCfg)
+	//Register(databaseRedisHIncrByCfg)
+	//Register(databaseRedisSubscribeCfg)
 	Register(databaseMemoryReadCfg)
 	Register(databaseMemoryWriteCfg)
 
 	Register(imageDecodeCfg)
 	Register(imageEncodeCfg)
 
-	Register(shellExecuteCfg)
+	//Register(shellExecuteCfg)
 	Register(systemLogCfg)
 
 	variableStores = make(map[string]*variableStore)

@@ -16,7 +16,7 @@ var controlSwitchCfg = &builtinConfig{
 			Name:             "switch",
 			ShortDescription: "emits a constant value for each item",
 			Icon:             "code-merge",
-			Tags:             []string{"control"},
+			Tags:             []string{"stream", "control"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/switch",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

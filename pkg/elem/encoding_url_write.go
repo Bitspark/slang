@@ -16,7 +16,7 @@ var encodingURLWriteCfg = &builtinConfig{
 			Name:             "encode URL",
 			ShortDescription: "encodes a Slang map into the corresponding URL-encoded string",
 			Icon:             "brackets",
-			Tags:             []string{"http", "encoding"},
+			Tags:             []string{"encoding"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/encode-url",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -14,7 +14,7 @@ var dataUUIDCfg = &builtinConfig{
 			Name:             "generate UUID",
 			ShortDescription: "generates a random UUID",
 			Icon:             "barcode-alt",
-			Tags:             []string{"data", "random"},
+			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/uuid",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

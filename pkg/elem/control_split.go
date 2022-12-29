@@ -14,7 +14,7 @@ var controlSplitCfg = &builtinConfig{
 			Name:             "split",
 			ShortDescription: "emits items of a stream to either outgoing stream depending on the control value",
 			Icon:             "code-merge",
-			Tags:             []string{"control"},
+			Tags:             []string{"stream", "control"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/split",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -16,7 +16,7 @@ var filesZIPUnpackCfg = &builtinConfig{
 			Name:             "unpack ZIP",
 			ShortDescription: "unpacks a zip archive and emits a stream of files and their binary content",
 			Icon:             "file-archive",
-			Tags:             []string{"zip", "compression"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/unpack-zip",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

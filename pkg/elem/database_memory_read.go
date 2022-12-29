@@ -35,9 +35,9 @@ var databaseMemoryReadCfg = &builtinConfig{
 		Id: databaseMemoryReadId,
 		Meta: core.BlueprintMetaDef{
 			Name:             "read from memory",
-			ShortDescription: "reads an item from memory by key string",
+			ShortDescription: "reads an item from memory associated with a key string",
 			Icon:             "memory",
-			Tags:             []string{"database", "memory"},
+			Tags:             []string{"database"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/memory-read",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

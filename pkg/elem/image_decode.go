@@ -16,7 +16,7 @@ var imageDecodeCfg = &builtinConfig{
 			Name:             "decode image",
 			ShortDescription: "reads an encoded image binary and emits its pixels as stream of rgb values",
 			Icon:             "file-image",
-			Tags:             []string{"image"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/decode-image",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

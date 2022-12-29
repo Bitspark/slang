@@ -16,7 +16,7 @@ var controlIterateCfg = &builtinConfig{
 			Name:             "iterate",
 			ShortDescription: "uses an iterator delegate to aggregate items of a stream",
 			Icon:             "compress-alt",
-			Tags:             []string{"data", "stream"},
+			Tags:             []string{"stream", "control"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/iterate",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

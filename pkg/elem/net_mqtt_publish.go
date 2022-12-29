@@ -16,7 +16,7 @@ var netMQTTPublishCfg = &builtinConfig{
 			Name:             "MQTT publish",
 			ShortDescription: "publishes an MQTT message at a given topic",
 			Icon:             "chart-network",
-			Tags:             []string{"network", "mqtt"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/mqtt-publish",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -92,7 +92,7 @@ var dataEvaluateCfg = &builtinConfig{
 			Name:             "evaluate",
 			ShortDescription: "evaluates an expression",
 			Icon:             "function",
-			Tags:             []string{"math", "boolean", "function"},
+			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/evaluate",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

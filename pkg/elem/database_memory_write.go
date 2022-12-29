@@ -11,10 +11,10 @@ var databaseMemoryWriteCfg = &builtinConfig{
 	blueprint: core.Blueprint{
 		Id: databaseMemoryWriteId,
 		Meta: core.BlueprintMetaDef{
-			Name:             "read from memory",
+			Name:             "write to memory",
 			ShortDescription: "writes an item to memory and associates it with a key string",
 			Icon:             "memory",
-			Tags:             []string{"database", "memory"},
+			Tags:             []string{"database"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/memory-write",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

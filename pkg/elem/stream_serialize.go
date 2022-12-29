@@ -16,7 +16,7 @@ var streamSerializeCfg = &builtinConfig{
 			Name:             "serialize",
 			ShortDescription: "takes a map of items and serializes them into a stream",
 			Icon:             "ellipsis-h",
-			Tags:             []string{"stream", "convert"},
+			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/serialize",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

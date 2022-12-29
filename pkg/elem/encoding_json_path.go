@@ -15,7 +15,7 @@ var encodingJSONPathCfg = &builtinConfig{
 			Name:             "JSON Path",
 			ShortDescription: "select values based json path expression from a JSON document",
 			Icon:             "brackets-curly",
-			Tags:             []string{"json", "encoding"},
+			Tags:             []string{"encoding"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/json-path",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

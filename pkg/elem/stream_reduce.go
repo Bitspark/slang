@@ -16,7 +16,7 @@ var controlReduceCfg = &builtinConfig{
 			Name:             "reduce",
 			ShortDescription: "reduces the items of a stream pairwise using a reducer delegate",
 			Icon:             "compress-alt",
-			Tags:             []string{"data", "stream"},
+			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/reduce",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

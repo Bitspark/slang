@@ -19,7 +19,7 @@ var netSendEmailCfg = &builtinConfig{
 			Name:             "send email",
 			ShortDescription: "sends an email",
 			Icon:             "envelope",
-			Tags:             []string{"network", "smtp", "email"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/send-email",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

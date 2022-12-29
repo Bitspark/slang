@@ -17,7 +17,7 @@ var netHTTPClientCfg = &builtinConfig{
 			Name:             "HTTP client",
 			ShortDescription: "sends an HTTP request",
 			Icon:             "browser",
-			Tags:             []string{"network", "http"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/http-client",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

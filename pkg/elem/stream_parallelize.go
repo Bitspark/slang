@@ -17,7 +17,7 @@ var streamParallelizeCfg = &builtinConfig{
 			Name:             "parallelize",
 			ShortDescription: "takes a stream and emits a map of items, selected by given indices",
 			Icon:             "align-justify",
-			Tags:             []string{"stream", "convert"},
+			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/parallelize",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -144,7 +144,7 @@ func Init() {
 	Register(timeUNIXMillisCfg)
 
 	Register(stringTemplateCfg)
-	Register(stringFormatCfg)
+	//Register(stringFormatCfg)
 	Register(stringSplitCfg)
 	Register(stringBeginswithCfg)
 	Register(stringContainsCfg)

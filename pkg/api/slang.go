@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Bitspark/go-funk"
@@ -10,6 +11,8 @@ import (
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
+
+var PROPERTY_PLACERHOLDER_REGEXP = regexp.MustCompile(`(\$\w+)`)
 
 // todo should be SlangBundle method
 func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
@@ -277,20 +280,17 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 
 		// Propagate property values to child operators
 		for prop, propVal := range childInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
+			updated, newPropVal, err := interpolatePropVal(propVal, props)
+
+			if err != nil {
+				return err
+			}
+
+			if !updated {
 				continue
 			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childInsDef.Properties[prop] = val
-			} else {
-				return fmt.Errorf("unknown property \"%s\"", prop)
-			}
+
+			childInsDef.Properties[prop] = newPropVal
 		}
 
 		for _, gen := range childInsDef.Generics {
@@ -307,4 +307,84 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 	def.PropertyDefs = nil
 
 	return nil
+}
+
+func interpolatePropVal(propVal interface{}, props core.Properties) (bool, interface{}, error) {
+	propStr, isString := propVal.(string)
+	if isString {
+		// Parameterized properties must start with a '$'
+		if strings.HasPrefix(propStr, "$") {
+			propKey := propStr[1:]
+			if val, ok := props[propKey]; ok {
+				return true, val, nil
+			}
+			return false, propStr, fmt.Errorf("unknown property \"%s\"", propKey)
+		}
+
+		for _, propKey := range PROPERTY_PLACERHOLDER_REGEXP.FindAllString(propStr, -1) {
+			if val, ok := props[propKey[1:]]; ok {
+				val, ok := val.(string)
+
+				if !ok {
+					return false, propVal, fmt.Errorf("cannot interpolate \"%s\" with value \"%v\"", propKey, val)
+				}
+
+				propStr = strings.Replace(propStr, propKey, val, -1)
+			} else {
+				return false, propVal, fmt.Errorf("unknown property \"%s\"", propKey)
+			}
+		}
+
+		return true, propStr, nil
+	}
+
+	propMapVal, isMap := propVal.(map[string]interface{})
+	if isMap {
+		anyUpdated := false
+		for k, v := range propMapVal {
+			updated, new, err := interpolatePropVal(v, props)
+
+			if err != nil {
+				return false, propVal, err
+			}
+
+			if !updated {
+				continue
+			}
+
+			if !anyUpdated {
+				anyUpdated = true
+			}
+
+			propMapVal[k] = new
+		}
+
+		return anyUpdated, propMapVal, nil
+	}
+
+	propArrayVal, isArray := propVal.([]interface{})
+	if isArray {
+		anyUpdated := false
+		for i, v := range propArrayVal {
+			updated, new, err := interpolatePropVal(v, props)
+
+			if err != nil {
+				return false, propVal, err
+			}
+
+			if !updated {
+				continue
+			}
+
+			if !anyUpdated {
+				anyUpdated = true
+			}
+
+			propArrayVal[i] = new
+		}
+
+		return anyUpdated, propArrayVal, nil
+	}
+
+	return false, propVal, nil
 }

@@ -277,20 +277,17 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 
 		// Propagate property values to child operators
 		for prop, propVal := range childInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
+			changed, newPropVal, err := findPlaceholderInPropVal(propVal, props)
+
+			if err != nil {
+				return err
+			}
+
+			if !changed {
 				continue
 			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childInsDef.Properties[prop] = val
-			} else {
-				return fmt.Errorf("unknown property \"%s\"", prop)
-			}
+
+			childInsDef.Properties[prop] = newPropVal
 		}
 
 		for _, gen := range childInsDef.Generics {
@@ -307,4 +304,45 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 	def.PropertyDefs = nil
 
 	return nil
+}
+
+func findPlaceholderInPropVal(propVal interface{}, props core.Properties) (bool, interface{}, error) {
+	propKey, ok := propVal.(string)
+	if ok {
+		// Parameterized properties must start with a '$'
+		if !strings.HasPrefix(propKey, "$") {
+			return false, propVal, nil
+		}
+
+		propKey = propKey[1:]
+		if val, ok := props[propKey]; ok {
+			return true, val, nil
+		} else {
+			return false, propVal, fmt.Errorf("unknown property \"%s\"", propKey)
+		}
+
+	}
+
+	return false, propVal, nil
+
+	/*
+
+		propMapVal, ok := propVal.(core.MapStr)
+
+		if ok {
+			for _, v := range propMapVal {
+				findPlaceholderInPropVal(v)
+			}
+		}
+
+		propArrayVal, ok := propVal.([]interface{})
+
+		if ok {
+			for i := range propArrayVal {
+				findPlaceholderInPropVal(i)
+			}
+		}
+		return ""
+
+	*/
 }

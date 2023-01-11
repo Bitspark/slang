@@ -12,9 +12,11 @@ import (
 
 type runningOperator struct {
 	// JSON
-	Blueprint uuid.UUID `json:"blueprint"`
-	Handle    string    `json:"handle"`
-	URL       string    `json:"url"`
+	Blueprint uuid.UUID    `json:"blueprint"`
+	In        core.TypeDef `json:"in"`
+	Out       core.TypeDef `json:"out"`
+	Handle    string       `json:"handle"`
+	URL       string       `json:"url"`
 
 	op       *core.Operator
 	incoming chan interface{}
@@ -51,6 +53,8 @@ func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runnin
 	url := "/run/" + handle + "/"
 	ro := &runningOperator{
 		op.Id(),
+		op.Main().In().Define(),
+		op.Main().Out().Define(),
 		handle,
 		url,
 		op,

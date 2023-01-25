@@ -25,6 +25,21 @@ type runningOperator struct {
 	outStop  chan bool
 }
 
+func (rop *runningOperator) Push(data interface{}) {
+	rop.incoming <- data
+}
+
+func (rop *runningOperator) Pull() interface{} {
+	for {
+		select {
+		case odat := <-rop.outgoing:
+			return odat
+		case <-rop.outStop:
+			return nil
+		}
+	}
+}
+
 type portOutput struct {
 	// JSON
 	Handle string      `json:"handle"`
@@ -42,11 +57,13 @@ func (pm *portOutput) String() string {
 }
 
 type runningOperatorManager struct {
-	ops map[string]*runningOperator
+	ropByHandle map[string]*runningOperator
 }
 
 var rnd = rand.New(rand.NewSource(99))
-var romanager = &runningOperatorManager{make(map[string]*runningOperator)}
+var romanager = &runningOperatorManager{
+	make(map[string]*runningOperator),
+}
 
 func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
 	handle := strconv.FormatInt(rnd.Int63(), 16)
@@ -64,7 +81,7 @@ func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runnin
 		make(chan bool),
 	}
 
-	rom.ops[handle] = ro
+	rom.ropByHandle[handle] = ro
 
 	op.Main().Out().Bufferize()
 	op.Start()
@@ -129,12 +146,12 @@ func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
 	go ro.op.Stop()
 	ro.inStop <- true
 	ro.outStop <- true
-	delete(rom.ops, ro.Handle)
+	delete(rom.ropByHandle, ro.Handle)
 	return nil
 }
 
 func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
-	if ro, ok := rom.ops[handle]; ok {
+	if ro, ok := rom.ropByHandle[handle]; ok {
 		return ro, nil
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)

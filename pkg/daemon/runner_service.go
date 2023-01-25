@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"bytes"
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -12,7 +11,6 @@ import (
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -28,34 +26,6 @@ type ResponseRunOp struct {
 	Error  *Error           `json:"error,omitempty"`
 }
 
-type PropertiesHash [16]byte
-
-var handleByProps = make(map[PropertiesHash]string)
-
-func hashIt(props core.Properties) PropertiesHash {
-	arrBytes := []byte{}
-	for _, item := range props {
-		jsonBytes, _ := json.Marshal(item)
-		arrBytes = append(arrBytes, jsonBytes...)
-	}
-	return md5.Sum(arrBytes)
-}
-
-func setRunningOperator(props core.Properties, rop *runningOperator) {
-	propsHash := hashIt(props)
-	handle := rop.Handle
-	handleByProps[propsHash] = handle
-}
-
-func getRunningOperator(props core.Properties) *runningOperator {
-	propsHash := hashIt(props)
-	if handle, ok := handleByProps[propsHash]; ok {
-		rop, _ := romanager.Get(handle)
-		return rop
-	}
-	return nil
-}
-
 func parseProperties(formData url.Values) core.Properties {
 	p := make(core.Properties)
 
@@ -64,16 +34,6 @@ func parseProperties(formData url.Values) core.Properties {
 	}
 
 	return p
-}
-
-func execBlueprint(uuid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
-	op, err := api.BuildAndCompile(uuid, gens, props, st)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return romanager.Run(op), nil
 }
 
 var RunnerService = &Service{map[string]*Endpoint{
@@ -151,7 +111,6 @@ var RunnerService = &Service{map[string]*Endpoint{
 	}},
 
 	`/{blueprint:[0-9a-f]{8}-[0-9a-f-]+}/`: {func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/blueprint/")
 		blueprintUUID, err := uuid.Parse(mux.Vars(r)["blueprint"])
 
 		if err != nil {
@@ -165,17 +124,16 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 		if r.Method == "GET" {
 			props := parseProperties(r.Form)
-			rop := getRunningOperator(props)
+			rop := romanager.GetByProperties(props)
 			if rop == nil {
 				st := GetStorage(r)
-				rop, err = execBlueprint(blueprintUUID, nil, props, st)
+				rop, err = romanager.Exec(blueprintUUID, nil, props, st)
 				if err != nil {
 					resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
 					w.WriteHeader(400)
 					writeJSON(w, &resp)
 					return
 				}
-				setRunningOperator(props, rop)
 			}
 
 			rop.Push(nil)
@@ -194,7 +152,6 @@ var RunnerService = &Service{map[string]*Endpoint{
 	}},
 
 	`/{handle:\w+}/`: {func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/hanlde/")
 		handle := mux.Vars(r)["handle"]
 
 		rop, err := romanager.Get(handle)

@@ -1,12 +1,15 @@
 package daemon
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strconv"
 
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
 
@@ -56,6 +59,17 @@ func (pm *portOutput) String() string {
 	return string(j)
 }
 
+type PropertiesHash [16]byte
+
+func hashProperties(p core.Properties) PropertiesHash {
+	arrBytes := []byte{}
+	for _, item := range p {
+		jsonBytes, _ := json.Marshal(item)
+		arrBytes = append(arrBytes, jsonBytes...)
+	}
+	return md5.Sum(arrBytes)
+}
+
 type runningOperatorManager struct {
 	ropByHandle map[string]*runningOperator
 }
@@ -63,6 +77,30 @@ type runningOperatorManager struct {
 var rnd = rand.New(rand.NewSource(99))
 var romanager = &runningOperatorManager{
 	make(map[string]*runningOperator),
+}
+
+var handleByProps = make(map[PropertiesHash]string)
+
+func (rom *runningOperatorManager) setRunningOperator(props core.Properties, rop *runningOperator) {
+	propsHash := hashProperties(props)
+	handle := rop.Handle
+
+	handleByProps[propsHash] = handle
+	rom.ropByHandle[handle] = rop
+}
+
+func (rom *runningOperatorManager) GetByProperties(props core.Properties) *runningOperator {
+	propsHash := hashProperties(props)
+
+	handle, ok := handleByProps[propsHash]
+
+	if !ok {
+		return nil
+	}
+
+	rop := rom.ropByHandle[handle]
+
+	return rop
 }
 
 func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
@@ -140,6 +178,19 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	*/
 
 	return ro
+}
+
+func (rom *runningOperatorManager) Exec(blueprint uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
+	op, err := api.BuildAndCompile(blueprint, gens, props, st)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rop := romanager.Run(op)
+	rom.setRunningOperator(props, rop)
+
+	return rop, nil
 }
 
 func (rom *runningOperatorManager) Halt(ro *runningOperator) error {

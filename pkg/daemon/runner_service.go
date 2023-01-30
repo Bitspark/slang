@@ -78,8 +78,15 @@ var RunnerService = &Service{map[string]*Endpoint{
 				Error   *Error             `json:"error,omitempty"`
 			}
 
-			resp := responseListJSON{Objects: funk.Values(romanager.ropByHandle).([]*runningOperator), Status: "success", Error: nil}
-			writeJSON(w, &resp)
+			response(w,
+				http.StatusOK,
+				&responseListJSON{
+					Objects: funk.Values(romanager.ropByHandle).([]*runningOperator),
+					Status:  "ok",
+					Error:   nil,
+				},
+			)
+			return
 
 		} else if r.Method == "POST" {
 			/*
@@ -89,22 +96,25 @@ var RunnerService = &Service{map[string]*Endpoint{
 			st := GetStorage(r)
 
 			var requ RequestRunOp
-			var resp ResponseRunOp
 
 			decoder := json.NewDecoder(r.Body)
 			err := decoder.Decode(&requ)
 			if err != nil {
-				resp = ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
-				w.WriteHeader(400)
-				writeJSON(w, &resp)
+				responseError(w,
+					http.StatusBadRequest,
+					err,
+					"E01",
+				)
 				return
 			}
 
 			op, err := api.BuildAndCompile(requ.Blueprint, requ.Gens, requ.Props, st)
 			if err != nil {
-				resp = ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
-				w.WriteHeader(400)
-				writeJSON(w, &resp)
+				responseError(w,
+					http.StatusBadRequest,
+					err,
+					"E02",
+				)
 				return
 			}
 
@@ -131,11 +141,13 @@ var RunnerService = &Service{map[string]*Endpoint{
 				}()
 			*/
 
-			resp.Status = "success"
-			resp = ResponseRunOp{Object: rop, Status: "success"}
-
-			writeJSON(w, &resp)
-
+			response(w, http.StatusOK,
+				&ResponseJSON{
+					Object: rop,
+					Status: "ok",
+					Error:  nil,
+				},
+			)
 		}
 	}},
 
@@ -144,30 +156,24 @@ var RunnerService = &Service{map[string]*Endpoint{
 		bpuuid, err := uuid.Parse(mux.Vars(r)["blueprint"])
 
 		if err != nil {
-			resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
-			w.WriteHeader(400)
-			writeJSON(w, &resp)
+			responseError(w, http.StatusBadRequest, err, "E01")
 			return
 		}
 
 		blueprint, err := st.Load(bpuuid)
 
 		if err != nil {
-			resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
-			w.WriteHeader(400)
-			writeJSON(w, &resp)
+			responseError(w, http.StatusBadRequest, err, "E02")
 			return
 		}
 
 		r.ParseForm()
 
-		if r.Method == "GET" {
+		if r.Method == "GET" || r.Method == "POST" {
 			props, err := parseProperties(r.Form, blueprint.PropertyDefs)
 
 			if err != nil {
-				resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
-				w.WriteHeader(400)
-				writeJSON(w, &resp)
+				responseError(w, http.StatusBadRequest, err, "E03")
 				return
 			}
 
@@ -176,9 +182,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 				st := GetStorage(r)
 				rop, err = romanager.Exec(blueprint, nil, props, st)
 				if err != nil {
-					resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0003"}}
-					w.WriteHeader(400)
-					writeJSON(w, &resp)
+					responseError(w, http.StatusBadRequest, err, "E04")
 					return
 				}
 			}
@@ -188,10 +192,10 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 			if out != nil {
 				fmt.Println("\t<--", out)
-				w.WriteHeader(200)
-				writeJSON(w, out)
+				response(w, http.StatusOK, &out)
 			} else {
-				w.WriteHeader(http.StatusNoContent)
+				response(w, http.StatusNoContent, nil)
+				//w.WriteHeader(http.StatusNoContent)
 			}
 			return
 		}
@@ -203,7 +207,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 		rop, err := romanager.Get(handle)
 		if err != nil {
-			w.WriteHeader(404)
+			response(w, http.StatusNotFound, nil)
+			//w.WriteHeader(404)
 			return
 		}
 
@@ -224,7 +229,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 				// TODO find out if json.NewDecoder
 				err := json.Unmarshal(buf.Bytes(), &idat)
 				if err != nil {
-					w.WriteHeader(400)
+					response(w, http.StatusBadRequest, nil)
+					//w.WriteHeader(400)
 					return
 				}
 			}
@@ -237,12 +243,11 @@ var RunnerService = &Service{map[string]*Endpoint{
 				select {
 				case odat := <-rop.outgoing:
 					fmt.Println("\t<--", odat)
-					w.WriteHeader(200)
-					writeJSON(w, &odat)
+					response(w, http.StatusOK, &odat)
 					break loop
 				case <-rop.outStop:
 					fmt.Println("\toperator stopped")
-					w.WriteHeader(http.StatusNoContent)
+					response(w, http.StatusNoContent, nil)
 					break loop
 				}
 			}
@@ -253,10 +258,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 			*/
 			romanager.Halt(rop)
 			log.Printf("operator %s (id: %s) stopped", rop.op.Name(), rop.Handle)
-			w.WriteHeader(http.StatusNoContent)
+			response(w, http.StatusNoContent, nil)
 		} else if r.Method == "OPTIONS" {
-
-			w.WriteHeader(http.StatusNoContent)
+			response(w, http.StatusNoContent, nil)
 		}
 	}},
 }}

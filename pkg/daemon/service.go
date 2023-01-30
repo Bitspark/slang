@@ -60,6 +60,27 @@ type responseBad struct {
 	Error *Error `json:"error,omitempty"`
 }
 
+type ResponseJSON struct {
+	Object  interface{}   `json:"object,omitempty"`
+	Objects []interface{} `json:"objects,omitempty"`
+	Status  string        `json:"status"`
+	Error   *Error        `json:"error,omitempty"`
+}
+
+func response(w http.ResponseWriter, statusCode int, json interface{}) {
+	w.WriteHeader(statusCode)
+	if json != nil {
+		writeJSON(w, json)
+	}
+}
+
+func responseError(w http.ResponseWriter, statusCode int, err error, code string) {
+	response(w, statusCode, &ResponseJSON{
+		Status: "error",
+		Error:  &Error{Msg: err.Error(), Code: code},
+	})
+}
+
 func sendSuccess(w http.ResponseWriter, resp *responseOK) {
 	w.WriteHeader(200)
 	err := writeJSON(w, resp)

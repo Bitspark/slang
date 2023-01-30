@@ -180,8 +180,8 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 	return ro
 }
 
-func (rom *runningOperatorManager) Exec(blueprint uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
-	op, err := api.BuildAndCompile(blueprint, gens, props, st)
+func (rom *runningOperatorManager) Exec(blueprint *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
+	op, err := api.BuildAndCompile(blueprint.Id, gens, props, st)
 
 	if err != nil {
 		return nil, err

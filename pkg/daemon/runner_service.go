@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
@@ -26,14 +27,42 @@ type ResponseRunOp struct {
 	Error  *Error           `json:"error,omitempty"`
 }
 
-func parseProperties(formData url.Values) core.Properties {
+func parseProperties(formData url.Values, propDef core.TypeDefMap) (core.Properties, error) {
+	/*
+		Convert operator properties passed as query parameters into correct type depending of expected slang type.
+		Currently only supports primitive types: No Maps and Streams.
+	*/
+
 	p := make(core.Properties)
 
-	for k := range formData {
-		p[k] = formData.Get(k)
+	for pname, ptype := range propDef {
+		var pv interface{}
+		var err error = nil
+
+		fv := formData.Get(pname)
+
+		switch ptype.Type {
+		case "string", "primitive":
+			pv = fv
+		case "trigger":
+			pv = nil
+		case "boolean":
+			pv, err = strconv.ParseBool(fv)
+		case "number":
+			pv, err = strconv.ParseFloat(fv, 32)
+		case "map", "stream":
+			err = fmt.Errorf("setting properties via query params is not supported for *maps* and *streams*")
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		p[pname] = pv
+
 	}
 
-	return p
+	return p, nil
 }
 
 var RunnerService = &Service{map[string]*Endpoint{
@@ -111,7 +140,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 	}},
 
 	`/{blueprint:[0-9a-f]{8}-[0-9a-f-]+}/`: {func(w http.ResponseWriter, r *http.Request) {
-		blueprintUUID, err := uuid.Parse(mux.Vars(r)["blueprint"])
+		st := GetStorage(r)
+		bpuuid, err := uuid.Parse(mux.Vars(r)["blueprint"])
 
 		if err != nil {
 			resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0001"}}
@@ -120,16 +150,33 @@ var RunnerService = &Service{map[string]*Endpoint{
 			return
 		}
 
+		blueprint, err := st.Load(bpuuid)
+
+		if err != nil {
+			resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
+			w.WriteHeader(400)
+			writeJSON(w, &resp)
+			return
+		}
+
 		r.ParseForm()
 
 		if r.Method == "GET" {
-			props := parseProperties(r.Form)
+			props, err := parseProperties(r.Form, blueprint.PropertyDefs)
+
+			if err != nil {
+				resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
+				w.WriteHeader(400)
+				writeJSON(w, &resp)
+				return
+			}
+
 			rop := romanager.GetByProperties(props)
 			if rop == nil {
 				st := GetStorage(r)
-				rop, err = romanager.Exec(blueprintUUID, nil, props, st)
+				rop, err = romanager.Exec(blueprint, nil, props, st)
 				if err != nil {
-					resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0002"}}
+					resp := ResponseRunOp{Status: "error", Error: &Error{Msg: err.Error(), Code: "E0003"}}
 					w.WriteHeader(400)
 					writeJSON(w, &resp)
 					return

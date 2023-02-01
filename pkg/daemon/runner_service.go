@@ -153,14 +153,14 @@ var RunnerService = &Service{map[string]*Endpoint{
 
 	`/{blueprint:[0-9a-f]{8}-[0-9a-f-]+}/`: {func(w http.ResponseWriter, r *http.Request) {
 		st := GetStorage(r)
-		bpuuid, err := uuid.Parse(mux.Vars(r)["blueprint"])
+		bpid, err := uuid.Parse(mux.Vars(r)["blueprint"])
 
 		if err != nil {
 			responseError(w, http.StatusBadRequest, err, "E01")
 			return
 		}
 
-		blueprint, err := st.Load(bpuuid)
+		blueprint, err := st.Load(bpid)
 
 		if err != nil {
 			responseError(w, http.StatusBadRequest, err, "E02")

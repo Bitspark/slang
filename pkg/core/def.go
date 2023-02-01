@@ -382,7 +382,7 @@ func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 		propVal, ok := props[prop]
 
 		if !ok && !propDef.Optional {
-			return errors.New("missing property " + prop)
+			return fmt.Errorf("[blueprint=%v] missing property %v", def.Id.String(), prop)
 		} else if err := propDef.VerifyData(propVal); err != nil {
 			return err
 		}
@@ -739,7 +739,7 @@ func (d TypeDef) VerifyData(data interface{}) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("expected %s, got %v", d.Type, data)
+	return fmt.Errorf("expected *%s*, got *%v*", d.Type, data)
 }
 
 // TYPE DEF MAP

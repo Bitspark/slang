@@ -1,12 +1,17 @@
 package daemon
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 
+	"github.com/Bitspark/go-funk"
+	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
 
@@ -25,6 +30,21 @@ type runningOperator struct {
 	outStop  chan bool
 }
 
+func (rop *runningOperator) Push(data interface{}) {
+	rop.incoming <- data
+}
+
+func (rop *runningOperator) Pull() interface{} {
+	for {
+		select {
+		case odat := <-rop.outgoing:
+			return odat
+		case <-rop.outStop:
+			return nil
+		}
+	}
+}
+
 type portOutput struct {
 	// JSON
 	Handle string      `json:"handle"`
@@ -41,14 +61,34 @@ func (pm *portOutput) String() string {
 	return string(j)
 }
 
+type PropertiesHash [16]byte
+
+func hashProperties(p core.Properties) PropertiesHash {
+	// hash value differs for any change in serializedProps, even when order of propNames changes --> sort props by names
+	propNames := funk.Keys(p).([]string)
+	sort.Strings(propNames)
+	serializedProps := []byte{}
+
+	for pn := range propNames {
+		jsonBytes, _ := json.Marshal(pn)
+		serializedProps = append(serializedProps, jsonBytes...)
+	}
+	fmt.Println()
+	return md5.Sum(serializedProps)
+}
+
 type runningOperatorManager struct {
-	ops map[string]*runningOperator
+	ropByHandle   map[string]*runningOperator
+	handleByProps map[PropertiesHash]string
 }
 
 var rnd = rand.New(rand.NewSource(99))
-var romanager = &runningOperatorManager{make(map[string]*runningOperator)}
+var romanager = &runningOperatorManager{
+	make(map[string]*runningOperator),
+	make(map[PropertiesHash]string),
+}
 
-func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
+func (rom *runningOperatorManager) start(op *core.Operator) *runningOperator {
 	handle := strconv.FormatInt(rnd.Int63(), 16)
 	url := "/run/" + handle + "/"
 	ro := &runningOperator{
@@ -64,16 +104,22 @@ func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runnin
 		make(chan bool),
 	}
 
-	rom.ops[handle] = ro
-
 	op.Main().Out().Bufferize()
 	op.Start()
 
 	return ro
 }
 
-func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
-	ro := rom.newRunningOperator(op)
+func (rom *runningOperatorManager) addRopAccess(rop *runningOperator, props core.Properties) {
+	propsHash := hashProperties(props)
+	handle := rop.Handle
+
+	rom.handleByProps[propsHash] = handle
+	rom.ropByHandle[handle] = rop
+}
+
+func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
+	op := ro.op
 
 	// Handle incoming data
 	go func() {
@@ -121,21 +167,46 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 			}()
 		})
 	*/
+}
 
-	return ro
+func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
+	op, err := api.BuildAndCompile(bpid, gens, props, st)
+
+	if err != nil {
+		return nil, err
+	}
+
+	ro := rom.start(op)
+	rom.addRopAccess(ro, props)
+	rom.handleInputOutput(ro)
+
+	return ro, nil
 }
 
 func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
 	go ro.op.Stop()
 	ro.inStop <- true
 	ro.outStop <- true
-	delete(rom.ops, ro.Handle)
+	delete(rom.ropByHandle, ro.Handle)
 	return nil
 }
 
-func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
-	if ro, ok := rom.ops[handle]; ok {
+func (rom runningOperatorManager) GetByHandle(handle string) (*runningOperator, error) {
+	if ro, ok := rom.ropByHandle[handle]; ok {
 		return ro, nil
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
+}
+
+func (rom *runningOperatorManager) GetByProperties(props core.Properties) *runningOperator {
+	propsHash := hashProperties(props)
+	handle, ok := rom.handleByProps[propsHash]
+
+	if !ok {
+		return nil
+	}
+
+	rop := rom.ropByHandle[handle]
+
+	return rop
 }

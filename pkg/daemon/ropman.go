@@ -78,38 +78,17 @@ func hashProperties(p core.Properties) PropertiesHash {
 }
 
 type runningOperatorManager struct {
-	ropByHandle map[string]*runningOperator
+	ropByHandle   map[string]*runningOperator
+	handleByProps map[PropertiesHash]string
 }
 
 var rnd = rand.New(rand.NewSource(99))
 var romanager = &runningOperatorManager{
 	make(map[string]*runningOperator),
+	make(map[PropertiesHash]string),
 }
 
-var handleByProps = make(map[PropertiesHash]string)
-
-func (rom *runningOperatorManager) setRunningOperator(props core.Properties, rop *runningOperator) {
-	propsHash := hashProperties(props)
-	handle := rop.Handle
-
-	handleByProps[propsHash] = handle
-	rom.ropByHandle[handle] = rop
-}
-
-func (rom *runningOperatorManager) GetByProperties(props core.Properties) *runningOperator {
-	propsHash := hashProperties(props)
-	handle, ok := handleByProps[propsHash]
-
-	if !ok {
-		return nil
-	}
-
-	rop := rom.ropByHandle[handle]
-
-	return rop
-}
-
-func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
+func (rom *runningOperatorManager) start(op *core.Operator) *runningOperator {
 	handle := strconv.FormatInt(rnd.Int63(), 16)
 	url := "/run/" + handle + "/"
 	ro := &runningOperator{
@@ -125,16 +104,22 @@ func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runnin
 		make(chan bool),
 	}
 
-	rom.ropByHandle[handle] = ro
-
 	op.Main().Out().Bufferize()
 	op.Start()
 
 	return ro
 }
 
-func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
-	ro := rom.newRunningOperator(op)
+func (rom *runningOperatorManager) addRopAccess(rop *runningOperator, props core.Properties) {
+	propsHash := hashProperties(props)
+	handle := rop.Handle
+
+	rom.handleByProps[propsHash] = handle
+	rom.ropByHandle[handle] = rop
+}
+
+func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
+	op := ro.op
 
 	// Handle incoming data
 	go func() {
@@ -182,24 +167,20 @@ func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
 			}()
 		})
 	*/
-
-	return ro
 }
 
-func (rom *runningOperatorManager) Exec(blueprint *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
-	op, err := api.BuildAndCompile(blueprint.Id, gens, props, st)
+func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
+	op, err := api.BuildAndCompile(bpid, gens, props, st)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rop := romanager.Run(op)
-	rom.setRunningOperator(props, rop)
+	ro := rom.start(op)
+	rom.addRopAccess(ro, props)
+	rom.handleInputOutput(ro)
 
-	fmt.Println(">", romanager.ropByHandle)
-	fmt.Println(">", handleByProps)
-
-	return rop, nil
+	return ro, nil
 }
 
 func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
@@ -210,9 +191,22 @@ func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
 	return nil
 }
 
-func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
+func (rom runningOperatorManager) GetByHandle(handle string) (*runningOperator, error) {
 	if ro, ok := rom.ropByHandle[handle]; ok {
 		return ro, nil
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
+}
+
+func (rom *runningOperatorManager) GetByProperties(props core.Properties) *runningOperator {
+	propsHash := hashProperties(props)
+	handle, ok := rom.handleByProps[propsHash]
+
+	if !ok {
+		return nil
+	}
+
+	rop := rom.ropByHandle[handle]
+
+	return rop
 }

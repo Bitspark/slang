@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -100,26 +99,17 @@ var RunnerService = &Service{map[string]*Endpoint{
 			decoder := json.NewDecoder(r.Body)
 			err := decoder.Decode(&requ)
 			if err != nil {
-				responseError(w,
-					http.StatusBadRequest,
-					err,
-					"E01",
-				)
+				responseError(w, http.StatusBadRequest, err, "E01")
 				return
 			}
 
-			op, err := api.BuildAndCompile(requ.Blueprint, requ.Gens, requ.Props, st)
+			rop, err := romanager.Exec(requ.Blueprint, requ.Gens, requ.Props, st)
 			if err != nil {
-				responseError(w,
-					http.StatusBadRequest,
-					err,
-					"E02",
-				)
+				responseError(w, http.StatusBadRequest, err, "E02")
 				return
 			}
 
-			rop := romanager.Run(op)
-			log.Printf("operator %s (id: %s) started", op.Name(), rop.Handle)
+			log.Printf("operator %s (id: %s) started", rop.op.Name(), rop.Handle)
 
 			/*
 				// Move into the background and wait on message from the operator resp. ports
@@ -180,7 +170,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			rop := romanager.GetByProperties(props)
 			if rop == nil {
 				st := GetStorage(r)
-				rop, err = romanager.Exec(blueprint, nil, props, st)
+				rop, err = romanager.Exec(blueprint.Id, nil, props, st)
 				if err != nil {
 					responseError(w, http.StatusBadRequest, err, "E04")
 					return
@@ -205,10 +195,9 @@ var RunnerService = &Service{map[string]*Endpoint{
 	`/{handle:\w+}/`: {func(w http.ResponseWriter, r *http.Request) {
 		handle := mux.Vars(r)["handle"]
 
-		rop, err := romanager.Get(handle)
+		rop, err := romanager.GetByHandle(handle)
 		if err != nil {
 			response(w, http.StatusNotFound, nil)
-			//w.WriteHeader(404)
 			return
 		}
 
@@ -230,7 +219,6 @@ var RunnerService = &Service{map[string]*Endpoint{
 				err := json.Unmarshal(buf.Bytes(), &idat)
 				if err != nil {
 					response(w, http.StatusBadRequest, nil)
-					//w.WriteHeader(400)
 					return
 				}
 			}

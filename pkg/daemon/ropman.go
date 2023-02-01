@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 
+	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
@@ -62,12 +64,17 @@ func (pm *portOutput) String() string {
 type PropertiesHash [16]byte
 
 func hashProperties(p core.Properties) PropertiesHash {
-	arrBytes := []byte{}
-	for _, item := range p {
-		jsonBytes, _ := json.Marshal(item)
-		arrBytes = append(arrBytes, jsonBytes...)
+	// hash value differs for any change in serializedProps, even when order of propNames changes --> sort props by names
+	propNames := funk.Keys(p).([]string)
+	sort.Strings(propNames)
+	serializedProps := []byte{}
+
+	for pn := range propNames {
+		jsonBytes, _ := json.Marshal(pn)
+		serializedProps = append(serializedProps, jsonBytes...)
 	}
-	return md5.Sum(arrBytes)
+	fmt.Println()
+	return md5.Sum(serializedProps)
 }
 
 type runningOperatorManager struct {
@@ -91,7 +98,6 @@ func (rom *runningOperatorManager) setRunningOperator(props core.Properties, rop
 
 func (rom *runningOperatorManager) GetByProperties(props core.Properties) *runningOperator {
 	propsHash := hashProperties(props)
-
 	handle, ok := handleByProps[propsHash]
 
 	if !ok {
@@ -189,6 +195,9 @@ func (rom *runningOperatorManager) Exec(blueprint *core.Blueprint, gens core.Gen
 
 	rop := romanager.Run(op)
 	rom.setRunningOperator(props, rop)
+
+	fmt.Println(">", romanager.ropByHandle)
+	fmt.Println(">", handleByProps)
 
 	return rop, nil
 }

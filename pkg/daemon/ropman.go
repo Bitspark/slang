@@ -69,8 +69,14 @@ func hashProperties(p core.Properties) PropertiesHash {
 	sort.Strings(propNames)
 	serializedProps := []byte{}
 
-	for pn := range propNames {
-		jsonBytes, _ := json.Marshal(pn)
+	for _, pn := range propNames {
+		pv, ok := p[pn]
+
+		if !ok {
+			continue
+		}
+
+		jsonBytes, _ := json.Marshal(pv)
 		serializedProps = append(serializedProps, jsonBytes...)
 	}
 	fmt.Println()

@@ -38,6 +38,10 @@ func parseProperties(formData url.Values, propDef core.TypeDefMap) (core.Propert
 		var pv interface{}
 		var err error = nil
 
+		if !formData.Has(pname) {
+			continue
+		}
+
 		fv := formData.Get(pname)
 
 		switch ptype.Type {

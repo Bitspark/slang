@@ -14,7 +14,7 @@ var controlReduceCfg = &builtinConfig{
 		Id: controlReduceId,
 		Meta: core.BlueprintMetaDef{
 			Name:             "reduce",
-			ShortDescription: "reduces the items of a stream pairwise using a reducer delegate",
+			ShortDescription: "reduces items of a stream pairwise using a reducer delegate",
 			Icon:             "compress-alt",
 			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/reduce",
@@ -104,7 +104,12 @@ var controlReduceCfg = &builtinConfig{
 					i := sIn.Pull()
 
 					mutex.Lock()
-					pool = append(pool, i)
+					// prepend (instead of appen) to ensure order of items while reducing
+					// append would do following:
+					// 		[1] [2] [3] -> [3] [1 2]
+					// prepend does:
+					//		[1] [2] [3] -> [1 2] [3]
+					pool = append([]interface{}{i}, pool...)
 					mutex.Unlock()
 				}
 			}()

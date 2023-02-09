@@ -47,7 +47,7 @@ var streamMapToStreamCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: core.TypeDefMap{
+		PropertyDefs: core.PropertyMap{
 			"entries": {
 				Type: "stream",
 				Stream: &core.TypeDef{

@@ -43,7 +43,7 @@ var netMQTTSubscribeCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: core.TypeDefMap{
+		PropertyDefs: core.PropertyMap{
 			"broker": {
 				Type: "string",
 			},

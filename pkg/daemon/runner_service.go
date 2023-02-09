@@ -26,7 +26,15 @@ type ResponseRunOp struct {
 	Error  *Error           `json:"error,omitempty"`
 }
 
-func parseProperties(formData url.Values, propDef core.TypeDefMap) (core.Properties, error) {
+func (r *ResponseRunOp) URL() string {
+	return r.Object.URL
+}
+
+func (r *ResponseRunOp) Handle() string {
+	return r.Object.Handle
+}
+
+func parseProperties(formData url.Values, propDef core.PropertyMap) (core.Properties, error) {
 	/*
 		Convert operator properties passed as query parameters into correct type depending of expected slang type.
 		Currently only supports primitive types: No Maps and Streams.

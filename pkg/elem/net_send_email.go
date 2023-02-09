@@ -63,7 +63,7 @@ var netSendEmailCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: core.TypeDefMap{
+		PropertyDefs: core.PropertyMap{
 			"server": {
 				Type: "string",
 			},

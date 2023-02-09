@@ -114,13 +114,13 @@ func TestServer_Start_Operator_Push_Input_Read_Websocket_Output(t *testing.T) {
 
 	instance := startOperator(t, server, data)
 	body, _ := json.Marshal(map[string]interface{}{"input": "test"})
-	response := getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
+	response := getResponse(t, server, "POST", instance.URL(), bytes.NewBuffer(body))
 	assert.Equal(t, 200, response.StatusCode)
 	out := readOneMessage(t, wsc)
 	assert.Len(t, out, 1)
 	msg := out[0]
 	assert.Equal(t, msg.Topic, "Port")
-	assert.Equal(t, msg.Payload, map[string]interface{}{"data": "test", "handle": instance.Handle, "isBOS": false, "isEOS": false, "port": ")output"})
+	assert.Equal(t, msg.Payload, map[string]interface{}{"data": "test", "handle": instance.Handle(), "isBOS": false, "isEOS": false, "port": ")output"})
 }
 
 func TestServer_Websocket_Messages_Are_Collected_If_Sent_Rapidly(t *testing.T) {
@@ -138,8 +138,8 @@ func TestServer_Websocket_Messages_Are_Collected_If_Sent_Rapidly(t *testing.T) {
 
 	instance := startOperator(t, server, data)
 	body, _ := json.Marshal(map[string]interface{}{"input": "test"})
-	getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
-	getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
+	getResponse(t, server, "POST", instance.URL(), bytes.NewBuffer(body))
+	getResponse(t, server, "POST", instance.URL(), bytes.NewBuffer(body))
 	out := readOneMessage(t, wsc)
 	assert.Len(t, out, 2)
 }
@@ -159,9 +159,9 @@ func TestServer_Websocket_Messages_Are_Not_Collected_If_Sent_With_Time_InBetween
 
 	instance := startOperator(t, server, data)
 	body, _ := json.Marshal(map[string]interface{}{"input": "test"})
-	getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
+	getResponse(t, server, "POST", instance.URL(), bytes.NewBuffer(body))
 	time.Sleep(1 * time.Second)
-	getResponse(t, server, "POST", instance.URL, bytes.NewBuffer(body))
+	getResponse(t, server, "POST", instance.URL(), bytes.NewBuffer(body))
 	out := readOneMessage(t, wsc)
 	assert.Len(t, out, 1)
 	out = readOneMessage(t, wsc)

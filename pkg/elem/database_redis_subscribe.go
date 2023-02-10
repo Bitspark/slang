@@ -31,15 +31,24 @@ var databaseRedisSubscribeCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"host": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 			"password": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 			"channel": {
-				Type: "string", // should be a map in the future as you can subscribe to multiple channels
+				core.TypeDef{
+					Type: "string", // should be a map in the future as you can subscribe to multiple channels
+				},
+				nil,
 			},
 		},
 	},

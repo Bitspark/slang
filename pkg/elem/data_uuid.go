@@ -27,7 +27,6 @@ var dataUUIDCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()

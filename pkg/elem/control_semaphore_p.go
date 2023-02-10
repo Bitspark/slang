@@ -51,9 +51,12 @@ var controlSemaphorePCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"semaphore": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 		},
 	},

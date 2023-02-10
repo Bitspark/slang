@@ -39,12 +39,18 @@ var databaseRedisHIncrByCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"host": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 			"password": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 		},
 	},

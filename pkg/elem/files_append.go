@@ -37,9 +37,12 @@ var filesAppendCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"newLine": {
-				Type: "boolean",
+				core.TypeDef{
+					Type: "boolean",
+				},
+				nil,
 			},
 		},
 	},

@@ -110,15 +110,21 @@ var dataEvaluateCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"expression": {
-				Type: "string",
-			},
-			"variables": {
-				Type: "stream",
-				Stream: &core.TypeDef{
+				core.TypeDef{
 					Type: "string",
 				},
+				nil,
+			},
+			"variables": {
+				core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
+				},
+				nil,
 			},
 		},
 	},

@@ -51,9 +51,12 @@ var dataVariableSetCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"valueName": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 		},
 	},

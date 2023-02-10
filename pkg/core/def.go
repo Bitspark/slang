@@ -12,9 +12,14 @@ import (
 
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
-type PropertyMap map[string]*TypeDef
+type PropertyMap map[string]*PropertyDef
 type Properties MapStr
 type Generics map[string]*TypeDef
+
+type PropertyDef struct {
+	TypeDef
+	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
+}
 
 type InstanceDef struct {
 	Name     string    `json:"-" yaml:"-"`
@@ -305,7 +310,7 @@ func (d Blueprint) Copy(recursive bool) Blueprint {
 		dlgDefs[k] = &c
 	}
 
-	propDefs := make(map[string]*TypeDef)
+	propDefs := make(PropertyMap)
 	for k, v := range d.PropertyDefs {
 		c := v.Copy()
 		propDefs[k] = &c
@@ -624,20 +629,6 @@ func (d TypeDef) Copy() TypeDef {
 	}
 }
 
-// TESTCASE DEFINITION
-
-func (tc *TestCaseDef) Validate() error {
-	if len(tc.Data.In) != len(tc.Data.Out) {
-		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
-	}
-	tc.valid = true
-	return nil
-}
-
-func (tc TestCaseDef) Valid() bool {
-	return tc.valid
-}
-
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
 // The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy, which is very important to prevent unintended side effects.
@@ -743,6 +734,15 @@ func (d TypeDef) VerifyData(data interface{}) error {
 	return fmt.Errorf("expected *%s*, got *%v*", d.Type, data)
 }
 
+// PROPTERY DEF
+
+func (d PropertyDef) Copy() PropertyDef {
+	return PropertyDef{
+		d.TypeDef.Copy(),
+		d.Default,
+	}
+}
+
 // TYPE DEF MAP
 
 func (t TypeDefMap) VerifyData(data map[string]interface{}) error {
@@ -781,7 +781,7 @@ func (t TypeDefMap) GenericsSpecified() error {
 	return nil
 }
 
-func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef) error {
+func (d *TypeDef) ApplyProperties(props Properties, propDefs PropertyMap) error {
 	if d.Type == "primitive" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "trigger" {
 		return nil
 	}
@@ -891,6 +891,20 @@ func (p Properties) Clean() {
 	for k, v := range p {
 		p[k] = CleanValue(v)
 	}
+}
+
+// TESTCASE DEFINITION
+
+func (tc *TestCaseDef) Validate() error {
+	if len(tc.Data.In) != len(tc.Data.Out) {
+		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
+	}
+	tc.valid = true
+	return nil
+}
+
+func (tc TestCaseDef) Valid() bool {
+	return tc.valid
 }
 
 type SlangBundle struct {

@@ -43,15 +43,21 @@ var databaseKafkaSubscribeCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"brokers": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type: "string",
+				core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
 				},
+				nil,
 			},
 			"topic": {
-				Type: "string",
+				core.TypeDef{
+					Type: "string",
+				},
+				nil,
 			},
 		},
 	},

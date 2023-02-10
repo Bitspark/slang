@@ -62,13 +62,16 @@ var controlSwitchCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"cases": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type:    "generic",
-					Generic: "selectType",
+				core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type:    "generic",
+						Generic: "selectType",
+					},
 				},
+				nil,
 			},
 		},
 	},

@@ -37,12 +37,15 @@ var stringFormatCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"variables": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type: "string",
+				core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
 				},
+				nil,
 			},
 		},
 	},

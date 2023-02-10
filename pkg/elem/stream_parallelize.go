@@ -43,10 +43,13 @@ var streamParallelizeCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"indexes": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type: "number",
+				core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "number",
+					},
 				},
+				nil,
 			},
 		},
 	},

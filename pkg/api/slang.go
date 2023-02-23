@@ -256,13 +256,34 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	return flatOp, nil
 }
 
-func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage, dependencyChain []uuid.UUID) error {
-	if err := def.SpecifyOperator(gens, props); err != nil {
+func completeProperties(blueprint *core.Blueprint, givenProps core.Properties) (core.Properties, error) {
+	propDefs := blueprint.PropertyDefs
+	completedProps := make(core.Properties)
+
+	for propKey, propDef := range propDefs {
+		if prop, err := givenProps.Get(propKey, propDef); err == nil {
+			completedProps[propKey] = prop
+		} else {
+			return nil, err
+		}
+	}
+
+	return completedProps, nil
+}
+
+func specifyOperator(blueprint *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage, dependencyChain []uuid.UUID) error {
+	var err error
+
+	if props, err = completeProperties(blueprint, props); err != nil {
 		return err
 	}
-	dependencyChain = append(dependencyChain, def.Id)
 
-	for _, childInsDef := range def.InstanceDefs {
+	if err := blueprint.SpecifyOperator(gens, props); err != nil {
+		return err
+	}
+	dependencyChain = append(dependencyChain, blueprint.Id)
+
+	for _, childInsDef := range blueprint.InstanceDefs {
 
 		// Load Blueprint for childInsDef
 		if childInsDef.Blueprint.Id == uuid.Nil {
@@ -275,7 +296,7 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 		}
 
 		if funk.Contains(dependencyChain, childInsDef.Operator) {
-			return fmt.Errorf("recursion in %s", def.Id)
+			return fmt.Errorf("recursion in %s", blueprint.Id)
 		}
 
 		// Propagate property values to child operators
@@ -304,7 +325,7 @@ func specifyOperator(def *core.Blueprint, gens core.Generics, props core.Propert
 		}
 	}
 
-	def.PropertyDefs = nil
+	blueprint.PropertyDefs = nil
 
 	return nil
 }

@@ -17,6 +17,21 @@ type Properties MapStr
 type SlangValue interface{}
 type Generics map[string]*TypeDef
 
+func (p Properties) Get(propKey string, propDef *PropertyDef) (SlangValue, error) {
+	prop, ok := p[propKey]
+	if !ok && propDef.Default != nil {
+		prop = propDef.Default
+		ok = true
+	}
+
+	if !ok && !propDef.Optional {
+		// property is expected to be defined, but isn't
+		return nil, fmt.Errorf("expected property %s:%v", propKey, propDef)
+	}
+
+	return prop, nil
+}
+
 type PropertyDef struct {
 	TypeDef
 	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
@@ -455,21 +470,11 @@ func (def *Blueprint) specifyGenericsOnPortGroups(gens Generics) {
 func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
-	for prop, propDef := range def.PropertyDefs {
-		var propVal SlangValue
-		propVal, ok := props[prop]
+	for propKey, propDef := range def.PropertyDefs {
+		propVal, err := props.Get(propKey, propDef)
 
-		fmt.Println("propDef", propDef)
-
-		if !ok && propDef.Default != nil {
-			// property no defined on exec
-			// property ok, because default value is provided
-			propVal = propDef.Default
-			ok = true
-		}
-
-		if !ok && !propDef.Optional {
-			return fmt.Errorf("[blueprint=%v] missing property %v", def.Id.String(), prop)
+		if err != nil {
+			return err
 		}
 
 		if err := propDef.VerifyData(propVal); err != nil {
@@ -1028,15 +1033,11 @@ func expandExpressionPart(exprPart string, props Properties, propDefs PropertyMa
 	var vals []string
 	prop, ok := props[exprPart]
 
-	if !ok && propDefs[exprPart].Default != nil {
-		prop = propDefs[exprPart].Default
-		ok = true
-	}
-
 	if !ok {
-		// property is used in exppression but is not defined
+		// property is used in expression but is not defined
 		return nil, errors.New("missing property " + exprPart)
 	}
+
 	propDef := propDefs[exprPart]
 	if propDef.Type == "stream" {
 		els := prop.([]interface{})

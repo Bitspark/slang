@@ -23,34 +23,25 @@ var timeDateNowCfg = &builtinConfig{
 				In: core.TypeDef{
 					Type: "trigger",
 				},
-				Out: core.TypeDef{
-					Type: "map",
-					Map: map[string]*core.TypeDef{
-						"year":       {Type: "number"},
-						"month":      {Type: "number"},
-						"day":        {Type: "number"},
-						"hour":       {Type: "number"},
-						"minute":     {Type: "number"},
-						"second":     {Type: "number"},
-						"nanosecond": {Type: "number"},
-					},
-				},
+				Out: timeParseDateCfg.blueprint.ServiceDefs[core.MAIN_SERVICE].Out,
 			},
 		},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
+		odate := out.Map("date")
+		otime := out.Map("time")
 		for !op.CheckStop() {
 			if i := in.Pull(); !core.IsMarker(i) {
 				t := time.Now()
-				out.Map("year").Push(t.Year())
-				out.Map("month").Push(int(t.Month()))
-				out.Map("day").Push(t.Day())
-				out.Map("hour").Push(t.Hour())
-				out.Map("minute").Push(t.Minute())
-				out.Map("second").Push(t.Second())
-				out.Map("nanosecond").Push(t.Nanosecond())
+				odate.Map("year").Push(t.Year())
+				odate.Map("month").Push(int(t.Month()))
+				odate.Map("day").Push(t.Day())
+				otime.Map("hour").Push(t.Hour())
+				otime.Map("minute").Push(t.Minute())
+				otime.Map("second").Push(t.Second())
+				out.Map("weekday").Push(t.Weekday().String())
 			} else {
 				out.Push(i)
 			}

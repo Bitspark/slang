@@ -33,10 +33,9 @@ var streamWindowReleaseCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"store": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
-				nil,
 			},
 		},
 	},

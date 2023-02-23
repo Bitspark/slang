@@ -37,13 +37,12 @@ var encodingURLWriteCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"params": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
 						Type: "string",
 					},
 				},
-				nil,
 			},
 		},
 	},

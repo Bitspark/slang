@@ -74,10 +74,9 @@ var databaseMemoryReadCfg = &builtinConfig{
 		},
 		PropertyDefs: core.PropertyMap{
 			"store": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
-				nil,
 			},
 		},
 	},

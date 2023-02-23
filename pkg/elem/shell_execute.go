@@ -91,10 +91,9 @@ var shellExecuteCfg = &builtinConfig{
 		},
 		PropertyDefs: core.PropertyMap{
 			"bufferSize": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "number",
 				},
-				nil,
 			},
 		},
 	},

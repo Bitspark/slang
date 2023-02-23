@@ -41,13 +41,12 @@ var stringTemplateCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"variables": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
 						Type: "string",
 					},
 				},
-				nil,
 			},
 		},
 	},

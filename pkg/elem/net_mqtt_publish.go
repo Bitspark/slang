@@ -39,50 +39,43 @@ var netMQTTPublishCfg = &builtinConfig{
 		},
 		PropertyDefs: core.PropertyMap{
 			"broker": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
-				nil,
 			},
 			"username": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
-				nil,
 			},
 			"password": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
-				nil,
 			},
 			"verifyCertificate": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type:     "boolean",
 					Optional: true,
 				},
-				nil,
 			},
 			"clientCertificate": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type:     "string",
 					Optional: true,
 				},
-				nil,
 			},
 			"clientKey": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type:     "string",
 					Optional: true,
 				},
-				nil,
 			},
 			"caCertificate": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type:     "string",
 					Optional: true,
 				},
-				nil,
 			},
 			// "clientId": {
 			// 	Type: "string",

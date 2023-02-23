@@ -41,25 +41,22 @@ var encodingCSVWriteCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"includeHeader": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "boolean",
 				},
-				nil,
 			},
 			"delimiter": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
-				nil,
 			},
 			"columns": {
-				core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "stream",
 					Stream: &core.TypeDef{
 						Type: "string",
 					},
 				},
-				nil,
 			},
 		},
 	},

@@ -53,12 +53,16 @@ var databaseRedisHGetCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"host": {
-				Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "string",
+				},
 			},
 			"password": {
-				Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "string",
+				},
 			},
 		},
 	},

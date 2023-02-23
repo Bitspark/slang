@@ -47,21 +47,29 @@ var databaseExecuteCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"query": {
-				Type: "string",
-			},
-			"queryParams": {
-				Type: "stream",
-				Stream: &core.TypeDef{
+				TypeDef: core.TypeDef{
 					Type: "string",
 				},
 			},
+			"queryParams": {
+				TypeDef: core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
+				},
+			},
 			"driver": {
-				Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "string",
+				},
 			},
 			"url": {
-				Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "string",
+				},
 			},
 		},
 	},

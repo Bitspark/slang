@@ -41,14 +41,18 @@ var encodingCSVReadCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"delimiter": {
-				Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "string",
+				},
 			},
 			"columns": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
 				},
 			},
 		},

@@ -28,10 +28,12 @@ var dataValueCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"value": {
-				Type:    "generic",
-				Generic: "valueType",
+				TypeDef: core.TypeDef{
+					Type:    "generic",
+					Generic: "valueType",
+				},
 			},
 		},
 	},

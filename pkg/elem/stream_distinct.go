@@ -65,7 +65,7 @@ var streamDistinctCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: core.TypeDefMap{},
+		PropertyDefs: core.PropertyMap{},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()

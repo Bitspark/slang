@@ -39,11 +39,13 @@ var streamConcatenateCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"streams": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
 				},
 			},
 		},

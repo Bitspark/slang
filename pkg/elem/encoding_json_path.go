@@ -45,11 +45,13 @@ var encodingJSONPathCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"path_names": {
-				Type: "stream",
-				Stream: &core.TypeDef{
-					Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "string",
+					},
 				},
 			},
 		},

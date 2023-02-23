@@ -53,7 +53,7 @@ var streamMapAccessCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: core.TypeDefMap{},
+		PropertyDefs: core.PropertyMap{},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()

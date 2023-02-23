@@ -30,12 +30,16 @@ var dataVariableGetCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"valueName": {
-				Type: "string",
+				TypeDef: core.TypeDef{
+					Type: "string",
+				},
 			},
 			"waitForSet": {
-				Type: "boolean",
+				TypeDef: core.TypeDef{
+					Type: "boolean",
+				},
 			},
 		},
 	},

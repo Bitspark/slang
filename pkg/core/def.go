@@ -12,8 +12,98 @@ import (
 
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
+type PropertyMap map[string]*PropertyDef
 type Properties MapStr
+type SlangValue interface{}
 type Generics map[string]*TypeDef
+
+func (p Properties) Get(propKey string, propDef *PropertyDef) (SlangValue, error) {
+	prop, ok := p[propKey]
+	if !ok && propDef.Default != nil {
+		prop = propDef.Default
+		ok = true
+	}
+
+	if !ok && !propDef.Optional {
+		// property is expected to be defined, but isn't
+		return nil, fmt.Errorf("expected property %s:%v", propKey, propDef)
+	}
+
+	return prop, nil
+}
+
+type PropertyDef struct {
+	TypeDef
+	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
+}
+
+func (pd *PropertyDef) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var result map[interface{}]interface{}
+	err := unmarshal(&result)
+	if err != nil {
+		panic(err)
+	}
+
+	if p, err := mapToTypeDef(result); err != nil {
+		return err
+	} else {
+		pd.TypeDef = *p
+		pd.Default = result["default"]
+	}
+	return nil
+}
+
+func mapToTypeDef(m map[interface{}]interface{}) (*TypeDef, error) {
+
+	t, ok := m["type"].(string)
+
+	if !ok {
+		return nil, errors.New("expected key *type*")
+	}
+
+	td := &TypeDef{Type: t}
+
+	switch td.Type {
+	case "generic":
+		td.Generic, ok = m[td.Type].(string)
+
+		if !ok {
+			return nil, errors.New("expected generic identifier")
+		}
+
+	case "stream":
+		stream, ok := m[td.Type]
+
+		if !ok {
+			return nil, errors.New("expected stream sub")
+		}
+
+		var err error
+
+		if td.Stream, err = mapToTypeDef(stream.(map[interface{}]interface{})); err != nil {
+			return nil, err
+		}
+
+	case "map":
+		m, ok := m[td.Type].(map[string]map[interface{}]interface{})
+
+		if !ok {
+			return nil, errors.New("expected map subs")
+		}
+
+		var err error
+
+		td.Map = make(TypeDefMap)
+
+		for k, sub := range m {
+			if td.Map[k], err = mapToTypeDef(sub); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return td, nil
+}
 
 type InstanceDef struct {
 	Name     string    `json:"-" yaml:"-"`
@@ -74,7 +164,7 @@ type Blueprint struct {
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
 	InstanceDefs InstanceDefList         `json:"operators,omitempty" yaml:"operators,omitempty"`
-	PropertyDefs TypeDefMap              `json:"properties,omitempty" yaml:"properties,omitempty"`
+	PropertyDefs PropertyMap             `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
 	Elementary   uuid.UUID               `json:"-" yaml:"-"`
 
@@ -111,11 +201,13 @@ type ServiceDef struct {
 
 type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
-	Type     string     `json:"type" yaml:"type"`
-	Stream   *TypeDef   `json:"stream,omitempty" yaml:"stream,omitempty"`
-	Map      TypeDefMap `json:"map,omitempty" yaml:"map,omitempty"`
-	Generic  string     `json:"generic,omitempty" yaml:"generic,omitempty"`
-	Optional bool       `json:"optional,omitempty" yaml:"optional,omitempty"`
+	Type    string     `json:"type" yaml:"type"`
+	Stream  *TypeDef   `json:"stream,omitempty" yaml:"stream,omitempty"`
+	Map     TypeDefMap `json:"map,omitempty" yaml:"map,omitempty"`
+	Generic string     `json:"generic,omitempty" yaml:"generic,omitempty"`
+
+	// XXX this doesn't belong to here... makes only sense for PropertyDef
+	Optional bool `json:"optional,omitempty" yaml:"optional,omitempty"`
 
 	valid bool
 }
@@ -304,7 +396,7 @@ func (d Blueprint) Copy(recursive bool) Blueprint {
 		dlgDefs[k] = &c
 	}
 
-	propDefs := make(map[string]*TypeDef)
+	propDefs := make(PropertyMap)
 	for k, v := range d.PropertyDefs {
 		c := v.Copy()
 		propDefs[k] = &c
@@ -378,12 +470,14 @@ func (def *Blueprint) specifyGenericsOnPortGroups(gens Generics) {
 func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
-	for prop, propDef := range def.PropertyDefs {
-		propVal, ok := props[prop]
+	for propKey, propDef := range def.PropertyDefs {
+		propVal, err := props.Get(propKey, propDef)
 
-		if !ok && !propDef.Optional {
-			return fmt.Errorf("[blueprint=%v] missing property %v", def.Id.String(), prop)
-		} else if err := propDef.VerifyData(propVal); err != nil {
+		if err != nil {
+			return err
+		}
+
+		if err := propDef.VerifyData(propVal); err != nil {
 			return err
 		}
 	}
@@ -623,20 +717,6 @@ func (d TypeDef) Copy() TypeDef {
 	}
 }
 
-// TESTCASE DEFINITION
-
-func (tc *TestCaseDef) Validate() error {
-	if len(tc.Data.In) != len(tc.Data.Out) {
-		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
-	}
-	tc.valid = true
-	return nil
-}
-
-func (tc TestCaseDef) Valid() bool {
-	return tc.valid
-}
-
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
 // The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy, which is very important to prevent unintended side effects.
@@ -742,6 +822,15 @@ func (d TypeDef) VerifyData(data interface{}) error {
 	return fmt.Errorf("expected *%s*, got *%v*", d.Type, data)
 }
 
+// PROPTERY DEF
+
+func (d PropertyDef) Copy() PropertyDef {
+	return PropertyDef{
+		d.TypeDef.Copy(),
+		d.Default,
+	}
+}
+
 // TYPE DEF MAP
 
 func (t TypeDefMap) VerifyData(data map[string]interface{}) error {
@@ -780,7 +869,7 @@ func (t TypeDefMap) GenericsSpecified() error {
 	return nil
 }
 
-func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef) error {
+func (d *TypeDef) ApplyProperties(props Properties, propDefs PropertyMap) error {
 	if d.Type == "primitive" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "trigger" {
 		return nil
 	}
@@ -809,6 +898,27 @@ func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef
 		return nil
 	}
 	return errors.New("unknown type " + d.Type)
+}
+
+// PROPERTY MAP
+
+func (t PropertyMap) SpecifyGenerics(generics map[string]*TypeDef) error {
+	for _, v := range t {
+		if err := v.SpecifyGenerics(generics); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t PropertyMap) GenericsSpecified() error {
+	for k, v := range t {
+		if err := v.GenericsSpecified(); err != nil {
+			return fmt.Errorf("%s: %s", k, err.Error())
+		}
+	}
+
+	return nil
 }
 
 // OPERATOR LIST MARSHALLING
@@ -871,6 +981,20 @@ func (p Properties) Clean() {
 	}
 }
 
+// TESTCASE DEFINITION
+
+func (tc *TestCaseDef) Validate() error {
+	if len(tc.Data.In) != len(tc.Data.Out) {
+		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
+	}
+	tc.valid = true
+	return nil
+}
+
+func (tc TestCaseDef) Valid() bool {
+	return tc.valid
+}
+
 type SlangBundle struct {
 	Main uuid.UUID `json:"main" yaml:"main"`
 
@@ -905,13 +1029,15 @@ func (sb *SlangBundle) Validate() error {
 
 // PROPERTY PARSING
 
-func expandExpressionPart(exprPart string, props Properties, propDefs TypeDefMap) ([]string, error) {
+func expandExpressionPart(exprPart string, props Properties, propDefs PropertyMap) ([]string, error) {
 	var vals []string
 	prop, ok := props[exprPart]
+
 	if !ok {
-		// property is used in exppression but is not defined
+		// property is used in expression but is not defined
 		return nil, errors.New("missing property " + exprPart)
 	}
+
 	propDef := propDefs[exprPart]
 	if propDef.Type == "stream" {
 		els := prop.([]interface{})
@@ -924,7 +1050,7 @@ func expandExpressionPart(exprPart string, props Properties, propDefs TypeDefMap
 	return vals, nil
 }
 
-func ExpandExpression(expr string, props Properties, propDefs TypeDefMap) ([]string, error) {
+func ExpandExpression(expr string, props Properties, propDefs PropertyMap) ([]string, error) {
 	re := regexp.MustCompile("{(.*?)}")
 	exprs := []string{expr}
 	for _, expr := range exprs {

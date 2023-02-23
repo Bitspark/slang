@@ -39,15 +39,21 @@ var streamWindowCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"size": {
-				Type: "number",
+				TypeDef: core.TypeDef{
+					Type: "number",
+				},
 			},
 			"stride": {
-				Type: "number",
+				TypeDef: core.TypeDef{
+					Type: "number",
+				},
 			},
 			"fill": {
-				Type: "boolean",
+				TypeDef: core.TypeDef{
+					Type: "boolean",
+				},
 			},
 		},
 	},

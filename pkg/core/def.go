@@ -14,11 +14,80 @@ type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
 type PropertyMap map[string]*PropertyDef
 type Properties MapStr
+type SlangValue interface{}
 type Generics map[string]*TypeDef
 
 type PropertyDef struct {
 	TypeDef
 	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
+}
+
+func (pd *PropertyDef) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var result map[interface{}]interface{}
+	err := unmarshal(&result)
+	if err != nil {
+		panic(err)
+	}
+
+	if p, err := mapToTypeDef(result); err != nil {
+		return err
+	} else {
+		pd.TypeDef = *p
+		pd.Default = result["default"]
+	}
+	return nil
+}
+
+func mapToTypeDef(m map[interface{}]interface{}) (*TypeDef, error) {
+
+	t, ok := m["type"].(string)
+
+	if !ok {
+		return nil, errors.New("expected key *type*")
+	}
+
+	td := &TypeDef{Type: t}
+
+	switch td.Type {
+	case "generic":
+		td.Generic, ok = m[td.Type].(string)
+
+		if !ok {
+			return nil, errors.New("expected generic identifier")
+		}
+
+	case "stream":
+		stream, ok := m[td.Type]
+
+		if !ok {
+			return nil, errors.New("expected stream sub")
+		}
+
+		var err error
+
+		if td.Stream, err = mapToTypeDef(stream.(map[interface{}]interface{})); err != nil {
+			return nil, err
+		}
+
+	case "map":
+		m, ok := m[td.Type].(map[string]map[interface{}]interface{})
+
+		if !ok {
+			return nil, errors.New("expected map subs")
+		}
+
+		var err error
+
+		td.Map = make(TypeDefMap)
+
+		for k, sub := range m {
+			if td.Map[k], err = mapToTypeDef(sub); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return td, nil
 }
 
 type InstanceDef struct {
@@ -117,11 +186,13 @@ type ServiceDef struct {
 
 type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
-	Type     string     `json:"type" yaml:"type"`
-	Stream   *TypeDef   `json:"stream,omitempty" yaml:"stream,omitempty"`
-	Map      TypeDefMap `json:"map,omitempty" yaml:"map,omitempty"`
-	Generic  string     `json:"generic,omitempty" yaml:"generic,omitempty"`
-	Optional bool       `json:"optional,omitempty" yaml:"optional,omitempty"`
+	Type    string     `json:"type" yaml:"type"`
+	Stream  *TypeDef   `json:"stream,omitempty" yaml:"stream,omitempty"`
+	Map     TypeDefMap `json:"map,omitempty" yaml:"map,omitempty"`
+	Generic string     `json:"generic,omitempty" yaml:"generic,omitempty"`
+
+	// XXX this doesn't belong to here... makes only sense for PropertyDef
+	Optional bool `json:"optional,omitempty" yaml:"optional,omitempty"`
 
 	valid bool
 }
@@ -385,11 +456,23 @@ func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
 	for prop, propDef := range def.PropertyDefs {
+		var propVal SlangValue
 		propVal, ok := props[prop]
+
+		fmt.Println("propDef", propDef)
+
+		if !ok && propDef.Default != nil {
+			// property no defined on exec
+			// property ok, because default value is provided
+			propVal = propDef.Default
+			ok = true
+		}
 
 		if !ok && !propDef.Optional {
 			return fmt.Errorf("[blueprint=%v] missing property %v", def.Id.String(), prop)
-		} else if err := propDef.VerifyData(propVal); err != nil {
+		}
+
+		if err := propDef.VerifyData(propVal); err != nil {
 			return err
 		}
 	}
@@ -944,6 +1027,12 @@ func (sb *SlangBundle) Validate() error {
 func expandExpressionPart(exprPart string, props Properties, propDefs PropertyMap) ([]string, error) {
 	var vals []string
 	prop, ok := props[exprPart]
+
+	if !ok && propDefs[exprPart].Default != nil {
+		prop = propDefs[exprPart].Default
+		ok = true
+	}
+
 	if !ok {
 		// property is used in exppression but is not defined
 		return nil, errors.New("missing property " + exprPart)

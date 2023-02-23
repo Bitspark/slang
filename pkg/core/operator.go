@@ -60,8 +60,10 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	o.children = make(map[string]*Operator)
 
 	var err error
-	if err := def.PropertyDefs.GenericsSpecified(); err != nil {
-		return nil, fmt.Errorf("%s: %s", "properties", err.Error())
+	for propKey := range def.PropertyDefs {
+		if err := def.PropertyDefs[propKey].GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("property %s: %s", propKey, err.Error())
+		}
 	}
 
 	o.services = make(map[string]*Service)

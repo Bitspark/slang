@@ -94,7 +94,7 @@ func Init() {
 	// Flow control operators
 	Register(controlSplitCfg)
 	Register(controlSwitchCfg)
-	Register(controlTakeCfg)
+	Register(controlMergeCfg)
 	Register(controlLoopCfg)
 	Register(controlIterateCfg)
 	Register(controlReduceCfg)

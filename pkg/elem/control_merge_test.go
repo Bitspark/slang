@@ -8,29 +8,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_CtrlTake__IsRegistered(t *testing.T) {
+func Test_CtrlMerge__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
 
-	ocTake := getBuiltinCfg(controlTakeId)
+	ocTake := getBuiltinCfg(controlMergeId)
 	a.NotNil(ocTake)
 }
 
-func Test_CtrlTake__NoGenerics(t *testing.T) {
+func Test_CtrlMerge__NoGenerics(t *testing.T) {
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
-			Operator: controlTakeId,
+			Operator: controlMergeId,
 		},
 	)
 	a.Error(err)
 	a.Nil(co)
 }
 
-func Test_CtrlTake__InPorts(t *testing.T) {
+func Test_CtrlMerge__InPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: controlTakeId,
+			Operator: controlMergeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -49,11 +49,11 @@ func Test_CtrlTake__InPorts(t *testing.T) {
 	a.Equal(core.TYPE_BOOLEAN, to.Delegate("compare").In().Type())
 }
 
-func Test_CtrlTake__OutPorts(t *testing.T) {
+func Test_CtrlMerge__OutPorts(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: controlTakeId,
+			Operator: controlMergeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",
@@ -71,11 +71,11 @@ func Test_CtrlTake__OutPorts(t *testing.T) {
 	a.Equal(core.TYPE_NUMBER, to.Delegate("compare").Out().Map("false").Type())
 }
 
-func Test_CtrlTake__Simple1(t *testing.T) {
+func Test_CtrlMerge__Simple1(t *testing.T) {
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
-			Operator: controlTakeId,
+			Operator: controlMergeId,
 			Generics: map[string]*core.TypeDef{
 				"itemType": {
 					Type: "number",

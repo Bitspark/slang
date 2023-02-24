@@ -5,13 +5,13 @@ import (
 	"github.com/google/uuid"
 )
 
-var controlTakeId = uuid.MustParse("9bebc4bf-d512-4944-bcb1-5b2c3d5b5471")
-var controlTakeCfg = &builtinConfig{
+var controlMergeId = uuid.MustParse("9bebc4bf-d512-4944-bcb1-5b2c3d5b5471")
+var controlMergeCfg = &builtinConfig{
 	safe: true,
 	blueprint: core.Blueprint{
-		Id: controlTakeId,
+		Id: controlMergeId,
 		Meta: core.BlueprintMetaDef{
-			Name:             "take",
+			Name:             "merge",
 			ShortDescription: "merges two streams using a compare delegate deciding which item has precedence",
 			Icon:             "hand-point-up",
 			Tags:             []string{"stream", "control"},

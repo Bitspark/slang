@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Bitspark/slang/pkg/env"
@@ -365,6 +366,13 @@ func (s *Server) basicAuth(handler http.HandlerFunc) http.HandlerFunc {
 	passwd := s.auth.Password
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// no auth for path /run/*
+		if strings.HasPrefix(r.URL.Path, "/run") {
+			handler(w, r)
+			return
+		}
+		
 		user, pass, ok := r.BasicAuth()
 		if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(passwd)) != 1 {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Authentication required."`)

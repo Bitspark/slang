@@ -65,19 +65,13 @@ var netSendEmailCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"server": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"username": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"password": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 		},
 	},

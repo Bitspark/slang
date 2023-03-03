@@ -30,10 +30,8 @@ var dataValueCfg = &builtinConfig{
 		},
 		PropertyDefs: core.PropertyMap{
 			"value": {
-				TypeDef: core.TypeDef{
-					Type:    "generic",
-					Generic: "valueType",
-				},
+				Type:    "generic",
+				Generic: "valueType",
 			},
 		},
 	},

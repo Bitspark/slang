@@ -57,10 +57,8 @@ var controlReduceCfg = &builtinConfig{
 		},
 		PropertyDefs: core.PropertyMap{
 			"emptyValue": {
-				TypeDef: core.TypeDef{
-					Type:    "generic",
-					Generic: "itemType",
-				},
+				Type:    "generic",
+				Generic: "itemType",
 			},
 		},
 	},

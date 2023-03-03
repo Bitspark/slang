@@ -49,27 +49,19 @@ var databaseExecuteCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"query": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"queryParams": {
-				TypeDef: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "string",
-					},
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "string",
 				},
 			},
 			"driver": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"url": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 		},
 	},

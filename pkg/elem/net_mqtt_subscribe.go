@@ -45,48 +45,32 @@ var netMQTTSubscribeCfg = &builtinConfig{
 		},
 		PropertyDefs: core.PropertyMap{
 			"broker": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"username": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"password": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"topic": {
-				TypeDef: core.TypeDef{
-					Type: "string",
-				},
+				Type: "string",
 			},
 			"verifyCertificate": {
-				TypeDef: core.TypeDef{
-					Type:     "boolean",
-					Optional: true,
-				},
+				Type:     "boolean",
+				Optional: true,
 			},
 			"clientCertificate": {
-				TypeDef: core.TypeDef{
-					Type:     "string",
-					Optional: true,
-				},
+				Type:     "string",
+				Optional: true,
 			},
 			"clientKey": {
-				TypeDef: core.TypeDef{
-					Type:     "string",
-					Optional: true,
-				},
+				Type:     "string",
+				Optional: true,
 			},
 			"caCertificate": {
-				TypeDef: core.TypeDef{
-					Type:     "string",
-					Optional: true,
-				},
+				Type:     "string",
+				Optional: true,
 			},
 		},
 	},

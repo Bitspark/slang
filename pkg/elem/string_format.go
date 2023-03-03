@@ -39,11 +39,9 @@ var stringFormatCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"variables": {
-				TypeDef: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "string",
-					},
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "string",
 				},
 			},
 		},

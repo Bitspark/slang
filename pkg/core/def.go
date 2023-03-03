@@ -12,12 +12,12 @@ import (
 
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
-type PropertyMap map[string]*PropertyDef
+type PropertyMap map[string]*TypeDef
 type Properties MapStr
 type SlangValue interface{}
 type Generics map[string]*TypeDef
 
-func (p Properties) Get(propKey string, propDef *PropertyDef) (SlangValue, error) {
+func (p Properties) Get(propKey string, propDef *TypeDef) (SlangValue, error) {
 	prop, ok := p[propKey]
 	if !ok && propDef.Default != nil {
 		prop = propDef.Default
@@ -30,79 +30,6 @@ func (p Properties) Get(propKey string, propDef *PropertyDef) (SlangValue, error
 	}
 
 	return prop, nil
-}
-
-type PropertyDef struct {
-	TypeDef
-	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
-}
-
-func (pd *PropertyDef) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var result map[interface{}]interface{}
-	err := unmarshal(&result)
-	if err != nil {
-		panic(err)
-	}
-
-	if p, err := mapToTypeDef(result); err != nil {
-		return err
-	} else {
-		pd.TypeDef = *p
-		pd.Default = result["default"]
-	}
-	return nil
-}
-
-func mapToTypeDef(m map[interface{}]interface{}) (*TypeDef, error) {
-
-	t, ok := m["type"].(string)
-
-	if !ok {
-		return nil, errors.New("expected key *type*")
-	}
-
-	td := &TypeDef{Type: t}
-
-	switch td.Type {
-	case "generic":
-		td.Generic, ok = m[td.Type].(string)
-
-		if !ok {
-			return nil, errors.New("expected generic identifier")
-		}
-
-	case "stream":
-		stream, ok := m[td.Type]
-
-		if !ok {
-			return nil, errors.New("expected stream sub")
-		}
-
-		var err error
-
-		if td.Stream, err = mapToTypeDef(stream.(map[interface{}]interface{})); err != nil {
-			return nil, err
-		}
-
-	case "map":
-		m, ok := m[td.Type].(map[string]map[interface{}]interface{})
-
-		if !ok {
-			return nil, errors.New("expected map subs")
-		}
-
-		var err error
-
-		td.Map = make(TypeDefMap)
-
-		for k, sub := range m {
-			if td.Map[k], err = mapToTypeDef(sub); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return td, nil
 }
 
 type InstanceDef struct {
@@ -208,6 +135,7 @@ type TypeDef struct {
 
 	// XXX this doesn't belong to here... makes only sense for PropertyDef
 	Optional bool `json:"optional,omitempty" yaml:"optional,omitempty"`
+	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
 
 	valid bool
 }
@@ -712,7 +640,8 @@ func (d TypeDef) Copy() TypeDef {
 		tStr,
 		tMap,
 		d.Generic,
-		d.Optional,
+		d.Optional, // only relevant for PropertyDef
+		d.Default, // only relevant for PropertyDef
 		d.valid,
 	}
 }
@@ -820,15 +749,6 @@ func (d TypeDef) VerifyData(data interface{}) error {
 		}
 	}
 	return fmt.Errorf("expected *%s*, got *%v*", d.Type, data)
-}
-
-// PROPTERY DEF
-
-func (d PropertyDef) Copy() PropertyDef {
-	return PropertyDef{
-		d.TypeDef.Copy(),
-		d.Default,
-	}
 }
 
 // TYPE DEF MAP

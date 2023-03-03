@@ -42,11 +42,9 @@ var streamSerializeCfg = &builtinConfig{
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
 			"indexes": {
-				TypeDef: core.TypeDef{
-					Type: "stream",
-					Stream: &core.TypeDef{
-						Type: "number",
-					},
+				Type: "stream",
+				Stream: &core.TypeDef{
+					Type: "number",
 				},
 			},
 		},

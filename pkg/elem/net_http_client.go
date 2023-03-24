@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/log"
 	"github.com/google/uuid"
 )
 
@@ -63,7 +64,9 @@ var netHTTPClientCfg = &builtinConfig{
 			}
 
 			resp, err := http.DefaultClient.Do(r)
+			
 			if err != nil {
+				log.Error(err)
 				out.Push(nil)
 				continue
 			}

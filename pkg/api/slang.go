@@ -333,14 +333,6 @@ func specifyOperator(blueprint *core.Blueprint, gens core.Generics, props core.P
 func interpolatePropVal(propVal interface{}, props core.Properties) (bool, interface{}, error) {
 	propStr, isString := propVal.(string)
 	if isString {
-		// Parameterized properties must start with a '$'
-		if strings.HasPrefix(propStr, "$") {
-			propKey := propStr[1:]
-			if val, ok := props[propKey]; ok {
-				return true, val, nil
-			}
-			return false, propStr, fmt.Errorf("unknown property \"%s\"", propKey)
-		}
 
 		for _, propKey := range PROPERTY_PLACERHOLDER_REGEXP.FindAllString(propStr, -1) {
 			if val, ok := props[propKey[1:]]; ok {

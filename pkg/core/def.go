@@ -26,7 +26,7 @@ func (p Properties) Get(propKey string, propDef *TypeDef) (SlangValue, error) {
 
 	if !ok && !propDef.Optional {
 		// property is expected to be defined, but isn't
-		return nil, fmt.Errorf("expected property %s:%v", propKey, propDef)
+		return nil, fmt.Errorf("expected property %s:%v", propKey, propDef.Type)
 	}
 
 	return prop, nil

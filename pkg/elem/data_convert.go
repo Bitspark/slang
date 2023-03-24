@@ -1,9 +1,7 @@
 package elem
 
 import (
-	"encoding/binary"
 	"fmt"
-	"math"
 	"strconv"
 
 	"github.com/Bitspark/slang/pkg/core"
@@ -11,10 +9,7 @@ import (
 )
 
 func numberToBinary(value float64) core.Binary {
-	bits := math.Float64bits(value)
-	bytes := make(core.Binary, 8)
-	binary.LittleEndian.PutUint64(bytes, bits)
-	return bytes
+	return []byte(numberToString(value))
 }
 
 func numberToString(value float64) string {
@@ -35,8 +30,7 @@ func boolToNumber(value bool) float64 {
 }
 
 func binaryToNumber(value core.Binary) float64 {
-	bits := binary.LittleEndian.Uint64(value)
-	return math.Float64frombits(bits)
+	return stringToNumber(string(value))
 }
 
 func binaryToBool(value core.Binary) bool {

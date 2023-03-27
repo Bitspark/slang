@@ -70,8 +70,11 @@ func main() {
 	}
 
 	st := storage.NewStorage().
-		AddBackend(storage.NewWritableFileSystem(env.SLANG_DIR)).
+		AddBackend(storage.NewWritableFileSystem(env.SLANG_WORKSPACE)).
 		AddBackend(storage.NewReadOnlyFileSystem(env.SLANG_LIB))
+
+	fmt.Println("\tYour   blueprints:", env.SLANG_WORKSPACE)
+	fmt.Println("\tShared blueprints:", env.SLANG_LIB)
 
 	ctx := daemon.SetStorage(context.Background(), st)
 	srv := daemon.NewServer(&ctx, env, newBasicAuth(credentials))

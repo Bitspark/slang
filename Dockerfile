@@ -36,8 +36,8 @@ WORKDIR /root/slang/
 RUN apk --no-cache add ca-certificates
 ENV USER root
 ENV SLANG_PATH "/root/slang/"
-COPY --from=0 /slang/examples/examples projects/examples
-COPY --from=0 /slang/lib/slang lib/slang/
+COPY --from=0 /slang/examples/examples blueprints/examples
+COPY --from=0 /slang/shared/slang shared/slang/
 COPY --from=0 /slang/ui/dist   ui/
 COPY --from=1 /go/src/slang/slangd .
 

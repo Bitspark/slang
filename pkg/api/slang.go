@@ -12,7 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
-var PROPERTY_PLACERHOLDER_REGEXP = regexp.MustCompile(`(\$\w+)`)
+var PROPERTY_ASSIGNMENT_REGEXP = regexp.MustCompile(`\$\w+$`)
+var PROPERTY_INTERPOLATION_REGEXP = regexp.MustCompile(`(\$\w+)`)
 
 // todo should be SlangBundle method
 func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
@@ -333,12 +334,20 @@ func specifyOperator(blueprint *core.Blueprint, gens core.Generics, props core.P
 func interpolatePropVal(propVal interface{}, props core.Properties) (bool, interface{}, error) {
 	propStr, isString := propVal.(string)
 	if isString {
+		if PROPERTY_ASSIGNMENT_REGEXP.MatchString(propStr) {
+			propKey := propStr[1:]
+			if val, ok := props[propKey]; ok {
+				return true, val, nil
+			}
+			return false, propStr, fmt.Errorf("unknown property \"%s\"", propKey)
+		}
 
-		for _, propKey := range PROPERTY_PLACERHOLDER_REGEXP.FindAllString(propStr, -1) {
+		for _, propKey := range PROPERTY_INTERPOLATION_REGEXP.FindAllString(propStr, -1) {
 			if val, ok := props[propKey[1:]]; ok {
 				val, ok := val.(string)
 
 				if !ok {
+					fmt.Println(">>>", propVal, val, props, propKey[1:], props[propKey[1:]])
 					return false, propVal, fmt.Errorf("cannot interpolate \"%s\" with value \"%v\"", propKey, val)
 				}
 

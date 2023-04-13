@@ -169,6 +169,8 @@ func Init() {
 	//Register(shellExecuteCfg)
 	Register(systemLogCfg)
 
+	Register(encodingPRTGHistDataCfg)
+
 	variableStores = make(map[string]*variableStore)
 	variableMutex = &sync.Mutex{}
 

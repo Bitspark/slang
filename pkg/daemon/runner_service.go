@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/thoas/go-funk"
 )
 
 type RequestRunOp struct {

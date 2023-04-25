@@ -8,11 +8,11 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 type runningOperator struct {

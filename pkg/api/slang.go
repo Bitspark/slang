@@ -5,14 +5,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
-var PROPERTY_ASSIGNMENT_REGEXP = regexp.MustCompile(`\$\w+$`)
+var PROPERTY_ASSIGNMENT_REGEXP = regexp.MustCompile(`^\$\w+$`)
 var PROPERTY_INTERPOLATION_REGEXP = regexp.MustCompile(`(\$\w+)`)
 
 // todo should be SlangBundle method
@@ -339,7 +339,7 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 			if val, ok := props[propKey]; ok {
 				return true, val, nil
 			}
-			return false, propStr, fmt.Errorf("unknown property \"%s\"", propKey)
+			return false, propStr, fmt.Errorf("1) unknown property \"%s\"", propKey)
 		}
 
 		for _, propKey := range PROPERTY_INTERPOLATION_REGEXP.FindAllString(propStr, -1) {
@@ -353,7 +353,7 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 
 				propStr = strings.Replace(propStr, propKey, val, -1)
 			} else {
-				return false, propVal, fmt.Errorf("unknown property \"%s\"", propKey)
+				return false, propVal, fmt.Errorf("2) unknown property \"%s\"", propKey)
 			}
 		}
 

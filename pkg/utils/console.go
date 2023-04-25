@@ -2,7 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"github.com/Bitspark/go-funk"
+
+	"github.com/thoas/go-funk"
 )
 
 func AskForConfirmation(question string) bool {

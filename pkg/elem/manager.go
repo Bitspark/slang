@@ -4,9 +4,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 type builtinConfig struct {
@@ -87,8 +87,8 @@ func Init() {
 	Register(dataEvaluateCfg)
 	Register(dataConvertCfg)
 	Register(dataUUIDCfg)
-	//Register(dataVariableSetCfg)
-	//Register(dataVariableGetCfg)
+	Register(dataVariableSetCfg)
+	Register(dataVariableGetCfg)
 	Register(randRangeCfg)
 
 	// Flow control operators
@@ -144,7 +144,7 @@ func Init() {
 	Register(timeUNIXMillisCfg)
 
 	Register(stringTemplateCfg)
-	//Register(stringFormatCfg)
+	Register(stringFormatCfg)
 	Register(stringSplitCfg)
 	Register(stringBeginswithCfg)
 	Register(stringContainsCfg)

@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/Bitspark/browser v0.0.0-20170505125900-c90ca0c84f15
-	github.com/Bitspark/go-funk v0.0.0-20180110164951-54489e5ff390
 	github.com/Bitspark/go-github v15.0.0+incompatible
 	github.com/Bitspark/go-version v0.0.0-20180716215031-270f2f71b1ee
 	github.com/Knetic/govaluate v3.0.0+incompatible
@@ -45,6 +44,7 @@ require (
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
+	github.com/thoas/go-funk v0.9.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect

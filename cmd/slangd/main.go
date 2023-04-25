@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/env"
 	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/thoas/go-funk"
 
 	"strconv"
 

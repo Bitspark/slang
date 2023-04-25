@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 func validateJSONOperatorDef(jsonDef string) (core.Blueprint, error) {

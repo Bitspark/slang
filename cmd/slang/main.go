@@ -13,13 +13,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/log"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"github.com/thoas/go-funk"
 )
 
 var SupportedRunModes = []string{"process", "httpPost"}

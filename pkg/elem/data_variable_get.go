@@ -13,8 +13,8 @@ var dataVariableGetCfg = &builtinConfig{
 	blueprint: core.Blueprint{
 		Id: dataVariableGetId,
 		Meta: core.BlueprintMetaDef{
-			Name:             "get value",
-			ShortDescription: "emits a value previously saved for each item",
+			Name:             "memory get",
+			ShortDescription: "emits a previously stored value with each trigger",
 			Icon:             "inbox-out",
 			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/get-value",

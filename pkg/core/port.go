@@ -596,6 +596,95 @@ func (p *Port) Pull() interface{} {
 	panic("unknown type")
 }
 
+// Similar to Port.Pull but will return (nil, false) when there is no item after timeout otherwise (value, true)
+func (p *Port) Poll() (interface{}, bool) {
+	timeout := time.After(1 * time.Millisecond)
+
+	if p.itemType == TYPE_GENERIC {
+		panic("cannot pull from generic")
+	}
+
+	if p.buf != nil {
+		if CHANNEL_DYNAMIC {
+			for {
+				p.mutex.Lock()
+				select {
+				case i := <-p.buf:
+					p.mutex.Unlock()
+					return i, true
+				case <-timeout:
+					p.mutex.Unlock()
+					return nil, false
+				default:
+					p.mutex.Unlock()
+				}
+				time.Sleep(1 * time.Millisecond)
+			}
+		} else {
+			select {
+			case i := <-p.buf:
+				return i, true
+			case <-timeout:
+				return nil, false
+			}
+		}
+	}
+
+	if p.PrimitiveType() {
+		panic("no buffer")
+	}
+
+	if p.itemType == TYPE_MAP {
+		var mi interface{}
+		itemMap := make(map[string]interface{})
+
+		for k, sub := range p.subs {
+			i := sub.Pull()
+
+			if i == PHMultiple {
+				mi = PHMultiple
+				continue
+			}
+			if bos, ok := i.(BOS); ok {
+				mi = bos
+				continue
+			}
+			if eos, ok := i.(EOS); ok {
+				mi = eos
+				continue
+			}
+			itemMap[k] = i
+		}
+
+		if mi != nil {
+			return mi, true
+		}
+		return itemMap, true
+	}
+
+	if p.itemType == TYPE_STREAM {
+		i := p.sub.Pull()
+
+		if !p.OwnBOS(i) {
+			return i, true
+		}
+
+		items := []interface{}{}
+
+		for {
+			i := p.sub.Pull()
+
+			if p.OwnEOS(i) {
+				return items, true
+			}
+
+			items = append(items, i)
+		}
+	}
+
+	panic("unknown type")
+}
+
 // Pull a float
 func (p *Port) PullFloat64() (float64, interface{}) {
 	item := p.Pull()
@@ -660,31 +749,6 @@ func (p *Port) PullEOS() bool {
 		panic("expected own EOS")
 	}
 	return true
-}
-
-// Similar to Port.Pull but will return nil when there is no item after timeout
-func (p *Port) Poll() interface{} {
-	if p.buf == nil {
-		panic("no buffer")
-	}
-
-	if len(p.buf) == 0 {
-		time.Sleep(200 * time.Millisecond)
-		if len(p.buf) == 0 {
-			return nil
-		}
-	}
-
-	var i interface{}
-	if CHANNEL_DYNAMIC {
-		p.mutex.Lock()
-		i = <-p.buf
-		p.mutex.Unlock()
-	} else {
-		i = <-p.buf
-	}
-
-	return i
 }
 
 func (p *Port) NewBOS() BOS {

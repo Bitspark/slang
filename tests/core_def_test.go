@@ -372,6 +372,217 @@ func TestExpandExpression__StringAndNumber(t *testing.T) {
 	a.Equal([]string{"testval_12"}, parts)
 }
 
+func TestExpandExpression__QueryValue__String(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+
+	propDefs := core.PropertyMap{
+		"user": {
+			Type: "Map",
+			Map: core.TypeDefMap{
+				"name": {Type: "string"},
+				"age": {Type: "number"},
+				"email": {Type: "string"},
+				"children": {
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "map",
+						Map: core.TypeDefMap{
+							"name": {Type: "string"},
+							"age": {Type: "number"},
+						},
+					},
+				},
+			},
+		},
+	}
+	props := core.Properties{
+		"user": map[string]interface{}{
+			"name":     "John Doe",
+			"age":      33,
+			"email":    "john@slang.io",
+			"children": []interface{}{
+				map[string]interface{}{
+					"name": "Doey Jr",
+					"age":  10,
+				},
+				map[string]interface{}{
+					"name": "Jane",
+					"age":  6,
+				},
+			},
+		},
+	}
+	
+
+	parts, err := core.ExpandExpression("user {user.name}", props, propDefs)
+	r.NoError(err)
+	a.Equal([]string{"user John Doe"}, parts)
+}
+
+func TestExpandExpression__QueryValue__Number(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+
+	propDefs := core.PropertyMap{
+		"user": {
+			Type: "Map",
+			Map: core.TypeDefMap{
+				"name": {Type: "string"},
+				"age": {Type: "number"},
+				"email": {Type: "string"},
+				"children": {
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "map",
+						Map: core.TypeDefMap{
+							"name": {Type: "string"},
+							"age": {Type: "number"},
+						},
+					},
+				},
+			},
+		},
+	}
+	props := core.Properties{
+		"user": map[string]interface{}{
+			"name":     "John Doe",
+			"age":      33,
+			"email":    "john@slang.io",
+		},
+	}
+	
+
+	parts, err := core.ExpandExpression("age {user.age}", props, propDefs)
+	r.NoError(err)
+	a.Equal([]string{"age 33"}, parts)
+}
+
+func TestExpandExpression__QueryValue__Array(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+
+	propDefs := core.PropertyMap{
+		"user": {
+			Type: "Map",
+			Map: core.TypeDefMap{
+				"name": {Type: "string"},
+				"age": {Type: "number"},
+				"email": {Type: "string"},
+				"children": {
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "map",
+						Map: core.TypeDefMap{
+							"name": {Type: "string"},
+							"age": {Type: "number"},
+						},
+					},
+				},
+			},
+		},
+	}
+	props := core.Properties{
+		"user": map[string]interface{}{
+			"name":     "John Doe",
+			"age":      33,
+			"email":    "john@slang.io",
+			"children": []interface{}{
+				map[string]interface{}{
+					"name": "Doe Jr",
+					"age":  10,
+				},
+				map[string]interface{}{
+					"name": "Jane",
+					"age":  6,
+				},
+			},
+		},
+	}
+	
+
+	parts, err := core.ExpandExpression("child {user.children.#.name}", props, propDefs)
+	r.NoError(err)
+	a.Equal([]string{"child Doe Jr", "child Jane"}, parts)
+}
+
+func TestExpandExpression__QueryValue__UnknwonProperty(t *testing.T) {
+	a := assertions.New(t)
+
+	propDefs := core.PropertyMap{
+		"user": {
+			Type: "Map",
+			Map: core.TypeDefMap{
+				"name": {Type: "string"},
+				"age": {Type: "number"},
+				"email": {Type: "string"},
+				"children": {
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "map",
+						Map: core.TypeDefMap{
+							"name": {Type: "string"},
+							"age": {Type: "number"},
+						},
+					},
+				},
+			},
+		},
+	}
+	props := core.Properties{
+		"user": map[string]interface{}{
+			"name":     "John Doe",
+			"age":      33,
+			"email":    "john@slang.io",
+			"children": []interface{}{
+				map[string]interface{}{
+					"name": "Doey Jr",
+					"age":  10,
+				},
+				map[string]interface{}{
+					"name": "Jane",
+					"age":  6,
+				},
+			},
+		},
+	}
+	
+
+	_, err := core.ExpandExpression("missing {user.Unknwon}", props, propDefs)
+	a.ErrorContains(err, "cannot query \"user.Unknwon\"")
+}
+
+func TestExpandExpression__QueryValue__PropertyValueNotProvided(t *testing.T) {
+	a := assertions.New(t)
+
+	propDefs := core.PropertyMap{
+		"user": {
+			Type: "Map",
+			Map: core.TypeDefMap{
+				"name": {Type: "string"},
+				"age": {Type: "number"},
+				"email": {Type: "string"},
+				"children": {
+					Type: "stream",
+					Stream: &core.TypeDef{
+						Type: "map",
+						Map: core.TypeDefMap{
+							"name": {Type: "string"},
+							"age": {Type: "number"},
+						},
+					},
+				},
+			},
+		},
+	}
+	props := core.Properties{
+	}
+	
+
+	_, err := core.ExpandExpression("missing {user.name}", props, propDefs)
+	a.ErrorContains(err, "missing property \"user.name\"")
+}
+
 func TestExpandExpression__Array1(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)

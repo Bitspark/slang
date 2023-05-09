@@ -13,7 +13,7 @@ var streamWindowReleaseCfg = &builtinConfig{
 			Name:             "release window",
 			ShortDescription: "releases windows of items collected before",
 			Icon:             "window-maximize",
-			Tags:             []string{"stream", "window"},
+			Tags:             []string{"data", "window"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/window-release",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

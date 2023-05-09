@@ -4,9 +4,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 type builtinConfig struct {
@@ -93,11 +93,12 @@ func Init() {
 
 	// Flow control operators
 	Register(controlSplitCfg)
-	Register(controlSwitchCfg)
 	Register(controlMergeCfg)
+	Register(controlSwitchCfg)
 	Register(controlLoopCfg)
 	Register(controlIterateCfg)
-	Register(controlReduceCfg)
+	Register(streamReduceCfg)
+	Register(streamCtrlJoinCfg)
 	//Register(controlSemaphorePCfg)
 	//Register(controlSemaphoreVCfg)
 
@@ -106,7 +107,8 @@ func Init() {
 	Register(streamParallelizeCfg)
 	Register(streamConcatenateCfg)
 	Register(streamMapAccessCfg)
-	Register(streamWindowCfg)
+	//Register(streamWindowCfg)
+	Register(streamWindow2Cfg)
 	Register(streamWindowCollectCfg)
 	Register(streamWindowReleaseCfg)
 	Register(streamMapToStreamCfg)
@@ -144,7 +146,7 @@ func Init() {
 	Register(timeUNIXMillisCfg)
 
 	Register(stringTemplateCfg)
-	//Register(stringFormatCfg)
+	Register(stringFormatCfg)
 	Register(stringSplitCfg)
 	Register(stringBeginswithCfg)
 	Register(stringContainsCfg)
@@ -168,6 +170,8 @@ func Init() {
 
 	//Register(shellExecuteCfg)
 	Register(systemLogCfg)
+
+	Register(encodingPRTGHistDataCfg)
 
 	variableStores = make(map[string]*variableStore)
 	variableMutex = &sync.Mutex{}

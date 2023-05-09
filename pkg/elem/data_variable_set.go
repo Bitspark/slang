@@ -34,8 +34,8 @@ var dataVariableSetCfg = &builtinConfig{
 	blueprint: core.Blueprint{
 		Id: dataVariableSetId,
 		Meta: core.BlueprintMetaDef{
-			Name:             "set value",
-			ShortDescription: "stores a value for later use",
+			Name:             "memory set",
+			ShortDescription: "stores a value for later use at runtime",
 			Icon:             "inbox-in",
 			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/set-value",
@@ -69,6 +69,7 @@ var dataVariableSetCfg = &builtinConfig{
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)
+				continue
 			}
 
 			vs.mutex.Lock()

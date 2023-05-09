@@ -1,6 +1,8 @@
 package elem
 
 import (
+	"fmt"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 )
@@ -11,7 +13,7 @@ var streamStreamToMapCfg = &builtinConfig{
 		Id: uuid.MustParse("42d0f961-4ce0-4a20-b1b0-3da46396ae66"),
 		Meta: core.BlueprintMetaDef{
 			Name:             "stream to map",
-			ShortDescription: "takes a map and emits a stream of key-value pairs",
+			ShortDescription: "takes a stream of key-value pairs and emits a map",
 			Icon:             "cubes",
 			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/map-to-stream",
@@ -23,11 +25,11 @@ var streamStreamToMapCfg = &builtinConfig{
 					Stream: &core.TypeDef{
 						Type: "map",
 						Map: map[string]*core.TypeDef{
-							"{key}": {
+							"key": {
 								Type:    "generic",
 								Generic: "keyType",
 							},
-							"{value}": {
+							"value": {
 								Type:    "generic",
 								Generic: "valueType",
 							},
@@ -47,12 +49,6 @@ var streamStreamToMapCfg = &builtinConfig{
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
 		PropertyDefs: core.PropertyMap{
-			"key": {
-				Type: "string",
-			},
-			"value": {
-				Type: "string",
-			},
 			"entries": {
 				Type: "stream",
 				Stream: &core.TypeDef{
@@ -68,23 +64,27 @@ var streamStreamToMapCfg = &builtinConfig{
 		for _, entry := range op.Property("entries").([]interface{}) {
 			entries = append(entries, entry.(string))
 		}
-		keyStr := op.Property("key").(string)
-		valueStr := op.Property("value").(string)
+		//keyStr := op.Property("key").(string)
+		//valueStr := op.Property("value").(string)
 		for !op.CheckStop() {
 			i := in.Pull()
+			fmt.Println("entries", entries)
 			if core.IsMarker(i) {
 				out.Push(i)
 				continue
 			}
+			fmt.Println("entries", entries)
 
 			is := i.([]interface{})
+			fmt.Println("==>", is)
 
 			mapOut := make(map[string]interface{})
 			for _, entry := range entries {
 				for _, value := range is {
 					valueMap := value.(map[string]interface{})
-					key := valueMap[keyStr].(string)
-					value := valueMap[valueStr]
+					key := valueMap["key"].(string)
+					value := valueMap["value"]
+					fmt.Println(" . >", key, value, entry)
 					if key == entry {
 						mapOut[entry] = value
 					}

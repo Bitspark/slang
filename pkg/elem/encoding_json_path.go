@@ -1,6 +1,8 @@
 package elem
 
 import (
+	"fmt"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
@@ -12,8 +14,8 @@ var encodingJSONPathCfg = &builtinConfig{
 	blueprint: core.Blueprint{
 		Id: encodingJSONPathId,
 		Meta: core.BlueprintMetaDef{
-			Name:             "JSON Path",
-			ShortDescription: "select values based json path expression from a JSON document",
+			Name:             "JSONPath",
+			ShortDescription: "query values from JSON",
 			Icon:             "brackets-curly",
 			Tags:             []string{"encoding"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/json-path",
@@ -21,15 +23,7 @@ var encodingJSONPathCfg = &builtinConfig{
 		ServiceDefs: map[string]*core.ServiceDef{
 			core.MAIN_SERVICE: {
 				In: core.TypeDef{
-					Type: "map",
-					Map: map[string]*core.TypeDef{
-						"document": {
-							Type: "binary",
-						},
-						"{path_names}": {
-							Type: "string",
-						},
-					},
+					Type: "binary",
 				},
 				Out: core.TypeDef{
 					Type: "map",
@@ -37,8 +31,9 @@ var encodingJSONPathCfg = &builtinConfig{
 						"valid": {
 							Type: "boolean",
 						},
-						"{path_names}": {
-							Type: "primitive",
+						"{path_names.#.name}": {
+							Type:    "generic",
+							Generic: "itemType",
 						},
 					},
 				},
@@ -49,7 +44,11 @@ var encodingJSONPathCfg = &builtinConfig{
 			"path_names": {
 				Type: "stream",
 				Stream: &core.TypeDef{
-					Type: "string",
+					Type: "map",
+					Map: core.TypeDefMap{
+						"query": {Type: "string"},
+						"name": {Type: "string"},
+					},
 				},
 			},
 		},
@@ -58,6 +57,7 @@ var encodingJSONPathCfg = &builtinConfig{
 		in := op.Main().In()
 		out := op.Main().Out()
 		path_names := op.Property("path_names").([]interface{})
+
 		for !op.CheckStop() {
 			in := in.Pull()
 			valid := true
@@ -66,24 +66,30 @@ var encodingJSONPathCfg = &builtinConfig{
 				continue
 			}
 
-			data := in.(map[string]interface{})
-			jsonDoc := []byte(data["document"].(core.Binary))
+			data := in
+			fmt.Println("1)", data)
+			jsonDoc := []byte(data.(core.Binary))
 
 			if !gjson.ValidBytes(jsonDoc) {
 				for _, path_name := range path_names {
-					out.Map(path_name.(string)).Push(nil)
+					fmt.Println("   2)", path_name.(map[string]interface{}))
+					out.Map(path_name.(map[string]interface{})["name"].(string)).Push(nil)
 				}
 				valid = false
 			} else {
 				for _, path_name := range path_names {
-					res := gjson.GetBytes(jsonDoc, data[path_name.(string)].(string))
+					res := gjson.GetBytes(jsonDoc, path_name.(map[string]interface{})["query"].(string))
 					if !res.Exists() {
-						out.Map(path_name.(string)).Push(nil)
+					fmt.Println("   3)", path_name.(map[string]interface{}))
+						out.Map(path_name.(map[string]interface{})["name"].(string)).Push(nil)
 					}
+					/*
 					if res.IsArray() || res.IsObject() {
-						out.Map(path_name.(string)).Push(res.Raw)
+						out.Map(path_name.(map[string]interface{})["name"].(string)).Push(res.Raw)
 					}
-					out.Map(path_name.(string)).Push(res.Value())
+					*/
+					fmt.Println("   4)", path_name.(map[string]interface{}))
+					out.Map(path_name.(map[string]interface{})["name"].(string)).Push(res.Value())
 				}
 			}
 			out.Map("valid").Push(valid)

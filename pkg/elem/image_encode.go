@@ -10,9 +10,9 @@ import (
 	"image/png"
 	_ "image/png"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 var imageEncodeCfg = &builtinConfig{

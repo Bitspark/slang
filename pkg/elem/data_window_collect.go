@@ -36,7 +36,7 @@ var streamWindowCollectCfg = &builtinConfig{
 			Name:             "collect window",
 			ShortDescription: "collects items from a stream until released",
 			Icon:             "window",
-			Tags:             []string{"stream", "window"},
+			Tags:             []string{"data", "window"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/window-collect",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

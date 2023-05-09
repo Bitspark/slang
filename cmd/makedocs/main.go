@@ -12,12 +12,12 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"github.com/stoewer/go-strcase"
+	"github.com/thoas/go-funk"
 )
 
 type TagInfo struct {

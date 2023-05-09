@@ -5,9 +5,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 var encodingCSVReadId = uuid.MustParse("77d60459-f8b5-4f4b-b293-740164c49a82")

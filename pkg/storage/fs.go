@@ -9,10 +9,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/utils"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 	"gopkg.in/yaml.v2"
 )
 

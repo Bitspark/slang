@@ -949,24 +949,112 @@ func (sb *SlangBundle) Validate() error {
 
 // PROPERTY PARSING
 
+/*
+Get property value by JSONpath like query.
+e.g. 
+Props:= {
+	"simple": 100, <-- "simple"
+	"map": {
+		left: 1,   <-- "map.left"
+		right: 2,
+	},
+	"stream": [
+		{x:...,},	<-- "stream.#.x"
+		{x:...,},	<----/
+		{x:...,},	<---/
+	]
+} 
+ */
+func (p Properties) Qet(qExpr string) ([]interface{}, bool) {
+	pvalues := []interface{}{p}
+
+	for _, q := range strings.Split(qExpr, "."){
+		pvaluesNew := []interface{}{}
+		for _, pv := range pvalues {
+
+			if q == "#" {
+				pvaluesNew = append(pvaluesNew, pv.([]interface{})...)
+				continue
+			}
+
+			var ok bool
+			switch pv.(type) {
+			case Properties:
+				pv, ok = pv.(Properties)[q]
+			default:
+				pv, ok = pv.(map[string]interface{})[q]
+			}
+
+			if !ok {
+				return []interface{}{}, false
+			}
+
+			pvaluesNew = append(pvaluesNew, pv)
+		}
+		pvalues = pvaluesNew
+	}
+
+	return pvalues, true
+}
+
+/*
+ See Properties.Qet
+ */
+func (pdefs PropertyMap) Qet(qExpr string) (*TypeDef, bool) {
+	var pdef *TypeDef
+
+	for _, q := range strings.Split(qExpr, "."){
+		var ok bool
+
+		if q == "#" {
+			pdef = pdef.Stream
+			continue
+		}
+
+		if pdef == nil {
+			pdef, ok = pdefs[q]
+		} else {
+			pdef, ok = pdef.Map[q]
+		}
+
+		if !ok {
+			return nil, false
+		}
+
+	}
+
+	return pdef, true
+}
+
 func expandExpressionPart(exprPart string, props Properties, propDefs PropertyMap) ([]string, error) {
 	var vals []string
-	prop, ok := props[exprPart]
+
+	propDef, ok := propDefs.Qet(exprPart)
+
+	if !ok {
+		return nil, fmt.Errorf("cannot query \"%v\"", exprPart)
+	}
+
+	prop, ok := props.Qet(exprPart)
 
 	if !ok {
 		// property is used in expression but is not defined
-		return nil, errors.New("missing property " + exprPart)
+		return nil, fmt.Errorf("missing property \"%v\". Given %s", exprPart, props)
 	}
 
-	propDef := propDefs[exprPart]
 	if propDef.Type == "stream" {
-		els := prop.([]interface{})
-		for _, el := range els {
-			vals = append(vals, fmt.Sprintf("%v", el))
+		for _, p := range prop {
+			els := p.([]interface{})
+			for _, el := range els {
+				vals = append(vals, fmt.Sprintf("%v", el))
+			}
 		}
 	} else {
-		vals = []string{fmt.Sprintf("%v", prop)}
+		for _, p := range prop {
+			vals = append(vals, fmt.Sprintf("%v", p))
+		}
 	}
+
 	return vals, nil
 }
 

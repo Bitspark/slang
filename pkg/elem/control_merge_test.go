@@ -9,6 +9,7 @@ import (
 )
 
 func Test_CtrlMerge__IsRegistered(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 
 	ocTake := getBuiltinCfg(controlMergeId)
@@ -16,6 +17,7 @@ func Test_CtrlMerge__IsRegistered(t *testing.T) {
 }
 
 func Test_CtrlMerge__NoGenerics(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 	co, err := buildOperator(
 		core.InstanceDef{
@@ -27,6 +29,7 @@ func Test_CtrlMerge__NoGenerics(t *testing.T) {
 }
 
 func Test_CtrlMerge__InPorts(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
@@ -50,6 +53,7 @@ func Test_CtrlMerge__InPorts(t *testing.T) {
 }
 
 func Test_CtrlMerge__OutPorts(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{
@@ -72,6 +76,7 @@ func Test_CtrlMerge__OutPorts(t *testing.T) {
 }
 
 func Test_CtrlMerge__Simple1(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 	to, err := buildOperator(
 		core.InstanceDef{

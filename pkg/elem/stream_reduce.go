@@ -7,11 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
-var controlReduceId = uuid.MustParse("b95e6da8-9770-4a04-a73d-cdfe2081870f")
-var controlReduceCfg = &builtinConfig{
+var streamReduceCfg = &builtinConfig{
 	safe: true,
 	blueprint: core.Blueprint{
-		Id: controlReduceId,
+		Id: uuid.MustParse("b95e6da8-9770-4a04-a73d-cdfe2081870f"),
 		Meta: core.BlueprintMetaDef{
 			Name:             "reduce",
 			ShortDescription: "reduces items of a stream pairwise using a reducer delegate",

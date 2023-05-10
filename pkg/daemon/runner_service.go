@@ -76,7 +76,15 @@ func parseProperties(formData url.Values, propDef core.PropertyMap) (core.Proper
 	return p, nil
 }
 
+func isQuasiTrigger(p *core.Port) bool {
+	// port is quasi a trigger,
+	// when it actually is a trigger port or
+	// it is a map with in total one sub-port of trigger type
+	return p.TriggerType() || p.MapType() && p.MapLength() == 1 && p.Map(p.MapEntryNames()[0]).TriggerType()
+}
+
 var RunnerService = &Service{map[string]*Endpoint{
+
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Method == "GET" {
@@ -119,6 +127,12 @@ var RunnerService = &Service{map[string]*Endpoint{
 			if err != nil {
 				responseError(w, http.StatusBadRequest, err, "E02")
 				return
+			}
+
+			op := rop.op
+
+			if isQuasiTrigger(op.Main().In()) {
+				op.Main().In().Push(true)
 			}
 
 			log.Printf("operator %s (id: %s) started", rop.op.Name(), rop.Handle)

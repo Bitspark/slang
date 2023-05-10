@@ -183,9 +183,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 			return
 		}
 
-		r.ParseForm()
-
-		if r.Method == "GET" || r.Method == "POST" {
+		if r.Method == "GET" {
+			r.ParseForm()
 			props, err := parseProperties(r.Form, blueprint.PropertyDefs)
 
 			if err != nil {
@@ -204,14 +203,48 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			rop.Push(nil)
-			out := rop.Pull()
-
-			if out != nil {
+			if out, ok := rop.Pull(); ok {
 				fmt.Println("\t<--", out)
 				response(w, http.StatusOK, &out)
 			} else {
 				response(w, http.StatusNoContent, nil)
 				//w.WriteHeader(http.StatusNoContent)
+			}
+			return
+		} else if r.Method == "POST" {
+
+			type Request struct {
+				Properties	core.Properties `json:"properties"`
+				Generics	core.Generics   `json:"generics"`
+				Input		any				`json:"input"`
+			}
+
+			var req Request;
+
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&req)
+
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E05")
+				return
+			}
+
+			rop := romanager.GetByProperties(req.Properties)
+			if rop == nil {
+				st := GetStorage(r)
+				rop, err = romanager.Exec(blueprint.Id, req.Generics, req.Properties, st)
+				if err != nil {
+					responseError(w, http.StatusBadRequest, err, "E04")
+					return
+				}
+			}
+
+			rop.Push(req.Input)
+			if out, ok := rop.Pull(); ok{
+				fmt.Println("\t<--", out)
+				response(w, http.StatusOK, &out)
+			} else {
+				response(w, http.StatusNoContent, nil)
 			}
 			return
 		}

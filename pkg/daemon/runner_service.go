@@ -132,7 +132,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			op := rop.op
 
 			if isQuasiTrigger(op.Main().In()) {
-				op.Main().In().Push(true)
+				op.Main().In().Push(nil)
 			}
 
 			log.Printf("operator %s (id: %s) started", rop.op.Name(), rop.Handle)

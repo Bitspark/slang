@@ -1,8 +1,6 @@
 package elem
 
 import (
-	"fmt"
-
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 )
@@ -90,6 +88,10 @@ var streamCtrlJoinCfg = &builtinConfig{
 				allDone = true
 
 				for i, s := range streams {
+					if op.CheckStop() {
+						return
+					}
+
 					if streamDone[i] {
 						continue
 					}
@@ -106,24 +108,6 @@ var streamCtrlJoinCfg = &builtinConfig{
 				}
 			}
 
-
-			/*
-			for i := 0; i < len(streams); i++ {
-				for {
-					item = streams[i].Stream().Pull()
-					if streams[i].OwnEOS(item) {
-						if i+1 < len(streams) {
-							streams[i+1].PullBOS()
-						}
-						break
-					}
-					out.Stream().Push(item)
-				}
-			}
-			*/
-
-
-			fmt.Println("EOS")
 			out.PushEOS()
 		}
 	},

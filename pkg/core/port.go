@@ -598,7 +598,7 @@ func (p *Port) Pull() interface{} {
 
 // Similar to Port.Pull but will return (nil, false) when there is no item after timeout otherwise (value, true)
 func (p *Port) Poll() (interface{}, bool) {
-	timeout := time.After(1 * time.Millisecond)
+	timeout := time.After(5 * time.Millisecond)
 
 	if p.itemType == TYPE_GENERIC {
 		panic("cannot pull from generic")
@@ -663,7 +663,11 @@ func (p *Port) Poll() (interface{}, bool) {
 	}
 
 	if p.itemType == TYPE_STREAM {
-		i := p.sub.Pull()
+		i, ok := p.sub.Poll()
+
+		if !ok {
+			return nil, false
+		}
 
 		if !p.OwnBOS(i) {
 			return i, true

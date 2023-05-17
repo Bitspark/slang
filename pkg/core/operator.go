@@ -203,6 +203,7 @@ func (o *Operator) WaitForStop() {
 func (o *Operator) CheckStop() bool {
 	select {
 	case <-o.stopChannel:
+		o.stopChannel <- true
 		return true
 	default:
 		return false

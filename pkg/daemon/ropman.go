@@ -143,6 +143,7 @@ func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
 	// Handle outgoing data
 
 	go func() {
+		/*******
 		p := ro.op.Main().Out()
 
 		go func() {
@@ -151,11 +152,19 @@ func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
 				if p.Closed() {
 					break loop
 				}
-				ro.outgoing <- p.Pull()
+
+				i, ok := p.Poll()
+
+				if ok {
+					ro.outgoing <- i
+				}
+
 			}
 		}()
+		******/
 
 		<-ro.outStop
+		ro.outStop <- true
 	}()
 
 	/*
@@ -190,9 +199,13 @@ func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, prop
 }
 
 func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
+	fmt.Println("OP STOP")
 	go ro.op.Stop()
+	fmt.Println("IN STOP")
 	ro.inStop <- true
+	fmt.Println("OUT STOP")
 	ro.outStop <- true
+	fmt.Println("DELETE")
 	delete(rom.ropByHandle, ro.Handle)
 	return nil
 }

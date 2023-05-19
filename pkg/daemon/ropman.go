@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
@@ -34,13 +35,15 @@ func (rop *runningOperator) Push(data interface{}) {
 	rop.incoming <- data
 }
 
-func (rop *runningOperator) Pull() interface{} {
+func (rop *runningOperator) Pull() (interface{}, bool) {
 	for {
 		select {
 		case odat := <-rop.outgoing:
-			return odat
+			return odat, true
+		case <-time.After(500 * time.Millisecond):
+			return nil, false
 		case <-rop.outStop:
-			return nil
+			return nil, false
 		}
 	}
 }

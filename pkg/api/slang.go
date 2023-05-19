@@ -347,7 +347,6 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 				val, ok := val.(string)
 
 				if !ok {
-					fmt.Println(">>>", propVal, val, props, propKey[1:], props[propKey[1:]])
 					return false, propVal, fmt.Errorf("cannot interpolate \"%s\" with value \"%v\"", propKey, val)
 				}
 
@@ -362,6 +361,7 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 
 	propMapVal, isMap := propVal.(map[string]interface{})
 	if isMap {
+		newPropMapVal := make(map[string]any, len(propMapVal))
 		anyUpdated := false
 		for k, v := range propMapVal {
 			updated, new, err := interpolatePropVal(v, props)
@@ -371,23 +371,25 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 			}
 
 			if !updated {
+				newPropMapVal[k] = v
 				continue
-			}
+			} 
+
+			newPropMapVal[k] = new
 
 			if !anyUpdated {
 				anyUpdated = true
 			}
-
-			propMapVal[k] = new
 		}
 
-		return anyUpdated, propMapVal, nil
+		return anyUpdated, newPropMapVal, nil
 	}
 
 	propArrayVal, isArray := propVal.([]interface{})
 	if isArray {
+		newPropArrVal := make([]any, 0)
 		anyUpdated := false
-		for i, v := range propArrayVal {
+		for _, v := range propArrayVal {
 			updated, new, err := interpolatePropVal(v, props)
 
 			if err != nil {
@@ -395,6 +397,7 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 			}
 
 			if !updated {
+				newPropArrVal = append(newPropArrVal, v)
 				continue
 			}
 
@@ -402,10 +405,10 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 				anyUpdated = true
 			}
 
-			propArrayVal[i] = new
+			newPropArrVal = append(newPropArrVal, new)
 		}
 
-		return anyUpdated, propArrayVal, nil
+		return anyUpdated, newPropArrVal, nil
 	}
 
 	return false, propVal, nil

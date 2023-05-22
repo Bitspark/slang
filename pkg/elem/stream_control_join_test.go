@@ -270,3 +270,39 @@ func Test_StreamJoin__FirstStreamEmpty_IncompleteStreams(t *testing.T) {
 	a.PortPushes("c4", o.Main().Out().Stream())
 	a.PortPushes("b5", o.Main().Out().Stream())
 }
+
+func Test_StreamJoin__PullMaps(t *testing.T) {
+	Init()
+	a := assertions.New(t)
+
+	o, err := buildOperator(
+		core.InstanceDef{
+			Operator: streamCtrlJoinCfg.blueprint.Id,
+			Properties: core.Properties{
+				"streams": []interface{}{"a", "b"},
+			},
+			Generics: core.Generics{
+				"itemType": {Type: "map", Map: core.TypeDefMap{"KEY": {Type: "string"}, "VAL": {Type: "string"}}},
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	o.Main().Out().Bufferize()
+	o.Start()
+
+	o.Main().In().Map("stream_a").PushBOS()
+	o.Main().In().Map("stream_b").PushBOS()
+
+	o.Main().In().Map("stream_a").Stream().Push(map[string]any{"KEY": "A1", "VAL": "11"})
+	o.Main().In().Map("stream_b").Stream().Push(map[string]any{"KEY": "B1", "VAL": "21"})
+
+	o.Main().In().Map("stream_b").Stream().Push(map[string]any{"KEY": "B2", "VAL": "22"})
+	o.Main().In().Map("stream_b").Stream().Push(map[string]any{"KEY": "B3", "VAL": "23"})
+
+	a.True(core.IsBOS(o.Main().Out().Stream().Pull()))
+	a.PortPushes(map[string]any{"KEY": "A1", "VAL": "11"}, o.Main().Out().Stream())
+	a.PortPushes(map[string]any{"KEY": "B1", "VAL": "21"}, o.Main().Out().Stream())
+	a.PortPushes(map[string]any{"KEY": "B2", "VAL": "22"}, o.Main().Out().Stream())
+	a.PortPushes(map[string]any{"KEY": "B3", "VAL": "23"}, o.Main().Out().Stream())
+}

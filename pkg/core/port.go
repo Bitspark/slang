@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	TYPE_GENERIC   = iota
-	TYPE_PRIMITIVE = iota
-	TYPE_TRIGGER   = iota
-	TYPE_NUMBER    = iota
-	TYPE_STRING    = iota
-	TYPE_BINARY    = iota
-	TYPE_BOOLEAN   = iota
-	TYPE_STREAM    = iota
-	TYPE_MAP       = iota
+	TYPE_GENERIC   = iota	// 0
+	TYPE_PRIMITIVE = iota 	// 1
+	TYPE_TRIGGER   = iota	// 2
+	TYPE_NUMBER    = iota 	// 3
+	TYPE_STRING    = iota	// 4
+	TYPE_BINARY    = iota	// 5
+	TYPE_BOOLEAN   = iota	// 6
+	TYPE_STREAM    = iota	// 7
+	TYPE_MAP       = iota	// 8
 )
 
 const (
@@ -639,7 +639,18 @@ func (p *Port) Poll() (interface{}, bool) {
 		itemMap := make(map[string]interface{})
 
 		for k, sub := range p.subs {
-			i := sub.Pull()
+			var i any
+
+			if len(itemMap) == 0 {
+				// prevent blocking when there has not arrived any value yet.
+				var ok bool
+				if i, ok = sub.Poll(); !ok {
+					return nil, false
+				}
+			} else {
+				i = sub.Pull()
+			}
+ 
 
 			if i == PHMultiple {
 				mi = PHMultiple

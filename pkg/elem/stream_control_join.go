@@ -97,7 +97,7 @@ var streamCtrlJoinCfg = &builtinConfig{
 					}
 
 					allDone = false
-
+					
 					if item, ok := s.Stream().Poll(); ok {
 						if s.OwnEOS(item) {
 							streamDone[i] = true

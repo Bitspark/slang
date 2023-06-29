@@ -1044,14 +1044,22 @@ func expandExpressionPart(exprPart string, props Properties, propDefs PropertyMa
 
 	if propDef.Type == "stream" {
 		for _, p := range prop {
-			els := p.([]interface{})
-			for _, el := range els {
-				vals = append(vals, fmt.Sprintf("%v", el))
+			if pStr, ok := p.(string); ok && strings.HasPrefix(pStr, "$") {
+				vals = append(vals, fmt.Sprintf("{%v}", exprPart))
+			} else
+			if pArr, ok := p.([]any); ok {
+				for _, pI := range pArr {
+					vals = append(vals, fmt.Sprintf("%v", pI))
+				}
 			}
 		}
 	} else {
 		for _, p := range prop {
-			vals = append(vals, fmt.Sprintf("%v", p))
+			if pStr, ok := p.(string); ok && strings.HasPrefix(pStr, "$") {
+				vals = append(vals, fmt.Sprintf("{%v}", exprPart))
+			} else {
+				vals = append(vals, fmt.Sprintf("%v", p))
+			}
 		}
 	}
 

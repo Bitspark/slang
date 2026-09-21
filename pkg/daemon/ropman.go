@@ -159,6 +159,7 @@ func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
 		}
 	}()
 }
+
 func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
 	op, err := api.BuildAndCompile(bpid, gens, props, st)
 

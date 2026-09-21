@@ -1,7 +1,9 @@
 package elem
 
 import (
-	"bytes"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -82,103 +84,69 @@ func Test_HTTP__Delegates(t *testing.T) {
 	a.Equal(core.TYPE_STRING, dlg.Out().Map("params").Stream().Map("values").Stream().Type())
 }
 
+func startHTTPTestOperator(t *testing.T) (*core.Operator, string) {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	port := listener.Addr().(*net.TCPAddr).Port
+	require.NoError(t, listener.Close())
+	o, err := buildOperator(core.InstanceDef{Operator: netHTTPServerId})
+	require.NoError(t, err)
+	o.Main().Out().Bufferize()
+	o.Delegate("handler").Out().Bufferize()
+	o.Start()
+	t.Cleanup(o.Stop)
+	o.Main().In().Push(port)
+	return o, fmt.Sprintf("http://127.0.0.1:%d", port)
+}
+
+func getHTTPTestResponse(url string) (*http.Response, error) {
+	client := &http.Client{Timeout: 2 * time.Second}
+	var err error
+	for i := 0; i < 20; i++ {
+		var response *http.Response
+		response, err = client.Get(url)
+		if err == nil {
+			return response, nil
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return nil, err
+}
+
 func Test_HTTP__Request(t *testing.T) {
 	a := assertions.New(t)
-
-	o, err := buildOperator(
-		core.InstanceDef{
-			Operator: netHTTPServerId,
-		},
-	)
-	require.NoError(t, err)
-
-	o.Main().Out().Bufferize()
+	o, url := startHTTPTestOperator(t)
 	handler := o.Delegate("handler")
-	handler.Out().Bufferize()
-
-	o.Start()
-	o.Main().In().Push(9438)
-
-	done := false
-
+	handler.In().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": core.Binary("")})
+	done := make(chan error, 1)
 	go func() {
-		for i := 0; i < 5; i++ {
-			http.Get("http://127.0.0.1:9438/test123?a=1")
-			if done {
-				return
-			}
-			time.Sleep(20 * time.Millisecond)
+		response, err := getHTTPTestResponse(url + "/test123?a=1")
+		if response != nil {
+			response.Body.Close()
 		}
+		done <- err
 	}()
-
 	a.Equal("GET", handler.Out().Map("method").Pull())
 	a.Equal("/test123", handler.Out().Map("path").Pull())
 	a.Equal([]interface{}{map[string]interface{}{"key": "a", "values": []interface{}{"1"}}}, handler.Out().Map("params").Pull())
-	done = true
+	require.NoError(t, <-done)
 }
 
-func Test_HTTP__Response200(t *testing.T) {
-	a := assertions.New(t)
-
-	o, err := buildOperator(
-		core.InstanceDef{
-			Operator: netHTTPServerId,
-		},
-	)
-	require.NoError(t, err)
-
-	o.Main().Out().Bufferize()
-	handler := o.Delegate("handler")
-	handler.Out().Bufferize()
-
-	o.Start()
-	o.Main().In().Push(9439)
-	handler.In().Push(map[string]interface{}{"status": 200, "headers": []interface{}{}, "body": core.Binary("hallo slang!")})
-
-	for i := 0; i < 5; i++ {
-		resp, _ := http.Get("http://127.0.0.1:9439/test789")
-		if resp == nil || resp.StatusCode != 200 {
-			time.Sleep(20 * time.Millisecond)
-			continue
-		}
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
-		a.Equal([]byte("hallo slang!"), buf.Bytes())
-		a.Equal("200 OK", resp.Status)
-		return
+func Test_HTTP__Responses(t *testing.T) {
+	for _, status := range []int{http.StatusOK, http.StatusNotFound} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			o, url := startHTTPTestOperator(t)
+			o.Delegate("handler").In().Push(map[string]interface{}{
+				"status": status, "headers": []interface{}{}, "body": core.Binary("hello slang!"),
+			})
+			response, err := getHTTPTestResponse(url + "/test789")
+			require.NoError(t, err)
+			defer response.Body.Close()
+			body, err := io.ReadAll(response.Body)
+			require.NoError(t, err)
+			require.Equal(t, status, response.StatusCode)
+			require.Equal(t, "hello slang!", string(body))
+		})
 	}
-	a.Fail("no response")
-}
-
-func Test_HTTP__Response404(t *testing.T) {
-	a := assertions.New(t)
-
-	o, err := buildOperator(
-		core.InstanceDef{
-			Operator: netHTTPServerId,
-		},
-	)
-	require.NoError(t, err)
-
-	o.Main().Out().Bufferize()
-	handler := o.Delegate("handler")
-	handler.Out().Bufferize()
-
-	o.Start()
-	o.Main().In().Push(9440)
-	handler.In().Push(map[string]interface{}{"status": 404, "headers": []interface{}{}, "body": core.Binary("bye slang!")})
-
-	for i := 0; i < 5; i++ {
-		resp, _ := http.Get("http://127.0.0.1:9440/test789")
-		if resp == nil || resp.StatusCode != 404 {
-			time.Sleep(20 * time.Millisecond)
-			continue
-		}
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
-		a.Equal([]byte("bye slang!"), buf.Bytes())
-		a.Equal("404 Not Found", resp.Status)
-		return
-	}
-	a.Fail("no response")
 }

@@ -45,6 +45,22 @@ class ReleaseTests(unittest.TestCase):
                 build.build("../../invalid")
             run.assert_not_called()
 
+    def test_signing_password_is_not_in_command_arguments(self):
+        def run(args, **kwargs):
+            if args[0] == "go":
+                self.fake_build(args, **kwargs)
+            else:
+                self.assertEqual("osslsigncode", args[0])
+                self.assertNotIn("test-password", " ".join(args))
+                self.assertEqual("test-password\n", kwargs["input"])
+                Path(args[args.index("-out") + 1]).write_bytes(b"signed executable")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("build.subprocess.run", side_effect=run):
+                build.build("v1.2.3", password="test-password", output_dir=directory)
+            with zipfile.ZipFile(Path(directory) / "slangd-v1_2_3-windows-amd64.zip") as archive:
+                self.assertEqual(b"signed executable", archive.read(archive.namelist()[0]))
+
 
 if __name__ == "__main__":
     unittest.main()

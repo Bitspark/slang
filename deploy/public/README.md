@@ -70,6 +70,20 @@ a local guide. No Node 8 build is needed. The runtime is built from this checkou
 The installer does not modify DNS, provider firewalls, or existing workspace data.
 Updates restart active programs; saved definitions remain on disk.
 
+### Website branding
+
+The landing-page wordmark and website/editor favicon use the approved SVGs from
+[Slang Design v0.2.1](https://github.com/Bitspark/slang-design/tree/v0.2.1/assets/logo).
+The dark-surface wordmark uses the richer raspberry and blue palette. The assets
+and outlined Roboto lettering's license are vendored in `site/brand/` and copied
+by `prepare.py`; the website makes no font request for its logo.
+
+For a branding-only update, back up the current files and copy `site/index.html`
+and `site/brand/` into `/srv/tryslang/site/`. Keep the source archive's matching
+files current as well. An editor favicon change also updates the icon link in
+`/srv/tryslang/assets/ui/index.html`. Caddy serves these static files directly;
+no runtime rebuild or restart is needed for a logo change.
+
 Before updating, retain the current image and gateway/config files for rollback:
 
 ```sh

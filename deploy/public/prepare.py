@@ -41,13 +41,14 @@ def main():
         print("Verified and installed", component, tag)
     index = root / "assets/ui/index.html"
     html = index.read_text()
+    html = html.replace('<link rel="icon" type="image/x-icon" href="favicon.ico">',
+                        '<link rel="icon" type="image/svg+xml" href="/brand/slang-mark.svg">')
     html = html.replace("</head>", '<style>#sl-feedback-box{display:none!important} #restore-bar{position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:5px 12px;background:#101d32;color:#fff;font:12px system-ui} #restore-bar a{color:#8cdeef;margin-right:16px}</style></head>')
     html = html.replace("</body>", '<div id="restore-bar"><a href="/">TrySlang home</a><a href="/workspace/export">Export workspace</a>Private workspace · saved for 30 days of inactivity · export a backup</div></body>')
     index.write_text(html)
     source = Path(__file__).parent
     shutil.copytree(source / "site", root / "site", dirs_exist_ok=True)
     shutil.copytree(source / "examples", root / "examples", dirs_exist_ok=True)
-    shutil.copy2(root / "assets/ui/assets/brand/logo_star_inv.png", root / "site/logo.png")
 
 
 if __name__ == "__main__":

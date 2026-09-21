@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Slang app icon">
+  <title>Slang app icon</title>
+  <rect x="1" y="1" width="126" height="126" rx="10" fill="#212124" stroke="#849ba8" stroke-width="2"/>
+  <g transform="translate(8 8) scale(.875)">
+    <path fill="#d82d63" d="M12 28H56V46H30V98H56V116H12Z"/>
+    <path fill="#2698c3" d="M56 28H100V12H116V28H100V116H56V98H82V46H56Z"/>
+    <path fill="#48bde0" d="M56 46H82V98H56V88H72V56H56Z"/>
+  </g>
+</svg>

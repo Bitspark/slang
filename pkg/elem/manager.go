@@ -17,6 +17,10 @@ type builtinConfig struct {
 }
 
 var SafeMode bool
+
+// PublicMode exposes only computation operators to untrusted web visitors.
+// It supplements process/container isolation; SafeMode alone permits network I/O.
+var PublicMode bool
 var Initalized bool = false
 
 var cfgs map[uuid.UUID]*builtinConfig
@@ -58,6 +62,9 @@ func IsRegistered(id uuid.UUID) bool {
 }
 
 func Register(cfg *builtinConfig) {
+	if PublicMode && !publicOperator(cfg) {
+		return
+	}
 	if SafeMode && SafeMode != cfg.safe {
 		// slang run in safe mode,
 		// unsafe elementary operators cannot be registered
@@ -69,6 +76,23 @@ func Register(cfg *builtinConfig) {
 	id := cfg.blueprint.Id
 	cfgs[id] = cfg
 	name2Id[cfg.blueprint.Meta.Name] = id
+}
+
+func publicOperator(cfg *builtinConfig) bool {
+	switch cfg {
+	case dataValueCfg, dataEvaluateCfg, dataConvertCfg, dataUUIDCfg, randRangeCfg,
+		controlSplitCfg, controlMergeCfg, controlSwitchCfg, controlLoopCfg, controlIterateCfg,
+		streamReduceCfg, streamCtrlJoinCfg, streamSerializeCfg, streamParallelizeCfg,
+		streamConcatenateCfg, streamMapAccessCfg, streamWindow2Cfg, streamWindowCollectCfg,
+		streamWindowReleaseCfg, streamMapToStreamCfg, streamStreamToMapCfg, streamSliceCfg,
+		streamTransformCfg, streamDistinctCfg, encodingCSVReadCfg, encodingCSVWriteCfg,
+		encodingJSONReadCfg, encodingJSONWriteCfg, encodingJSONPathCfg, encodingURLWriteCfg,
+		timeDelayCfg, timeParseDateCfg, timeDateNowCfg, timeUNIXMillisCfg,
+		stringTemplateCfg, stringFormatCfg, stringSplitCfg, stringBeginswithCfg,
+		stringContainsCfg, stringEndswithCfg, databaseMemoryReadCfg, databaseMemoryWriteCfg:
+		return true
+	}
+	return false
 }
 
 func GetBuiltinIds() []uuid.UUID {

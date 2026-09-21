@@ -161,8 +161,8 @@ func Test_CtrlReduce__SelectionFromPool(t *testing.T) {
 	r := require.New(t)
 
 	o, err := buildOperator(core.InstanceDef{
-		Operator: streamReduceCfg.blueprint.Id,
-		Generics: map[string]*core.TypeDef{"itemType": {Type: "number"}},
+		Operator:   streamReduceCfg.blueprint.Id,
+		Generics:   map[string]*core.TypeDef{"itemType": {Type: "number"}},
 		Properties: map[string]interface{}{"emptyValue": -1},
 	})
 	r.NoError(err)
@@ -173,13 +173,14 @@ func Test_CtrlReduce__SelectionFromPool(t *testing.T) {
 
 	o.Main().In().Push([]interface{}{1.0, 1.0, 1.0, 1.0})
 	o.Delegate("reducer").In().Push(2.0)
-	o.Delegate("reducer").In().Push(2.0)
+	o.Delegate("reducer").In().Push(3.0)
 	o.Delegate("reducer").In().Push(4.0)
 
 	i := o.Delegate("reducer").Out().Pull()
 	a.Equal(map[string]interface{}{"a": 1.0, "b": 1.0}, i)
 	i = o.Delegate("reducer").Out().Pull()
-	a.Equal(map[string]interface{}{"a": 1.0, "b": 1.0}, i)
+	a.Equal(map[string]interface{}{"a": 2.0, "b": 1.0}, i)
 	i = o.Delegate("reducer").Out().Pull()
-	a.Equal(map[string]interface{}{"a": 2.0, "b": 2.0}, i)
+	a.Equal(map[string]interface{}{"a": 3.0, "b": 1.0}, i)
+	a.Equal(4.0, o.Main().Out().Pull())
 }

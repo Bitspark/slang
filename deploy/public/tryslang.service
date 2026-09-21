@@ -1,0 +1,25 @@
+[Unit]
+Description=TrySlang isolated public workspaces
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+User=tryslang
+Group=tryslang
+SupplementaryGroups=docker
+WorkingDirectory=/srv/tryslang
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 /srv/tryslang/gateway.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/tryslang/state
+MemoryMax=256M
+TasksMax=100
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

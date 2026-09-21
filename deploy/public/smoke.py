@@ -5,6 +5,7 @@ import io
 import json
 from pathlib import Path
 import sys
+import time
 import urllib.parse
 import uuid
 import zipfile
@@ -37,6 +38,16 @@ class Client:
 def main():
     base = sys.argv[1]
     a, b = Client(base), Client(base)
+    # systemd reports started before startup has finished retiring old containers.
+    deadline = time.monotonic() + 30
+    while True:
+        try:
+            assert a.request("GET", "/healthz")["status"] == "ok"
+            break
+        except (OSError, http.client.HTTPException):
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(1)
     catalog = a.request("GET", "/operator/")["objects"]
     counts = {kind: len([o for o in catalog if o["type"] == kind]) for kind in ("local", "library", "elementary")}
     assert counts["local"] >= 3 and counts["library"] >= 20 and counts["elementary"] >= 30, counts

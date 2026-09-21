@@ -6,6 +6,7 @@ import (
 
 	"github.com/Bitspark/slang/pkg/log"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type OFunc func(op *Operator)
@@ -119,6 +120,11 @@ func (o *Operator) Name() string {
 	return o.name
 }
 
+// Logger includes the operator's identity in each structured log event.
+func (o *Operator) Logger() *logrus.Entry {
+	return log.ForOperator(o.Id(), o.Name())
+}
+
 func (o *Operator) BasePort() *Port {
 	return o.basePort
 }
@@ -158,7 +164,7 @@ func (o *Operator) Start() {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Errorf("%s:%s panicked: %s", o.Id(), o.Name(), r)
+					o.Logger().Errorf("operator panicked: %v", r)
 					o.Stop()
 				}
 			}()

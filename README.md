@@ -26,6 +26,10 @@ Visit [TrySlang](https://tryslang.com/) to use the hosted playground without
 installing anything. Start with **Double a number**, click play, send `21`, and
 look for `42` in the output. Use **Export workspace** to keep a backup of your work.
 
+For the isolated Docker deployment used by the public site, including HTTPS,
+visitor workspaces, verification, and rollback, see
+[the public deployment guide](deploy/public/README.md).
+
 ## Run locally from source
 
 Install [Go](https://go.dev/doc/install) and Git, then run these commands in a

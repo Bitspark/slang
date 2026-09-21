@@ -38,6 +38,7 @@ var safeMode bool
 var credentials string
 
 func main() {
+	flag.BoolVar(&elem.PublicMode, "public", false, "Only expose computation operators suitable for an isolated public playground.")
 	flag.BoolVar(&safeMode, "safe", false, "Only support safe operator. Unsafe operators are handled as not existing.")
 	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Don't automatically open UI")
 	flag.BoolVar(&skipChecks, "skip-checks", false, "Skip checking and updating UI and Lib")

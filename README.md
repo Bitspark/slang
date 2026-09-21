@@ -20,7 +20,26 @@ You don't need anything else to start working with Slang, so this here is the pl
 
 ## How to install
 
-If you want to run Slang, you can simply download the [latest release](https://github.com/Bitspark/slang/releases/latest), unpack and run it. We have binaries for Windows, Linux and MacOS.
+Download an archive for your operating system from the [releases page](https://github.com/Bitspark/slang/releases), unpack it, and run it. Release assets vary by version: v0.1.26 contains Linux and macOS archives, but no Windows binaries.
+
+### Windows 10
+
+For the visual editor, use **slangd**, the daemon that serves the browser UI. The **slang** executable is the command-line blueprint runner.
+
+When a release includes Windows assets, choose `slangd-<version>-windows-amd64.zip` for 64-bit Windows on Intel/AMD processors, or `slangd-<version>-windows-386.zip` for 32-bit Windows. Extract the archive and run the `.exe` inside. The `darwin` archives are for macOS and the `linux` archives are for Linux.
+
+Since v0.1.26 has no Windows archive, build from source using [Go](https://go.dev/dl/) and [Git for Windows](https://git-scm.com/download/win). In PowerShell:
+
+```powershell
+git clone https://github.com/Bitspark/slang.git
+cd slang
+go build -o slangd.exe ./cmd/slangd
+.\slangd.exe
+```
+
+The daemon downloads the UI and standard library on first launch, which requires internet access. Open <http://localhost:5149/app/> if your browser does not open automatically. Keep the PowerShell window open while using Slang; press Ctrl+C to stop it.
+
+To build the optional command-line runner, use `go build -o slang.exe ./cmd/slang`.
 
 ### Compile it yourself
 

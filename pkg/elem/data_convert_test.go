@@ -55,7 +55,9 @@ func Test_Convert__To_Number(t *testing.T) {
 	convertOperator(t, "primitive", "number", false, 0.0)
 	convertOperator(t, "boolean", "number", false, 0.0)
 
-	convertOperator(t, "binary", "number", core.Binary{0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x09, 0x40}, 3.141592653589793)
+	convertOperator(t, "binary", "number", core.Binary("3.141592653589793"), 3.141592653589793)
+	convertOperator(t, "primitive", "number", core.Binary("2.1"), 2.1)
+	convertOperator(t, "binary", "number", core.Binary("not a number"), 0.0)
 	convertOperator(t, "primitive", "number", nil, nil)
 }
 
@@ -112,8 +114,8 @@ func Test_Convert__To_Binary(t *testing.T) {
 	convertOperator(t, "primitive", "binary", "2.1", core.Binary("2.1"))
 	convertOperator(t, "string", "binary", "2.1", core.Binary("2.1"))
 
-	convertOperator(t, "primitive", "binary", 2.1, core.Binary{0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x0, 0x40})
-	convertOperator(t, "number", "binary", 2.1, core.Binary{0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x0, 0x40})
+	convertOperator(t, "primitive", "binary", 2.1, core.Binary("2.1"))
+	convertOperator(t, "number", "binary", 2.1, core.Binary("2.1"))
 
 	convertOperator(t, "primitive", "binary", true, core.Binary("true"))
 	convertOperator(t, "boolean", "binary", true, core.Binary("true"))

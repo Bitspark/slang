@@ -20,6 +20,14 @@ You don't need anything else to start working with Slang, so this here is the pl
 
 ## How to install
 
+The public playground is available at [tryslang.com](https://tryslang.com/).
+Open the editor and try **Double a number**: click play, enter **21**, and click
+**Send** to see **42**. Export your workspace to keep a backup.
+
+For the isolated Docker deployment used by the public site, including HTTPS,
+visitor workspaces, verification, and rollback, see
+[the public deployment guide](deploy/public/README.md).
+
 If you want to run Slang, you can simply download the [latest release](https://github.com/Bitspark/slang/releases/latest), unpack and run it. We have binaries for Windows, Linux and MacOS.
 
 ### Compile it yourself

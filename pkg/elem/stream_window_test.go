@@ -8,7 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_StreamWindow__IsRegistered(t *testing.T) {
+func Test_StreamWindow__CanRegister(t *testing.T) {
+	registerLegacyOperator(t, streamWindowCfg)
 	a := assertions.New(t)
 
 	ocFork := getBuiltinCfg(streamWindowId)
@@ -16,6 +17,7 @@ func Test_StreamWindow__IsRegistered(t *testing.T) {
 }
 
 func Test_StreamWindow__Sliding1(t *testing.T) {
+	registerLegacyOperator(t, streamWindowCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -49,6 +51,7 @@ func Test_StreamWindow__Sliding1(t *testing.T) {
 }
 
 func Test_StreamWindow__Sliding2(t *testing.T) {
+	registerLegacyOperator(t, streamWindowCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -79,6 +82,7 @@ func Test_StreamWindow__Sliding2(t *testing.T) {
 }
 
 func Test_StreamWindow__Sliding3(t *testing.T) {
+	registerLegacyOperator(t, streamWindowCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -109,6 +113,7 @@ func Test_StreamWindow__Sliding3(t *testing.T) {
 }
 
 func Test_StreamWindow__Jumping1(t *testing.T) {
+	registerLegacyOperator(t, streamWindowCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(

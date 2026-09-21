@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"sync"
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
@@ -28,10 +29,14 @@ type runningOperator struct {
 	outgoing chan interface{}
 	inStop   chan bool
 	outStop  chan bool
+	stopOnce sync.Once
 }
 
 func (rop *runningOperator) Push(data interface{}) {
-	rop.incoming <- data
+	select {
+	case rop.incoming <- data:
+	case <-rop.inStop:
+	}
 }
 
 func (rop *runningOperator) Pull() interface{} {
@@ -108,6 +113,7 @@ func (rom *runningOperatorManager) start(op *core.Operator) *runningOperator {
 		make(chan interface{}),
 		make(chan bool),
 		make(chan bool),
+		sync.Once{},
 	}
 
 	op.Main().Out().Bufferize()
@@ -140,48 +146,18 @@ func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
 		}
 	}()
 
-	// Handle outgoing data
-
+	// Block until a complete output is available; polling here used to spin and
+	// could discard partially received map or stream values.
 	go func() {
-		/*******
-		p := ro.op.Main().Out()
-
-		go func() {
-		loop:
-			for {
-				if p.Closed() {
-					break loop
-				}
-
-				i, ok := p.Poll()
-
-				if ok {
-					ro.outgoing <- i
-				}
-
+		for {
+			item := op.Main().Out().Pull()
+			select {
+			case ro.outgoing <- item:
+			case <-ro.outStop:
+				return
 			}
-		}()
-		******/
-
-		<-ro.outStop
-		ro.outStop <- true
+		}
 	}()
-
-	/*
-		op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-			go func() {
-				for {
-					if p.Closed() {
-						break
-					}
-					i := p.Pull()
-
-					po := portOutput{ro.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
-					ro.outgoing <- po
-				}
-			}()
-		})
-	*/
 }
 
 func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
@@ -199,14 +175,12 @@ func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, prop
 }
 
 func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
-	fmt.Println("OP STOP")
-	go ro.op.Stop()
-	fmt.Println("IN STOP")
-	ro.inStop <- true
-	fmt.Println("OUT STOP")
-	ro.outStop <- true
-	fmt.Println("DELETE")
-	delete(rom.ropByHandle, ro.Handle)
+	ro.stopOnce.Do(func() {
+		close(ro.inStop)
+		close(ro.outStop)
+		ro.op.Stop()
+		delete(rom.ropByHandle, ro.Handle)
+	})
 	return nil
 }
 

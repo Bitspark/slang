@@ -102,7 +102,7 @@ func run(operator *core.Operator, mode string, bind string) error {
 			quit <- syscall.SIGQUIT
 		}()
 	default:
-		log.Fatal("run mode not supported: %s", mode)
+		return fmt.Errorf("run mode not supported: %s", mode)
 	}
 
 	for {

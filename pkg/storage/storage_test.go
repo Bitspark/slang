@@ -32,5 +32,5 @@ func Test_SavingWithoutWritableBackend(t *testing.T) {
 	s := NewStorage().AddBackend(NewReadOnlyFileSystem("/somewhere"))
 	id, err := s.Save(core.Blueprint{})
 	a.Equal(id, u)
-	a.EqualError(err, "No writable backend for saving found")
+	a.EqualError(err, "no writable backend for saving found")
 }

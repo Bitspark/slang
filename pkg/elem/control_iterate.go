@@ -4,17 +4,19 @@ import (
 	"fmt"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlIterateId = "e58624d4-5568-40d3-8b77-ab792ef620f1"
+var controlIterateId = uuid.MustParse("e58624d4-5568-40d3-8b77-ab792ef620f1")
 var controlIterateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: controlIterateId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "iterate",
 			ShortDescription: "uses an iterator delegate to aggregate items of a stream",
 			Icon:             "compress-alt",
-			Tags:             []string{"data", "stream"},
+			Tags:             []string{"stream", "control"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/iterate",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

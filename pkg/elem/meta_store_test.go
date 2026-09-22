@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_MetaStore__IsRegistered(t *testing.T) {
+func Test_MetaStore__CanRegister(t *testing.T) {
+	registerLegacyOperator(t, metaStoreCfg)
 	a := assertions.New(t)
 
 	ocMetaStore := getBuiltinCfg(metaStoreId)
@@ -17,6 +18,7 @@ func Test_MetaStore__IsRegistered(t *testing.T) {
 }
 
 func Test_MetaStore__Single(t *testing.T) {
+	registerLegacyOperator(t, metaStoreCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -57,6 +59,7 @@ func Test_MetaStore__Single(t *testing.T) {
 }
 
 func Test_MetaStore__Stream(t *testing.T) {
+	registerLegacyOperator(t, metaStoreCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -110,6 +113,7 @@ func Test_MetaStore__Stream(t *testing.T) {
 }
 
 func Test_MetaStore__Map(t *testing.T) {
+	registerLegacyOperator(t, metaStoreCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -177,6 +181,7 @@ func Test_MetaStore__Map(t *testing.T) {
 }
 
 func Test_MetaStore__StreamMap(t *testing.T) {
+	registerLegacyOperator(t, metaStoreCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(
@@ -260,6 +265,7 @@ func Test_MetaStore__StreamMap(t *testing.T) {
 }
 
 func Test_MetaStore__MapStream(t *testing.T) {
+	registerLegacyOperator(t, metaStoreCfg)
 	a := assertions.New(t)
 
 	o, err := buildOperator(

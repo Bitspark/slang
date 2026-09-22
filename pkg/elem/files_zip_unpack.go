@@ -5,16 +5,18 @@ import (
 	"bytes"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var filesZIPUnpackCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "04714d4a-1d5d-4b68-b614-524dd4662ef4",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("04714d4a-1d5d-4b68-b614-524dd4662ef4"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "unpack ZIP",
 			ShortDescription: "unpacks a zip archive and emits a stream of files and their binary content",
 			Icon:             "file-archive",
-			Tags:             []string{"zip", "compression"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/unpack-zip",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

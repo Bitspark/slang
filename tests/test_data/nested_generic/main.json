@@ -1,4 +1,5 @@
 {
+  "id": "dfec66d6-8ab6-463c-aa25-a9adf3e82a51",
   "services": {
     "main": {
       "in": {
@@ -19,7 +20,7 @@
   },
   "operators": {
     "pass1": {
-      "operator": "test_data.nested_generic.passer",
+      "operator": "c4645d83-2552-49cb-8762-c2b9f5c98aa4",
       "generics": {
         "itemType": {
           "type": "number"

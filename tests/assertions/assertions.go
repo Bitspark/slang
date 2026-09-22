@@ -2,6 +2,7 @@ package assertions
 
 import (
 	"fmt"
+
 	"github.com/Bitspark/slang/pkg/core"
 
 	"github.com/stretchr/testify/assert"

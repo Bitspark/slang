@@ -3,12 +3,14 @@ package elem
 import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 var databaseRedisGetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "362482c1-2021-4e5c-9463-b580a6c1967e",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("362482c1-2021-4e5c-9463-b580a6c1967e"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "Redis Get",
 			ShortDescription: "executes a Get command at the specified Redis server",
 			Icon:             "database",
@@ -26,7 +28,7 @@ var databaseRedisGetCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"host": {
 				Type: "string",
 			},

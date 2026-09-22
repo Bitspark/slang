@@ -12,12 +12,29 @@ import (
 
 type InstanceDefList []*InstanceDef
 type TypeDefMap map[string]*TypeDef
+type PropertyMap map[string]*TypeDef
 type Properties MapStr
+type SlangValue interface{}
 type Generics map[string]*TypeDef
 
+func (p Properties) Get(propKey string, propDef *TypeDef) (SlangValue, error) {
+	prop, ok := p[propKey]
+	if !ok && propDef.Default != nil {
+		prop = propDef.Default
+		ok = true
+	}
+
+	if !ok && !propDef.Optional {
+		// property is expected to be defined, but isn't
+		return nil, fmt.Errorf("expected property %s:%v", propKey, propDef.Type)
+	}
+
+	return prop, nil
+}
+
 type InstanceDef struct {
-	Name     string `json:"-" yaml:"-"`
-	Operator string `json:"operator" yaml:"operator"`
+	Name     string    `json:"-" yaml:"-"`
+	Operator uuid.UUID `json:"operator" yaml:"operator"`
 
 	Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
@@ -29,8 +46,8 @@ type InstanceDef struct {
 		} `json:"position" yaml:"position"`
 	} `json:"geometry,omitempty" yaml:"geometry,omitempty"`
 
-	valid       bool
-	OperatorDef OperatorDef `json:"-" yaml:"definition,omitempty"`
+	valid     bool
+	Blueprint Blueprint `json:"-" yaml:"-"`
 }
 
 type PortGeometryDef struct {
@@ -57,7 +74,7 @@ type TestCaseDef struct {
 	valid bool
 }
 
-type OperatorMetaDef struct {
+type BlueprintMetaDef struct {
 	Name             string   `json:"name" yaml:"name"`
 	Icon             string   `json:"icon" yaml:"icon"`
 	ShortDescription string   `json:"shortDescription" yaml:"shortDescription"`
@@ -68,18 +85,18 @@ type OperatorMetaDef struct {
 	valid bool
 }
 
-type OperatorDef struct {
-	Id string `json:"id" yaml:"id"`
+type Blueprint struct {
+	Id uuid.UUID `json:"id" yaml:"id"`
 
 	ServiceDefs  map[string]*ServiceDef  `json:"services,omitempty" yaml:"services,omitempty"`
 	DelegateDefs map[string]*DelegateDef `json:"delegates,omitempty" yaml:"delegates,omitempty"`
 	InstanceDefs InstanceDefList         `json:"operators,omitempty" yaml:"operators,omitempty"`
-	PropertyDefs TypeDefMap              `json:"properties,omitempty" yaml:"properties,omitempty"`
+	PropertyDefs PropertyMap             `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Connections  map[string][]string     `json:"connections,omitempty" yaml:"connections,omitempty"`
-	Elementary   string                  `json:"-" yaml:"-"`
+	Elementary   uuid.UUID               `json:"-" yaml:"-"`
 
-	Meta      OperatorMetaDef `json:"meta" yaml:"meta"`
-	TestCases []TestCaseDef   `json:"tests,omitempty" yaml:"tests,omitempty"`
+	Meta      BlueprintMetaDef `json:"meta" yaml:"meta"`
+	TestCases []TestCaseDef    `json:"tests,omitempty" yaml:"tests,omitempty"`
 
 	Geometry *struct {
 		Size struct {
@@ -111,10 +128,14 @@ type ServiceDef struct {
 
 type TypeDef struct {
 	// Type is one of "primitive", "number", "string", "boolean", "stream", "map", "generic"
-	Type    string              `json:"type" yaml:"type"`
-	Stream  *TypeDef            `json:"stream,omitempty" yaml:"stream,omitempty"`
-	Map     map[string]*TypeDef `json:"map,omitempty" yaml:"map,omitempty"`
-	Generic string              `json:"generic,omitempty" yaml:"generic,omitempty"`
+	Type    string     `json:"type" yaml:"type"`
+	Stream  *TypeDef   `json:"stream,omitempty" yaml:"stream,omitempty"`
+	Map     TypeDefMap `json:"map,omitempty" yaml:"map,omitempty"`
+	Generic string     `json:"generic,omitempty" yaml:"generic,omitempty"`
+
+	// XXX this doesn't belong to here... makes only sense for PropertyDef
+	Optional bool `json:"optional,omitempty" yaml:"optional,omitempty"`
+	Default interface{} `json:"default,omitempty" yaml:"default,omitempty"`
 
 	valid bool
 }
@@ -134,16 +155,8 @@ func (d *InstanceDef) Validate() error {
 		return fmt.Errorf(`operator instance name may not contain spaces: "%s"`, d.Name)
 	}
 
-	if d.Operator == "" {
-		return errors.New(`operator may not be empty`)
-	}
-
-	if strings.Contains(d.Operator, " ") {
-		return fmt.Errorf(`operator may not contain spaces: "%s"`, d.Operator)
-	}
-
-	if _, err := uuid.Parse(d.Operator); err != nil {
-		return fmt.Errorf(`operator id is not a valid UUID v4: "%s" --> "%s"`, d.Operator, err)
+	if d.Operator == uuid.Nil {
+		return errors.New(`operator may not be unset`)
 	}
 
 	d.valid = true
@@ -168,9 +181,9 @@ func (d InstanceDef) Copy(recursive bool) InstanceDef {
 		}
 	}
 
-	opDef := OperatorDef{}
+	blueprint := Blueprint{}
 	if recursive {
-		opDef = d.OperatorDef.Copy(recursive)
+		blueprint = d.Blueprint.Copy(recursive)
 	}
 
 	cpy := InstanceDef{
@@ -180,22 +193,22 @@ func (d InstanceDef) Copy(recursive bool) InstanceDef {
 		generics,
 		d.Geometry,
 		d.valid,
-		opDef,
+		blueprint,
 	}
 	return cpy
 }
 
 // OPERATOR DEFINITION
 
-func (d OperatorDef) Valid() bool {
+func (d Blueprint) Valid() bool {
 	return d.valid
 }
 
-func (d *OperatorDef) Validate() error {
+func (d *Blueprint) Validate() error {
 	d.valid = false
 
-	if _, err := uuid.Parse(d.Id); err != nil {
-		return fmt.Errorf(`id is not a valid UUID v4: "%s" --> "%s"`, d.Id, err)
+	if d.Id == uuid.Nil {
+		return fmt.Errorf(`operator id not set: %s`, d.Id)
 	}
 
 	for _, srv := range d.ServiceDefs {
@@ -235,7 +248,7 @@ func (d *OperatorDef) Validate() error {
 // SpecifyGenerics replaces generic types in the operator definition with the types given in the generics map.
 // The values of the map are the according identifiers. It does not touch referenced values such as *TypeDef but
 // replaces them with a reference on a copy.
-func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
+func (d *Blueprint) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	srvs := make(map[string]*ServiceDef)
 	for srvName := range d.ServiceDefs {
 		srv := d.ServiceDefs[srvName].Copy()
@@ -271,7 +284,7 @@ func (d *OperatorDef) SpecifyGenericPorts(generics map[string]*TypeDef) error {
 	return nil
 }
 
-func (d OperatorDef) GenericsSpecified() error {
+func (d Blueprint) GenericsSpecified() error {
 	for _, srv := range d.ServiceDefs {
 		if err := srv.In.GenericsSpecified(); err != nil {
 			return err
@@ -298,7 +311,7 @@ func (d OperatorDef) GenericsSpecified() error {
 	return nil
 }
 
-func (d OperatorDef) Copy(recursive bool) OperatorDef {
+func (d Blueprint) Copy(recursive bool) Blueprint {
 	srvDefs := make(map[string]*ServiceDef)
 	for k, v := range d.ServiceDefs {
 		c := v.Copy()
@@ -311,7 +324,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 		dlgDefs[k] = &c
 	}
 
-	propDefs := make(map[string]*TypeDef)
+	propDefs := make(PropertyMap)
 	for k, v := range d.PropertyDefs {
 		c := v.Copy()
 		propDefs[k] = &c
@@ -320,7 +333,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 	var connDefs map[string][]string = nil
 	var insDefs InstanceDefList = nil
 
-	if d.Elementary == "" {
+	if d.Elementary == uuid.Nil {
 		connDefs = make(map[string][]string)
 		for k, v := range d.Connections {
 			c := make([]string, 0)
@@ -337,7 +350,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 		}
 	}
 
-	return OperatorDef{
+	return Blueprint{
 		d.Id,
 		srvDefs,
 		dlgDefs,
@@ -352,7 +365,7 @@ func (d OperatorDef) Copy(recursive bool) OperatorDef {
 	}
 }
 
-func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
+func (def *Blueprint) SpecifyOperator(gens Generics, props Properties) error {
 	if !def.Valid() {
 		err := def.Validate()
 		if err != nil {
@@ -370,7 +383,7 @@ func (def *OperatorDef) SpecifyOperator(gens Generics, props Properties) error {
 	return nil
 }
 
-func (def *OperatorDef) specifyGenericsOnPortGroups(gens Generics) {
+func (def *Blueprint) specifyGenericsOnPortGroups(gens Generics) {
 	for _, srv := range def.ServiceDefs {
 		srv.In.SpecifyGenerics(gens)
 		srv.Out.SpecifyGenerics(gens)
@@ -382,14 +395,16 @@ func (def *OperatorDef) specifyGenericsOnPortGroups(gens Generics) {
 	def.PropertyDefs.SpecifyGenerics(gens)
 }
 
-func (def *OperatorDef) applyPropertiesOnPortGroups(props Properties) error {
+func (def *Blueprint) applyPropertiesOnPortGroups(props Properties) error {
 	props.Clean()
 
-	for prop, propDef := range def.PropertyDefs {
-		propVal, ok := props[prop]
-		if !ok {
-			return errors.New("Missing property " + prop)
+	for propKey, propDef := range def.PropertyDefs {
+		propVal, err := props.Get(propKey, propDef)
+
+		if err != nil {
+			return err
 		}
+
 		if err := propDef.VerifyData(propVal); err != nil {
 			return err
 		}
@@ -428,11 +443,11 @@ func (def *OperatorDef) applyPropertiesOnPortGroups(props Properties) error {
 
 // OPERATOR META DEFINITION
 
-func (d *OperatorMetaDef) Valid() bool {
+func (d *BlueprintMetaDef) Valid() bool {
 	return d.valid
 }
 
-func (d *OperatorMetaDef) Validate() error {
+func (d *BlueprintMetaDef) Validate() error {
 	d.valid = false
 
 	if len(d.Name) < 2 {
@@ -566,7 +581,8 @@ func (d *TypeDef) Validate() error {
 		return errors.New("type must not be empty")
 	}
 
-	validTypes := []string{"generic", "primitive", "trigger", "number", "string", "binary", "boolean", "stream", "map"}
+	// type "unspecified" is only allowed when defining blueprint port types
+	validTypes := []string{"generic", "primitive", "trigger", "number", "string", "binary", "boolean", "stream", "map", "unspecified"}
 	found := false
 	for _, t := range validTypes {
 		if t == d.Type {
@@ -624,22 +640,10 @@ func (d TypeDef) Copy() TypeDef {
 		tStr,
 		tMap,
 		d.Generic,
+		d.Optional, // only relevant for PropertyDef
+		d.Default, // only relevant for PropertyDef
 		d.valid,
 	}
-}
-
-// TESTCASE DEFINITION
-
-func (tc *TestCaseDef) Validate() error {
-	if len(tc.Data.In) != len(tc.Data.Out) {
-		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
-	}
-	tc.valid = true
-	return nil
-}
-
-func (tc TestCaseDef) Valid() bool {
-	return tc.valid
 }
 
 // SpecifyGenerics replaces generic types in the port definition with the types given in the generics map.
@@ -744,8 +748,7 @@ func (d TypeDef) VerifyData(data interface{}) error {
 			return nil
 		}
 	}
-
-	return fmt.Errorf("exptected %s, got %v", d.Type, data)
+	return fmt.Errorf("expected *%s*, got *%v*", d.Type, data)
 }
 
 // TYPE DEF MAP
@@ -786,7 +789,7 @@ func (t TypeDefMap) GenericsSpecified() error {
 	return nil
 }
 
-func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef) error {
+func (d *TypeDef) ApplyProperties(props Properties, propDefs PropertyMap) error {
 	if d.Type == "primitive" || d.Type == "string" || d.Type == "number" || d.Type == "boolean" || d.Type == "trigger" {
 		return nil
 	}
@@ -815,6 +818,27 @@ func (d *TypeDef) ApplyProperties(props Properties, propDefs map[string]*TypeDef
 		return nil
 	}
 	return errors.New("unknown type " + d.Type)
+}
+
+// PROPERTY MAP
+
+func (t PropertyMap) SpecifyGenerics(generics map[string]*TypeDef) error {
+	for _, v := range t {
+		if err := v.SpecifyGenerics(generics); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t PropertyMap) GenericsSpecified() error {
+	for k, v := range t {
+		if err := v.GenericsSpecified(); err != nil {
+			return fmt.Errorf("%s: %s", k, err.Error())
+		}
+	}
+
+	return nil
 }
 
 // OPERATOR LIST MARSHALLING
@@ -877,68 +901,172 @@ func (p Properties) Clean() {
 	}
 }
 
-type SlangFileDef struct {
-	Main string `json:"main" yaml:"main"`
+// TESTCASE DEFINITION
+
+func (tc *TestCaseDef) Validate() error {
+	if len(tc.Data.In) != len(tc.Data.Out) {
+		return fmt.Errorf(`data count unequal in test case "%s"`, tc.Name)
+	}
+	tc.valid = true
+	return nil
+}
+
+func (tc TestCaseDef) Valid() bool {
+	return tc.valid
+}
+
+type SlangBundle struct {
+	Main uuid.UUID `json:"main" yaml:"main"`
 
 	Args struct {
 		Properties Properties `json:"properties,omitempty" yaml:"properties,omitempty"`
 		Generics   Generics   `json:"generics,omitempty" yaml:"generics,omitempty"`
-	} `json:"args,omitempty" yaml:"args,omitempty"`
+	} `json:"args,omitempty"`
 
-	Blueprints []OperatorDef `json:"blueprints" yaml:"blueprints"`
+	Blueprints map[uuid.UUID]Blueprint `json:"blueprints"`
 
 	valid bool
 }
 
-func (sf SlangFileDef) Valid() bool {
-	return sf.valid
+func (sb SlangBundle) Valid() bool {
+	return sb.valid
 }
 
-func (sf *SlangFileDef) Validate() error {
-	if sf.Main == "" {
+func (sb *SlangBundle) Validate() error {
+	if sb.Main == uuid.Nil {
 		return fmt.Errorf(`missing main blueprint id`)
 	}
 
-	if _, err := uuid.Parse(sf.Main); err != nil {
-		return fmt.Errorf(`blueprint id is not a valid UUID v4: "%s" --> "%s"`, sf.Main, err)
-	}
-
-	if len(sf.Blueprints) == 0 {
-		return fmt.Errorf(`incomplete slang file: no blueprint definitions found`)
-
-	}
-
-	for _, bp := range sf.Blueprints {
+	for _, bp := range sb.Blueprints {
 		if err := bp.Validate(); err != nil {
 			return err
 		}
 	}
 
-	sf.valid = true
+	sb.valid = true
 	return nil
 }
 
 // PROPERTY PARSING
 
-func expandExpressionPart(exprPart string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
-	var vals []string
-	prop, ok := props[exprPart]
-	if !ok {
-		return nil, errors.New("missing property " + exprPart)
+/*
+Get property value by JSONpath like query.
+e.g. 
+Props:= {
+	"simple": 100, <-- "simple"
+	"map": {
+		left: 1,   <-- "map.left"
+		right: 2,
+	},
+	"stream": [
+		{x:...,},	<-- "stream.#.x"
+		{x:...,},	<----/
+		{x:...,},	<---/
+	]
+} 
+ */
+func (p Properties) Qet(qExpr string) ([]interface{}, bool) {
+	pvalues := []interface{}{p}
+
+	for _, q := range strings.Split(qExpr, "."){
+		pvaluesNew := []interface{}{}
+		for _, pv := range pvalues {
+
+			if q == "#" {
+				pvaluesNew = append(pvaluesNew, pv.([]interface{})...)
+				continue
+			}
+
+			var ok bool
+			switch pv.(type) {
+			case Properties:
+				pv, ok = pv.(Properties)[q]
+			default:
+				pv, ok = pv.(map[string]interface{})[q]
+			}
+
+			if !ok {
+				return []interface{}{}, false
+			}
+
+			pvaluesNew = append(pvaluesNew, pv)
+		}
+		pvalues = pvaluesNew
 	}
-	propDef := propDefs[exprPart]
+
+	return pvalues, true
+}
+
+/*
+ See Properties.Qet
+ */
+func (pdefs PropertyMap) Qet(qExpr string) (*TypeDef, bool) {
+	var pdef *TypeDef
+
+	for _, q := range strings.Split(qExpr, "."){
+		var ok bool
+
+		if q == "#" {
+			pdef = pdef.Stream
+			continue
+		}
+
+		if pdef == nil {
+			pdef, ok = pdefs[q]
+		} else {
+			pdef, ok = pdef.Map[q]
+		}
+
+		if !ok {
+			return nil, false
+		}
+
+	}
+
+	return pdef, true
+}
+
+func expandExpressionPart(exprPart string, props Properties, propDefs PropertyMap) ([]string, error) {
+	var vals []string
+
+	propDef, ok := propDefs.Qet(exprPart)
+
+	if !ok {
+		return nil, fmt.Errorf("cannot query \"%v\"", exprPart)
+	}
+
+	prop, ok := props.Qet(exprPart)
+
+	if !ok {
+		// property is used in expression but is not defined
+		return nil, fmt.Errorf("missing property \"%v\". Given %s", exprPart, props)
+	}
+
 	if propDef.Type == "stream" {
-		els := prop.([]interface{})
-		for _, el := range els {
-			vals = append(vals, fmt.Sprintf("%v", el))
+		for _, p := range prop {
+			if pStr, ok := p.(string); ok && strings.HasPrefix(pStr, "$") {
+				vals = append(vals, fmt.Sprintf("{%v}", exprPart))
+			} else
+			if pArr, ok := p.([]any); ok {
+				for _, pI := range pArr {
+					vals = append(vals, fmt.Sprintf("%v", pI))
+				}
+			}
 		}
 	} else {
-		vals = []string{fmt.Sprintf("%v", prop)}
+		for _, p := range prop {
+			if pStr, ok := p.(string); ok && strings.HasPrefix(pStr, "$") {
+				vals = append(vals, fmt.Sprintf("{%v}", exprPart))
+			} else {
+				vals = append(vals, fmt.Sprintf("%v", p))
+			}
+		}
 	}
+
 	return vals, nil
 }
 
-func ExpandExpression(expr string, props Properties, propDefs map[string]*TypeDef) ([]string, error) {
+func ExpandExpression(expr string, props Properties, propDefs PropertyMap) ([]string, error) {
 	re := regexp.MustCompile("{(.*?)}")
 	exprs := []string{expr}
 	for _, expr := range exprs {

@@ -5,15 +5,16 @@ import (
 	"github.com/google/uuid"
 )
 
-var dataUUIDId = "a83bf9b2-cf1b-4b14-94c2-ea04d5cf70c0"
+var dataUUIDId = uuid.MustParse("a83bf9b2-cf1b-4b14-94c2-ea04d5cf70c0")
 var dataUUIDCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: dataUUIDId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "generate UUID",
 			ShortDescription: "generates a random UUID",
 			Icon:             "barcode-alt",
-			Tags:             []string{"data", "random"},
+			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/uuid",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -26,7 +27,6 @@ var dataUUIDCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()

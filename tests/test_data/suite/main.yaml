@@ -1,5 +1,6 @@
 # Main
 ---
+id: 2cb01963-9b7f-46b8-852b-6cb687a76245
 tests:
   - name: TC1
     data:
@@ -32,32 +33,32 @@ services:
       type: number
 operators:
   dbl1:
-    operator: "test_data.suite.duplicator"
+    operator: 5781d282-1fbf-4ddc-be25-2acc7830e64c
     generics:
       itemType:
         type: number
   dbl2:
-    operator: "test_data.suite.duplicator"
+    operator: 5781d282-1fbf-4ddc-be25-2acc7830e64c
     generics:
       itemType:
         type: number
   dbl3:
-    operator: "test_data.suite.duplicator"
+    operator: 5781d282-1fbf-4ddc-be25-2acc7830e64c
     generics:
       itemType:
         type: number
   tl:
-    operator: "test_data.suite.takers.takeLeft"
+    operator: e10a400f-8dd0-4600-a529-757b639e5cb3
     generics:
       itemType:
         type: number
   tr:
-    operator: "test_data.suite.takers.takeRight"
+    operator: 3a88c81d-a75a-44fa-8e6b-ef20807851bd
     generics:
       itemType:
         type: number
   p:
-    operator: "test_data.suite.polynomial"
+    operator: 5b08e62c-7e37-4b21-b8d0-fbbee5d4df2e
 connections:
   first(:
   - (dbl1

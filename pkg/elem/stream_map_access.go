@@ -4,13 +4,15 @@ import (
 	"reflect"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var streamMapAccessId = "618c4007-70fc-44ac-9443-184df77ab730"
+var streamMapAccessId = uuid.MustParse("618c4007-70fc-44ac-9443-184df77ab730")
 var streamMapAccessCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: streamMapAccessId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "access map",
 			ShortDescription: "takes a stream of key-value pairs and emits the value with the given key",
 			Icon:             "envelope",
@@ -51,7 +53,7 @@ var streamMapAccessCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: core.TypeDefMap{},
+		PropertyDefs: core.PropertyMap{},
 	},
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()

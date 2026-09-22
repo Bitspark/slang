@@ -2,16 +2,18 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamWindowReleaseCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "47b3f097-2043-42c6-aad5-0cfdb9004aef",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("47b3f097-2043-42c6-aad5-0cfdb9004aef"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "release window",
 			ShortDescription: "releases windows of items collected before",
 			Icon:             "window-maximize",
-			Tags:             []string{"stream", "window"},
+			Tags:             []string{"data", "window"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/window-release",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -29,7 +31,7 @@ var streamWindowReleaseCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"store": {
 				Type: "string",
 			},

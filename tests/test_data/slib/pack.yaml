@@ -1,5 +1,6 @@
 # Pack: Yields streams for each incoming element containing that element
 ---
+id: a7840d6e-41ce-4631-b2a4-1b95f62552bc
 tests:
   - name: PackItems
     data:

@@ -4,16 +4,24 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 type builtinConfig struct {
 	opConnFunc core.CFunc
 	opFunc     core.OFunc
-	opDef      core.OperatorDef
+	blueprint  core.Blueprint
+	safe       bool
 }
+
+var SafeMode bool
+
+// PublicMode exposes only computation operators to untrusted web visitors.
+// It supplements process/container isolation; SafeMode alone permits network I/O.
+var PublicMode bool
+var Initalized bool = false
 
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
@@ -22,14 +30,14 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	cfg := getBuiltinCfg(def.Operator)
 
 	if cfg == nil {
-		return nil, errors.New("unknown builtin operator")
+		return nil, errors.New("unknown elementary operator")
 	}
 
-	if err := def.OperatorDef.GenericsSpecified(); err != nil {
+	if err := def.Blueprint.GenericsSpecified(); err != nil {
 		return nil, err
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.OperatorDef)
+	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.Blueprint)
 	if err != nil {
 		return nil, err
 	}
@@ -37,72 +45,94 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 	return o, nil
 }
 
-func GetId(idOrName string) uuid.UUID {
-	if id, ok := name2Id[idOrName]; ok {
-		return id
-	}
-	id, _ := uuid.Parse(idOrName)
-	return id
-}
-
-func GetOperatorDef(idOrName string) (*core.OperatorDef, error) {
-	cfg, ok := cfgs[GetId(idOrName)]
+func GetBlueprint(id uuid.UUID) (*core.Blueprint, error) {
+	cfg, ok := cfgs[id]
 
 	if !ok {
-		return nil, errors.New("builtin operator not found")
+		return nil, errors.New("elementary operator not found")
 	}
 
-	opDef := cfg.opDef.Copy(true)
-	return &opDef, nil
+	blueprint := cfg.blueprint.Copy(true)
+	return &blueprint, nil
 }
 
-func IsRegistered(idOrName string) bool {
-	_, b := cfgs[GetId(idOrName)]
+func IsRegistered(id uuid.UUID) bool {
+	_, b := cfgs[id]
 	return b
 }
 
 func Register(cfg *builtinConfig) {
-	cfg.opDef.Elementary = cfg.opDef.Id
+	if PublicMode && !publicOperator(cfg) {
+		return
+	}
+	if SafeMode && SafeMode != cfg.safe {
+		// slang run in safe mode,
+		// unsafe elementary operators cannot be registered
+		return
+	}
 
-	id := GetId(cfg.opDef.Id)
+	cfg.blueprint.Elementary = cfg.blueprint.Id
+
+	id := cfg.blueprint.Id
 	cfgs[id] = cfg
-	name2Id[cfg.opDef.Meta.Name] = id
+	name2Id[cfg.blueprint.Meta.Name] = id
+}
+
+func publicOperator(cfg *builtinConfig) bool {
+	switch cfg {
+	case dataValueCfg, dataEvaluateCfg, dataConvertCfg, dataUUIDCfg, randRangeCfg,
+		controlSplitCfg, controlMergeCfg, controlSwitchCfg, controlLoopCfg, controlIterateCfg,
+		streamReduceCfg, streamCtrlJoinCfg, streamSerializeCfg, streamParallelizeCfg,
+		streamConcatenateCfg, streamMapAccessCfg, streamWindow2Cfg, streamWindowCollectCfg,
+		streamWindowReleaseCfg, streamMapToStreamCfg, streamStreamToMapCfg, streamSliceCfg,
+		streamTransformCfg, streamDistinctCfg, encodingCSVReadCfg, encodingCSVWriteCfg,
+		encodingJSONReadCfg, encodingJSONWriteCfg, encodingJSONPathCfg, encodingURLWriteCfg,
+		timeDelayCfg, timeParseDateCfg, timeDateNowCfg, timeUNIXMillisCfg,
+		stringTemplateCfg, stringFormatCfg, stringSplitCfg, stringBeginswithCfg,
+		stringContainsCfg, stringEndswithCfg, databaseMemoryReadCfg, databaseMemoryWriteCfg:
+		return true
+	}
+	return false
 }
 
 func GetBuiltinIds() []uuid.UUID {
 	return funk.Keys(cfgs).([]uuid.UUID)
 }
 
-func init() {
+func Init() {
+	Initalized = true
 	cfgs = make(map[uuid.UUID]*builtinConfig)
 	name2Id = make(map[string]uuid.UUID)
 
-	Register(metaStoreCfg)
+	//Register(metaStoreCfg)
 
 	// Data manipulating operators
 	Register(dataValueCfg)
 	Register(dataEvaluateCfg)
 	Register(dataConvertCfg)
 	Register(dataUUIDCfg)
-	Register(dataVariableSetCfg)
-	Register(dataVariableGetCfg)
+	//Register(dataVariableSetCfg)
+	//Register(dataVariableGetCfg)
+	Register(randRangeCfg)
 
 	// Flow control operators
 	Register(controlSplitCfg)
+	Register(controlMergeCfg)
 	Register(controlSwitchCfg)
-	Register(controlTakeCfg)
 	Register(controlLoopCfg)
 	Register(controlIterateCfg)
-	Register(controlReduceCfg)
-	Register(controlSemaphorePCfg)
-	Register(controlSemaphoreVCfg)
+	Register(streamReduceCfg)
+	Register(streamCtrlJoinCfg)
+	//Register(controlSemaphorePCfg)
+	//Register(controlSemaphoreVCfg)
 
 	// Stream accessing and processing operators
 	Register(streamSerializeCfg)
 	Register(streamParallelizeCfg)
 	Register(streamConcatenateCfg)
 	Register(streamMapAccessCfg)
-	Register(streamWindowCfg)
+	//Register(streamWindowCfg)
+	Register(streamWindow2Cfg)
 	Register(streamWindowCollectCfg)
 	Register(streamWindowReleaseCfg)
 	Register(streamMapToStreamCfg)
@@ -129,6 +159,7 @@ func init() {
 	Register(encodingCSVWriteCfg)
 	Register(encodingJSONReadCfg)
 	Register(encodingJSONWriteCfg)
+	Register(encodingJSONPathCfg)
 	Register(encodingXLSXReadCfg)
 	Register(encodingURLWriteCfg)
 
@@ -147,21 +178,24 @@ func init() {
 
 	Register(databaseQueryCfg)
 	Register(databaseExecuteCfg)
-	Register(databaseKafkaSubscribeCfg)
-	Register(databaseRedisGetCfg)
-	Register(databaseRedisSetCfg)
-	Register(databaseRedisHGetCfg)
-	Register(databaseRedisHSetCfg)
-	Register(databaseRedisLPushCfg)
-	Register(databaseRedisHIncrByCfg)
-	Register(databaseRedisSubscribeCfg)
+	//Register(databaseKafkaSubscribeCfg)
+	//Register(databaseRedisGetCfg)
+	//Register(databaseRedisSetCfg)
+	//Register(databaseRedisHGetCfg)
+	//Register(databaseRedisHSetCfg)
+	//Register(databaseRedisLPushCfg)
+	//Register(databaseRedisHIncrByCfg)
+	//Register(databaseRedisSubscribeCfg)
 	Register(databaseMemoryReadCfg)
 	Register(databaseMemoryWriteCfg)
 
 	Register(imageDecodeCfg)
 	Register(imageEncodeCfg)
 
-	Register(shellExecuteCfg)
+	//Register(shellExecuteCfg)
+	Register(systemLogCfg)
+
+	Register(encodingPRTGHistDataCfg)
 
 	variableStores = make(map[string]*variableStore)
 	variableMutex = &sync.Mutex{}
@@ -176,24 +210,34 @@ func init() {
 	semaphoreMutex = &sync.Mutex{}
 }
 
-func getBuiltinCfg(id string) *builtinConfig {
-	c, _ := cfgs[GetId(id)]
+func getBuiltinCfg(id uuid.UUID) *builtinConfig {
+	c, _ := cfgs[id]
 	return c
+}
+
+func getBuiltinCfgErr(id uuid.UUID) (*builtinConfig, error) {
+	cfg, ok := cfgs[id]
+
+	if !ok {
+		return nil, errors.New("builtin operator not found")
+	}
+
+	return cfg, nil
 }
 
 // Mainly for testing
 
 func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
-	opDef, err := GetOperatorDef(insDef.Operator)
+	blueprint, err := GetBlueprint(insDef.Operator)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if err = opDef.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
+	if err = blueprint.SpecifyOperator(insDef.Generics, insDef.Properties); err != nil {
 		return nil, err
 	}
-	insDef.OperatorDef = *opDef
+	insDef.Blueprint = *blueprint
 
 	return MakeOperator(insDef)
 }

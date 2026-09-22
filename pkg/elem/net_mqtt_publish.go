@@ -1,18 +1,22 @@
 package elem
 
 import (
+	"crypto/tls"
+
 	"github.com/Bitspark/slang/pkg/core"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 )
 
 var netMQTTPublishCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "c6b5bef6-e93e-4bc1-8ded-49c90919f39d",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("c6b5bef6-e93e-4bc1-8ded-49c90919f39d"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "MQTT publish",
 			ShortDescription: "publishes an MQTT message at a given topic",
 			Icon:             "chart-network",
-			Tags:             []string{"network", "mqtt"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/mqtt-publish",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -33,7 +37,7 @@ var netMQTTPublishCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"broker": {
 				Type: "string",
 			},
@@ -43,17 +47,36 @@ var netMQTTPublishCfg = &builtinConfig{
 			"password": {
 				Type: "string",
 			},
+			"verifyCertificate": {
+				Type:     "boolean",
+				Optional: true,
+			},
+			"clientCertificate": {
+				Type:     "string",
+				Optional: true,
+			},
+			"clientKey": {
+				Type:     "string",
+				Optional: true,
+			},
+			"caCertificate": {
+				Type:     "string",
+				Optional: true,
+			},
 			// "clientId": {
 			// 	Type: "string",
 			// },
 		},
 	},
 	opFunc: func(op *core.Operator) {
-		options := mqtt.NewClientOptions()
-		options.AddBroker(op.Property("broker").(string))
-		// options.SetClientID(op.Property("clientId").(string))
-		options.SetUsername(op.Property("username").(string))
-		options.SetPassword(op.Property("password").(string))
+		options := mqtt.NewClientOptions().
+			AddBroker(op.Property("broker").(string)).
+			SetUsername(op.Property("username").(string)).
+			SetPassword(op.Property("password").(string)).
+			SetTLSConfig(&tls.Config{
+				ClientAuth:         tls.NoClientCert,
+				InsecureSkipVerify: true,
+			})
 
 		client := mqtt.NewClient(options)
 		token := client.Connect().(*mqtt.ConnectToken)

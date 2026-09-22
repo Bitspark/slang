@@ -1,4 +1,5 @@
 {
+  "id": "a3f89587-0440-49ec-8f3c-df2296e4f915",
   "services": {
     "main": {
       "in": {
@@ -11,13 +12,13 @@
   },
   "operators": {
     "left": {
-      "operator": "test_data.nested_op.customPasser"
+      "operator": "4534612d-a843-487c-9163-b3fbfe62e455"
     },
     "middle": {
-      "operator": "test_data.nested_op.customPasser"
+      "operator": "4534612d-a843-487c-9163-b3fbfe62e455"
     },
     "right": {
-      "operator": "test_data.nested_op.customPasser"
+      "operator": "4534612d-a843-487c-9163-b3fbfe62e455"
     }
   },
   "connections": {

@@ -5,19 +5,21 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
-var encodingCSVReadId = "77d60459-f8b5-4f4b-b293-740164c49a82"
+var encodingCSVReadId = uuid.MustParse("77d60459-f8b5-4f4b-b293-740164c49a82")
 var encodingCSVReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: encodingCSVReadId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "read CSV",
 			ShortDescription: "reads a CSV file and emits a stream of lines, separated into columns",
 			Icon:             "file-csv",
-			Tags:             []string{"csv", "encoding"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/read-csv",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -39,7 +41,7 @@ var encodingCSVReadCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"delimiter": {
 				Type: "string",
 			},
@@ -68,7 +70,7 @@ var encodingCSVReadCfg = &builtinConfig{
 			var mapping []string
 			colNames := op.Property("columns").([]interface{})
 
-			mapSize := outStream.MapSize()
+			mapSize := outStream.MapLength()
 
 			r := csv.NewReader(strings.NewReader(csvText))
 			r.Comma = rune(op.Property("delimiter").(string)[0])

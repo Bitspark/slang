@@ -2,6 +2,8 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+
 	"sync"
 )
 
@@ -26,13 +28,14 @@ func getVariableStore(store string) *variableStore {
 	return ws
 }
 
-var dataVariableSetId = "3be41b5b-5a43-4f94-a7ae-7f0bacc4ae77"
+var dataVariableSetId = uuid.MustParse("3be41b5b-5a43-4f94-a7ae-7f0bacc4ae77")
 var dataVariableSetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: dataVariableSetId,
-		Meta: core.OperatorMetaDef{
-			Name:             "set value",
-			ShortDescription: "stores a value for later use",
+		Meta: core.BlueprintMetaDef{
+			Name:             "memory set",
+			ShortDescription: "stores a value for later use at runtime",
 			Icon:             "inbox-in",
 			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/set-value",
@@ -48,7 +51,7 @@ var dataVariableSetCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"valueName": {
 				Type: "string",
 			},
@@ -66,6 +69,7 @@ var dataVariableSetCfg = &builtinConfig{
 			i := in.Pull()
 			if core.IsMarker(i) {
 				out.Push(i)
+				continue
 			}
 
 			vs.mutex.Lock()

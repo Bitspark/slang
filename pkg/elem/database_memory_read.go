@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 type memoryStore struct {
@@ -27,15 +28,16 @@ func getMemoryStore(store string) *memoryStore {
 	return ms
 }
 
-var databaseMemoryReadId = "2fcd32f5-c83c-4fff-9ac2-ccd6d02139fa"
+var databaseMemoryReadId = uuid.MustParse("2fcd32f5-c83c-4fff-9ac2-ccd6d02139fa")
 var databaseMemoryReadCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: databaseMemoryReadId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "read from memory",
-			ShortDescription: "reads an item from memory by key string",
+			ShortDescription: "reads an item from memory associated with a key string",
 			Icon:             "memory",
-			Tags:             []string{"database", "memory"},
+			Tags:             []string{"database"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/memory-read",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -70,7 +72,7 @@ var databaseMemoryReadCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"store": {
 				Type: "string",
 			},

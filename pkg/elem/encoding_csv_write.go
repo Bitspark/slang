@@ -5,17 +5,19 @@ import (
 	"encoding/csv"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var encodingCSVWriteId = "fdd1e8e5-6959-4511-bf44-54c1bcbebc12"
+var encodingCSVWriteId = uuid.MustParse("fdd1e8e5-6959-4511-bf44-54c1bcbebc12")
 var encodingCSVWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: encodingCSVWriteId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "write CSV",
 			ShortDescription: "encodes streams into a single string",
 			Icon:             "file-csv",
-			Tags:             []string{"csv", "encoding"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/write-csv",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -37,7 +39,7 @@ var encodingCSVWriteCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"includeHeader": {
 				Type: "boolean",
 			},

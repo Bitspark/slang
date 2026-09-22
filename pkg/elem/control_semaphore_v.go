@@ -2,13 +2,15 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlSemaphoreVId = "dc9b35a3-bd0e-4ca3-99df-4e2689ea5097"
+var controlSemaphoreVId = uuid.MustParse("dc9b35a3-bd0e-4ca3-99df-4e2689ea5097")
 var controlSemaphoreVCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: controlSemaphoreVId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "semaphore V",
 			ShortDescription: "frees a semaphore token",
 			Icon:             "traffic-light-go",
@@ -27,7 +29,7 @@ var controlSemaphoreVCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"semaphore": {
 				Type: "string",
 			},

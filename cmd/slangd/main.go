@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/env"
 	"github.com/Bitspark/slang/pkg/storage"
+	"github.com/thoas/go-funk"
 
 	"strconv"
 
@@ -31,12 +34,25 @@ var (
 var onlyDaemon bool
 var skipChecks bool
 var withoutUI bool
+var safeMode bool
+var credentials string
 
 func main() {
+	flag.BoolVar(&elem.PublicMode, "public", false, "Only expose computation operators suitable for an isolated public playground.")
+	flag.BoolVar(&safeMode, "safe", false, "Only support safe operator. Unsafe operators are handled as not existing.")
 	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Don't automatically open UI")
 	flag.BoolVar(&skipChecks, "skip-checks", false, "Skip checking and updating UI and Lib")
 	flag.BoolVar(&withoutUI, "without-ui", false, "Do not serve the UI found in SLANG_UI")
+	flag.StringVar(&credentials, "basic-auth", "", "Set basic auth for daemon username:password")
 	flag.Parse()
+
+	if funk.NotEmpty(credentials) && !strings.ContainsRune(credentials, ':') {
+		log.Fatalf("\n\n\t%v\n\n", "Invalid format for credentials. Must be username:password")
+	}
+
+	// init elementary operators in proper mode (safe mode oder unsafe mode)
+	elem.SafeMode = safeMode
+	elem.Init()
 
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)
 	if buildTime != 0 {
@@ -55,11 +71,14 @@ func main() {
 	}
 
 	st := storage.NewStorage().
-		AddBackend(storage.NewWritableFileSystem(env.SLANG_DIR)).
+		AddBackend(storage.NewWritableFileSystem(env.SLANG_WORKSPACE)).
 		AddBackend(storage.NewReadOnlyFileSystem(env.SLANG_LIB))
 
+	fmt.Println("\tYour   blueprints:", env.SLANG_WORKSPACE)
+	fmt.Println("\tShared blueprints:", env.SLANG_LIB)
+
 	ctx := daemon.SetStorage(context.Background(), st)
-	srv := daemon.NewServer(&ctx, env)
+	srv := daemon.NewServer(&ctx, env, newBasicAuth(credentials))
 
 	if !withoutUI {
 		srv.AddRedirect("/", "/app/")
@@ -67,6 +86,19 @@ func main() {
 	}
 
 	startDaemonServer(srv)
+}
+
+func newBasicAuth(cred string) *daemon.BasicAuth {
+	s := strings.Split(cred, ":")
+
+	if len(s) < 2 {
+		return nil
+	}
+
+	return &daemon.BasicAuth{
+		Username: s[0],
+		Password: s[1],
+	}
 }
 
 func checkNewestVersion() {
@@ -124,7 +156,7 @@ func startDaemonServer(srv *daemon.Server) {
 func informUser(url string, errors chan error) {
 	select {
 	case err := <-errors:
-		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
+		log.Fatalf("\n\n\t%v\n\n", err)
 	case <-time.After(500 * time.Millisecond):
 		if !onlyDaemon && !withoutUI {
 			log.Printf("\n\n\tOpen  %s  in your browser.\n\n", url)
@@ -133,6 +165,6 @@ func informUser(url string, errors chan error) {
 	}
 	select {
 	case err := <-errors:
-		log.Fatal(fmt.Sprintf("\n\n\t%v\n\n", err))
+		log.Fatalf("\n\n\t%v\n\n", err)
 	}
 }

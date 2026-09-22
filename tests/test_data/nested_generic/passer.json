@@ -1,4 +1,5 @@
 {
+  "id": "c4645d83-2552-49cb-8762-c2b9f5c98aa4",
   "services": {
     "main": {
       "in": {
@@ -22,7 +23,7 @@
   },
   "operators": {
     "dupl1": {
-      "operator": "test_data.nested_generic.duplicator",
+      "operator": "f3a8d576-71e9-4767-8cba-3dc44881862b",
       "generics": {
         "itemType": {
           "type": "generic",

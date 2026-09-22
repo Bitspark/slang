@@ -4,17 +4,18 @@ import (
 	"sync"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var controlReduceId = "b95e6da8-9770-4a04-a73d-cdfe2081870f"
-var controlReduceCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: controlReduceId,
-		Meta: core.OperatorMetaDef{
+var streamReduceCfg = &builtinConfig{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("b95e6da8-9770-4a04-a73d-cdfe2081870f"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "reduce",
-			ShortDescription: "reduces the items of a stream pairwise using a reducer delegate",
+			ShortDescription: "reduces items of a stream pairwise using a reducer delegate",
 			Icon:             "compress-alt",
-			Tags:             []string{"data", "stream"},
+			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/reduce",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -53,7 +54,7 @@ var controlReduceCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"emptyValue": {
 				Type:    "generic",
 				Generic: "itemType",
@@ -102,7 +103,12 @@ var controlReduceCfg = &builtinConfig{
 					i := sIn.Pull()
 
 					mutex.Lock()
-					pool = append(pool, i)
+					// prepend (instead of appen) to ensure order of items while reducing
+					// append would do following:
+					// 		[1] [2] [3] -> [3] [1 2]
+					// prepend does:
+					//		[1] [2] [3] -> [1 2] [3]
+					pool = append([]interface{}{i}, pool...)
 					mutex.Unlock()
 				}
 			}()

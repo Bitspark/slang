@@ -5,12 +5,14 @@ import (
 	"path/filepath"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var filesAppendCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "e49369c2-eac2-4dc7-9a6d-b635ae1654f9",
-		Meta: core.OperatorMetaDef{
+	safe: false,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("e49369c2-eac2-4dc7-9a6d-b635ae1654f9"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "append file",
 			ShortDescription: "appends binary data to a file or creates it if non existent",
 			Icon:             "file-plus",
@@ -35,7 +37,7 @@ var filesAppendCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"newLine": {
 				Type: "boolean",
 			},

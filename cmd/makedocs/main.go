@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -10,12 +12,12 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 	"github.com/stoewer/go-strcase"
+	"github.com/thoas/go-funk"
 )
 
 type TagInfo struct {
@@ -28,7 +30,7 @@ type TagInfo struct {
 }
 
 type OperatorDefinition struct {
-	UUID string
+	ID   uuid.UUID
 	Type string
 	JSON string
 }
@@ -48,7 +50,7 @@ type TestCase struct {
 }
 
 type OperatorInfo struct {
-	UUID                string
+	ID                  uuid.UUID
 	Name                string
 	Type                string
 	Icon                string
@@ -64,49 +66,96 @@ type OperatorInfo struct {
 	OperatorsUsingCount  int
 	OperatorsUsingJSON   string
 
-	operatorContent map[string]*OperatorUsage
-	operatorsUsing  map[string]*OperatorUsage
+	operatorContent map[uuid.UUID]*OperatorUsage
+	operatorsUsing  map[uuid.UUID]*OperatorUsage
 
-	operatorDefinition *core.OperatorDef
+	operatorDefinition *core.Blueprint
 }
 
 type DocGenerator struct {
 	libDir         string
 	docOpDir       string
-	docTagDir      string
 	docIndexPath   string
 	docOpURL       *url.URL
-	docTagURL      *url.URL
 	opTmpl         *template.Template
-	tagTmpl        *template.Template
-	indexTmpl      *template.Template
-	operatorInfos  map[string]*OperatorInfo
+	operatorInfos  map[uuid.UUID]*OperatorInfo
 	tagInfos       map[string]*TagInfo
 	slugs          map[string]*OperatorInfo
 	generatedInfos []*OperatorInfo
 }
 
+var clean bool
+var genIdx bool
+var saveUrls bool
+var showHelp bool
+
+var libDir string
+
+var opTpl string
+var opExt string
+var opOutDir string
+
+var idxTpl string
+var idxOut string
+
+var Usage = func() {
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
 func main() {
-	libDir := "C:/Users/julia_000/Go/src/slang-lib/slang"
-	docDir := "C:/Bitspark/bitspark-www/html/pages/slang/docs/"
-	tplDir := "C:/Bitspark/bitspark-www/templates/"
 	docURL := "https://bitspark.de/slang/docs/"
 
-	dg := makeDocumentGenerator(libDir, docDir, tplDir, docURL)
+	flag.BoolVar(&clean, "clean", false, "Clean folders before recreation")
+	flag.BoolVar(&genIdx, "index", false, "Generate a single index file")
+	flag.BoolVar(&saveUrls, "save-urls", false, "Save back doc urls into standard library")
+	flag.BoolVar(&showHelp, "help", false, "Show this dialog")
 
-	dg.init()
+	flag.StringVar(&libDir, "libdir", "./", "Location of the standard library")
+
+	flag.StringVar(&idxOut, "index-target", "./", "Where to write the index to")
+	flag.StringVar(&idxTpl, "index-template", "./", "Index template")
+
+	flag.StringVar(&opTpl, "operator-template", "./", "Operator template")
+	flag.StringVar(&opOutDir, "operator-output-dir", "./", "Where to write the operators to")
+	flag.StringVar(&opExt, "operator-ext", "json", "What extension should the files have")
+	flag.Parse()
+
+	if showHelp {
+		Usage()
+		os.Exit(0)
+	}
+
+	dg := makeDocumentGenerator(libDir, idxOut, opTpl, opOutDir, docURL)
+	if clean {
+		dg.clean()
+	}
+
 	dg.collect(true)
 	dg.contents()
 	dg.usage()
-	dg.generateOperatorDocs()
-	dg.prepareTags()
-	// dg.generateTagDocs()
-	dg.generateIndex()
-	dg.saveURLs()
+	dg.generateOperatorDocs(opExt)
+
+	if genIdx {
+		bytesIndex, err := ioutil.ReadFile(idxTpl)
+		if err != nil {
+			panic(err)
+		}
+		indexTmpl, err := template.New("DocIndex").Delims("[[", "]]").Parse(string(bytesIndex))
+		if err != nil {
+			panic(err)
+		}
+
+		dg.generateIndex(*indexTmpl)
+	}
+	if saveUrls {
+		dg.saveURLs()
+	}
+
 }
 
-func makeDocumentGenerator(libDir string, docDir string, tmplDir string, docURL string) DocGenerator {
-	bytesOperator, err := ioutil.ReadFile(path.Join(tmplDir, "operator.html"))
+func makeDocumentGenerator(libDir string, idxOut string, opTpl string, opOutDir string, docURL string) DocGenerator {
+	bytesOperator, err := ioutil.ReadFile(opTpl)
 	if err != nil {
 		panic(err)
 	}
@@ -115,70 +164,46 @@ func makeDocumentGenerator(libDir string, docDir string, tmplDir string, docURL 
 		panic(err)
 	}
 
-	//bytesTag, err := ioutil.ReadFile(path.Join(tmplDir, "tag.html"))
-	//if err != nil {
-	//	panic(err)
-	//}
-	//tagTmpl, err := template.New("DocTagInfo").Delims("[[", "]]").Parse(string(bytesTag))
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	bytesIndex, err := ioutil.ReadFile(path.Join(tmplDir, "doc-index.html"))
-	if err != nil {
-		panic(err)
-	}
-	indexTmpl, err := template.New("DocIndex").Delims("[[", "]]").Parse(string(bytesIndex))
-	if err != nil {
-		panic(err)
-	}
-
 	docOpURL, _ := url.Parse(docURL)
 	docOpURL.Path = path.Join(docOpURL.Path, "operator")
-	docTagURL, _ := url.Parse(docURL)
-	docTagURL.Path = path.Join(docTagURL.Path, "tag")
 
 	return DocGenerator{
 		libDir:        libDir,
-		docOpDir:      path.Join(docDir, "operator"),
-		docTagDir:     path.Join(docDir, "tag"),
-		docIndexPath:  path.Join(docDir, "index.html"),
+		docOpDir:      opOutDir,
+		docIndexPath:  idxOut,
 		docOpURL:      docOpURL,
-		docTagURL:     docTagURL,
 		opTmpl:        opTmpl,
-		indexTmpl:     indexTmpl,
 		slugs:         make(map[string]*OperatorInfo),
 		tagInfos:      make(map[string]*TagInfo),
-		operatorInfos: make(map[string]*OperatorInfo),
+		operatorInfos: make(map[uuid.UUID]*OperatorInfo),
 	}
 }
 
-func (dg *DocGenerator) init() {
+func (dg *DocGenerator) clean() {
 	os.Remove(dg.docIndexPath)
 	os.RemoveAll(dg.docOpDir)
-	os.RemoveAll(dg.docTagDir)
 }
 
 func (dg *DocGenerator) collect(strict bool) {
 	log.Println("Begin collecting")
 	log.Printf("Library path: %s\n", dg.libDir)
 
-	elementaryUUIDs := elem.GetBuiltinIds()
+	elementaryIDs := elem.GetBuiltinIds()
 
 	store := storage.NewStorage().AddBackend(storage.NewReadOnlyFileSystem(dg.libDir))
 
-	libraryUUIDs, err := store.List()
+	libraryIDs, err := store.List()
 	if err != nil {
 		panic(err)
 	}
 
 	var uuids []uuid.UUID
 
-	for _, id := range elementaryUUIDs {
+	for _, id := range elementaryIDs {
 		uuids = append(uuids, id)
 	}
 
-	for _, id := range libraryUUIDs {
+	for _, id := range libraryIDs {
 		uuids = append(uuids, id)
 	}
 
@@ -189,24 +214,24 @@ func (dg *DocGenerator) collect(strict bool) {
 	for _, id := range uuids {
 		tries++
 
-		opDef, err := store.Load(id)
+		blueprint, err := store.Load(id)
 		if err != nil {
-			log.Println(opDef.Id, opDef.Meta.Name, err)
+			log.Println(blueprint.Id, blueprint.Meta.Name, err)
 			continue
 		}
 
 		if strict {
-			if err := opDef.Meta.Validate(); err != nil {
-				log.Println(opDef.Id, opDef.Meta.Name, err)
+			if err := blueprint.Meta.Validate(); err != nil {
+				log.Println(blueprint.Id, blueprint.Meta.Name, err)
 				continue
 			}
 		}
 
 		var opType string
-		if funk.Contains(libraryUUIDs, id) {
+		if funk.Contains(libraryIDs, id) {
 			libraries++
 			opType = "library"
-		} else if funk.Contains(elementaryUUIDs, id) {
+		} else if funk.Contains(elementaryIDs, id) {
 			elementaries++
 			opType = "elementary"
 		} else {
@@ -214,10 +239,10 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		var opSlug string
-		if opDef.Meta.DocURL == "" {
-			opSlug = dg.findSlug(opDef, strcase.KebabCase(opDef.Meta.Name))
+		if blueprint.Meta.DocURL == "" {
+			opSlug = dg.findSlug(blueprint, strcase.KebabCase(blueprint.Meta.Name))
 		} else {
-			u, err := url.Parse(opDef.Meta.DocURL)
+			u, err := url.Parse(blueprint.Meta.DocURL)
 			if err != nil {
 				panic(err)
 			}
@@ -227,7 +252,7 @@ func (dg *DocGenerator) collect(strict bool) {
 		opInfo := &OperatorInfo{}
 
 		opTags := []*TagInfo{}
-		for _, tag := range opDef.Meta.Tags {
+		for _, tag := range blueprint.Meta.Tags {
 			kebabTag := strcase.KebabCase(tag)
 			opTag, ok := dg.tagInfos[kebabTag]
 			if !ok {
@@ -245,14 +270,14 @@ func (dg *DocGenerator) collect(strict bool) {
 			opJSONDefs = append(opJSONDefs, jsonDef)
 		}
 
-		opIcon := opDef.Meta.Icon
+		opIcon := blueprint.Meta.Icon
 		if opIcon == "" {
 			opIcon = "box"
 		}
 
 		opTests := []TestCase{}
 
-		for _, tc := range opDef.TestCases {
+		for _, tc := range blueprint.TestCases {
 			data := []struct {
 				In  string
 				Out string
@@ -288,23 +313,23 @@ func (dg *DocGenerator) collect(strict bool) {
 		}
 
 		*opInfo = OperatorInfo{
-			UUID:                id.String(),
-			Name:                opDef.Meta.Name,
+			ID:                  id,
+			Name:                blueprint.Meta.Name,
 			Icon:                opIcon,
-			Description:         opDef.Meta.Description,
-			ShortDescription:    opDef.Meta.ShortDescription,
+			Description:         blueprint.Meta.Description,
+			ShortDescription:    blueprint.Meta.ShortDescription,
 			Type:                opType,
 			Slug:                opSlug,
 			Tags:                opTags,
 			Tests:               opTests,
 			OperatorDefinitions: opJSONDefs,
-			operatorDefinition:  opDef,
-			operatorContent:     make(map[string]*OperatorUsage),
-			operatorsUsing:      make(map[string]*OperatorUsage),
+			operatorDefinition:  blueprint,
+			operatorContent:     make(map[uuid.UUID]*OperatorUsage),
+			operatorsUsing:      make(map[uuid.UUID]*OperatorUsage),
 		}
 
 		dg.slugs[opSlug] = opInfo
-		dg.operatorInfos[opDef.Id] = opInfo
+		dg.operatorInfos[blueprint.Id] = opInfo
 	}
 
 	if len(dg.operatorInfos) == 0 {
@@ -349,10 +374,10 @@ func (dg *DocGenerator) usage() {
 				continue
 			}
 
-			if usage, ok := insInfo.operatorsUsing[info.UUID]; ok {
+			if usage, ok := insInfo.operatorsUsing[info.ID]; ok {
 				usage.Count++
 			} else {
-				insInfo.operatorsUsing[info.UUID] = &OperatorUsage{
+				insInfo.operatorsUsing[info.ID] = &OperatorUsage{
 					Count: 1,
 					Info:  info,
 				}
@@ -371,19 +396,19 @@ func (dg *DocGenerator) usage() {
 	}
 }
 
-func (dg *DocGenerator) generateOperatorDocs() {
+func (dg *DocGenerator) generateOperatorDocs(extension string) {
 	log.Println("Begin generating operator docs")
 
 	if len(dg.operatorInfos) == 0 {
 		panic("No operators found")
 	}
 
-	os.MkdirAll(dg.docOpDir, os.ModeDir)
+	//os.MkdirAll(dg.docOpDir, os.ModeDir)
 
 	generated := 0
 
 	for _, opInfo := range dg.operatorInfos {
-		file, err := os.Create(path.Join(dg.docOpDir, opInfo.Slug+".html"))
+		file, err := os.Create(path.Join(dg.docOpDir, opInfo.Slug+"."+extension))
 		if err != nil {
 			panic(err)
 		}
@@ -420,40 +445,13 @@ func (dg *DocGenerator) prepareTags() {
 	}
 }
 
-func (dg *DocGenerator) generateTagDocs() {
-	log.Println("Begin generating tag docs")
-
-	if len(dg.tagInfos) == 0 {
-		panic("No tags found")
-	}
-
-	os.MkdirAll(dg.docTagDir, os.ModeDir)
-
-	generated := 0
-
-	for _, tagInfo := range dg.tagInfos {
-		file, err := os.Create(path.Join(dg.docTagDir, tagInfo.Slug+".html"))
-		if err != nil {
-			panic(err)
-		}
-		err = dg.tagTmpl.Execute(file, tagInfo)
-		if err != nil {
-			panic(err)
-		}
-		file.Close()
-
-		generated++
-	}
-
-	log.Printf("Generated %d operator doc files\n", generated)
-}
-
-func (dg *DocGenerator) generateIndex() {
+func (dg *DocGenerator) generateIndex(indexTmpl template.Template) {
 	log.Println("Begin generating doc index")
 
 	if len(dg.tagInfos) == 0 {
 		panic("No tags found")
 	}
+	dg.prepareTags()
 
 	os.MkdirAll(path.Dir(dg.docIndexPath), os.ModeDir)
 
@@ -461,7 +459,7 @@ func (dg *DocGenerator) generateIndex() {
 	if err != nil {
 		panic(err)
 	}
-	err = dg.indexTmpl.Execute(file, struct {
+	err = indexTmpl.Execute(file, struct {
 		Total int
 		Tags  map[string]*TagInfo
 	}{len(dg.generatedInfos), dg.tagInfos})
@@ -489,20 +487,20 @@ func (dg *DocGenerator) saveURLs() {
 			continue
 		}
 
-		opDef := opInfo.operatorDefinition.Copy(false)
+		blueprint := opInfo.operatorDefinition.Copy(false)
 
 		opDocURL, _ := url.Parse(dg.docOpURL.String())
 		opDocURL.Path = path.Join(opDocURL.Path, opInfo.Slug)
 		opDocURLStr := opDocURL.String()
 
 		//nolint:staticcheck
-		if opDef.Meta.DocURL == opDocURLStr {
+		if blueprint.Meta.DocURL == opDocURLStr {
 			// continue
 		}
 
-		opDef.Meta.DocURL = opDocURLStr
+		blueprint.Meta.DocURL = opDocURLStr
 
-		_, err := store.Save(opDef)
+		_, err := store.Save(blueprint)
 		if err != nil {
 			panic(err)
 		}
@@ -513,14 +511,14 @@ func (dg *DocGenerator) saveURLs() {
 	log.Printf("Updated %d URLs\n", written)
 }
 
-func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
+func (dg *DocGenerator) findSlug(blueprint *core.Blueprint, slug string) string {
 	if info, ok := dg.slugs[slug]; !ok {
 		return slug
 	} else {
 		otherTags := info.Tags
 		additionalTags := []string{}
 
-		for _, tag := range opDef.Meta.Tags {
+		for _, tag := range blueprint.Meta.Tags {
 			if !funk.Contains(otherTags, tag) {
 				additionalTags = append(additionalTags, tag)
 			}
@@ -532,40 +530,35 @@ func (dg *DocGenerator) findSlug(opDef *core.OperatorDef, slug string) string {
 
 		slug += "-" + additionalTags[0]
 
-		return dg.findSlug(opDef, slug)
+		return dg.findSlug(blueprint, slug)
 	}
 }
 
-func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[string]OperatorDefinition {
-	opDef, err := store.Load(id)
+func dumpDefinitions(id uuid.UUID, store *storage.Storage) map[uuid.UUID]OperatorDefinition {
+	blueprint, err := store.Load(id)
 	if err != nil {
 		panic(err)
 	}
 
-	defs := make(map[string]OperatorDefinition)
+	defs := make(map[uuid.UUID]OperatorDefinition)
 
 	var opType string
-	if opDef.Elementary == "" {
+	if blueprint.Elementary == uuid.Nil {
 		opType = "library"
 	} else {
 		opType = "elementary"
 	}
 
 	buf := new(bytes.Buffer)
-	json.NewEncoder(buf).Encode(opDef)
+	json.NewEncoder(buf).Encode(blueprint)
 
 	// Remove newline at the end
 	buf.Truncate(buf.Len() - 1)
 
-	defs[opDef.Id] = OperatorDefinition{opDef.Id, opType, buf.String()}
+	defs[blueprint.Id] = OperatorDefinition{blueprint.Id, opType, buf.String()}
 
-	for _, ins := range opDef.InstanceDefs {
-		opUuid, err := uuid.Parse(ins.Operator)
-		if err != nil {
-			panic(err)
-		}
-		subDefs := dumpDefinitions(opUuid, store)
-
+	for _, ins := range blueprint.InstanceDefs {
+		subDefs := dumpDefinitions(ins.Operator, store)
 		for id, def := range subDefs {
 			if _, ok := defs[id]; !ok {
 				defs[id] = def

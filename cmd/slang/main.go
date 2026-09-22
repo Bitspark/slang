@@ -1,228 +1,280 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
-	"net"
+	"net/http"
 	"os"
-	"os/exec"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
+	"github.com/Bitspark/slang/pkg/log"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
+	"github.com/thoas/go-funk"
 )
 
-var printPorts bool
+var SupportedRunModes = []string{"process", "httpPost"}
 
 func main() {
-	flag.BoolVar(&printPorts, "print-ports", false, "display port def")
-
-	if len(os.Args) < 2 {
-		fmt.Println("USAGE: slang [OPTIONS] SLANGFILE.slang.json")
-		fmt.Println("OPTIONS:")
-		flag.PrintDefaults()
-		return
-	}
-
+	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
+	bind := flag.String("bind", "localhost:0", "To which address httpPost should bind")
+	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
-	slFile, err := readSlangFile(flag.Arg(0))
+	if *help {
+		fmt.Println("slang OPTIONS SLANG_BUNDLE")
+		flag.PrintDefaults()
+	}
 
+	// Check cmd args
+
+	// Expect slang file as 1st arg
+	slangBundlePath := flag.Arg(0)
+	if slangBundlePath == "" {
+		log.Fatal("missing slang bundle file")
+	}
+
+	// Expect supported runmode
+	if !funk.ContainsString(SupportedRunModes, *runMode) {
+		log.Fatalf("invalid run mode: %s must be one of following %s", *runMode, SupportedRunModes)
+	}
+
+	// Read in slang file
+	slBundle, err := readSlangBundleJSON(slangBundlePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if printPorts {
-		if err := printPortDef(slFile); err != nil {
-			log.Fatal(err)
-		}
-		return
+	// Init elementary operators
+	elem.SafeMode = false
+	elem.Init()
+
+	// Parse and Build blueprint
+	operator, err := api.BuildOperator(slBundle)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if err := run(slFile); err != nil {
+	log.SetBlueprint(operator.Id(), operator.Name())
+
+	// Run
+	if err := run(operator, *runMode, *bind); err != nil {
 		log.Fatal(err)
 	}
 
 }
 
-func readSlangFile(slFilePath string) (*core.SlangFileDef, error) {
-	var slFile core.SlangFileDef
-
-	b, err := ioutil.ReadFile(slFilePath)
+func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
+	slBundleContent, err := ioutil.ReadFile(slBundlePath)
 
 	if err != nil {
-		return &slFile, fmt.Errorf("could not read operator file: %s", slFilePath)
+		return nil, err
 	}
-	err = json.Unmarshal(b, &slFile)
+
+	var slFile core.SlangBundle
+	err = json.Unmarshal([]byte(slBundleContent), &slFile)
 	return &slFile, err
 }
 
-func printPortDef(slFile *core.SlangFileDef) error {
-	mainBpId := slFile.Main
-	var opDef *core.OperatorDef
-	for _, bp := range slFile.Blueprints {
-		bp := bp
-		if mainBpId == bp.Id {
-			opDef = &bp
+func run(operator *core.Operator, mode string, bind string) error {
+	if operator.Main() == nil {
+		return errors.New("blueprint has no main service")
+	}
+	if err := operator.Main().Out().FullyConnected(); err != nil {
+		return err
+	}
+	// Handle SIGTERM (CTRL-C)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(quit)
+
+	switch mode {
+	case "process":
+		go func() {
+			runProcess(operator)
+			quit <- syscall.SIGQUIT
+		}()
+	case "httpPost":
+		go func() {
+			runHttpPost(operator, bind)
+			quit <- syscall.SIGQUIT
+		}()
+	default:
+		return fmt.Errorf("run mode not supported: %s", mode)
+	}
+
+	for {
+		select {
+		case <-quit:
+			return nil
+		case <-time.After(5 * time.Second):
+			log.Ping()
 		}
 	}
-
-	if opDef == nil {
-		return fmt.Errorf("unknown blueprint: %s", mainBpId)
-	}
-
-	fmt.Printf("Ports:\n")
-	fmt.Printf("\tIn:\n\t\t%s\n", jsonString(opDef.ServiceDefs["main"].In))
-	fmt.Printf("\tOut:\n\t\t%s\n", jsonString(opDef.ServiceDefs["main"].Out))
-
-	return nil
 }
 
-func run(slFile *core.SlangFileDef) error {
+func runProcess(operator *core.Operator) {
+	// Expect to read from stdin
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if fi.Mode()&(os.ModeNamedPipe|os.ModeSocket) == 0 {
+		log.Fatal("slang command is intended to work with pipes\nUsage: data-src | slang")
+	}
 
-	errors := make(chan error, 1)
-	done := make(chan bool, 1)
-	portcfgs := make(chan map[string]string, 1)
+	operator.Main().Out().Bufferize()
+	operator.Start()
 
-	cmdr := api.NewCommander(":0")
+	/*
+		if isQuasiTrigger(operator.Main().In()) {
+			operator.Main().In().Push(true)
+		}
+	*/
+
+	incoming := make(chan interface{})
+	outgoing := make(chan interface{})
+	stopped := false
+	// expecting to read newline delimited json (ndjson) from stdin
+	jdeco := json.NewDecoder(os.Stdin)
+
+	// Read from stdin
+	go func() {
+	loop:
+		for jdeco.More() {
+			var jval interface{}
+			if err := jdeco.Decode(&jval); err != nil {
+				// as soon as decode error decoder cannot continue to read stream
+				// without break this line will be passed infinitly
+				log.Error("json decode error: ", err)
+				break loop
+			}
+			jval = core.CleanValue(jval)
+			incoming <- jval
+		}
+		stopped = true
+	}()
+
+	// Write to stdout
+	go func() {
+		var jval interface{}
+		jenco := json.NewEncoder(os.Stdout)
+
+	loop:
+		for !stopped {
+			jval = <-outgoing
+			if err := jenco.Encode(jval); err != nil {
+				log.Error("json encode error: ", err)
+				break loop
+			}
+		}
+		operator.Stop()
+	}()
 
 	go func() {
-		err := cmdr.Begin(func(c api.Commands) error {
-			var msg string
-			var err error
+	loop:
+		for {
+			jval := <-incoming
+			operator.Main().In().Push(jval)
 
-			msg, err = c.Hello()
-
-			if err != nil {
-				return err
+			p := operator.Main().Out()
+			if p.Closed() {
+				break loop
 			}
 
-			if msg == "" {
-				msg, err = c.Init(jsonString(slFile))
-			} else {
-				msg, err = c.PrtCfg()
+			outgoing <- p.Pull()
+		}
+	}()
+
+	operator.WaitForStop()
+}
+
+func runHttpPost(operator *core.Operator, bind string) {
+	inDef := operator.Main().In().Define()
+
+	r := mux.NewRouter()
+	r.
+		Methods("POST").
+		HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			var incoming interface{}
+
+			err := json.NewDecoder(req.Body).Decode(&incoming)
+			switch {
+			// We do not have a POST-Body but we could still serve a result
+			// for the case when the `In` is a trigger.
+			case err == io.EOF:
+				if isQuasiTrigger(operator.Main().In()) {
+					operator.Main().In().Push(true)
+					outgoing := operator.Main().Out().Pull()
+					responseWithOk(resp, outgoing)
+				} else {
+					responseWithError(resp, errors.New("missing data"), http.StatusBadRequest)
+				}
+			// We have an error while decoding the response
+			case err != nil:
+				responseWithError(resp, err, http.StatusBadRequest)
+
+			// Everything is fine, validate the values and pass it to the running operator
+			default:
+				incoming = core.CleanValue(incoming)
+				if err := inDef.VerifyData(incoming); err != nil {
+					responseWithError(resp, err, http.StatusBadRequest)
+					return
+				}
+				operator.Main().In().Push(incoming)
+
+				p := operator.Main().Out()
+				if p.Closed() {
+					return
+				}
+
+				outgoing := p.Pull()
+				responseWithOk(resp, outgoing)
 			}
 
-			if err != nil {
-				return err
-			}
-
-			var pcfg map[string]string
-			if err = json.Unmarshal([]byte(msg), &pcfg); err != nil {
-				return err
-			}
-
-			portcfgs <- pcfg
-			return nil
 		})
 
-		if err != nil {
-			errors <- err
-		}
-	}()
+	handler := cors.New(cors.Options{
+		AllowedMethods: []string{"POST"},
+	}).Handler(r)
 
-	cmd := exec.Command("slangr", "--aggr-in", "--aggr-out", "--mgnt-addr", fmt.Sprintf("%s", cmdr.Addr()))
-
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Start()
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		if err := cmd.Wait(); err != nil {
-			<-done
-		}
-		done <- true
-	}()
-
-	var portcfg map[string]string
-	select {
-	case err = <-errors:
-		return err
-	case portcfg = <-portcfgs:
-		break
-	}
-
-	pconn := api.NewPortConnHandler(portcfg)
-	if err := pconn.ConnectTo("(", pushToRnr); err != nil {
-		return err
-	}
-	if err := pconn.ConnectTo(")", pullFromRnr); err != nil {
-		return err
-	}
-
-	<-done
-	return nil
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	log.Fatal(http.ListenAndServe(bind, handler))
 }
 
-func jsonString(j interface{}) string {
-	jb, _ := json.Marshal(j)
-	return string(jb)
+func isQuasiTrigger(p *core.Port) bool {
+	// port is quasi a trigger,
+	// when it actually is a trigger port or
+	// it is a map with in total one sub-port of trigger type
+	return p.TriggerType() || p.MapType() && p.MapLength() == 1 && p.Map(p.MapEntryNames()[0]).TriggerType()
 }
 
-func wrerr(err error) {
-	wrerr := bufio.NewWriter(os.Stderr)
-	wrerr.WriteString(err.Error() + "\n")
-	wrerr.Flush()
-}
+func responseWithError(w http.ResponseWriter, err error, status int) {
+	log.Error(err)
 
-func pushToRnr(connRnr net.Conn) bool {
-	stdin := bufio.NewReader(os.Stdin)
-	wrRnr := bufio.NewWriter(connRnr)
-
-	defer connRnr.Close()
-
-	for {
-		m, err := api.Rdbuf(stdin)
-
-		time.Sleep(1 * time.Second)
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			wrerr(err)
-			continue
-		}
-
-		if err := api.Wrbuf(wrRnr, m); err != nil {
-			break
-		}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(err.Error()); err != nil {
+		log.Fatal(err)
 	}
-
-	return false
 }
 
-func pullFromRnr(connRnr net.Conn) bool {
-	rdRnr := bufio.NewReader(connRnr)
-	stdout := bufio.NewWriter(os.Stdout)
-
-	defer connRnr.Close()
-
-	for {
-		m, err := api.Rdbuf(rdRnr)
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			wrerr(err)
-			continue
-		}
-
-		if err := api.Wrbuf(stdout, m); err != nil {
-			wrerr(err)
-			break
-		}
+func responseWithOk(w http.ResponseWriter, m interface{}) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		log.Fatal(err)
 	}
-	return false
 }

@@ -2,13 +2,15 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var streamWindowId = "5b704038-9617-454a-b7a1-2091277cff69"
+var streamWindowId = uuid.MustParse("5b704038-9617-454a-b7a1-2091277cff69")
 var streamWindowCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: streamWindowId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "window",
 			ShortDescription: "cuts a stream into windows of a certain size and emits them",
 			Icon:             "window-restore",
@@ -37,7 +39,7 @@ var streamWindowCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"size": {
 				Type: "number",
 			},

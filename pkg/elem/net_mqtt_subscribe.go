@@ -1,18 +1,22 @@
 package elem
 
 import (
+	"crypto/tls"
+
 	"github.com/Bitspark/slang/pkg/core"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 )
 
 var netMQTTSubscribeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "fd51e295-3483-4558-9b26-8c16d579c4ef",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("fd51e295-3483-4558-9b26-8c16d579c4ef"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "MQTT subscribe",
 			ShortDescription: "subscribes at a given topic, behaves like an MQTT client",
 			Icon:             "chart-network",
-			Tags:             []string{"network", "mqtt"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/mqtt-subscribe",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -39,7 +43,7 @@ var netMQTTSubscribeCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"broker": {
 				Type: "string",
 			},
@@ -52,13 +56,33 @@ var netMQTTSubscribeCfg = &builtinConfig{
 			"topic": {
 				Type: "string",
 			},
+			"verifyCertificate": {
+				Type:     "boolean",
+				Optional: true,
+			},
+			"clientCertificate": {
+				Type:     "string",
+				Optional: true,
+			},
+			"clientKey": {
+				Type:     "string",
+				Optional: true,
+			},
+			"caCertificate": {
+				Type:     "string",
+				Optional: true,
+			},
 		},
 	},
 	opFunc: func(op *core.Operator) {
-		options := mqtt.NewClientOptions()
-		options.AddBroker(op.Property("broker").(string))
-		options.SetUsername(op.Property("username").(string))
-		options.SetPassword(op.Property("password").(string))
+		options := mqtt.NewClientOptions().
+			AddBroker(op.Property("broker").(string)).
+			SetUsername(op.Property("username").(string)).
+			SetPassword(op.Property("password").(string)).
+			SetTLSConfig(&tls.Config{
+				ClientAuth:         tls.NoClientCert,
+				InsecureSkipVerify: true,
+			})
 
 		topic := op.Property("topic").(string)
 

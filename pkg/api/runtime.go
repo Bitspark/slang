@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/Bitspark/go-funk"
 	"io"
 	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/thoas/go-funk"
 )
 
 type Commander interface {

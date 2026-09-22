@@ -5,16 +5,18 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var streamSerializeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "13257172-b05d-497c-be23-da7c86577c1e",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("13257172-b05d-497c-be23-da7c86577c1e"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "serialize",
 			ShortDescription: "takes a map of items and serializes them into a stream",
 			Icon:             "ellipsis-h",
-			Tags:             []string{"stream", "convert"},
+			Tags:             []string{"stream"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/serialize",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -38,7 +40,7 @@ var streamSerializeCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"indexes": {
 				Type: "stream",
 				Stream: &core.TypeDef{

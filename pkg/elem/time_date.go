@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 func parseDate(dateStr string) (time.Time, error) {
@@ -22,9 +23,10 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 var timeParseDateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "2a9da2d5-2684-4d2f-8a37-9560d0f2de29",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("2a9da2d5-2684-4d2f-8a37-9560d0f2de29"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "to date",
 			ShortDescription: "takes a string containing date and time and emits its parsed values",
 			Icon:             "calendar-week",
@@ -39,13 +41,23 @@ var timeParseDateCfg = &builtinConfig{
 				Out: core.TypeDef{
 					Type: "map",
 					Map: map[string]*core.TypeDef{
-						"year":       {Type: "number"},
-						"month":      {Type: "number"},
-						"day":        {Type: "number"},
-						"hour":       {Type: "number"},
-						"minute":     {Type: "number"},
-						"second":     {Type: "number"},
-						"nanosecond": {Type: "number"},
+						"weekday": {Type: "string"},
+						"date": {
+							Type: "map",
+							Map: core.TypeDefMap{
+								"year":  {Type: "number"},
+								"month": {Type: "number"},
+								"day":   {Type: "number"},
+							},
+						},
+						"time": {
+							Type: "map",
+							Map: core.TypeDefMap{
+								"hour":   {Type: "number"},
+								"minute": {Type: "number"},
+								"second": {Type: "number"},
+							},
+						},
 					},
 				},
 			},
@@ -54,16 +66,18 @@ var timeParseDateCfg = &builtinConfig{
 	opFunc: func(op *core.Operator) {
 		in := op.Main().In()
 		out := op.Main().Out()
+		odate := out.Map("date")
+		otime := out.Map("time")
 		for !op.CheckStop() {
 			if i := in.Pull(); !core.IsMarker(i) {
 				t, _ := parseDate(i.(string))
-				out.Map("year").Push(t.Year())
-				out.Map("month").Push(int(t.Month()))
-				out.Map("day").Push(t.Day())
-				out.Map("hour").Push(t.Hour())
-				out.Map("minute").Push(t.Minute())
-				out.Map("second").Push(t.Second())
-				out.Map("nanosecond").Push(t.Nanosecond())
+				odate.Map("year").Push(t.Year())
+				odate.Map("month").Push(int(t.Month()))
+				odate.Map("day").Push(t.Day())
+				otime.Map("hour").Push(t.Hour())
+				otime.Map("minute").Push(t.Minute())
+				otime.Map("second").Push(t.Second())
+				out.Map("weekday").Push(t.Weekday().String())
 			} else {
 				out.Push(i)
 			}

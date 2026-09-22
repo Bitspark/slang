@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	TYPE_GENERIC   = iota
-	TYPE_PRIMITIVE = iota
-	TYPE_TRIGGER   = iota
-	TYPE_NUMBER    = iota
-	TYPE_STRING    = iota
-	TYPE_BINARY    = iota
-	TYPE_BOOLEAN   = iota
-	TYPE_STREAM    = iota
-	TYPE_MAP       = iota
+	TYPE_GENERIC   = iota	// 0
+	TYPE_PRIMITIVE = iota 	// 1
+	TYPE_TRIGGER   = iota	// 2
+	TYPE_NUMBER    = iota 	// 3
+	TYPE_STRING    = iota	// 4
+	TYPE_BINARY    = iota	// 5
+	TYPE_BOOLEAN   = iota	// 6
+	TYPE_STREAM    = iota	// 7
+	TYPE_MAP       = iota	// 8
 )
 
 const (
@@ -124,7 +124,7 @@ func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 		p.itemType = TYPE_BOOLEAN
 	}
 
-	if p.Primitive() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
+	if p.PrimitiveType() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	}
 
@@ -171,12 +171,12 @@ func (p *Port) Unlock() {
 }
 
 // Returns the length of the map ports
-func (p *Port) MapSize() int {
+func (p *Port) MapLength() int {
 	return len(p.subs)
 }
 
 // Returns all map entry names of this port
-func (p *Port) MapEntries() []string {
+func (p *Port) MapEntryNames() []string {
 	entries := []string{}
 	for entry := range p.subs {
 		entries = append(entries, entry)
@@ -218,11 +218,11 @@ func (p *Port) Connect(q *Port) (err error) {
 		return p.connect(q, true)
 	}
 
-	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.Primitive() {
+	if p.itemType != TYPE_PRIMITIVE && p.itemType != q.itemType || p.itemType == TYPE_PRIMITIVE && !q.PrimitiveType() {
 		return fmt.Errorf("%s -> %s: types don't match - %d != %d", p.Name(), q.Name(), p.itemType, q.itemType)
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		return p.connect(q, true)
 	}
 
@@ -375,7 +375,7 @@ func (p *Port) DirectlyConnected() error {
 		return errors.New("can only check in ports")
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		if p.src == nil {
 			return errors.New(p.Name() + " not connected")
 		}
@@ -429,7 +429,7 @@ func (p *Port) assertChannelSpace() {
 }
 
 func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		handle(p)
 	}
 
@@ -437,7 +437,7 @@ func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
 		p.Stream().WalkPrimitivePorts(handle)
 	}
 
-	for _, pname := range p.MapEntries() {
+	for _, pname := range p.MapEntryNames() {
 		p.Map(pname).WalkPrimitivePorts(handle)
 	}
 }
@@ -467,12 +467,12 @@ func (p *Port) Push(item interface{}) {
 	}
 
 	for dest := range p.dests {
-		if dest.Type() == TYPE_TRIGGER || p.Primitive() {
+		if dest.Type() == TYPE_TRIGGER || p.PrimitiveType() {
 			dest.Push(item)
 		}
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		return
 	}
 
@@ -560,7 +560,7 @@ func (p *Port) Pull() interface{} {
 		}
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		panic("no buffer")
 	}
 
@@ -606,6 +606,110 @@ func (p *Port) Pull() interface{} {
 
 			if p.OwnEOS(i) {
 				return items
+			}
+
+			items = append(items, i)
+		}
+	}
+
+	panic("unknown type")
+}
+
+// Similar to Port.Pull but will return (nil, false) when there is no item after timeout otherwise (value, true)
+func (p *Port) Poll() (interface{}, bool) {
+	timeout := time.After(5 * time.Millisecond)
+
+	if p.itemType == TYPE_GENERIC {
+		panic("cannot pull from generic")
+	}
+
+	if p.buf != nil {
+		if CHANNEL_DYNAMIC {
+			for {
+				p.mutex.Lock()
+				select {
+				case i := <-p.buf:
+					p.mutex.Unlock()
+					return i, true
+				case <-timeout:
+					p.mutex.Unlock()
+					return nil, false
+				default:
+					p.mutex.Unlock()
+				}
+				time.Sleep(1 * time.Millisecond)
+			}
+		} else {
+			select {
+			case i := <-p.buf:
+				return i, true
+			case <-timeout:
+				return nil, false
+			}
+		}
+	}
+
+	if p.PrimitiveType() {
+		panic("no buffer")
+	}
+
+	if p.itemType == TYPE_MAP {
+		var mi interface{}
+		itemMap := make(map[string]interface{})
+
+		for k, sub := range p.subs {
+			var i any
+
+			if len(itemMap) == 0 {
+				// prevent blocking when there has not arrived any value yet.
+				var ok bool
+				if i, ok = sub.Poll(); !ok {
+					return nil, false
+				}
+			} else {
+				i = sub.Pull()
+			}
+ 
+
+			if i == PHMultiple {
+				mi = PHMultiple
+				continue
+			}
+			if bos, ok := i.(BOS); ok {
+				mi = bos
+				continue
+			}
+			if eos, ok := i.(EOS); ok {
+				mi = eos
+				continue
+			}
+			itemMap[k] = i
+		}
+
+		if mi != nil {
+			return mi, true
+		}
+		return itemMap, true
+	}
+
+	if p.itemType == TYPE_STREAM {
+		i, ok := p.sub.Poll()
+
+		if !ok {
+			return nil, false
+		}
+
+		if !p.OwnBOS(i) {
+			return i, true
+		}
+
+		items := []interface{}{}
+
+		for {
+			i := p.sub.Pull()
+
+			if p.OwnEOS(i) {
+				return items, true
 			}
 
 			items = append(items, i)
@@ -681,31 +785,6 @@ func (p *Port) PullEOS() bool {
 	return true
 }
 
-// Similar to Port.Pull but will return nil when there is no item after timeout
-func (p *Port) Poll() interface{} {
-	if p.buf == nil {
-		panic("no buffer")
-	}
-
-	if len(p.buf) == 0 {
-		time.Sleep(200 * time.Millisecond)
-		if len(p.buf) == 0 {
-			return nil
-		}
-	}
-
-	var i interface{}
-	if CHANNEL_DYNAMIC {
-		p.Lock()
-		i = <-p.buf
-		p.Unlock()
-	} else {
-		i = <-p.buf
-	}
-
-	return i
-}
-
 func (p *Port) NewBOS() BOS {
 	return BOS{p.strSrc}
 }
@@ -748,7 +827,7 @@ func (p *Port) Bufferize() {
 		return
 	}
 
-	if p.Primitive() {
+	if p.PrimitiveType() {
 		p.buf = make(chan interface{}, CHANNEL_SIZE)
 	} else if p.itemType == TYPE_MAP {
 		for _, sub := range p.subs {
@@ -854,13 +933,25 @@ func (p *Port) connect(q *Port, original bool) error {
 	return nil
 }
 
-func (p *Port) Primitive() bool {
+func (p *Port) PrimitiveType() bool {
 	return p.itemType == TYPE_PRIMITIVE ||
 		p.itemType == TYPE_TRIGGER ||
 		p.itemType == TYPE_NUMBER ||
 		p.itemType == TYPE_STRING ||
 		p.itemType == TYPE_BINARY ||
 		p.itemType == TYPE_BOOLEAN
+}
+
+func (p *Port) TriggerType() bool {
+	return p.itemType == TYPE_TRIGGER
+}
+
+func (p *Port) MapType() bool {
+	return p.itemType == TYPE_MAP
+}
+
+func (p *Port) StreamType() bool {
+	return p.itemType == TYPE_STREAM
 }
 
 func (p *Port) Define() TypeDef {
@@ -948,7 +1039,7 @@ func (p *Port) String() string {
 	return ""
 }
 
-func (p *Port) defineConnections(def *OperatorDef) {
+func (p *Port) defineConnections(def *Blueprint) {
 	portStr := p.String()
 
 	if def.Connections[portStr] == nil {

@@ -6,12 +6,14 @@ import (
 	"path/filepath"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var filesReadLinesCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "6124cd6b-5c23-4e17-a714-458d0f8ac1a7",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("6124cd6b-5c23-4e17-a714-458d0f8ac1a7"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "lines from file",
 			ShortDescription: "reads the contents of a file line by line and emits them as stream",
 			Icon:             "file",

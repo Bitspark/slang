@@ -1,3 +1,4 @@
+id: 83c4253d-5aa3-4b45-90fa-2958e8ad6ff7
 services:
   main:
     in:
@@ -13,7 +14,7 @@ properties:
 
 operators:
   del2:
-    operator: test_data.delegates.del2_op
+    operator: a8780183-5c51-4370-b6ef-20ce70a3d3c5
     generics:
       gen:
         type: number

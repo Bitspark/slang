@@ -3,9 +3,10 @@ package core
 import (
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/Bitspark/slang/pkg/log"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type OFunc func(op *Operator)
@@ -16,7 +17,7 @@ var MAIN_SERVICE = "main"
 type Operator struct {
 	name        string
 	defId       uuid.UUID
-	defMeta     OperatorMetaDef
+	defMeta     BlueprintMetaDef
 	services    map[string]*Service
 	delegates   map[string]*Delegate
 	basePort    *Port
@@ -26,7 +27,7 @@ type Operator struct {
 	generics    Generics
 	properties  Properties
 	connectFunc CFunc
-	elementary  string
+	elementary  uuid.UUID
 	stopChannel chan bool
 	stopped     bool
 }
@@ -45,12 +46,12 @@ type Service struct {
 	outPort  *Port
 }
 
-func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def OperatorDef) (*Operator, error) {
+func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def Blueprint) (*Operator, error) {
 	props.Clean()
 
 	o := &Operator{}
 	o.defMeta = def.Meta
-	o.defId, _ = uuid.Parse(def.Id)
+	o.defId = def.Id
 	o.function = f
 	o.connectFunc = c
 	o.name = name
@@ -60,8 +61,10 @@ func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties,
 	o.children = make(map[string]*Operator)
 
 	var err error
-	if err := def.PropertyDefs.GenericsSpecified(); err != nil {
-		return nil, fmt.Errorf("%s: %s", "properties", err.Error())
+	for propKey := range def.PropertyDefs {
+		if err := def.PropertyDefs[propKey].GenericsSpecified(); err != nil {
+			return nil, fmt.Errorf("property %s: %s", propKey, err.Error())
+		}
 	}
 
 	o.services = make(map[string]*Service)
@@ -117,6 +120,11 @@ func (o *Operator) Name() string {
 	return o.name
 }
 
+// Logger includes the operator's identity in each structured log event.
+func (o *Operator) Logger() *logrus.Entry {
+	return log.ForOperator(o.Id(), o.Name())
+}
+
 func (o *Operator) BasePort() *Port {
 	return o.basePort
 }
@@ -156,7 +164,7 @@ func (o *Operator) Start() {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("%s panicked: %s", o.Name(), r)
+					o.Logger().Errorf("operator panicked: %v", r)
 					o.Stop()
 				}
 			}()
@@ -203,6 +211,7 @@ func (o *Operator) WaitForStop() {
 func (o *Operator) CheckStop() bool {
 	select {
 	case <-o.stopChannel:
+		o.stopChannel <- true
 		return true
 	default:
 		return false
@@ -278,7 +287,7 @@ func (o *Operator) CorrectlyCompiled() error {
 	return nil
 }
 
-func (o *Operator) defineConnections(def *OperatorDef) {
+func (o *Operator) defineConnections(def *Blueprint) {
 	for _, srv := range o.services {
 		srv.outPort.defineConnections(def)
 	}
@@ -288,9 +297,9 @@ func (o *Operator) defineConnections(def *OperatorDef) {
 	}
 }
 
-func (o *Operator) Define() (OperatorDef, error) {
-	var def OperatorDef
-	def.Id = o.defId.String()
+func (o *Operator) Define() (Blueprint, error) {
+	var def Blueprint
+	def.Id = o.defId
 	def.Meta = o.defMeta
 	def.ServiceDefs = make(map[string]*ServiceDef)
 	def.DelegateDefs = make(map[string]*DelegateDef)
@@ -303,7 +312,7 @@ func (o *Operator) Define() (OperatorDef, error) {
 		insDef.Operator = child.elementary
 		insDef.Generics = child.generics
 		insDef.Properties = child.properties
-		insDef.OperatorDef, _ = child.Define()
+		insDef.Blueprint, _ = child.Define()
 		def.InstanceDefs = append(def.InstanceDefs, insDef)
 	}
 

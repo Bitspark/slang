@@ -2,17 +2,19 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
-var databaseMemoryWriteId = "78e92496-dd73-4422-bcd0-691fa549dccd"
+var databaseMemoryWriteId = uuid.MustParse("78e92496-dd73-4422-bcd0-691fa549dccd")
 var databaseMemoryWriteCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: databaseMemoryWriteId,
-		Meta: core.OperatorMetaDef{
-			Name:             "read from memory",
+		Meta: core.BlueprintMetaDef{
+			Name:             "write to memory",
 			ShortDescription: "writes an item to memory and associates it with a key string",
 			Icon:             "memory",
-			Tags:             []string{"database", "memory"},
+			Tags:             []string{"database"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/memory-write",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -35,7 +37,7 @@ var databaseMemoryWriteCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"store": {
 				Type: "string",
 			},

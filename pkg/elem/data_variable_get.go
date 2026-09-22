@@ -2,16 +2,19 @@ package elem
 
 import (
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+
 	"time"
 )
 
-var dataVariableGetId = "b8771c73-cddf-4eb1-a10c-bf78c2552efe"
+var dataVariableGetId = uuid.MustParse("b8771c73-cddf-4eb1-a10c-bf78c2552efe")
 var dataVariableGetCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: dataVariableGetId,
-		Meta: core.OperatorMetaDef{
-			Name:             "get value",
-			ShortDescription: "emits a value previously saved for each item",
+		Meta: core.BlueprintMetaDef{
+			Name:             "memory get",
+			ShortDescription: "emits a previously stored value with each trigger",
 			Icon:             "inbox-out",
 			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/get-value",
@@ -27,7 +30,7 @@ var dataVariableGetCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"valueName": {
 				Type: "string",
 			},

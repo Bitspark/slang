@@ -1,4 +1,5 @@
 {
+  "id": "a61e36b2-81f5-41e2-8139-306e54510221",
   "services": {
     "main": {
       "in": {
@@ -11,7 +12,7 @@
   },
   "operators": {
     "void": {
-      "operator": "test_data.voidOp"
+      "operator": "fc06528d-13e5-42ec-b4b6-f3ab75b5b9e0"
     }
   },
   "connections": {

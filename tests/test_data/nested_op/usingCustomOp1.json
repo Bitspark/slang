@@ -1,4 +1,5 @@
 {
+  "id": "f62b9f50-0656-4889-9e5c-16ba3abb5eb7",
   "services": {
     "main": {
       "in": {
@@ -11,7 +12,7 @@
   },
   "operators": {
     "childOpr": {
-      "operator": "test_data.nested_op.customOp"
+      "operator": "8a8864c8-8195-4d7b-aeb4-b62827b75829"
     }
   },
   "connections": {

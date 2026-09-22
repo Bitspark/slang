@@ -9,6 +9,7 @@ import (
 )
 
 func Test_CtrlIterate__IsRegistered(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 
 	ocAgg := getBuiltinCfg(controlIterateId)
@@ -16,6 +17,7 @@ func Test_CtrlIterate__IsRegistered(t *testing.T) {
 }
 
 func Test_CtrlIterate__PassOtherMarkers(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 	r := require.New(t)
 
@@ -42,7 +44,7 @@ func Test_CtrlIterate__PassOtherMarkers(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		core.OperatorDef{
+		core.Blueprint{
 			ServiceDefs: map[string]*core.ServiceDef{
 				"main": {
 					In: core.TypeDef{Type: "stream",
@@ -68,6 +70,7 @@ func Test_CtrlIterate__PassOtherMarkers(t *testing.T) {
 	r.NoError(do.Main().In().Stream().Map("items").Connect(ao.Main().In().Map("items")))
 	r.NoError(ao.Delegate("iterator").Out().Connect(ao.Delegate("iterator").In()))
 	r.NoError(ao.Main().Out().Connect(do.Main().Out().Stream()))
+	r.NoError(do.Main().Out().FullyConnected())
 
 	do.Main().Out().Bufferize()
 
@@ -78,6 +81,7 @@ func Test_CtrlIterate__PassOtherMarkers(t *testing.T) {
 }
 
 func Test_CtrlIterate__SimpleAggregation(t *testing.T) {
+	Init()
 	a := assertions.New(t)
 	ao, err := buildOperator(
 		core.InstanceDef{
@@ -118,7 +122,7 @@ func Test_CtrlIterate__SimpleAggregation(t *testing.T) {
 		nil,
 		nil,
 		nil,
-		core.OperatorDef{
+		core.Blueprint{
 			ServiceDefs: map[string]*core.ServiceDef{
 				"main": {
 					In:  core.TypeDef{Type: "map", Map: map[string]*core.TypeDef{"state": {Type: "number"}, "item": {Type: "number"}}},
@@ -132,6 +136,7 @@ func Test_CtrlIterate__SimpleAggregation(t *testing.T) {
 	// Connect
 	require.NoError(t, ao.Delegate("iterator").Out().Connect(fo.Main().In()))
 	require.NoError(t, fo.Main().Out().Connect(ao.Delegate("iterator").In()))
+	require.NoError(t, ao.Main().Out().FullyConnected())
 
 	ao.Main().Out().Bufferize()
 

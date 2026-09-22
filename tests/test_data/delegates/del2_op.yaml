@@ -1,3 +1,4 @@
+id: a8780183-5c51-4370-b6ef-20ce70a3d3c5
 services:
   main:
     in:
@@ -27,7 +28,7 @@ properties:
 
 operators:
   del:
-    operator: test_data.delegates.del_op
+    operator: 259cfeff-9e06-4ba7-b413-0f0c5562d563
     generics:
       gen:
         type: generic

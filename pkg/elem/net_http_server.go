@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 type requestHandler struct {
@@ -79,15 +80,16 @@ func (r *requestHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 	})
 }
 
-var netHTTPServerId = "241cc7ef-c6d6-49c1-8729-c5e3c0be8188"
+var netHTTPServerId = uuid.MustParse("241cc7ef-c6d6-49c1-8729-c5e3c0be8188")
 var netHTTPServerCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: netHTTPServerId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "HTTP server",
 			ShortDescription: "starts an HTTP server, uses a handler delegate to process requests",
 			Icon:             "server",
-			Tags:             []string{"network", "http"},
+			Tags:             []string{"network"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/http-server",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

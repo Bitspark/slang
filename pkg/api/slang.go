@@ -2,15 +2,103 @@ package api
 
 import (
 	"fmt"
-	"github.com/Bitspark/go-funk"
+	"regexp"
+	"strings"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
-	"strings"
+	"github.com/thoas/go-funk"
 )
 
-func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool) (*core.Operator, error) {
+var PROPERTY_ASSIGNMENT_REGEXP = regexp.MustCompile(`^\$\w+$`)
+var PROPERTY_INTERPOLATION_REGEXP = regexp.MustCompile(`(\$\w+)`)
+
+// todo should be SlangBundle method
+func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
+	if !bundle.Valid() {
+		if err := bundle.Validate(); err != nil {
+			return nil, err
+		}
+	}
+
+	stor := newSlangBundleStorage(funk.Values(bundle.Blueprints).([]core.Blueprint))
+
+	return BuildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor)
+}
+
+func gatherDependencies(def *core.Blueprint, bundle *core.SlangBundle, store *storage.Storage) error {
+	bundle.Blueprints[def.Id] = *def
+	for _, dep := range def.InstanceDefs {
+		id := dep.Operator
+		if _, ok := bundle.Blueprints[id]; !ok {
+			depDef, err := store.Load(id)
+			if err != nil {
+				return err
+			}
+			bundle.Blueprints[id] = *depDef
+			err = gatherDependencies(depDef, bundle, store)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func CreateBundle(bp *core.Blueprint, st *storage.Storage) (*core.SlangBundle, error) {
+	bundle := &core.SlangBundle{
+		Main:       bp.Id,
+		Blueprints: make(map[uuid.UUID]core.Blueprint),
+	}
+
+	if err := gatherDependencies(bp, bundle, st); err != nil {
+		return bundle, err
+	}
+
+	return bundle, bundle.Validate()
+}
+
+type slangBundleLoader struct {
+	blueprintById map[uuid.UUID]core.Blueprint
+}
+
+func newSlangBundleStorage(blueprints []core.Blueprint) *storage.Storage {
+	m := make(map[uuid.UUID]core.Blueprint)
+
+	for _, bp := range blueprints {
+		m[bp.Id] = bp
+	}
+
+	return storage.NewStorage().AddBackend(&slangBundleLoader{m})
+}
+
+func (l *slangBundleLoader) Has(opId uuid.UUID) bool {
+	_, ok := l.blueprintById[opId]
+	return ok
+}
+
+func (l *slangBundleLoader) List() ([]uuid.UUID, error) {
+	var uuidList []uuid.UUID
+
+	for _, idOrName := range funk.Keys(l.blueprintById).([]string) {
+		if id, err := uuid.Parse(idOrName); err == nil {
+			uuidList = append(uuidList, id)
+		}
+	}
+
+	return uuidList, nil
+}
+
+func (l *slangBundleLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	if blueprint, ok := l.blueprintById[opId]; ok {
+		return &blueprint, nil
+	}
+	return nil, fmt.Errorf("unknown operator")
+}
+
+func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)
 	if err != nil {
@@ -28,7 +116,7 @@ func CreateAndConnectOperator(insName string, def core.OperatorDef, ordered bool
 			return nil, err
 		}
 
-		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.OperatorDef, ordered)
+		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.Blueprint, ordered)
 		if err != nil {
 			return nil, err
 		}
@@ -109,30 +197,34 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 	return nil
 }
 
-func BuildAndCompile(opId uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
-	if op, err := Build(opId, gens, props, st); err == nil {
+func BuildAndCompile(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
+	if op, err := Build(bpid, gens, props, st); err == nil {
 		return Compile(op)
 	} else {
 		return op, err
 	}
 }
 
-func Build(opId uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
+func Build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
+	if !elem.Initalized {
+		return nil, fmt.Errorf("call elem.Init() before api.Build() or api.BuildAndCompile()")
+	}
+
 	// Recursively replace generics by their actual types and propagate properties
 	// TODO SpecifyOperator should instantiate and return an Operator
-	opDef, err := st.Load(opId)
+	blueprint, err := st.Load(bpid)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = specifyOperator(opDef, gens, props, st, []string{})
+	err = specifyOperator(blueprint, gens, props, st, []uuid.UUID{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Create and connect the operator
-	op, err := CreateAndConnectOperator("", *opDef, false)
+	op, err := CreateAndConnectOperator("", *blueprint, false)
 	if err != nil {
 		return nil, err
 	}
@@ -165,58 +257,159 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	return flatOp, nil
 }
 
-func specifyOperator(def *core.OperatorDef, gens core.Generics, props core.Properties, st storage.Storage, dependenyChain []string) error {
-	if err := def.SpecifyOperator(gens, props); err != nil {
+func completeProperties(blueprint *core.Blueprint, givenProps core.Properties) (core.Properties, error) {
+	propDefs := blueprint.PropertyDefs
+	completedProps := make(core.Properties)
+
+	for propKey, propDef := range propDefs {
+		if prop, err := givenProps.Get(propKey, propDef); err == nil {
+			completedProps[propKey] = prop
+		} else {
+			return nil, err
+		}
+	}
+
+	return completedProps, nil
+}
+
+func specifyOperator(blueprint *core.Blueprint, gens core.Generics, props core.Properties, st storage.Storage, dependencyChain []uuid.UUID) error {
+	var err error
+
+	if props, err = completeProperties(blueprint, props); err != nil {
 		return err
 	}
-	dependenyChain = append(dependenyChain, def.Id)
 
-	for _, childInsDef := range def.InstanceDefs {
+	if err := blueprint.SpecifyOperator(gens, props); err != nil {
+		return err
+	}
+	dependencyChain = append(dependencyChain, blueprint.Id)
 
-		// Load OperatorDef for childInsDef
-		if childInsDef.OperatorDef.Id == "" {
-			childOpId, _ := uuid.Parse(childInsDef.Operator)
-			if childOpDef, err := st.Load(childOpId); err == nil {
-				childInsDef.OperatorDef = *childOpDef
+	for _, childInsDef := range blueprint.InstanceDefs {
+
+		// Load Blueprint for childInsDef
+		if childInsDef.Blueprint.Id == uuid.Nil {
+			childOpId := childInsDef.Operator
+			if childBlueprint, err := st.Load(childOpId); err == nil {
+				childInsDef.Blueprint = *childBlueprint
 			} else {
 				return err
 			}
 		}
 
-		if funk.ContainsString(dependenyChain, childInsDef.Operator) {
-			return fmt.Errorf("recursion in %s", def.Id)
+		if funk.Contains(dependencyChain, childInsDef.Operator) {
+			return fmt.Errorf("recursion in %s", blueprint.Id)
 		}
 
 		// Propagate property values to child operators
 		for prop, propVal := range childInsDef.Properties {
-			propKey, ok := propVal.(string)
-			if !ok {
+			updated, newPropVal, err := interpolatePropVal(propVal, props)
+
+			if err != nil {
+				return err
+			}
+
+			if !updated {
 				continue
 			}
-			// Parameterized properties must start with a '$'
-			if !strings.HasPrefix(propKey, "$") {
-				continue
-			}
-			propKey = propKey[1:]
-			if val, ok := props[propKey]; ok {
-				childInsDef.Properties[prop] = val
-			} else {
-				return fmt.Errorf("unknown property \"%s\"", prop)
-			}
+
+			childInsDef.Properties[prop] = newPropVal
 		}
 
 		for _, gen := range childInsDef.Generics {
 			gen.SpecifyGenerics(gens)
 		}
 
-		err := specifyOperator(&childInsDef.OperatorDef, childInsDef.Generics, childInsDef.Properties, st, dependenyChain)
+		err := specifyOperator(&childInsDef.Blueprint, childInsDef.Generics, childInsDef.Properties, st, dependencyChain)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	def.PropertyDefs = nil
+	blueprint.PropertyDefs = nil
 
 	return nil
+}
+
+func interpolatePropVal(propVal interface{}, props core.Properties) (bool, interface{}, error) {
+	propStr, isString := propVal.(string)
+	if isString {
+		if PROPERTY_ASSIGNMENT_REGEXP.MatchString(propStr) {
+			propKey := propStr[1:]
+			if val, ok := props[propKey]; ok {
+				return true, val, nil
+			}
+			return false, propStr, fmt.Errorf("1) unknown property \"%s\"", propKey)
+		}
+
+		for _, propKey := range PROPERTY_INTERPOLATION_REGEXP.FindAllString(propStr, -1) {
+			if val, ok := props[propKey[1:]]; ok {
+				val, ok := val.(string)
+
+				if !ok {
+					return false, propVal, fmt.Errorf("cannot interpolate \"%s\" with value \"%v\"", propKey, val)
+				}
+
+				propStr = strings.Replace(propStr, propKey, val, -1)
+			} else {
+				return false, propVal, fmt.Errorf("2) unknown property \"%s\"", propKey)
+			}
+		}
+
+		return true, propStr, nil
+	}
+
+	propMapVal, isMap := propVal.(map[string]interface{})
+	if isMap {
+		newPropMapVal := make(map[string]any, len(propMapVal))
+		anyUpdated := false
+		for k, v := range propMapVal {
+			updated, new, err := interpolatePropVal(v, props)
+
+			if err != nil {
+				return false, propVal, err
+			}
+
+			if !updated {
+				newPropMapVal[k] = v
+				continue
+			} 
+
+			newPropMapVal[k] = new
+
+			if !anyUpdated {
+				anyUpdated = true
+			}
+		}
+
+		return anyUpdated, newPropMapVal, nil
+	}
+
+	propArrayVal, isArray := propVal.([]interface{})
+	if isArray {
+		newPropArrVal := make([]any, 0)
+		anyUpdated := false
+		for _, v := range propArrayVal {
+			updated, new, err := interpolatePropVal(v, props)
+
+			if err != nil {
+				return false, propVal, err
+			}
+
+			if !updated {
+				newPropArrVal = append(newPropArrVal, v)
+				continue
+			}
+
+			if !anyUpdated {
+				anyUpdated = true
+			}
+
+			newPropArrVal = append(newPropArrVal, new)
+		}
+
+		return anyUpdated, newPropArrVal, nil
+	}
+
+	return false, propVal, nil
 }

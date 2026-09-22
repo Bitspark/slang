@@ -32,10 +32,10 @@ func FileWithFileEnding(filename string, fileEndings []string) (string, error) {
 	return "", fmt.Errorf("%s: no appropriate YAML or JSON file for given basename found", filename)
 }
 
-func IsJSON(opDefFilePath string) bool {
-	return strings.HasSuffix(opDefFilePath, ".json")
+func IsJSON(blueprintFilePath string) bool {
+	return strings.HasSuffix(blueprintFilePath, ".json")
 }
 
-func IsYAML(opDefFilePath string) bool {
-	return strings.HasSuffix(opDefFilePath, ".yaml") || strings.HasSuffix(opDefFilePath, ".yml")
+func IsYAML(blueprintFilePath string) bool {
+	return strings.HasSuffix(blueprintFilePath, ".yaml") || strings.HasSuffix(blueprintFilePath, ".yml")
 }

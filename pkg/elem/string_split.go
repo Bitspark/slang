@@ -4,12 +4,14 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
 )
 
 var stringSplitCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "c02bc7ad-65e5-4a43-a2a3-7d86b109915d",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("c02bc7ad-65e5-4a43-a2a3-7d86b109915d"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "split string",
 			ShortDescription: "splits a string at a given separator and emits its pieces as stream",
 			Icon:             "cut",
@@ -30,7 +32,7 @@ var stringSplitCfg = &builtinConfig{
 			},
 		},
 		DelegateDefs: map[string]*core.DelegateDef{},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"separator": {
 				Type: "string",
 			},

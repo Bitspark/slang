@@ -11,13 +11,13 @@ import (
 
 type Backend interface {
 	List() ([]uuid.UUID, error)
-	Load(opId uuid.UUID) (*core.OperatorDef, error)
+	Load(opId uuid.UUID) (*core.Blueprint, error)
 	Has(opId uuid.UUID) bool
 }
 
 type WriteableBackend interface {
 	Backend
-	Save(opDef core.OperatorDef) (uuid.UUID, error)
+	Save(blueprint core.Blueprint) (uuid.UUID, error)
 }
 
 type Storage struct {
@@ -43,6 +43,15 @@ func (s *Storage) IsSavedInWritableBackend(opId uuid.UUID) bool {
 	return false
 }
 
+func (s *Storage) IsSaved(opId uuid.UUID) bool {
+	for _, backend := range s.backends {
+		if backend.Has(opId) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Storage) List() ([]uuid.UUID, error) {
 	all := make([]uuid.UUID, 0)
 
@@ -58,17 +67,17 @@ func (s *Storage) List() ([]uuid.UUID, error) {
 	return all, nil
 }
 
-func (s *Storage) Save(opDef core.OperatorDef) (uuid.UUID, error) {
+func (s *Storage) Save(blueprint core.Blueprint) (uuid.UUID, error) {
 	var opId uuid.UUID
 	var err error
 	// The question is whether we want multiple backends that are able to take a write
 	// because if we need to make sure they all use the same identifier
 	writableBackends := s.writeableBackends()
 	if len(writableBackends) == 0 {
-		return opId, errors.New("No writable backend for saving found")
+		return opId, errors.New("no writable backend for saving found")
 	}
 	for _, backend := range writableBackends {
-		opId, err = backend.Save(opDef)
+		opId, err = backend.Save(blueprint)
 	}
 	return opId, err
 }
@@ -86,13 +95,13 @@ func (s *Storage) writeableBackends() []WriteableBackend {
 	return writeableBackends
 }
 
-func (s *Storage) Load(opId uuid.UUID) (*core.OperatorDef, error) {
-	opDef, err := s.getOpDef(opId)
+func (s *Storage) Load(opId uuid.UUID) (*core.Blueprint, error) {
+	blueprint, err := s.getBlueprintId(opId)
 	if err != nil {
 		return nil, err
 	}
-	cpyOpDef := opDef.Copy(true)
-	return &cpyOpDef, nil
+	cpyBlueprint := blueprint.Copy(true)
+	return &cpyBlueprint, nil
 }
 
 func (s *Storage) selectBackends(f func(Backend) bool) []Backend {
@@ -113,9 +122,9 @@ func (s *Storage) selectBackend(opId uuid.UUID) Backend {
 	return nil
 }
 
-func (s *Storage) getOpDef(opId uuid.UUID) (*core.OperatorDef, error) {
-	if opDef, err := elem.GetOperatorDef(opId.String()); err == nil {
-		return opDef, nil
+func (s *Storage) getBlueprintId(opId uuid.UUID) (*core.Blueprint, error) {
+	if blueprint, err := elem.GetBlueprint(opId); err == nil {
+		return blueprint, nil
 	}
 
 	backend := s.selectBackend(opId)
@@ -124,11 +133,11 @@ func (s *Storage) getOpDef(opId uuid.UUID) (*core.OperatorDef, error) {
 		return nil, fmt.Errorf("unknown operator for id: %s", opId)
 	}
 
-	opDef, err := backend.Load(opId)
+	blueprint, err := backend.Load(opId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return opDef, nil
+	return blueprint, nil
 }

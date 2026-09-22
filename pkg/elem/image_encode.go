@@ -10,18 +10,20 @@ import (
 	"image/png"
 	_ "image/png"
 
-	"github.com/Bitspark/go-funk"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/google/uuid"
+	"github.com/thoas/go-funk"
 )
 
 var imageEncodeCfg = &builtinConfig{
-	opDef: core.OperatorDef{
-		Id: "bd4475af-795b-4be8-9e57-9fec9444e028",
-		Meta: core.OperatorMetaDef{
+	safe: true,
+	blueprint: core.Blueprint{
+		Id: uuid.MustParse("bd4475af-795b-4be8-9e57-9fec9444e028"),
+		Meta: core.BlueprintMetaDef{
 			Name:             "encode image",
 			ShortDescription: "takes pixels as stream of rgb values and encodes it into an image binary",
 			Icon:             "file-image",
-			Tags:             []string{"image"},
+			Tags:             []string{"file"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/encode-image",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Knetic/govaluate"
+	"github.com/google/uuid"
 )
 
 type EvaluableExpression struct {
@@ -82,15 +83,16 @@ func newEvaluableExpression(expression string) (*EvaluableExpression, error) {
 	return nil, err
 }
 
-var dataEvaluateId = "37ccdc28-67b0-4bb1-8591-4e0e813e3ec1"
+var dataEvaluateId = uuid.MustParse("37ccdc28-67b0-4bb1-8591-4e0e813e3ec1")
 var dataEvaluateCfg = &builtinConfig{
-	opDef: core.OperatorDef{
+	safe: true,
+	blueprint: core.Blueprint{
 		Id: dataEvaluateId,
-		Meta: core.OperatorMetaDef{
+		Meta: core.BlueprintMetaDef{
 			Name:             "evaluate",
 			ShortDescription: "evaluates an expression",
 			Icon:             "function",
-			Tags:             []string{"math", "boolean", "function"},
+			Tags:             []string{"data"},
 			DocURL:           "https://bitspark.de/slang/docs/operator/evaluate",
 		},
 		ServiceDefs: map[string]*core.ServiceDef{
@@ -108,7 +110,7 @@ var dataEvaluateCfg = &builtinConfig{
 				},
 			},
 		},
-		PropertyDefs: map[string]*core.TypeDef{
+		PropertyDefs: core.PropertyMap{
 			"expression": {
 				Type: "string",
 			},

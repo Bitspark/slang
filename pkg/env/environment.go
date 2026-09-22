@@ -18,7 +18,7 @@ type httpCfg struct {
 
 type Environment struct {
 	SLANG_PATH          string
-	SLANG_DIR           string
+	SLANG_WORKSPACE     string
 	SLANG_LIB_REPO_PATH string
 	SLANG_LIB           string
 	SLANG_UI            string
@@ -44,14 +44,14 @@ func New(addr string, port int) *Environment {
 
 	e := &Environment{
 		slangPath,
-		ensureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "projects")),
-		ensureEnvironVar("SLANG_LIB_REPO_PATH", filepath.Join(slangPath, "lib")),
-		ensureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "lib", "slang")),
+		ensureEnvironVar("SLANG_DIR", filepath.Join(slangPath, "blueprints")),
+		ensureEnvironVar("SLANG_LIB_REPO_PATH", filepath.Join(slangPath, "shared")),
+		ensureEnvironVar("SLANG_LIB", filepath.Join(slangPath, "shared", "slang")),
 		ensureEnvironVar("SLANG_UI", filepath.Join(slangPath, "ui")),
 		httpCfg{Address: addr, Port: port},
 	}
 
-	if _, err = utils.EnsureDirExists(e.SLANG_DIR); err != nil {
+	if _, err = utils.EnsureDirExists(e.SLANG_WORKSPACE); err != nil {
 		log.Fatal(err)
 	}
 	// we do not need to check the REPO as it will be present after

@@ -1,5 +1,6 @@
 # Merge sort
 ---
+id: 3e0cd594-7825-4680-8eb4-b31523f399df
 tests:
   - name: Empty
     data:
@@ -69,7 +70,7 @@ services:
 operators:
   # Packer
   packer:
-    operator: test_data.slib.pack
+    operator: a7840d6e-41ce-4631-b2a4-1b95f62552bc
     generics:
       stateType:
         type: number

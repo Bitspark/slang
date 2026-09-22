@@ -4,258 +4,317 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 
-	"github.com/Bitspark/go-funk"
-	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
-type RunInstruction struct {
-	Id     uuid.UUID       `json:"id"`
-	Props  core.Properties `json:"props"`
-	Gens   core.Generics   `json:"gens"`
-	Stream bool            `json:"stream"`
+type RequestRunOp struct {
+	Blueprint uuid.UUID       `json:"blueprint"`
+	Props     core.Properties `json:"props"`
+	Gens      core.Generics   `json:"gens"`
+}
+type ResponseRunOp struct {
+	Object *runningOperator `json:"object"`
+	Status string           `json:"status"`
+	Error  *Error           `json:"error,omitempty"`
 }
 
-type RunState struct {
-	Handle string `json:"handle,omitempty"`
-	URL    string `json:"url,omitempty"`
-	Status string `json:"status"`
-	Error  *Error `json:"error,omitempty"`
+func (r *ResponseRunOp) URL() string {
+	return r.Object.URL
 }
 
-type runningOperator struct {
-	// JSON
-	Operator uuid.UUID `json:"operator"`
-	Handle   string    `json:"handle"`
-	URL      string    `json:"url"`
-
-	op       *core.Operator
-	incoming chan interface{}
-	outgoing chan portOutput
-	inStop   chan bool
-	outStop  chan bool
+func (r *ResponseRunOp) Handle() string {
+	return r.Object.Handle
 }
 
-type portOutput struct {
-	// JSON
-	Handle string      `json:"handle"`
-	Port   string      `json:"port"`
-	Data   interface{} `json:"data"`
-	IsEOS  bool        `json:"isEOS"`
-	IsBOS  bool        `json:"isBOS"`
+func parseProperties(formData url.Values, propDef core.PropertyMap) (core.Properties, error) {
+	/*
+		Convert operator properties passed as query parameters into correct type depending of expected slang type.
+		Currently only supports primitive types: No Maps and Streams.
+	*/
 
-	port *core.Port
-}
+	p := make(core.Properties)
 
-func (pm *portOutput) String() string {
-	j, _ := json.Marshal(pm)
-	return string(j)
-}
+	for pname, ptype := range propDef {
+		var pv interface{}
+		var err error = nil
 
-type runningOperatorManager struct {
-	ops map[string]*runningOperator
-}
-
-var rnd = rand.New(rand.NewSource(99))
-var runningOperators = &runningOperatorManager{make(map[string]*runningOperator)}
-
-func (rom *runningOperatorManager) newRunningOperator(op *core.Operator) *runningOperator {
-	handle := strconv.FormatInt(rnd.Int63(), 16)
-	url := "/instance/" + handle + "/"
-	runningOp := &runningOperator{op.Id(), handle, url, op, make(chan interface{}, 0), make(chan portOutput, 0), make(chan bool, 0), make(chan bool, 0)}
-	rom.ops[handle] = runningOp
-	op.Main().Out().Bufferize()
-	op.Start()
-	log.Printf("operator %s (id: %s) started", op.Name(), handle)
-	return runningOp
-}
-
-func (rom *runningOperatorManager) Run(op *core.Operator) *runningOperator {
-	runningOp := rom.newRunningOperator(op)
-	go func() {
-	loop:
-		for {
-			select {
-			case incoming := <-runningOp.incoming:
-				op.Main().In().Push(incoming)
-			case <-runningOp.inStop:
-				break loop
-			}
+		if !formData.Has(pname) {
+			continue
 		}
-	}()
 
-	op.Main().Out().WalkPrimitivePorts(func(p *core.Port) {
-		go func() {
-			for {
-				if p.Closed() {
-					break
-				}
-				i := p.Pull()
+		fv := formData.Get(pname)
 
-				po := portOutput{runningOp.Handle, p.String(), i, core.IsEOS(i), core.IsBOS(i), p}
-				runningOp.outgoing <- po
-			}
-		}()
-	})
-	return runningOp
-}
+		switch ptype.Type {
+		case "string", "primitive":
+			pv = fv
+		case "trigger":
+			pv = nil
+		case "boolean":
+			pv, err = strconv.ParseBool(fv)
+		case "number":
+			pv, err = strconv.ParseFloat(fv, 32)
+		case "map", "stream":
+			err = fmt.Errorf("setting properties via query params is not supported for *maps* and *streams*")
+		}
 
-func (rom *runningOperatorManager) Halt(handle string) error {
-	// `Halt` to me suggest that there is a way to resume operations
-	// which is not the case.
-	ro, err := runningOperators.Get(handle)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return err
+		p[pname] = pv
+
 	}
 
-	go ro.op.Stop()
-	ro.inStop <- true
-	ro.outStop <- true
-	delete(rom.ops, handle)
-
-	return nil
+	return p, nil
 }
 
-func (rom runningOperatorManager) Get(handle string) (*runningOperator, error) {
-	if runningOp, ok := rom.ops[handle]; ok {
-		return runningOp, nil
-	}
-	return nil, fmt.Errorf("unknown handle value: %s", handle)
+func isQuasiTrigger(p *core.Port) bool {
+	// port is quasi a trigger,
+	// when it actually is a trigger port or
+	// it is a map with in total one sub-port of trigger type
+	return p.TriggerType() || p.MapType() && p.MapLength() == 1 && p.Map(p.MapEntryNames()[0]).TriggerType()
 }
 
-var InstanceService = &Service{map[string]*Endpoint{
+var RunnerService = &Service{map[string]*Endpoint{
+
 	"/": {func(w http.ResponseWriter, r *http.Request) {
 
-		type outJSON struct {
-			Objects []runningOperator `json:"objects"`
-			Status  string            `json:"status"`
-			Error   *Error            `json:"error,omitempty"`
+		if r.Method == "GET" {
+			/*
+				Get all running operators
+			*/
+			type responseListJSON struct {
+				Objects []*runningOperator `json:"objects"`
+				Status  string             `json:"status"`
+				Error   *Error             `json:"error,omitempty"`
+			}
+
+			response(w,
+				http.StatusOK,
+				&responseListJSON{
+					Objects: romanager.List(),
+					Status:  "ok",
+					Error:   nil,
+				},
+			)
+			return
+
+		} else if r.Method == "POST" {
+			/*
+				Start operator
+			*/
+			//hub := GetHub(r)
+			st := GetStorage(r)
+
+			var requ RequestRunOp
+
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&requ)
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E01")
+				return
+			}
+
+			rop, err := romanager.Exec(requ.Blueprint, requ.Gens, requ.Props, st)
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E02")
+				return
+			}
+
+			op := rop.op
+
+			if isQuasiTrigger(op.Main().In()) {
+				op.Main().In().Push(nil)
+			}
+
+			log.Printf("operator %s (id: %s) started", rop.op.Name(), rop.Handle)
+
+			/*
+				// Move into the background and wait on message from the operator resp. ports
+				// and relay them through the `hub`
+				go func() {
+				loop:
+					for {
+						select {
+						case outgoing := <-runOp.outgoing:
+							// I don't know what happens when Root would be a dynamically changing variable.
+							// Is root's value bound to the scope or is the reference bound to the scope.
+							// I would suspect the latter, which means this is could turn into a race condition.
+							fmt.Println("Outgoing data", outgoing.Port, outgoing.Data)
+							hub.broadCastTo(Root, Port, outgoing)
+						case <-runOp.outStop:
+							break loop
+						}
+					}
+				}()
+			*/
+
+			response(w, http.StatusOK,
+				&ResponseJSON{
+					Object: rop,
+					Status: "ok",
+					Error:  nil,
+				},
+			)
+		}
+	}},
+
+	`/{blueprint:[0-9a-f]{8}-[0-9a-f-]+}/`: {func(w http.ResponseWriter, r *http.Request) {
+		st := GetStorage(r)
+		bpid, err := uuid.Parse(mux.Vars(r)["blueprint"])
+
+		if err != nil {
+			responseError(w, http.StatusBadRequest, err, "E01")
+			return
+		}
+
+		blueprint, err := st.Load(bpid)
+
+		if err != nil {
+			responseError(w, http.StatusBadRequest, err, "E02")
+			return
 		}
 
 		if r.Method == "GET" {
-			writeJSON(w, funk.Values(runningOperators.ops))
-		}
-	}},
-}}
+			r.ParseForm()
+			props, err := parseProperties(r.Form, blueprint.PropertyDefs)
 
-var RunningInstanceService = &Service{map[string]*Endpoint{
-	"/{handle:\\w+}/": {func(w http.ResponseWriter, r *http.Request) {
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E03")
+				return
+			}
+
+			rop, err := romanager.GetOrExec(blueprint.Id, nil, props, st)
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E04")
+				return
+			}
+
+			rop.requestMu.Lock()
+			defer rop.requestMu.Unlock()
+			rop.Push(nil)
+			if out, ok := rop.Pull(); ok {
+				fmt.Println("\t<--", out)
+				response(w, http.StatusOK, &out)
+			} else {
+				response(w, http.StatusNoContent, nil)
+				//w.WriteHeader(http.StatusNoContent)
+			}
+			return
+		} else if r.Method == "POST" {
+
+			type Request struct {
+				Properties core.Properties `json:"properties"`
+				Generics   core.Generics   `json:"generics"`
+				Input      any             `json:"input"`
+			}
+
+			var req Request
+
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&req)
+
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E05")
+				return
+			}
+			if err := decoder.Decode(new(interface{})); err != io.EOF {
+				responseError(w, http.StatusBadRequest, fmt.Errorf("expected one JSON request object"), "E05")
+				return
+			}
+
+			rop, err := romanager.GetOrExec(blueprint.Id, req.Generics, req.Properties, st)
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E04")
+				return
+			}
+
+			input := core.CleanValue(req.Input)
+			if err := rop.In.VerifyData(input); err != nil {
+				responseError(w, http.StatusBadRequest, err, "E06")
+				return
+			}
+			rop.requestMu.Lock()
+			defer rop.requestMu.Unlock()
+			rop.Push(input)
+			if out, ok := rop.Pull(); ok {
+				fmt.Println("\t<--", out)
+				response(w, http.StatusOK, &out)
+			} else {
+				response(w, http.StatusNoContent, nil)
+			}
+			return
+		}
+
+	}},
+
+	`/{handle:\w+}/`: {func(w http.ResponseWriter, r *http.Request) {
 		handle := mux.Vars(r)["handle"]
 
-		runningIns, err := runningOperators.Get(handle)
+		rop, err := romanager.GetByHandle(handle)
 		if err != nil {
-			w.WriteHeader(404)
+			response(w, http.StatusNotFound, nil)
 			return
 		}
 
 		var idat interface{}
 		if r.Method == "POST" {
-			r.ParseForm()
+			/*
+				Pushing data into running operator in-port
+			*/
+
+			r.ParseForm() // TODO why is this required
 			buf := new(bytes.Buffer)
 			buf.ReadFrom(r.Body)
 
 			// An empty buffer would result into an error that is why we check the length
 			// and only than try to encode, because an empty POST is still valid and treated as trigger.
 			if buf.Len() > 0 {
+				// Unmarshal incoming data into a dataformat that is compatible with our operator
+				// TODO find out if json.NewDecoder
 				err := json.Unmarshal(buf.Bytes(), &idat)
 				if err != nil {
-					w.WriteHeader(400)
+					response(w, http.StatusBadRequest, nil)
 					return
 				}
 			}
-			runningIns.incoming <- idat
 
-			writeJSON(w, &runningIns)
-		}
+			fmt.Println("\t-->", idat)
+			rop.requestMu.Lock()
+			defer rop.requestMu.Unlock()
+			rop.incoming <- idat
 
-	}},
-}}
-
-var RunnerService = &Service{map[string]*Endpoint{
-	"/": {Handle: func(w http.ResponseWriter, r *http.Request) {
-		hub := GetHub(r)
-		st := GetStorage(r)
-		if r.Method == "POST" {
-			var data RunState
-			var ri RunInstruction
-
-			decoder := json.NewDecoder(r.Body)
-			err := decoder.Decode(&ri)
-			if err != nil {
-				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			opId := ri.Id
-			op, err := api.BuildAndCompile(opId, ri.Gens, ri.Props, st)
-			if err != nil {
-				data = RunState{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			runOp := runningOperators.Run(op)
-
-			// Move into the background and wait on message from the operator resp. ports
-			// and relay them through the `hub`
-			go func() {
-			loop:
-				for {
-					select {
-					case outgoing := <-runOp.outgoing:
-						// I don't know what happens when Root would be a dynamically changing variable.
-						// Is root's value bound to the scope or is the reference bound to the scope.
-						// I would suspect the latter, which means this is could turn into a race condition.
-						hub.broadCastTo(Root, Port, outgoing)
-					case <-runOp.outStop:
-						break loop
-					}
+		loop:
+			for {
+				select {
+				case odat := <-rop.outgoing:
+					fmt.Println("\t<--", odat)
+					response(w, http.StatusOK, &odat)
+					break loop
+				case <-rop.outStop:
+					fmt.Println("\toperator stopped")
+					response(w, http.StatusNoContent, nil)
+					break loop
 				}
-			}()
-
-			data.Status = "success"
-			data.Handle = runOp.Handle
-			data.URL = runOp.URL
-
-			writeJSON(w, &data)
+			}
 
 		} else if r.Method == "DELETE" {
-			type stopInstructionJSON struct {
-				Handle string `json:"handle"`
-			}
-
-			type outJSON struct {
-				Status string `json:"status"`
-				Error  *Error `json:"error,omitempty"`
-			}
-
-			var data outJSON
-
-			decoder := json.NewDecoder(r.Body)
-			var si stopInstructionJSON
-			err := decoder.Decode(&si)
-			if err != nil {
-				data = outJSON{Status: "error", Error: &Error{Msg: err.Error(), Code: "E000X"}}
-				writeJSON(w, &data)
-				return
-			}
-
-			if err := runningOperators.Halt(si.Handle); err == nil {
-				data.Status = "success"
-			} else {
-				data = outJSON{Status: "error", Error: &Error{Msg: "Unknown handle", Code: "E000X"}}
-			}
-
-			writeJSON(w, &data)
+			/*
+				Stop running operator
+			*/
+			romanager.Halt(rop)
+			log.Printf("operator %s (id: %s) stopped", rop.op.Name(), rop.Handle)
+			response(w, http.StatusNoContent, nil)
+		} else if r.Method == "OPTIONS" {
+			response(w, http.StatusNoContent, nil)
 		}
 	}},
 }}

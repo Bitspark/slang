@@ -1,8 +1,6 @@
 package elem
 
 import (
-	"github.com/Bitspark/slang/pkg/log"
-
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 )
@@ -26,7 +24,7 @@ var systemLogCfg = &builtinConfig{
 					Generic: "valueType",
 				},
 				Out: core.TypeDef{
-					Type:    "trigger",
+					Type: "trigger",
 				},
 			},
 		},
@@ -36,7 +34,7 @@ var systemLogCfg = &builtinConfig{
 		out := op.Main().Out()
 		for !op.CheckStop() {
 			i := in.Pull()
-			log.Print(i)
+			op.Logger().Print(i)
 			out.Push(nil)
 		}
 	},

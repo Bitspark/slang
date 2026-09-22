@@ -1,11 +1,9 @@
 package daemon
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"sort"
 	"strconv"
 	"sync"
 
@@ -13,7 +11,6 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
-	"github.com/thoas/go-funk"
 )
 
 type runningOperator struct {
@@ -24,12 +21,13 @@ type runningOperator struct {
 	Handle    string       `json:"handle"`
 	URL       string       `json:"url"`
 
-	op       *core.Operator
-	incoming chan interface{}
-	outgoing chan interface{}
-	inStop   chan bool
-	outStop  chan bool
-	stopOnce sync.Once
+	op        *core.Operator
+	incoming  chan interface{}
+	outgoing  chan interface{}
+	inStop    chan bool
+	outStop   chan bool
+	stopOnce  sync.Once
+	requestMu sync.Mutex
 }
 
 func (rop *runningOperator) Push(data interface{}) {
@@ -39,13 +37,13 @@ func (rop *runningOperator) Push(data interface{}) {
 	}
 }
 
-func (rop *runningOperator) Pull() interface{} {
+func (rop *runningOperator) Pull() (interface{}, bool) {
 	for {
 		select {
 		case odat := <-rop.outgoing:
-			return odat
+			return odat, true
 		case <-rop.outStop:
-			return nil
+			return nil, false
 		}
 	}
 }
@@ -66,37 +64,26 @@ func (pm *portOutput) String() string {
 	return string(j)
 }
 
-type PropertiesHash [16]byte
-
-func hashProperties(p core.Properties) PropertiesHash {
-	// hash value differs for any change in serializedProps, even when order of propNames changes --> sort props by names
-	propNames := funk.Keys(p).([]string)
-	sort.Strings(propNames)
-	serializedProps := []byte{}
-
-	for _, pn := range propNames {
-		pv, ok := p[pn]
-
-		if !ok {
-			continue
-		}
-
-		jsonBytes, _ := json.Marshal(pv)
-		serializedProps = append(serializedProps, jsonBytes...)
-	}
-	fmt.Println()
-	return md5.Sum(serializedProps)
+func definitionKey(bpid uuid.UUID, gens core.Generics, props core.Properties) string {
+	// JSON sorts map keys and preserves property names as well as values.
+	key, _ := json.Marshal(struct {
+		Blueprint  uuid.UUID
+		Generics   core.Generics
+		Properties core.Properties
+	}{bpid, gens, props})
+	return string(key)
 }
 
 type runningOperatorManager struct {
-	ropByHandle   map[string]*runningOperator
-	handleByProps map[PropertiesHash]string
+	mu                 sync.Mutex
+	ropByHandle        map[string]*runningOperator
+	handleByDefinition map[string]string
 }
 
 var rnd = rand.New(rand.NewSource(99))
 var romanager = &runningOperatorManager{
-	make(map[string]*runningOperator),
-	make(map[PropertiesHash]string),
+	ropByHandle:        make(map[string]*runningOperator),
+	handleByDefinition: make(map[string]string),
 }
 
 func (rom *runningOperatorManager) start(op *core.Operator) *runningOperator {
@@ -114,6 +101,7 @@ func (rom *runningOperatorManager) start(op *core.Operator) *runningOperator {
 		make(chan bool),
 		make(chan bool),
 		sync.Once{},
+		sync.Mutex{},
 	}
 
 	op.Main().Out().Bufferize()
@@ -122,11 +110,11 @@ func (rom *runningOperatorManager) start(op *core.Operator) *runningOperator {
 	return ro
 }
 
-func (rom *runningOperatorManager) addRopAccess(rop *runningOperator, props core.Properties) {
-	propsHash := hashProperties(props)
+func (rom *runningOperatorManager) addRopAccess(rop *runningOperator, gens core.Generics, props core.Properties) {
+	key := definitionKey(rop.Blueprint, gens, props)
 	handle := rop.Handle
 
-	rom.handleByProps[propsHash] = handle
+	rom.handleByDefinition[key] = handle
 	rom.ropByHandle[handle] = rop
 }
 
@@ -161,6 +149,12 @@ func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
 }
 
 func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
+	rom.mu.Lock()
+	defer rom.mu.Unlock()
+	return rom.exec(bpid, gens, props, st)
+}
+
+func (rom *runningOperatorManager) exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
 	op, err := api.BuildAndCompile(bpid, gens, props, st)
 
 	if err != nil {
@@ -168,7 +162,7 @@ func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, prop
 	}
 
 	ro := rom.start(op)
-	rom.addRopAccess(ro, props)
+	rom.addRopAccess(ro, gens, props)
 	rom.handleInputOutput(ro)
 
 	return ro, nil
@@ -179,27 +173,46 @@ func (rom *runningOperatorManager) Halt(ro *runningOperator) error {
 		close(ro.inStop)
 		close(ro.outStop)
 		ro.op.Stop()
+		rom.mu.Lock()
+		defer rom.mu.Unlock()
 		delete(rom.ropByHandle, ro.Handle)
+		for key, handle := range rom.handleByDefinition {
+			if handle == ro.Handle {
+				delete(rom.handleByDefinition, key)
+			}
+		}
 	})
 	return nil
 }
 
-func (rom runningOperatorManager) GetByHandle(handle string) (*runningOperator, error) {
+func (rom *runningOperatorManager) GetByHandle(handle string) (*runningOperator, error) {
+	rom.mu.Lock()
+	defer rom.mu.Unlock()
 	if ro, ok := rom.ropByHandle[handle]; ok {
 		return ro, nil
 	}
 	return nil, fmt.Errorf("unknown handle value: %s", handle)
 }
 
-func (rom *runningOperatorManager) GetByProperties(props core.Properties) *runningOperator {
-	propsHash := hashProperties(props)
-	handle, ok := rom.handleByProps[propsHash]
-
-	if !ok {
-		return nil
+func (rom *runningOperatorManager) GetOrExec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
+	rom.mu.Lock()
+	defer rom.mu.Unlock()
+	key := definitionKey(bpid, gens, props)
+	handle, ok := rom.handleByDefinition[key]
+	if ok {
+		if rop := rom.ropByHandle[handle]; rop != nil {
+			return rop, nil
+		}
 	}
+	return rom.exec(bpid, gens, props, st)
+}
 
-	rop := rom.ropByHandle[handle]
-
-	return rop
+func (rom *runningOperatorManager) List() []*runningOperator {
+	rom.mu.Lock()
+	defer rom.mu.Unlock()
+	result := make([]*runningOperator, 0, len(rom.ropByHandle))
+	for _, rop := range rom.ropByHandle {
+		result = append(result, rop)
+	}
+	return result
 }

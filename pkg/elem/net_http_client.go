@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/log"
+
 	"github.com/google/uuid"
 )
 
@@ -53,7 +53,7 @@ var netHTTPClientCfg = &builtinConfig{
 
 			r, err := http.NewRequest(method, url, bytes.NewReader(body))
 			if err != nil {
-				log.Error(err)
+				op.Logger().Error(err)
 				out.Push(nil)
 				continue
 			}
@@ -65,16 +65,16 @@ var netHTTPClientCfg = &builtinConfig{
 			}
 
 			resp, err := http.DefaultClient.Do(r)
-			
+
 			if err != nil {
-				log.Error(err)
+				op.Logger().Error(err)
 				out.Push(nil)
 				continue
 			}
 
 			respBody, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				log.Error(err)
+				op.Logger().Error(err)
 				out.Push(nil)
 				continue
 			}

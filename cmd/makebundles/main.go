@@ -34,6 +34,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	elem.Init()
+
 	store := storage.NewStorage().AddBackend(storage.NewReadOnlyFileSystem(libDir))
 
 	var uuids []uuid.UUID

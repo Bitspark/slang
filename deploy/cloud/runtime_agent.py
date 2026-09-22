@@ -4,6 +4,7 @@ Clients can supply bundle data, IDs and one of three modes, never Docker flags,
 images, commands or host paths. TLS client verification is enforced by Gunicorn.
 """
 import contextlib
+import datetime
 import hashlib
 import json
 import os
@@ -81,6 +82,38 @@ def running(iid):
     return bool(response.returncode == 0 and json.loads(response.stdout).get('Running'))
 
 
+def reconcile(iid):
+    """Refresh Docker-assigned ports before routing after a daemon/host restart."""
+    item = record(iid)
+    if not item or item['status'] != 'running':
+        return
+    response = docker('inspect', identity(iid), check=False)
+    if response.returncode:
+        return
+    actual = json.loads(response.stdout)[0]
+    if not actual['State']['Running']:
+        return
+    started = actual['State']['StartedAt']
+    bindings = actual['NetworkSettings']['Ports'].get('8080/tcp')
+    port = int(bindings[0]['HostPort']) if bindings else None
+    if item['mode'] != 'process' and (not bindings or bindings[0]['HostIp'] != '127.0.0.1'):
+        raise RuntimeError('Running program has no private HTTP binding')
+    if started == item['container_started'] and port == item['port']:
+        return
+    if item['mode'] == 'process' and started != item['container_started']:
+        docker('exec', identity(iid), 'sh', '-c', "printf 'null\\n' > /proc/1/fd/0")
+    with contextlib.closing(connection('state.db')) as db, db:
+        db.execute('UPDATE instance SET port=?,started=?,container_started=? WHERE iid=?',
+                   (port, datetime.datetime.fromisoformat(started.replace('Z', '+00:00')).timestamp(), started, iid))
+
+
+def reconcile_all():
+    with contextlib.closing(connection('state.db', readonly=True)) as db:
+        ids = [row[0] for row in db.execute("SELECT iid FROM instance WHERE status='running'")]
+    for iid in ids:
+        reconcile(iid)
+
+
 @app.get('/health')
 def health():
     docker('info', '--format', '{{.ServerVersion}}')
@@ -141,6 +174,7 @@ def start(iid):
         started = time.time()
         docker(*options)
         docker('start', name)
+        container_started = json.loads(docker('inspect', '--format', '{{json .State}}', name).stdout)['StartedAt']
         if mode == 'process':
             # Deliver the initial trigger without closing the container's input
             # pipe; subsequent events can come from schedules/delegates.
@@ -151,6 +185,7 @@ def start(iid):
         db.execute('INSERT INTO instance(iid,owner,mode,port,status,public,started,digest,log_cursor) VALUES(?,?,?,?,?,?,?,?,?) '
             'ON CONFLICT(iid) DO UPDATE SET mode=excluded.mode,port=excluded.port,status=excluded.status,public=0,started=excluded.started,digest=excluded.digest,log_cursor=excluded.log_cursor',
             (iid, user, mode, port, 'running', 0, started, digest, str(started)))
+        db.execute('UPDATE instance SET container_started=? WHERE iid=?', (container_started, iid))
         db.commit()
     # Give invalid blueprints time to fail before reporting them as started.
     time.sleep(.25)
@@ -240,6 +275,7 @@ def collect_logs(iid):
 
 @app.get('/events')
 def events():
+    reconcile_all()
     with contextlib.closing(connection('state.db', readonly=True)) as db:
         ids = [row[0] for row in db.execute('SELECT iid FROM instance')]
     for iid in ids:

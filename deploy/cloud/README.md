@@ -30,6 +30,10 @@ The Hetzner SSH firewall is separate from public ports 80/443. Management uses
 dedicated Slang SSH keys and pinned host keys. The former bn2 account and root
 SSH login are disabled. Network filters are installed before Docker restarts
 programs. Shared cloud-account administration is not a separate IAM boundary.
+Before the router starts, a privileged reconciliation unit refreshes Docker's
+dynamic loopback ports and container start times. It also re-delivers the initial
+trigger to restarted background processes. Telemetry polls repeat this check for
+individual container restarts; unchanged start times do not duplicate triggers.
 
 ## Service boundaries
 

@@ -1,7 +1,7 @@
 [Unit]
 Description=Slang private runtime management API with mutual TLS
-Requires=docker.service slang-runtime-network.service
-After=docker.service network-online.target slang-runtime-network.service
+Requires=docker.service slang-runtime-reconcile.service
+After=docker.service network-online.target slang-runtime-reconcile.service
 
 [Service]
 WorkingDirectory=/srv/slang/runtime

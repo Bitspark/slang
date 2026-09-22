@@ -1,0 +1,20 @@
+[Unit]
+Description=Restore Slang runtime routes after Docker starts
+Requires=slang-runtime-network.service
+After=slang-runtime-network.service
+Before=slang-runtime-agent.service slang-runtime-router.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/srv/slang/runtime
+EnvironmentFile=-/srv/slang/runtime.env
+ExecStart=/srv/slang/runtime/venv/bin/python /srv/slang/runtime/runtime_reconcile.py
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/slang-runtime /var/run/docker.sock
+
+[Install]
+WantedBy=multi-user.target

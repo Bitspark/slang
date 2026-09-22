@@ -41,6 +41,15 @@ func SetOperator(operatorId uuid.UUID, operatorName string) {
 	logger.Data["operatorName"] = operatorName
 }
 
+// ForOperator returns a separate entry so concurrent operators cannot overwrite
+// one another's logging context.
+func ForOperator(operatorId uuid.UUID, operatorName string) *logrus.Entry {
+	return logger.WithFields(logrus.Fields{
+		"operatorId":   operatorId,
+		"operatorName": operatorName,
+	})
+}
+
 func Ping() {
 	logger.Debug("ping")
 }

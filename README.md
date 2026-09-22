@@ -34,9 +34,11 @@ The [product website](https://slang.bitspark.com/) is maintained in
 [Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
 `tryslang.com` and its former playground aliases now redirect there.
 
-The current [hosted operations guide](deploy/cloud/README.md) covers the original
+Hosting implementation and operations live in the private
+[slang-infra repository](https://github.com/Bitspark/slang-infra). Its
+[hosted operations guide](https://github.com/Bitspark/slang-infra/blob/main/deploy/cloud/README.md) covers the original
 backend services, Telstar/Meta, the two Docker hosts, isolation, backups and
-recovery. The [previous playground guide](deploy/public/README.md) retains the
+recovery. The [previous playground guide](https://github.com/Bitspark/slang-infra/blob/main/deploy/public/README.md) retains the
 standalone configuration deployed earlier on 21–22 September 2026.
 
 ## Run locally from source

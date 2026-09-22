@@ -6,13 +6,18 @@ adapts that API while preserving the native daemon run endpoints.
 
 ## Production
 
-- Site: https://tryslang.com/ (editor: `/app/`)
+- Product website: https://slang.bitspark.com/
+- Working playground: https://tryslang.com/app/
+- `tryslang.com/` redirects to the product website; editor/API paths retain their origin.
+- Future cloud frontend: `slang.run`, owned by the separate Bitspark/slang.run project.
 - Server: `bn2-space-h3`, Hetzner ID `165375950`, IPv4 `159.69.122.161`
 - SSH: the existing `bn2-space-h3` SSH alias, user `bn2`, passwordless sudo
 - Files: `/srv/tryslang`; source checkout/archive: `/srv/tryslang/src`
 - Services: `caddy`, `docker`, `tryslang` (enabled at boot)
 - DNS: Cloudflare zone `b1e7c265c3639dc705fb872c1035c952`; apex and `www`
   A records point to the server, **DNS only**, TTL 120. Preserve mail and other records.
+- Product DNS: `slang.bitspark.com` A points to the same server, DNS only, TTL 120.
+  Preserve the existing bitspark.com apex and www records.
 - TLS: Caddy obtains and renews public Let's Encrypt certificates. HTTP redirects
   to HTTPS, and `www` redirects to the apex.
 - Firewall: `tryslang-web` (ID `11658638`) permits TCP 80/443 on this server only.
@@ -70,19 +75,38 @@ a local guide. No Node 8 build is needed. The runtime is built from this checkou
 The installer does not modify DNS, provider firewalls, or existing workspace data.
 Updates restart active programs; saved definitions remain on disk.
 
-### Website branding
+### Independently released website
 
-The landing-page wordmark and website/editor favicon use the approved SVGs from
-[Slang Design v0.2.1](https://github.com/Bitspark/slang-design/tree/v0.2.1/assets/logo).
-The dark-surface wordmark uses the richer raspberry and blue palette. The assets
-and outlined Roboto lettering's license are vendored in `site/brand/` and copied
-by `prepare.py`; the website makes no font request for its logo.
+Website source now lives in [Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
+It consumes the pinned Slang Design package for tokens, native control recipes,
+fonts, SVG logos, and type components. The product site, welcome guide, and
+Angular presentation adapter share those assets. The editor engine is still the
+checksum-verified slang-ui release; the adapter does not replace its behavior.
 
-For a branding-only update, back up the current files and copy `site/index.html`
-and `site/brand/` into `/srv/tryslang/site/`. Keep the source archive's matching
-files current as well. An editor favicon change also updates the icon link in
-`/srv/tryslang/assets/ui/index.html`. Caddy serves these static files directly;
-no runtime rebuild or restart is needed for a logo change.
+`website.lock.json` pins the independently built website release and SHA-256.
+Update that lock after publishing a reviewed website version. Then back up
+`/srv/tryslang/site`, `/srv/tryslang/assets/ui`, and the matching source/config
+files, and run:
+
+```sh
+sudo python3 /srv/tryslang/src/deploy/public/prepare.py /srv/tryslang --frontend-only
+```
+
+This updates static files only. It does not restart programs or touch visitor
+state. `--website-archive /path/to/archive.zip` can install a local copy of the
+same artifact; checksum verification still applies. `/website-source.json`
+reports the installed release. `/design/0.2.1/source.json` reports the upstream
+design dependency. Licenses ship inside the versioned design assets.
+
+Keep `tryslang.com/app/`, `/operator/*`, `/run/*`, `/share/*`, and `/workspace/*`
+on the existing origin until a deliberate cloud migration. Workspace cookies
+are host-specific: redirecting the editor to a different domain would not carry
+saved workspaces with it. The product site's call to action therefore continues
+to use the working playground until the separate slang.run frontend is ready.
+
+Roll back a frontend-only update by restoring the backed-up site, editor files,
+and Caddy configuration (reload Caddy after restoring its configuration).
+Do not restore or remove visitor state as part of a presentation rollback.
 
 Before updating, retain the current image and gateway/config files for rollback:
 

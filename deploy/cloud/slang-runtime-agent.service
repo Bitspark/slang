@@ -1,0 +1,22 @@
+[Unit]
+Description=Slang private runtime management API with mutual TLS
+Requires=docker.service slang-runtime-reconcile.service
+After=docker.service network-online.target slang-runtime-reconcile.service
+
+[Service]
+WorkingDirectory=/srv/slang/runtime
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/srv/slang/runtime.env
+ExecStart=/srv/slang/runtime/venv/bin/gunicorn --bind 10.78.1.2:9443 --workers 1 --threads 1 --timeout 90 --certfile /srv/slang/runtime/tls/server.crt --keyfile /srv/slang/runtime/tls/server.key --ca-certs /srv/slang/runtime/tls/ca.crt --cert-reqs 2 runtime_agent:app
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/slang-runtime /var/run/docker.sock
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

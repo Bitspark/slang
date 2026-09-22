@@ -1,0 +1,48 @@
+name: slang
+services:
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: slang
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres-password
+    secrets: [postgres-password]
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U slang]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 640m
+    pids_limit: 128
+    logging: &logging
+      driver: local
+      options: {max-size: 10m, max-file: '3'}
+  redis:
+    image: redis:7.2-bookworm
+    command: [redis-server, --appendonly, 'yes', --appendfsync, everysec, --maxmemory, 256mb, --maxmemory-policy, noeviction]
+    restart: unless-stopped
+    volumes: [redis:/data]
+    networks: [backend]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 384m
+    pids_limit: 64
+    logging: *logging
+secrets:
+  postgres-password:
+    file: /srv/slang/secrets/postgres-password
+networks:
+  backend:
+    name: slang-backend
+    internal: true
+volumes:
+  postgres:
+    name: slang-postgres
+  redis:
+    name: slang-redis

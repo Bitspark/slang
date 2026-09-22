@@ -1,0 +1,10 @@
+[Unit]
+Description=Encrypted Slang backup and off-host copy
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /srv/slang/ops/backup.py
+User=root
+UMask=0077
+TimeoutStartSec=600

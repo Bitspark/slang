@@ -1,0 +1,13 @@
+{
+  "auth": "../auth.bitspark.de",
+  "repo": "../repo.bitspark.de",
+  "deployment": "../deployment.bitspark.de",
+  "usage": "../usage.bitspark.de",
+  "vision": "../vision.bitspark.de",
+  "search": "../search.bitspark.de",
+  "meta": "../meta.bitspark.de",
+  "transit": "../transit.bitspark.de",
+  "customer": "../customer.bitspark.de",
+  "narrow": "../narrow.bitspark.de",
+  "telstar": "../telstar"
+}

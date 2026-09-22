@@ -7,6 +7,8 @@ tryslang.com, www.tryslang.com {
 	}
 	@www host www.tryslang.com
 	redir @www https://tryslang.com{uri} permanent
+	@home path /
+	redir @home https://slang.bitspark.com{uri} permanent
 	@api path /operator/* /run/* /share/* /workspace/* /healthz
 	handle @api {
 		reverse_proxy 127.0.0.1:5150
@@ -21,4 +23,18 @@ tryslang.com, www.tryslang.com {
 		try_files {path} {path}/index.html /index.html
 		file_server
 	}
+}
+
+slang.bitspark.com {
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		Strict-Transport-Security "max-age=31536000"
+	}
+	@app path /app /app/*
+	redir @app https://tryslang.com{uri} temporary
+	root * /srv/tryslang/site
+	try_files {path} {path}/index.html
+	file_server
 }

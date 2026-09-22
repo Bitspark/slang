@@ -1,4 +1,0 @@
-Slang brand artwork by Bitspark.
-Source: Bitspark/slang-design v0.2.1 (https://github.com/Bitspark/slang-design/tree/v0.2.1).
-The wordmark contains outlined Roboto Medium lettering; see ROBOTO-LICENSE.txt.
-The Slang name and mark identify Bitspark; no endorsement is implied by reuse.

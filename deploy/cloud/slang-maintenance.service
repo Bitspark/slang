@@ -1,9 +1,0 @@
-[Unit]
-Description=Bounded Slang event history
-After=docker.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/docker exec slang-meta-1 python maintenance.py
-ExecStart=/usr/bin/docker exec slang-usage-1 python maintenance.py
-TimeoutStartSec=120

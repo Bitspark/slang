@@ -1,7 +1,7 @@
 [Unit]
 Description=Slang unprivileged program invocation router
-Requires=slang-runtime-network.service
-After=network-online.target slang-runtime-network.service
+Requires=slang-runtime-reconcile.service
+After=network-online.target slang-runtime-reconcile.service
 
 [Service]
 User=slang-router

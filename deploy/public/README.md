@@ -77,7 +77,7 @@ Updates restart active programs; saved definitions remain on disk.
 
 ### Independently released website
 
-Website source now lives in [Bitspark/slang-website](https://github.com/Bitspark/slang-website).
+Website source now lives in [Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
 It consumes the pinned Slang Design package for tokens, native control recipes,
 fonts, SVG logos, and type components. The product site, welcome guide, and
 Angular presentation adapter share those assets. The editor engine is still the

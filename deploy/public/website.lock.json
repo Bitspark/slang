@@ -1,6 +1,6 @@
 {
-  "repository": "https://github.com/Bitspark/slang-website",
-  "version": "0.1.0",
-  "url": "https://github.com/Bitspark/slang-website/releases/download/v0.1.0/slang-website-v0.1.0.zip",
-  "sha256": "0a01aadaec1e2fd2c5a376052225ecb3aea8eb8474bf85af4b897b360ffc1c35"
+  "repository": "https://github.com/Bitspark/slang.bitspark.com",
+  "version": "0.1.1",
+  "url": "https://github.com/Bitspark/slang.bitspark.com/releases/download/v0.1.1/slang-website-v0.1.1.zip",
+  "sha256": "c46bfdca71e32fdf129242c34d350a9c9d2468907129c954d5aa63f19f4b51b4"
 }

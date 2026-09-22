@@ -1,0 +1,23 @@
+[Unit]
+Description=Slang unprivileged program invocation router
+Requires=slang-runtime-network.service
+After=network-online.target slang-runtime-network.service
+
+[Service]
+User=slang-router
+Group=slang-router
+WorkingDirectory=/srv/slang/runtime
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/slang/runtime/venv/bin/gunicorn --bind 127.0.0.1:9010 --workers 2 --threads 4 --timeout 30 runtime_router:app
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/slang-runtime/telemetry
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,7 +13,6 @@ import (
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/thoas/go-funk"
 )
 
 type RequestRunOp struct {
@@ -100,7 +100,7 @@ var RunnerService = &Service{map[string]*Endpoint{
 			response(w,
 				http.StatusOK,
 				&responseListJSON{
-					Objects: funk.Values(romanager.ropByHandle).([]*runningOperator),
+					Objects: romanager.List(),
 					Status:  "ok",
 					Error:   nil,
 				},
@@ -183,9 +183,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 			return
 		}
 
-		r.ParseForm()
-
-		if r.Method == "GET" || r.Method == "POST" {
+		if r.Method == "GET" {
+			r.ParseForm()
 			props, err := parseProperties(r.Form, blueprint.PropertyDefs)
 
 			if err != nil {
@@ -193,25 +192,64 @@ var RunnerService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			rop := romanager.GetByProperties(props)
-			if rop == nil {
-				st := GetStorage(r)
-				rop, err = romanager.Exec(blueprint.Id, nil, props, st)
-				if err != nil {
-					responseError(w, http.StatusBadRequest, err, "E04")
-					return
-				}
+			rop, err := romanager.GetOrExec(blueprint.Id, nil, props, st)
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E04")
+				return
 			}
 
+			rop.requestMu.Lock()
+			defer rop.requestMu.Unlock()
 			rop.Push(nil)
-			out := rop.Pull()
-
-			if out != nil {
+			if out, ok := rop.Pull(); ok {
 				fmt.Println("\t<--", out)
 				response(w, http.StatusOK, &out)
 			} else {
 				response(w, http.StatusNoContent, nil)
 				//w.WriteHeader(http.StatusNoContent)
+			}
+			return
+		} else if r.Method == "POST" {
+
+			type Request struct {
+				Properties core.Properties `json:"properties"`
+				Generics   core.Generics   `json:"generics"`
+				Input      any             `json:"input"`
+			}
+
+			var req Request
+
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&req)
+
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E05")
+				return
+			}
+			if err := decoder.Decode(new(interface{})); err != io.EOF {
+				responseError(w, http.StatusBadRequest, fmt.Errorf("expected one JSON request object"), "E05")
+				return
+			}
+
+			rop, err := romanager.GetOrExec(blueprint.Id, req.Generics, req.Properties, st)
+			if err != nil {
+				responseError(w, http.StatusBadRequest, err, "E04")
+				return
+			}
+
+			input := core.CleanValue(req.Input)
+			if err := rop.In.VerifyData(input); err != nil {
+				responseError(w, http.StatusBadRequest, err, "E06")
+				return
+			}
+			rop.requestMu.Lock()
+			defer rop.requestMu.Unlock()
+			rop.Push(input)
+			if out, ok := rop.Pull(); ok {
+				fmt.Println("\t<--", out)
+				response(w, http.StatusOK, &out)
+			} else {
+				response(w, http.StatusNoContent, nil)
 			}
 			return
 		}
@@ -250,6 +288,8 @@ var RunnerService = &Service{map[string]*Endpoint{
 			}
 
 			fmt.Println("\t-->", idat)
+			rop.requestMu.Lock()
+			defer rop.requestMu.Unlock()
 			rop.incoming <- idat
 
 		loop:

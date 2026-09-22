@@ -1,15 +1,22 @@
-# Public TrySlang deployment
+# Previous TrySlang playground deployment
 
-The public site runs the released Angular editor against the current Go daemon.
+This arrangement was deployed on 21–22 September 2026 and replaced later on
+22 September when the hosting plan changed. All three tryslang hostnames now
+redirect to the product website. The current studio is [slang.run](https://slang.run/);
+use the [hosted operations guide](../cloud/README.md) for its backend deployment.
+The H3 service is stopped/disabled and its saved state is retained and backed up.
+The configuration and commands below describe the previous arrangement.
+
+This configuration runs the released Angular editor against the Go daemon.
 The released editor speaks the older save/start/poll/stop API, so `gateway.py`
 adapts that API while preserving the native daemon run endpoints.
 
-## Production
+## Previous production arrangement
 
 - Product website: https://slang.bitspark.com/
-- Working playground: https://tryslang.com/app/
+- Playground at the time: `https://tryslang.com/app/` (now redirects)
 - `tryslang.com/` redirects to the product website; editor/API paths retain their origin.
-- Future cloud frontend: `slang.run`, owned by the separate Bitspark/slang.run project.
+- The Vue frontend `slang.run` was not yet deployed in this arrangement; it is now the current studio.
 - Server: `bn2-space-h3`, Hetzner ID `165375950`, IPv4 `159.69.122.161`
 - SSH: the existing `bn2-space-h3` SSH alias, user `bn2`, passwordless sudo
 - Files: `/srv/tryslang`; source checkout/archive: `/srv/tryslang/src`

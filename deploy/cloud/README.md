@@ -193,9 +193,12 @@ call its `route` endpoint for public HTTP instances. Recreate lock files through
 groups/outboxes and test login, blueprint loading and public invocation. Renew
 runtime TLS if the host/private IP or trust boundary changes.
 
-The historical H3 `/srv/tryslang/state` was preserved on retirement, and an
-encrypted archive was copied to controller and both Slang hosts. It is not
-automatically imported into the new account-based studio.
+The previous playground was deployed on H3 on 21–22 September 2026 and replaced
+later on 22 September after the deployment plan changed. Its saved state at
+`/srv/tryslang/state` remains in place, and an encrypted archive was copied to
+the controller and both Slang hosts. These are files from that recent deployment,
+not recovered data from the original 2018–2020 cloud. They have not been imported
+into the new account-based studio.
 
 ## Rollback
 

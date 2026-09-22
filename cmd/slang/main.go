@@ -128,7 +128,7 @@ func runProcess(operator *core.Operator) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if fi.Mode()&os.ModeNamedPipe == 0 {
+	if fi.Mode()&(os.ModeNamedPipe|os.ModeSocket) == 0 {
 		log.Fatal("slang command is intended to work with pipes\nUsage: data-src | slang")
 	}
 

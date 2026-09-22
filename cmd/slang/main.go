@@ -86,9 +86,16 @@ func readSlangBundleJSON(slBundlePath string) (*core.SlangBundle, error) {
 }
 
 func run(operator *core.Operator, mode string, bind string) error {
+	if operator.Main() == nil {
+		return errors.New("blueprint has no main service")
+	}
+	if err := operator.Main().Out().FullyConnected(); err != nil {
+		return err
+	}
 	// Handle SIGTERM (CTRL-C)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(quit)
 
 	switch mode {
 	case "process":

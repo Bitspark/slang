@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Bitspark/slang/pkg/core"
-	"github.com/Bitspark/slang/pkg/log"
+
 	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
 )
@@ -61,7 +61,6 @@ type PRTGData struct {
 	TreeSize    int        `json:"treesize"`
 	HistData    []HistData `json:"histdata"`
 }
-
 
 func (h *HistData) UnmarshalJSON(data []byte) error {
 	h.Fields = make(map[string]interface{})
@@ -130,10 +129,10 @@ var encodingPRTGHistDataCfg = &builtinConfig{
 								Type: "map",
 								Map: map[string]*core.TypeDef{
 									"{ChannelNames}": {
-										Type:    "number",
+										Type: "number",
 									},
 								},
-							}, 
+							},
 						},
 					},
 				},
@@ -164,7 +163,7 @@ var encodingPRTGHistDataCfg = &builtinConfig{
 			// Unmarshal JSON data
 			var prtgData PRTGData
 			if err := json.Unmarshal([]byte(i.(core.Binary)), &prtgData); err != nil {
-				log.Error("cannot parse PRTG historic data payload:", prtgData)
+				op.Logger().Error("cannot parse PRTG historic data payload:", prtgData)
 				out.Map("item").Push(nil)
 				out.Map("valid").Push(false)
 				continue
@@ -172,7 +171,7 @@ var encodingPRTGHistDataCfg = &builtinConfig{
 
 			channelValues := getChannels(channelNames, &prtgData)
 			invalid := false
-			
+
 			// check if channelValues provides values for all expected channels
 			if len(channelValues) > 0 {
 				providedChannelNames := funk.Keys(channelValues[0]).([]string)
@@ -180,7 +179,7 @@ var encodingPRTGHistDataCfg = &builtinConfig{
 				for _, expChanName := range channelNames {
 					if !funk.ContainsString(providedChannelNames, expChanName.(string)) {
 						invalid = true
-						break;
+						break
 					}
 				}
 			}
@@ -189,7 +188,7 @@ var encodingPRTGHistDataCfg = &builtinConfig{
 				out.Map("valid").Push(false)
 				out.Map("channels").PushBOS()
 				out.Map("channels").PushEOS()
-				return;
+				return
 			}
 
 			outStream := out.Map("channels").Stream()

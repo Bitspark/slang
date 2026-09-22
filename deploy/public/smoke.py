@@ -15,6 +15,7 @@ class Client:
     def __init__(self, base):
         self.base = urllib.parse.urlsplit(base)
         self.cookie = ""
+        self.location = None
 
     def request(self, method, path, body=None, kind="application/json", status=200):
         cls = http.client.HTTPSConnection if self.base.scheme == "https" else http.client.HTTPConnection
@@ -26,6 +27,7 @@ class Client:
         try:
             conn.request(method, path, data, headers)
             r = conn.getresponse()
+            self.location = r.getheader("Location")
             payload = r.read()
             assert r.status == status, (method, path, r.status, payload[:500])
             if r.getheader("Set-Cookie"):
@@ -83,10 +85,16 @@ def main():
     assert saved["id"] in {o["def"]["id"] for o in b.request("GET", "/operator/")["objects"]}
     print("Workspace export and import into another session: passed")
     if base.startswith("https:"):
-        assert b"Connect ideas" in a.request("GET", "/")
-        assert b"app-root" in a.request("GET", "/app/")
-        assert b"Welcome back" in a.request("GET", "/slang-app/index-1/")
-        print("Public HTTPS homepage, editor and help: passed")
+        a.request("GET", "/", status=301)
+        assert a.location == "https://slang.bitspark.com/"
+        product = Client(a.location)
+        assert b"Small pieces" in product.request("GET", "/")
+        lock = json.loads((Path(__file__).parent / "website.lock.json").read_text())
+        assert product.request("GET", "/website-source.json") == lock
+        editor = a.request("GET", "/app/")
+        assert b"app-root" in editor and b"sd-scope slang-editor" in editor
+        assert b"A small start" in a.request("GET", "/slang-app/index-1/")
+        print("HTTPS product site, homepage redirect, pinned website, editor and help: passed")
 
 
 if __name__ == "__main__":

@@ -25,15 +25,19 @@ The [visual editor](https://github.com/Bitspark/slang-ui) and
 
 ## Try it in your browser
 
-Visit [TrySlang](https://tryslang.com/app/) to use the hosted playground without
-installing anything. The [product website](https://slang.bitspark.com/) is maintained
-in [Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
-Start with **Double a number**, click play, send `21`, and look for `42` in the
-output. Use **Export workspace** to keep a backup of your work.
+Open [Slang Run](https://slang.run/) and sign up or log in. Keep the recovery
+code shown at signup. Create or clone a blueprint, edit and save it, then use
+the studio's test action to execute it with the Go runner. HTTP deployments
+receive a public address under `<deployment-id>.slangapps.com`.
 
-For the isolated Docker deployment used by the public site, including HTTPS,
-visitor workspaces, verification, and rollback, see
-[the public deployment guide](deploy/public/README.md).
+The [product website](https://slang.bitspark.com/) is maintained in
+[Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
+`tryslang.com` and its former playground aliases now redirect there.
+
+The current [hosted operations guide](deploy/cloud/README.md) covers the original
+backend services, Telstar/Meta, the two Docker hosts, isolation, backups and
+recovery. The [previous playground guide](deploy/public/README.md) retains the
+standalone configuration deployed earlier on 21–22 September 2026.
 
 ## Run locally from source
 
@@ -190,7 +194,8 @@ bundle when [filing an issue](https://github.com/Bitspark/slang/issues).
 
 ## Related projects
 
-- [TrySlang playground](https://tryslang.com/app/)
+- [Slang Run studio](https://slang.run/)
+- [Slang product website](https://slang.bitspark.com/)
 - [Slang UI](https://github.com/Bitspark/slang-ui)
 - [Slang standard library](https://github.com/Bitspark/slang-lib)
 - [Slang examples](https://github.com/Bitspark/slang-examples)

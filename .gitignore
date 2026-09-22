@@ -14,6 +14,8 @@
 *.out
 ci/release/
 ci/__pycache__/
+.work/
+__pycache__/
 ### macOS template
 # General
 .DS_Store

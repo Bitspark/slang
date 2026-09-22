@@ -1,81 +1,56 @@
+"""Build the daemon and runner release archives; any failed command aborts."""
+
+import os
+from pathlib import Path
+import re
+import subprocess
 import sys
+import tarfile
 import time
-from os import chdir
+import zipfile
 
-from utils import execute_commands
+ROOT = Path(__file__).resolve().parent.parent
+RELEASE_DIR = ROOT / "ci" / "release"
+# Go no longer supports darwin/386. Keep the other existing release targets.
+TARGETS = [("darwin", "amd64"), ("linux", "386"), ("linux", "amd64"),
+           ("windows", "386"), ("windows", "amd64")]
 
-OS = ['darwin', 'linux', 'windows']
-ARCHS = ['386', 'amd64']
 
-
-def build_slangd(version, b6k_cs_pw):
-    versioned_dist = 'slangd-' + version.replace('.', '_')
-    build_time = int(time.time())
-
-    ldflags = f"-X main.Version={version} "
-    ldflags += f"-X main.BuildTime={build_time} "
-
-    for os in OS:
-        for arch in ARCHS:
-            filename_with_ending = filename = f"{versioned_dist}-{os}-{arch}"
-            if os == 'windows':
-                filename_with_ending += ".exe"
-                compress_cmd = f"zip {filename}.zip {filename_with_ending}"
+def build(version, password="", output_dir=RELEASE_DIR):
+    if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version):
+        raise ValueError("version must look like v1.2.3 or v1.2.3-rc.1")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    build_time = str(int(time.time()))
+    for command in ("slangd", "slang"):
+        for target_os, arch in TARGETS:
+            name = f"{command}-{version.replace('.', '_')}-{target_os}-{arch}"
+            binary = output_dir / (name + (".exe" if target_os == "windows" else ""))
+            env = dict(os.environ, GOOS=target_os, GOARCH=arch, CGO_ENABLED="0")
+            args = ["go", "build", "-trimpath"]
+            if command == "slangd":
+                args += ["-ldflags", f"-X main.Version={version} -X main.BuildTime={build_time}"]
+            args += ["-o", str(binary), f"./cmd/{command}"]
+            print(f"Building {name}", flush=True)
+            subprocess.run(args, cwd=ROOT, env=env, check=True)
+            if command == "slangd" and target_os == "windows" and password:
+                signed = binary.with_name("signed_" + binary.name)
+                # Supply the password through stdin, not command-line arguments.
+                subprocess.run([
+                    "osslsigncode", "sign", "-pkcs12", str(ROOT / "ci" / "b6k_csc.p12"),
+                    "-readpass", "/dev/stdin", "-in", str(binary), "-out", str(signed),
+                ], input=password + "\n", text=True, check=True)
+                signed.replace(binary)
+            if target_os == "windows":
+                with zipfile.ZipFile(output_dir / (name + ".zip"), "w", zipfile.ZIP_DEFLATED) as archive:
+                    archive.write(binary, binary.name)
             else:
-                compress_cmd = f"tar -czvf {filename}.tar.gz {filename_with_ending}"
-
-            execute_commands([
-                f"env GOOS={os} GOARCH={arch} go build -ldflags \"{ldflags}\" -o ./ci/release/{filename_with_ending} ./cmd/slangd",
-            ])
-
-            if os == 'windows' and b6k_cs_pw:
-                execute_commands([
-                    f"osslsigncode sign -pkcs12 ./ci/b6k_csc.p12 -pass {b6k_cs_pw} -in ./ci/release/{filename_with_ending} -out ./ci/release/signed_{filename_with_ending}",
-                ], True, False)
-                execute_commands([
-                    f"rm ./ci/release/{filename_with_ending}",
-                    f"mv ./ci/release/signed_{filename_with_ending} ./ci/release/{filename_with_ending}",
-                ])
-
-            chdir("./ci/release/")
-            execute_commands([
-                compress_cmd,
-                f"rm {filename_with_ending}",
-            ])
-            chdir("../..")
+                with tarfile.open(output_dir / (name + ".tar.gz"), "w:gz") as archive:
+                    archive.add(binary, arcname=binary.name)
+            binary.unlink()
 
 
-def build_slang(version):
-    versioned_dist = 'slang-' + version.replace('.', '_')
-
-    for os in OS:
-        for arch in ARCHS:
-            filename_with_ending = filename = f"{versioned_dist}-{os}-{arch}"
-            if os == 'windows':
-                filename_with_ending += ".exe"
-                compress_cmd = f"zip {filename}.zip {filename_with_ending}"
-            else:
-                compress_cmd = f"tar -czvf {filename}.tar.gz {filename_with_ending}"
-
-            execute_commands([
-                f"env GOOS={os} GOARCH={arch} go build -o ./ci/release/{filename_with_ending} ./cmd/slang",
-            ])
-
-            chdir("./ci/release/")
-            execute_commands([
-                compress_cmd,
-                f"rm {filename_with_ending}",
-            ])
-            chdir("../..")
-
-
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Usage: python3 build.py vx.y.z [b6k_cs_pw]')
-        exit(-1)
-
-    version = sys.argv[1]
-    b6k_cs_pw = sys.argv[2] if len(sys.argv) > 2 else None
-
-    build_slangd(version, b6k_cs_pw)
-    build_slang(version)
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit("Usage: python3 ci/build.py v1.2.3")
+    build(sys.argv[1], os.environ.get("B6K_CS_PW", ""))

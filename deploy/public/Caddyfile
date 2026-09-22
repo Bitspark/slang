@@ -9,6 +9,8 @@ tryslang.com, www.tryslang.com {
 	redir @www https://tryslang.com{uri} permanent
 	@home path /
 	redir @home https://slang.bitspark.com{uri} permanent
+	@app_root path /app
+	redir @app_root /app/ permanent
 	@api path /operator/* /run/* /share/* /workspace/* /healthz
 	handle @api {
 		reverse_proxy 127.0.0.1:5150

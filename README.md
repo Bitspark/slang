@@ -24,8 +24,9 @@ The [visual editor](https://github.com/Bitspark/slang-ui) and
 
 Visit [TrySlang](https://tryslang.com/app/) to use the hosted playground without
 installing anything. The [product website](https://slang.bitspark.com/) is maintained
-in [Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com). Start with **Double a number**, click play, send `21`, and
-look for `42` in the output. Use **Export workspace** to keep a backup of your work.
+in [Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
+Start with **Double a number**, click play, send `21`, and look for `42` in the
+output. Use **Export workspace** to keep a backup of your work.
 
 For the isolated Docker deployment used by the public site, including HTTPS,
 visitor workspaces, verification, and rollback, see

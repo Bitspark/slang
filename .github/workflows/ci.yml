@@ -26,6 +26,8 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 -m compileall -q deploy/cloud
+      - run: python3 -m pip install -r deploy/cloud/runtime_requirements.txt
+      - run: python3 -m unittest discover -s deploy/cloud/tests -v
       - run: for script in deploy/cloud/*.sh; do sh -n "$script"; done
       - run: git diff --check
 

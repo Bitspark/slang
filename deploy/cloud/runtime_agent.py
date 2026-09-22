@@ -219,6 +219,11 @@ def collect_logs(iid):
         timestamp, _, message = line.partition(' ')
         if not timestamp.endswith('Z') or not message:
             continue
+        # Docker's --since boundary includes the last line again. The outbox is
+        # emptied after delivery, so its UUID uniqueness alone cannot suppress
+        # retransmitting that same line on every telemetry poll.
+        if item['log_cursor'].endswith('Z') and timestamp <= item['log_cursor']:
+            continue
         try:
             parsed = json.loads(message)
             level = parsed.get('level', 'info')

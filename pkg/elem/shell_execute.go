@@ -122,7 +122,7 @@ var shellExecuteCfg = &builtinConfig{
 
 			c.Start()
 			// Redirect stdout to out port
-			go func() {
+			op.Go(func() {
 				user.Out().Map("stdout").PushBOS()
 				out.Map("stdout").PushBOS()
 				bytes := make([]byte, buffersize)
@@ -137,9 +137,9 @@ var shellExecuteCfg = &builtinConfig{
 				}
 				user.Out().Map("stdout").PushEOS()
 				out.Map("stdout").PushEOS()
-			}()
+			})
 			// Redirect stderr to out port
-			go func() {
+			op.Go(func() {
 				user.Out().Map("stderr").PushBOS()
 				out.Map("stderr").PushBOS()
 				bytes := make([]byte, buffersize)
@@ -154,9 +154,10 @@ var shellExecuteCfg = &builtinConfig{
 				}
 				user.Out().Map("stderr").PushEOS()
 				out.Map("stderr").PushEOS()
-			}()
+			})
 			// Redirect stdin to program and out port
-			go func() {
+			op.Go(func() {
+				defer stdin.Close()
 				user.In().PullBOS()
 				out.Map("stdin").PushBOS()
 				for {
@@ -170,7 +171,7 @@ var shellExecuteCfg = &builtinConfig{
 					stdin.Write(input)
 					out.Map("stdin").Stream().Push(input)
 				}
-			}()
+			})
 			err := c.Wait()
 			if err != nil {
 				out.Map("code").Push(err.Error())

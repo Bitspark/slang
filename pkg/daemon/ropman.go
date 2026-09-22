@@ -138,7 +138,10 @@ func (rom *runningOperatorManager) handleInputOutput(ro *runningOperator) {
 	// could discard partially received map or stream values.
 	go func() {
 		for {
-			item := op.Main().Out().Pull()
+			item, err := op.Main().Out().Receive()
+			if err != nil {
+				return
+			}
 			select {
 			case ro.outgoing <- item:
 			case <-ro.outStop:

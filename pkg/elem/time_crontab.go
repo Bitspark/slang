@@ -61,7 +61,10 @@ var timeCrontabCfg = &builtinConfig{
 			c.AddFunc(crontab, func() {
 				handler.Out().Push(nil)
 
-				item := handler.In().Pull()
+				item, err := handler.In().Receive()
+				if err != nil {
+					return
+				}
 				out.Stream().Push(item)
 			})
 			c.Start()

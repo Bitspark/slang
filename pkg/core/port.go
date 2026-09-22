@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	TYPE_GENERIC   = iota	// 0
-	TYPE_PRIMITIVE = iota 	// 1
-	TYPE_TRIGGER   = iota	// 2
-	TYPE_NUMBER    = iota 	// 3
-	TYPE_STRING    = iota	// 4
-	TYPE_BINARY    = iota	// 5
-	TYPE_BOOLEAN   = iota	// 6
-	TYPE_STREAM    = iota	// 7
-	TYPE_MAP       = iota	// 8
+	TYPE_GENERIC   = iota // 0
+	TYPE_PRIMITIVE = iota // 1
+	TYPE_TRIGGER   = iota // 2
+	TYPE_NUMBER    = iota // 3
+	TYPE_STRING    = iota // 4
+	TYPE_BINARY    = iota // 5
+	TYPE_BOOLEAN   = iota // 6
+	TYPE_STREAM    = iota // 7
+	TYPE_MAP       = iota // 8
 )
 
 const (
@@ -60,7 +60,7 @@ type Port struct {
 	sub  *Port
 	subs map[string]*Port
 
-	buf    chan interface{}
+	buf    *portBuffer
 	mutex  sync.Mutex
 	closed bool
 }
@@ -125,7 +125,7 @@ func NewPort(srv *Service, del *Delegate, def TypeDef, dir int) (*Port, error) {
 	}
 
 	if p.PrimitiveType() && dir == DIRECTION_IN && p.operator != nil && p.operator.function != nil {
-		p.buf = make(chan interface{}, CHANNEL_SIZE)
+		p.buf = newPortBuffer()
 	}
 
 	return p, nil
@@ -160,14 +160,6 @@ func (p *Port) Delegate() *Delegate {
 func (p *Port) Map(name string) *Port {
 	port, _ := p.subs[name]
 	return port
-}
-
-func (p *Port) Lock() {
-	p.mutex.Lock()
-}
-
-func (p *Port) Unlock() {
-	p.mutex.Unlock()
 }
 
 // Returns the length of the map ports
@@ -280,49 +272,38 @@ func (p *Port) Connected(q *Port) bool {
 	return false
 }
 
-// Opens the port by opening all channels
+// Opens the port for a new run. Call after the previous run has finished.
 func (p *Port) Open() {
-	if !p.closed {
-		return
+	p.mutex.Lock()
+	if p.closed {
+		p.closed = false
+		if p.buf != nil {
+			p.buf = newPortBuffer()
+		}
 	}
-
-	p.closed = false
-
-	if p.buf != nil {
-		p.buf = make(chan interface{}, CHANNEL_SIZE)
-	}
-
+	p.mutex.Unlock()
 	if p.sub != nil {
 		p.sub.Open()
 	}
-
-	if len(p.subs) > 0 {
-		for _, sub := range p.subs {
-			sub.Open()
-		}
+	for _, sub := range p.subs {
+		sub.Open()
 	}
 }
 
-// Closes the port by closing all channels
+// Close cancels blocked writes and closes reads after already buffered values.
+// Repeated and concurrent calls are safe.
 func (p *Port) Close() {
-	if p.closed {
-		return
-	}
-	p.Lock()
+	p.mutex.Lock()
 	p.closed = true
 	if p.buf != nil {
-		close(p.buf)
+		p.buf.close()
 	}
-	p.Unlock()
-
+	p.mutex.Unlock()
 	if p.sub != nil {
 		p.sub.Close()
 	}
-
-	if len(p.subs) > 0 {
-		for _, sub := range p.subs {
-			sub.Close()
-		}
+	for _, sub := range p.subs {
+		sub.Close()
 	}
 }
 
@@ -409,25 +390,6 @@ func (p *Port) DirectlyConnected() error {
 	return nil
 }
 
-func (p *Port) assertChannelSpace() {
-	c := cap(p.buf)
-	if len(p.buf) > c/2 {
-		newChan := make(chan interface{}, 2*c)
-		p.Lock()
-		for {
-			select {
-			case i := <-p.buf:
-				newChan <- i
-			default:
-				goto end
-			}
-		}
-	end:
-		p.buf = newChan
-		p.Unlock()
-	}
-}
-
 func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
 	if p.PrimitiveType() {
 		handle(p)
@@ -442,28 +404,27 @@ func (p *Port) WalkPrimitivePorts(handle func(p *Port)) {
 	}
 }
 func (p *Port) Closed() bool {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	return p.closed
+}
+
+func (p *Port) buffer() *portBuffer {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	return p.buf
 }
 
 // Push an item to this port.
 func (p *Port) Push(item interface{}) {
-	p.Lock()
-	if p.closed {
-		p.Unlock()
+	p.mutex.Lock()
+	buf, closed := p.buf, p.closed
+	p.mutex.Unlock()
+	if closed {
 		return
 	}
-	p.Unlock()
-
-	if p.buf != nil {
-		if CHANNEL_DYNAMIC {
-			p.assertChannelSpace()
-
-			p.Lock()
-			p.buf <- item
-			p.Unlock()
-		} else {
-			p.buf <- item
-		}
+	if buf != nil && !buf.push(item) {
+		return
 	}
 
 	for dest := range p.dests {
@@ -528,36 +489,31 @@ func (p *Port) PushEOS() {
 	p.sub.Push(EOS{p.strSrc})
 }
 
-// Pull an item from this port
+// Receive blocks for a complete value, returning ErrPortClosed on shutdown.
+// A legitimate nil value is returned with a nil error. A partial map or stream
+// is discarded if shutdown interrupts its assembly.
+func (p *Port) Receive() (item interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if r != ErrPortClosed {
+				panic(r)
+			}
+			item, err = nil, ErrPortClosed
+		}
+	}()
+	return p.Pull(), nil
+}
+
+// Pull blocks for an item. Closure panics with ErrPortClosed to unwind operator
+// execution without turning shutdown into data. External callers should use
+// Receive; operator workers must run through Operator.Run or Operator.Go.
 func (p *Port) Pull() interface{} {
 	if p.itemType == TYPE_GENERIC {
 		panic("cannot pull from generic")
 	}
-
-	if p.buf != nil {
-		if CHANNEL_DYNAMIC {
-			for {
-				p.Lock()
-				select {
-				case i := <-p.buf:
-					p.Unlock()
-					return i
-				default:
-					p.Unlock()
-				}
-				time.Sleep(1 * time.Millisecond)
-			}
-		} else {
-			i, ok := <-p.buf
-			if !ok {
-				// the channel was activly closed
-				// but we still send the zero value
-				// we recievied - this solves a strange
-				// race condition detected with `go test -race ...`
-				return i
-			}
-			return i
-		}
+	if buf := p.buffer(); buf != nil {
+		item, _ := buf.pull(nil)
+		return item
 	}
 
 	if p.PrimitiveType() {
@@ -615,38 +571,24 @@ func (p *Port) Pull() interface{} {
 	panic("unknown type")
 }
 
-// Similar to Port.Pull but will return (nil, false) when there is no item after timeout otherwise (value, true)
-func (p *Port) Poll() (interface{}, bool) {
-	timeout := time.After(5 * time.Millisecond)
-
+// Poll returns (nil, false) on timeout or closure. Once assembly of a compound
+// value starts, it waits for completion, or discards the partial value on close.
+func (p *Port) Poll() (item interface{}, ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			if r != ErrPortClosed {
+				panic(r)
+			}
+			item, ok = nil, false
+		}
+	}()
 	if p.itemType == TYPE_GENERIC {
 		panic("cannot pull from generic")
 	}
-
-	if p.buf != nil {
-		if CHANNEL_DYNAMIC {
-			for {
-				p.mutex.Lock()
-				select {
-				case i := <-p.buf:
-					p.mutex.Unlock()
-					return i, true
-				case <-timeout:
-					p.mutex.Unlock()
-					return nil, false
-				default:
-					p.mutex.Unlock()
-				}
-				time.Sleep(1 * time.Millisecond)
-			}
-		} else {
-			select {
-			case i := <-p.buf:
-				return i, true
-			case <-timeout:
-				return nil, false
-			}
-		}
+	if buf := p.buffer(); buf != nil {
+		timer := time.NewTimer(5 * time.Millisecond)
+		defer timer.Stop()
+		return buf.pull(timer.C)
 	}
 
 	if p.PrimitiveType() {
@@ -669,7 +611,6 @@ func (p *Port) Poll() (interface{}, bool) {
 			} else {
 				i = sub.Pull()
 			}
- 
 
 			if i == PHMultiple {
 				mi = PHMultiple
@@ -822,19 +763,21 @@ func (p *Port) Name() string {
 	return p.String()
 }
 
+// Bufferize must be called before starting the graph.
 func (p *Port) Bufferize() {
-	if p.buf != nil {
-		return
-	}
-
-	if p.PrimitiveType() {
-		p.buf = make(chan interface{}, CHANNEL_SIZE)
-	} else if p.itemType == TYPE_MAP {
-		for _, sub := range p.subs {
-			sub.Bufferize()
+	p.mutex.Lock()
+	if p.PrimitiveType() && p.buf == nil {
+		p.buf = newPortBuffer()
+		if p.closed {
+			p.buf.close()
 		}
-	} else if p.itemType == TYPE_STREAM {
+	}
+	p.mutex.Unlock()
+	if p.sub != nil {
 		p.sub.Bufferize()
+	}
+	for _, sub := range p.subs {
+		sub.Bufferize()
 	}
 }
 

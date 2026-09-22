@@ -117,7 +117,7 @@ var netHTTPServerCfg = &builtinConfig{
 		sync.Init(
 			slangHandler.In(),
 			slangHandler.Out())
-		go sync.Worker()
+		op.Go(sync.Worker)
 
 		for !op.CheckStop() {
 			port, marker := in.PullInt()

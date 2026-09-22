@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	TYPE_GENERIC   = iota
-	TYPE_PRIMITIVE = iota
-	TYPE_TRIGGER   = iota
-	TYPE_NUMBER    = iota
-	TYPE_STRING    = iota
-	TYPE_BINARY    = iota
-	TYPE_BOOLEAN   = iota
-	TYPE_STREAM    = iota
-	TYPE_MAP       = iota
+	TYPE_GENERIC   = iota	// 0
+	TYPE_PRIMITIVE = iota 	// 1
+	TYPE_TRIGGER   = iota	// 2
+	TYPE_NUMBER    = iota 	// 3
+	TYPE_STRING    = iota	// 4
+	TYPE_BINARY    = iota	// 5
+	TYPE_BOOLEAN   = iota	// 6
+	TYPE_STREAM    = iota	// 7
+	TYPE_MAP       = iota	// 8
 )
 
 const (
@@ -598,7 +598,7 @@ func (p *Port) Pull() interface{} {
 
 // Similar to Port.Pull but will return (nil, false) when there is no item after timeout otherwise (value, true)
 func (p *Port) Poll() (interface{}, bool) {
-	timeout := time.After(1 * time.Millisecond)
+	timeout := time.After(5 * time.Millisecond)
 
 	if p.itemType == TYPE_GENERIC {
 		panic("cannot pull from generic")
@@ -639,7 +639,18 @@ func (p *Port) Poll() (interface{}, bool) {
 		itemMap := make(map[string]interface{})
 
 		for k, sub := range p.subs {
-			i := sub.Pull()
+			var i any
+
+			if len(itemMap) == 0 {
+				// prevent blocking when there has not arrived any value yet.
+				var ok bool
+				if i, ok = sub.Poll(); !ok {
+					return nil, false
+				}
+			} else {
+				i = sub.Pull()
+			}
+ 
 
 			if i == PHMultiple {
 				mi = PHMultiple
@@ -663,7 +674,11 @@ func (p *Port) Poll() (interface{}, bool) {
 	}
 
 	if p.itemType == TYPE_STREAM {
-		i := p.sub.Pull()
+		i, ok := p.sub.Poll()
+
+		if !ok {
+			return nil, false
+		}
 
 		if !p.OwnBOS(i) {
 			return i, true

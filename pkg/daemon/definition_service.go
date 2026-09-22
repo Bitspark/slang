@@ -93,18 +93,23 @@ var DefinitionService = &Service{map[string]*Endpoint{
 				return
 			}
 
-			var def core.Blueprint
-			err = json.Unmarshal(body, &def)
+			var bpList core.SlangBundle
+
+			err = json.Unmarshal(body, &bpList)
 			if err != nil {
 				fail(&Error{Msg: err.Error(), Code: "E000X"})
 				return
 			}
 
-			_, err = st.Save(def)
+			for _, bp := range bpList.Blueprints {
+				if !st.IsSavedInWritableBackend(bp.Id) && st.IsSaved(bp.Id) {
+					continue
+				}
 
-			if err != nil {
-				fail(&Error{Msg: err.Error(), Code: "E000X"})
-				return
+				if _, err = st.Save(bp); err != nil {
+					fail(&Error{Msg: err.Error(), Code: "E000X"})
+					return
+				}
 			}
 
 			sendSuccess(w, nil)

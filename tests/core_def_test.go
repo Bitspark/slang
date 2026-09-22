@@ -593,6 +593,39 @@ func TestExpandExpression__Array1(t *testing.T) {
 	a.Equal([]string{"val_a_end", "val_b_end", "val_c_end"}, parts)
 }
 
+func TestExpandExpression__Expected_String__Got_Placehoder(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+	propDefs := core.PropertyMap{
+		"name": {Type: "string"},
+	}
+	props := core.Properties{
+		"name":     "$placeholder",
+	}
+	parts, err := core.ExpandExpression("Hello, {name}", props, propDefs)
+	r.NoError(err)
+	a.Equal([]string{"Hello, {name}"}, parts)
+}
+
+func TestExpandExpression__Expected_StreamOfString__Got_Placehoder(t *testing.T) {
+	a := assertions.New(t)
+	r := require.New(t)
+	propDefs := core.PropertyMap{
+		"colors": {
+			Type: "stream",
+			Stream: &core.TypeDef{
+				Type: "string",
+			},
+		},
+	}
+	props := core.Properties{
+		"colors":     "$placeholder",
+	}
+	parts, err := core.ExpandExpression("I love {colors}", props, propDefs)
+	r.NoError(err)
+	a.Equal([]string{"I love {colors}"}, parts)
+}
+
 func TestExpandExpression__ArrayAndBoolean(t *testing.T) {
 	a := assertions.New(t)
 	r := require.New(t)

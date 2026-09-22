@@ -26,8 +26,7 @@ var systemLogCfg = &builtinConfig{
 					Generic: "valueType",
 				},
 				Out: core.TypeDef{
-					Type:    "generic",
-					Generic: "valueType",
+					Type:    "trigger",
 				},
 			},
 		},
@@ -38,7 +37,7 @@ var systemLogCfg = &builtinConfig{
 		for !op.CheckStop() {
 			i := in.Pull()
 			log.Print(i)
-			out.Push(i)
+			out.Push(nil)
 		}
 	},
 }

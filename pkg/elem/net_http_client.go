@@ -53,6 +53,7 @@ var netHTTPClientCfg = &builtinConfig{
 
 			r, err := http.NewRequest(method, url, bytes.NewReader(body))
 			if err != nil {
+				log.Error(err)
 				out.Push(nil)
 				continue
 			}
@@ -73,6 +74,7 @@ var netHTTPClientCfg = &builtinConfig{
 
 			respBody, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
+				log.Error(err)
 				out.Push(nil)
 				continue
 			}

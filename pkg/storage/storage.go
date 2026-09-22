@@ -43,6 +43,15 @@ func (s *Storage) IsSavedInWritableBackend(opId uuid.UUID) bool {
 	return false
 }
 
+func (s *Storage) IsSaved(opId uuid.UUID) bool {
+	for _, backend := range s.backends {
+		if backend.Has(opId) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Storage) List() ([]uuid.UUID, error) {
 	all := make([]uuid.UUID, 0)
 

@@ -12,6 +12,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+ci/release/
+ci/__pycache__/
 ### macOS template
 # General
 .DS_Store

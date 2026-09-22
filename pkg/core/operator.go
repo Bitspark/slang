@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/Bitspark/slang/pkg/log"
 	"github.com/google/uuid"
@@ -28,8 +29,12 @@ type Operator struct {
 	properties  Properties
 	connectFunc CFunc
 	elementary  uuid.UUID
-	stopChannel chan bool
+	stopChannel chan struct{}
 	stopped     bool
+	started     bool
+	stateMu     sync.Mutex
+	workers     sync.WaitGroup
+	failure     error
 }
 
 type Delegate struct {
@@ -49,7 +54,7 @@ type Service struct {
 func NewOperator(name string, f OFunc, c CFunc, gens Generics, props Properties, def Blueprint) (*Operator, error) {
 	props.Clean()
 
-	o := &Operator{}
+	o := &Operator{stopChannel: make(chan struct{})}
 	o.defMeta = def.Meta
 	o.defId = def.Id
 	o.function = f
@@ -149,74 +154,157 @@ func (o *Operator) Child(name string) *Operator {
 	return c
 }
 
+// Start initializes the whole graph before launching any workers. Restarting
+// requires Stop first; workers from the previous run are joined before reopening.
 func (o *Operator) Start() {
-	o.stopChannel = make(chan bool, 1)
-	o.stopped = false
+	o.stateMu.Lock()
+	alreadyStarted := o.started && !o.stopped
+	o.stateMu.Unlock()
+	if alreadyStarted {
+		return
+	}
+	o.waitWorkers()
+	o.prepareStart()
+	o.startWorkers()
+}
 
+func (o *Operator) waitWorkers() {
+	o.workers.Wait()
+	for _, child := range o.children {
+		child.waitWorkers()
+	}
+}
+
+func (o *Operator) prepareStart() {
+	o.stateMu.Lock()
+	if o.stopped {
+		o.stopChannel = make(chan struct{})
+	}
+	o.stopped, o.started, o.failure = false, true, nil
+	o.stateMu.Unlock()
 	for _, srv := range o.services {
+		srv.inPort.Open()
 		srv.outPort.Open()
 	}
 	for _, dlg := range o.delegates {
+		dlg.inPort.Open()
 		dlg.outPort.Open()
 	}
+	for _, child := range o.children {
+		child.prepareStart()
+	}
+}
 
+func (o *Operator) startWorkers() {
 	if o.function != nil {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					o.Logger().Errorf("operator panicked: %v", r)
-					o.Stop()
-				}
-			}()
-			o.function(o)
-		}()
+		o.Go(func() { o.function(o) })
 	} else {
-		for _, c := range o.children {
-			c.Start()
+		for _, child := range o.children {
+			child.startWorkers()
 		}
 	}
 }
 
-func (o *Operator) Stop() {
+// Run executes operator work with cancellation and panic handling. Callbacks
+// invoked by external libraries should use Run; asynchronous workers use Go.
+func (o *Operator) Run(fn func()) {
+	defer func() {
+		if r := recover(); r != nil {
+			if r == ErrPortClosed {
+				o.Stop()
+				return
+			}
+			err := fmt.Errorf("operator panicked: %v", r)
+			if cause, ok := r.(error); ok {
+				err = fmt.Errorf("operator panicked: %w", cause)
+			}
+			o.Logger().Error(err)
+			o.Fail(err)
+		}
+	}()
+	fn()
+}
+
+// Go starts a tracked worker with the same shutdown handling as the main worker.
+func (o *Operator) Go(fn func()) {
+	o.stateMu.Lock()
 	if o.stopped {
+		o.stateMu.Unlock()
 		return
 	}
+	o.workers.Add(1)
+	o.stateMu.Unlock()
+	go func() {
+		defer o.workers.Done()
+		o.Run(fn)
+	}()
+}
 
-	o.stopChannel <- true
-	o.stopped = true
+// Done is closed when this run stops. It broadcasts without consuming a token.
+func (o *Operator) Done() <-chan struct{} {
+	o.stateMu.Lock()
+	defer o.stateMu.Unlock()
+	return o.stopChannel
+}
 
+// Stop cancels the entire connected operator hierarchy. Concurrent calls are safe.
+func (o *Operator) Stop() {
+	if o.parent != nil {
+		o.parent.Stop()
+		return
+	}
+	o.stop(nil)
+}
+
+// Fail stops the graph and records its first failure separately from cancellation.
+func (o *Operator) Fail(err error) {
+	if o.parent != nil {
+		o.parent.Fail(err)
+		return
+	}
+	o.stop(err)
+}
+
+func (o *Operator) stop(err error) {
+	o.stateMu.Lock()
+	if o.failure == nil {
+		o.failure = err
+	}
+	if !o.stopped {
+		o.stopped = true
+		close(o.stopChannel)
+	}
+	o.stateMu.Unlock()
 	for _, srv := range o.services {
+		srv.inPort.Close()
 		srv.outPort.Close()
 	}
 	for _, dlg := range o.delegates {
+		dlg.inPort.Close()
 		dlg.outPort.Close()
 	}
-
-	for _, c := range o.children {
-		c.Stop()
+	for _, child := range o.children {
+		child.stop(err)
 	}
+}
 
+// Err returns the first failure of this graph, or nil for an ordinary Stop.
+func (o *Operator) Err() error {
 	if o.parent != nil {
-		o.parent.Stop()
+		return o.parent.Err()
 	}
+	o.stateMu.Lock()
+	defer o.stateMu.Unlock()
+	return o.failure
 }
 
-func (o *Operator) WaitForStop() {
-	<-o.stopChannel
-	o.stopChannel <- true
-}
+func (o *Operator) WaitForStop() { <-o.Done() }
 
-func (o *Operator) CheckStop() bool {
-	select {
-	case <-o.stopChannel:
-		o.stopChannel <- true
-		return true
-	default:
-		return false
-	}
-}
+func (o *Operator) CheckStop() bool { return o.Stopped() }
 
 func (o *Operator) Stopped() bool {
+	o.stateMu.Lock()
+	defer o.stateMu.Unlock()
 	return o.stopped
 }
 

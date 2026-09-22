@@ -64,7 +64,14 @@ func (t TestBench) Run(opId uuid.UUID, writer io.Writer, failFast bool) (int, in
 			expected := core.CleanValue(tc.Data.Out[j])
 
 			o.Main().In().Push(core.CleanValue(in))
-			actual := o.Main().Out().Pull()
+			actual, err := o.Main().Out().Receive()
+			if err != nil {
+				o.Stop()
+				if failure := o.Err(); failure != nil {
+					err = failure
+				}
+				return succs, fails + 1, err
+			}
 
 			if !testEqual(expected, actual) {
 				fmt.Fprintf(writer, "  expected: %#v (%T)\n", expected, expected)

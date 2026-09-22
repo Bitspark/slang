@@ -191,7 +191,11 @@ func runProcess(operator *core.Operator) {
 				break loop
 			}
 
-			outgoing <- p.Pull()
+			item, err := p.Receive()
+			if err != nil {
+				return
+			}
+			outgoing <- item
 		}
 	}()
 
@@ -214,7 +218,11 @@ func runHttpPost(operator *core.Operator, bind string) {
 			case err == io.EOF:
 				if isQuasiTrigger(operator.Main().In()) {
 					operator.Main().In().Push(true)
-					outgoing := operator.Main().Out().Pull()
+					outgoing, err := operator.Main().Out().Receive()
+					if err != nil {
+						responseWithError(resp, err, http.StatusServiceUnavailable)
+						return
+					}
 					responseWithOk(resp, outgoing)
 				} else {
 					responseWithError(resp, errors.New("missing data"), http.StatusBadRequest)
@@ -237,7 +245,11 @@ func runHttpPost(operator *core.Operator, bind string) {
 					return
 				}
 
-				outgoing := p.Pull()
+				outgoing, err := p.Receive()
+				if err != nil {
+					responseWithError(resp, err, http.StatusServiceUnavailable)
+					return
+				}
 				responseWithOk(resp, outgoing)
 			}
 

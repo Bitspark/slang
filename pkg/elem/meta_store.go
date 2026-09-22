@@ -1,6 +1,8 @@
 package elem
 
 import (
+	"sync"
+
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 )
@@ -8,6 +10,7 @@ import (
 type storePipe struct {
 	index int
 	items []interface{}
+	mutex sync.Mutex
 }
 
 type store map[*core.Port]*storePipe
@@ -16,15 +19,19 @@ type store map[*core.Port]*storePipe
 // at the port
 func (s store) attachPort(p *core.Port) {
 	if p.PrimitiveType() {
-		s[p] = &storePipe{
+		pipe := &storePipe{
 			index: 0,
 			items: []interface{}{},
 		}
-		go func() {
+		s[p] = pipe
+		p.Operator().Go(func() {
 			for !p.Operator().Stopped() {
-				s[p].items = append(s[p].items, p.Pull())
+				i := p.Pull()
+				pipe.mutex.Lock()
+				pipe.items = append(pipe.items, i)
+				pipe.mutex.Unlock()
 			}
-		}()
+		})
 	} else if p.Type() == core.TYPE_MAP {
 		for _, sub := range p.MapEntryNames() {
 			s.attachPort(p.Map(sub))
@@ -35,12 +42,16 @@ func (s store) attachPort(p *core.Port) {
 }
 
 func (p *storePipe) next() interface{} {
+	p.mutex.Lock()
 	if p.index >= len(p.items) {
+		p.mutex.Unlock()
 		return core.PHMultiple
 	}
 	index := p.index
 	p.index++
-	return p.items[index]
+	r := p.items[index]
+	p.mutex.Unlock()
+	return r
 }
 
 func (s store) pull(p *core.Port) interface{} {
@@ -108,7 +119,9 @@ func (s store) pull(p *core.Port) interface{} {
 
 func (s store) resetIndexes() {
 	for pipe := range s {
+		s[pipe].mutex.Lock()
 		s[pipe].index = 0
+		s[pipe].mutex.Unlock()
 	}
 }
 

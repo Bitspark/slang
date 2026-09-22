@@ -75,65 +75,77 @@ var streamReduceCfg = &builtinConfig{
 				continue
 			}
 
-			mutex := &sync.Mutex{}
-			pool := []interface{}{}
-			done := false
-			doneChan := make(chan bool)
-
-			// Reducer
-			go func() {
-				for {
-					mutex.Lock()
-					if done && len(pool) < 2 {
-						doneChan <- true
-						break
-					}
-					mutex.Unlock()
-
-					mutex.Lock()
-					if len(pool) > 1 {
-						sOut.Push(map[string]interface{}{"a": pool[0], "b": pool[1]})
-						pool = pool[2:]
-					} else {
-						mutex.Unlock()
-						continue
-					}
-					mutex.Unlock()
-
-					i := sIn.Pull()
-
-					mutex.Lock()
-					// prepend (instead of appen) to ensure order of items while reducing
-					// append would do following:
-					// 		[1] [2] [3] -> [3] [1 2]
-					// prepend does:
-					//		[1] [2] [3] -> [1 2] [3]
-					pool = append([]interface{}{i}, pool...)
-					mutex.Unlock()
-				}
-			}()
-
-			for {
-				// Stream items
-
-				i = in.Stream().Pull()
-				if in.OwnEOS(i) {
-					done = true
-					break
-				}
-
-				mutex.Lock()
-				pool = append(pool, i)
-				mutex.Unlock()
+			result, ok := reduceStream(op, in, sIn, sOut, nullValue)
+			if !ok {
+				return
 			}
-
-			<-doneChan
-
-			if len(pool) == 1 {
-				out.Push(pool[0])
-			} else {
-				out.Push(nullValue)
-			}
+			out.Push(result)
 		}
 	},
+}
+
+// Read the source concurrently with the delegate, but never hold the pool lock
+// during port I/O. Both workers must be able to finish if either input closes.
+func reduceStream(op *core.Operator, in, sIn, sOut *core.Port, empty interface{}) (interface{}, bool) {
+	var mutex sync.Mutex
+	ready := sync.NewCond(&mutex)
+	pool := []interface{}{}
+	done := false
+	completed := false
+	finished := make(chan struct{})
+	finishInput := func() {
+		mutex.Lock()
+		done = true
+		ready.Broadcast()
+		mutex.Unlock()
+	}
+	defer finishInput()
+	op.Go(func() {
+		defer close(finished)
+		for {
+			mutex.Lock()
+			for len(pool) < 2 && !done {
+				ready.Wait()
+			}
+			if len(pool) < 2 {
+				completed = true
+				mutex.Unlock()
+				return
+			}
+			a, b := pool[0], pool[1]
+			pool = pool[2:]
+			mutex.Unlock()
+			sOut.Push(map[string]interface{}{"a": a, "b": b})
+			item := sIn.Pull()
+			mutex.Lock()
+			// Prepend the reduction to preserve source order.
+			pool = append([]interface{}{item}, pool...)
+			mutex.Unlock()
+		}
+	})
+	for {
+		item := in.Stream().Pull()
+		if in.OwnEOS(item) {
+			break
+		}
+		mutex.Lock()
+		pool = append(pool, item)
+		ready.Signal()
+		mutex.Unlock()
+	}
+	finishInput()
+	select {
+	case <-finished:
+	case <-op.Done():
+		return nil, false
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+	if !completed {
+		return nil, false
+	}
+	if len(pool) == 1 {
+		return pool[0], true
+	}
+	return empty, true
 }

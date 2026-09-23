@@ -39,3 +39,13 @@ func TestRunRejectsMissingMainService(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualError(t, run(o, "process", ""), "blueprint has no main service")
 }
+
+func TestSafeModeFromEnv(t *testing.T) {
+	for value, want := range map[string]bool{"": false, "false": false, "0": false, "true": true, "1": true} {
+		got, err := safeModeFromEnv(value)
+		require.NoError(t, err, value)
+		require.Equal(t, want, got, value)
+	}
+	_, err := safeModeFromEnv("yes")
+	require.Error(t, err, "an unreadable value must not fall back to unsafe mode")
+}

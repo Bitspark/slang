@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -23,6 +24,22 @@ import (
 )
 
 var SupportedRunModes = []string{"process", "httpPost"}
+
+// safeModeFromEnv reads SLANG_SAFE_MODE, which leaves shell execution and file
+// writes unregistered. The hosted runner sets it. It is an environment variable
+// rather than a flag because older binaries ignore an unknown variable, so the
+// runner can set it before every deployed engine release understands it. An
+// unreadable value is an error, never a silent return to the unsafe default.
+func safeModeFromEnv(value string) (bool, error) {
+	if value == "" {
+		return false, nil
+	}
+	safe, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("invalid SLANG_SAFE_MODE %q: must be true or false", value)
+	}
+	return safe, nil
+}
 
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
@@ -55,7 +72,11 @@ func main() {
 	}
 
 	// Init elementary operators
-	elem.SafeMode = false
+	safeMode, err := safeModeFromEnv(os.Getenv("SLANG_SAFE_MODE"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	elem.SafeMode = safeMode
 	elem.Init()
 
 	// Parse and Build blueprint

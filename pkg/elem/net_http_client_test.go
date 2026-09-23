@@ -142,25 +142,38 @@ func Test_NetHTTPClient__ReleasesConnectionsAfterReadErrors(t *testing.T) {
 	a.LessOrEqual(settledGoroutines(), baseline+2, "failed reads should not leave goroutines behind")
 }
 
-// Known defect. Condition slang.http-client.bounded-stall is refuted: the
-// operator's client has no timeout, so a stalled response holds it indefinitely.
-// Replace this guard with a regression test when the operator gains a timeout.
-func Test_NetHTTPClient__StalledResponseStillBlocks(t *testing.T) {
+// overrideNetHTTPTimeout shortens or lengthens the operator's timeout for one test.
+func overrideNetHTTPTimeout(t *testing.T, timeout time.Duration) {
+	atomic.StoreInt64(&netHTTPClientTimeoutOverride, int64(timeout))
+	t.Cleanup(func() { atomic.StoreInt64(&netHTTPClientTimeoutOverride, 0) })
+}
+
+// Condition slang.http-client.bounded-stall.
+func Test_NetHTTPClient__GivesUpOnStalledResponse(t *testing.T) {
+	a := assertions.New(t)
+	overrideNetHTTPTimeout(t, 200*time.Millisecond)
 	s := newStallingServer(t)
 	op := startNetHTTPClient(t)
 	pushGet(op, s.url)
 	<-s.arrived
 	select {
 	case <-s.gaveUp:
-		t.Fatal("the operator abandoned a stalled response: slang.http-client.bounded-stall may now hold; turn this guard into a regression test")
-	case <-time.After(2 * time.Second):
+	case <-time.After(5 * time.Second):
+		t.Fatal("the operator kept waiting on a stalled response past its timeout")
 	}
+	a.Nil(op.Main().Out().Pull().(map[string]interface{})["status"], "a timed-out request should produce no response")
 }
 
-// Known defect. Condition slang.http-client.stop-abandons-request is refuted:
-// stopping the operator leaves its in-flight request running.
-// Replace this guard with a regression test when stopping cancels the request.
-func Test_NetHTTPClient__StopLeavesRequestRunning(t *testing.T) {
+// The default must leave the program time to handle a failed request before the
+// hosted runtime ends the whole invocation at 15 seconds.
+func Test_NetHTTPClient__DefaultTimeoutIsBelowHostedLimit(t *testing.T) {
+	a := assertions.New(t)
+	a.Less(netHTTPTimeout(), 15*time.Second)
+}
+
+// Condition slang.http-client.stop-abandons-request.
+func Test_NetHTTPClient__StopCancelsRequest(t *testing.T) {
+	overrideNetHTTPTimeout(t, time.Minute) // only stopping may end this request
 	s := newStallingServer(t)
 	op := startNetHTTPClient(t)
 	pushGet(op, s.url)
@@ -168,7 +181,7 @@ func Test_NetHTTPClient__StopLeavesRequestRunning(t *testing.T) {
 	op.Stop()
 	select {
 	case <-s.gaveUp:
-		t.Fatal("stopping the operator abandoned its request: slang.http-client.stop-abandons-request now holds; turn this guard into a regression test")
-	case <-time.After(2 * time.Second):
+	case <-time.After(5 * time.Second):
+		t.Fatal("stopping the operator left its request running")
 	}
 }

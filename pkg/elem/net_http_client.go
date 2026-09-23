@@ -3,38 +3,18 @@ package elem
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
-	"sync/atomic"
-	"time"
 
 	"github.com/Bitspark/slang/pkg/core"
 
 	"github.com/google/uuid"
 )
 
-// netHTTPClientTimeout bounds one exchange, including reading the body. It stays
-// below the hosted runtime's 15-second invocation limit, so a program receives a
-// failed request instead of the runtime stopping its instance.
-const netHTTPClientTimeout = 10 * time.Second
-
-// netHTTPClientTimeoutOverride replaces the timeout when positive. Tests use it
-// to observe a timeout without waiting for the default.
-var netHTTPClientTimeoutOverride int64
-
-func netHTTPTimeout() time.Duration {
-	if override := atomic.LoadInt64(&netHTTPClientTimeoutOverride); override > 0 {
-		return time.Duration(override)
-	}
-	return netHTTPClientTimeout
-}
-
-// netHTTPExchange sends one request and reads the whole response before the
-// timeout expires or ctx is cancelled.
-func netHTTPExchange(ctx context.Context, method, url string, body []byte, headers []interface{}) (*http.Response, []byte, error) {
-	ctx, cancel := context.WithTimeout(ctx, netHTTPTimeout())
-	defer cancel()
-
+// netHTTPExchange sends one request through client and reads the whole response,
+// within the client's timeout and until ctx is cancelled.
+func netHTTPExchange(ctx context.Context, client *http.Client, method, url string, body []byte, headers []interface{}) (*http.Response, []byte, error) {
 	r, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, nil, err
@@ -46,7 +26,7 @@ func netHTTPExchange(ctx context.Context, method, url string, body []byte, heade
 		}
 	}
 
-	resp, err := http.DefaultClient.Do(r)
+	resp, err := client.Do(r)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -84,52 +64,58 @@ var netHTTPClientCfg = &builtinConfig{
 			},
 		},
 	},
-	opFunc: func(op *core.Operator) {
-		in := op.Main().In()
-		out := op.Main().Out()
-
-		// Stopping the operator cancels the request it is waiting on.
-		running, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		go func() {
-			select {
-			case <-op.Done():
-				cancel()
-			case <-running.Done():
-			}
-		}()
-
-		for !op.CheckStop() {
-			i := in.Pull()
-			if core.IsMarker(i) {
-				out.Push(i)
-				continue
-			}
-
-			req := i.(map[string]interface{})
-			method := req["method"].(string)
-			url := req["url"].(string)
-			body := req["body"].(core.Binary)
-			headers := req["headers"].([]interface{})
-
-			resp, respBody, err := netHTTPExchange(running, method, url, body, headers)
-			if err != nil {
-				if running.Err() == nil {
-					op.Logger().Error(err)
-				}
-				out.Push(nil)
-				continue
-			}
-
-			out.Map("status").Push(float64(resp.StatusCode))
-			out.Map("body").Push(core.Binary(respBody))
-
-			out.Map("headers").PushBOS()
-			for key := range resp.Header {
-				out.Map("headers").Stream().Map("key").Push(key)
-				out.Map("headers").Stream().Map("value").Push(resp.Header.Get(key))
-			}
-			out.Map("headers").PushEOS()
+	makeFunc: func(caps Capabilities) (core.OFunc, error) {
+		if caps.HTTP == nil {
+			return nil, errors.New("this host does not provide HTTP")
 		}
+		client := caps.HTTP
+		return func(op *core.Operator) {
+			in := op.Main().In()
+			out := op.Main().Out()
+
+			// Stopping the operator cancels the request it is waiting on.
+			running, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go func() {
+				select {
+				case <-op.Done():
+					cancel()
+				case <-running.Done():
+				}
+			}()
+
+			for !op.CheckStop() {
+				i := in.Pull()
+				if core.IsMarker(i) {
+					out.Push(i)
+					continue
+				}
+
+				req := i.(map[string]interface{})
+				method := req["method"].(string)
+				url := req["url"].(string)
+				body := req["body"].(core.Binary)
+				headers := req["headers"].([]interface{})
+
+				resp, respBody, err := netHTTPExchange(running, client, method, url, body, headers)
+				if err != nil {
+					if running.Err() == nil {
+						op.Logger().Error(err)
+					}
+					out.Push(nil)
+					continue
+				}
+
+				out.Map("status").Push(float64(resp.StatusCode))
+				out.Map("body").Push(core.Binary(respBody))
+
+				out.Map("headers").PushBOS()
+				for key := range resp.Header {
+					out.Map("headers").Stream().Map("key").Push(key)
+					out.Map("headers").Stream().Map("value").Push(resp.Header.Get(key))
+				}
+				out.Map("headers").PushEOS()
+			}
+		}, nil
 	},
 }

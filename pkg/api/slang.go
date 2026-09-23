@@ -16,7 +16,13 @@ var PROPERTY_ASSIGNMENT_REGEXP = regexp.MustCompile(`^\$\w+$`)
 var PROPERTY_INTERPOLATION_REGEXP = regexp.MustCompile(`(\$\w+)`)
 
 // todo should be SlangBundle method
+// BuildOperator builds a bundle whose operators reach this machine directly.
 func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
+	return BuildOperatorWith(bundle, elem.LocalCapabilities())
+}
+
+// BuildOperatorWith builds a bundle whose operators use only the given capabilities.
+func BuildOperatorWith(bundle *core.SlangBundle, caps elem.Capabilities) (*core.Operator, error) {
 	if !bundle.Valid() {
 		if err := bundle.Validate(); err != nil {
 			return nil, err
@@ -25,7 +31,7 @@ func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
 
 	stor := newSlangBundleStorage(funk.Values(bundle.Blueprints).([]core.Blueprint))
 
-	return BuildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor)
+	return buildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor, caps)
 }
 
 func gatherDependencies(def *core.Blueprint, bundle *core.SlangBundle, store *storage.Storage) error {
@@ -99,6 +105,10 @@ func (l *slangBundleLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
 }
 
 func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) (*core.Operator, error) {
+	return createAndConnectOperator(insName, def, ordered, elem.LocalCapabilities())
+}
+
+func createAndConnectOperator(insName string, def core.Blueprint, ordered bool, caps elem.Capabilities) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)
 	if err != nil {
@@ -107,7 +117,7 @@ func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) 
 
 	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.InstanceDefs {
-		if builtinOp, err := elem.MakeOperator(*childOpInsDef); err == nil {
+		if builtinOp, err := elem.MakeOperatorWith(*childOpInsDef, caps); err == nil {
 			// Builtin operator has been found
 			builtinOp.SetParent(o)
 			continue
@@ -116,7 +126,7 @@ func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) 
 			return nil, err
 		}
 
-		oc, err := CreateAndConnectOperator(childOpInsDef.Name, childOpInsDef.Blueprint, ordered)
+		oc, err := createAndConnectOperator(childOpInsDef.Name, childOpInsDef.Blueprint, ordered, caps)
 		if err != nil {
 			return nil, err
 		}
@@ -198,14 +208,22 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 }
 
 func BuildAndCompile(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
-	if op, err := Build(bpid, gens, props, st); err == nil {
-		return Compile(op)
+	return buildAndCompile(bpid, gens, props, st, elem.LocalCapabilities())
+}
+
+func buildAndCompile(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, caps elem.Capabilities) (*core.Operator, error) {
+	if op, err := build(bpid, gens, props, st, caps); err == nil {
+		return compile(op, caps)
 	} else {
 		return op, err
 	}
 }
 
 func Build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
+	return build(bpid, gens, props, st, elem.LocalCapabilities())
+}
+
+func build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, caps elem.Capabilities) (*core.Operator, error) {
 	if !elem.Initalized {
 		return nil, fmt.Errorf("call elem.Init() before api.Build() or api.BuildAndCompile()")
 	}
@@ -224,7 +242,7 @@ func Build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage
 	}
 
 	// Create and connect the operator
-	op, err := CreateAndConnectOperator("", *blueprint, false)
+	op, err := createAndConnectOperator("", *blueprint, false, caps)
 	if err != nil {
 		return nil, err
 	}
@@ -233,6 +251,12 @@ func Build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage
 }
 
 func Compile(op *core.Operator) (*core.Operator, error) {
+	return compile(op, elem.LocalCapabilities())
+}
+
+// compile flattens op and rebuilds every elementary operator, so it needs the
+// same capabilities the operator was built with.
+func compile(op *core.Operator, caps elem.Capabilities) (*core.Operator, error) {
 	// Compile
 	op.Compile()
 
@@ -243,7 +267,7 @@ func Compile(op *core.Operator) (*core.Operator, error) {
 	}
 
 	// Create and connect the flat operator
-	flatOp, err := CreateAndConnectOperator("", flatDef, true)
+	flatOp, err := createAndConnectOperator("", flatDef, true, caps)
 	if err != nil {
 		return nil, err
 	}

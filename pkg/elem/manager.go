@@ -2,6 +2,7 @@ package elem
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/Bitspark/slang/pkg/core"
@@ -12,8 +13,11 @@ import (
 type builtinConfig struct {
 	opConnFunc core.CFunc
 	opFunc     core.OFunc
-	blueprint  core.Blueprint
-	safe       bool
+	// makeFunc builds the operator function around the capabilities it needs.
+	// Operators that reach the host use it instead of opFunc.
+	makeFunc  func(Capabilities) (core.OFunc, error)
+	blueprint core.Blueprint
+	safe      bool
 }
 
 var SafeMode bool
@@ -26,7 +30,13 @@ var Initalized bool = false
 var cfgs map[uuid.UUID]*builtinConfig
 var name2Id map[string]uuid.UUID
 
+// MakeOperator builds an elementary operator that reaches this machine directly.
 func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
+	return MakeOperatorWith(def, LocalCapabilities())
+}
+
+// MakeOperatorWith builds an elementary operator that uses only the given capabilities.
+func MakeOperatorWith(def core.InstanceDef, caps Capabilities) (*core.Operator, error) {
 	cfg := getBuiltinCfg(def.Operator)
 
 	if cfg == nil {
@@ -37,7 +47,15 @@ func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
 		return nil, err
 	}
 
-	o, err := core.NewOperator(def.Name, cfg.opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.Blueprint)
+	opFunc := cfg.opFunc
+	if cfg.makeFunc != nil {
+		var err error
+		if opFunc, err = cfg.makeFunc(caps); err != nil {
+			return nil, fmt.Errorf("%s: %w", cfg.blueprint.Meta.Name, err)
+		}
+	}
+
+	o, err := core.NewOperator(def.Name, opFunc, cfg.opConnFunc, def.Generics, def.Properties, def.Blueprint)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +246,10 @@ func getBuiltinCfgErr(id uuid.UUID) (*builtinConfig, error) {
 // Mainly for testing
 
 func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
+	return buildOperatorWith(insDef, LocalCapabilities())
+}
+
+func buildOperatorWith(insDef core.InstanceDef, caps Capabilities) (*core.Operator, error) {
 	blueprint, err := GetBlueprint(insDef.Operator)
 
 	if err != nil {
@@ -239,5 +261,5 @@ func buildOperator(insDef core.InstanceDef) (*core.Operator, error) {
 	}
 	insDef.Blueprint = *blueprint
 
-	return MakeOperator(insDef)
+	return MakeOperatorWith(insDef, caps)
 }

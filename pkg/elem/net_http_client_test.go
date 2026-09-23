@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -22,7 +21,12 @@ const netHTTPTestRequests = 20
 
 func startNetHTTPClient(t *testing.T) *core.Operator {
 	t.Helper()
-	op, err := buildOperator(core.InstanceDef{Operator: netHTTPClientCfg.blueprint.Id})
+	return startNetHTTPClientWith(t, LocalCapabilities())
+}
+
+func startNetHTTPClientWith(t *testing.T, caps Capabilities) *core.Operator {
+	t.Helper()
+	op, err := buildOperatorWith(core.InstanceDef{Operator: netHTTPClientCfg.blueprint.Id}, caps)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,14 +90,33 @@ func newStallingServer(t *testing.T) *stallingServer {
 	return s
 }
 
-func settledGoroutines() int {
-	count := 0
-	for i := 0; i < 20; i++ {
-		runtime.GC()
-		time.Sleep(50 * time.Millisecond)
-		count = runtime.NumGoroutine()
+// bodyCountingTransport records every response body it hands out and every one
+// that is closed again.
+type bodyCountingTransport struct{ opened, closed int64 }
+
+type countedBody struct {
+	io.ReadCloser
+	closed *int64
+	once   sync.Once
+}
+
+func (b *countedBody) Close() error {
+	b.once.Do(func() { atomic.AddInt64(b.closed, 1) })
+	return b.ReadCloser.Close()
+}
+
+func (c *bodyCountingTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	resp, err := http.DefaultTransport.RoundTrip(r)
+	if err == nil {
+		atomic.AddInt64(&c.opened, 1)
+		resp.Body = &countedBody{ReadCloser: resp.Body, closed: &c.closed}
 	}
-	return count
+	return resp, err
+}
+
+// httpWithTimeout returns capabilities whose HTTP client gives up after timeout.
+func httpWithTimeout(timeout time.Duration) Capabilities {
+	return Capabilities{HTTP: &http.Client{Timeout: timeout}}
 }
 
 // Condition slang.http-client.reuses-connections.
@@ -131,29 +154,21 @@ func Test_NetHTTPClient__ReleasesConnectionsAfterReadErrors(t *testing.T) {
 		conn.Close()
 	}))
 	defer srv.Close()
-	op := startNetHTTPClient(t)
-	pushGet(op, srv.URL)
-	a.Nil(op.Main().Out().Pull().(map[string]interface{})["status"], "a truncated body should produce no response")
-	baseline := settledGoroutines()
+	bodies := &bodyCountingTransport{}
+	op := startNetHTTPClientWith(t, Capabilities{HTTP: &http.Client{Transport: bodies}})
 	for i := 0; i < netHTTPTestRequests; i++ {
 		pushGet(op, srv.URL)
-		op.Main().Out().Pull()
+		a.Nil(op.Main().Out().Pull().(map[string]interface{})["status"], "a truncated body should produce no response")
 	}
-	a.LessOrEqual(settledGoroutines(), baseline+2, "failed reads should not leave goroutines behind")
-}
-
-// overrideNetHTTPTimeout shortens or lengthens the operator's timeout for one test.
-func overrideNetHTTPTimeout(t *testing.T, timeout time.Duration) {
-	atomic.StoreInt64(&netHTTPClientTimeoutOverride, int64(timeout))
-	t.Cleanup(func() { atomic.StoreInt64(&netHTTPClientTimeoutOverride, 0) })
+	a.Equal(int64(netHTTPTestRequests), atomic.LoadInt64(&bodies.opened), "every request should reach the transport")
+	a.Equal(atomic.LoadInt64(&bodies.opened), atomic.LoadInt64(&bodies.closed), "every response body should be closed after a failed read")
 }
 
 // Condition slang.http-client.bounded-stall.
 func Test_NetHTTPClient__GivesUpOnStalledResponse(t *testing.T) {
 	a := assertions.New(t)
-	overrideNetHTTPTimeout(t, 200*time.Millisecond)
 	s := newStallingServer(t)
-	op := startNetHTTPClient(t)
+	op := startNetHTTPClientWith(t, httpWithTimeout(200*time.Millisecond))
 	pushGet(op, s.url)
 	<-s.arrived
 	select {
@@ -168,14 +183,13 @@ func Test_NetHTTPClient__GivesUpOnStalledResponse(t *testing.T) {
 // hosted runtime ends the whole invocation at 15 seconds.
 func Test_NetHTTPClient__DefaultTimeoutIsBelowHostedLimit(t *testing.T) {
 	a := assertions.New(t)
-	a.Less(netHTTPTimeout(), 15*time.Second)
+	a.Less(LocalCapabilities().HTTP.Timeout, 15*time.Second)
 }
 
 // Condition slang.http-client.stop-abandons-request.
 func Test_NetHTTPClient__StopCancelsRequest(t *testing.T) {
-	overrideNetHTTPTimeout(t, time.Minute) // only stopping may end this request
 	s := newStallingServer(t)
-	op := startNetHTTPClient(t)
+	op := startNetHTTPClientWith(t, httpWithTimeout(time.Minute)) // only stopping may end this request
 	pushGet(op, s.url)
 	<-s.arrived
 	op.Stop()
@@ -184,4 +198,10 @@ func Test_NetHTTPClient__StopCancelsRequest(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("stopping the operator left its request running")
 	}
+}
+
+func Test_NetHTTPClient__UnavailableWithoutHTTPCapability(t *testing.T) {
+	a := assertions.New(t)
+	_, err := buildOperatorWith(core.InstanceDef{Operator: netHTTPClientCfg.blueprint.Id}, Capabilities{})
+	a.ErrorContains(err, "does not provide HTTP")
 }

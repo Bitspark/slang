@@ -7,14 +7,17 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/Bitspark/slang/pkg/api"
+	"github.com/Bitspark/slang/pkg/capability"
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/log"
@@ -41,9 +44,33 @@ func safeModeFromEnv(value string) (bool, error) {
 	return safe, nil
 }
 
+// capabilitiesFromEnv reads SLANG_HTTP_CAPABILITY_SOCKET. When it names a capability
+// host's socket, HTTP requests go through that host instead of this machine's
+// network; the hosted runner, which has no network, sets it.
+func capabilitiesFromEnv(socket string) elem.Capabilities {
+	caps := elem.LocalCapabilities()
+	if socket != "" {
+		caps.HTTP = &http.Client{Timeout: caps.HTTP.Timeout, Transport: capability.NewHTTPTransport(socket)}
+	}
+	return caps
+}
+
+// listen opens bind, a TCP address or "unix:" followed by a socket path. A socket
+// left behind by an earlier run is replaced; any other file at that path is kept.
+func listen(bind string) (net.Listener, error) {
+	socket := strings.TrimPrefix(bind, "unix:")
+	if socket == bind {
+		return net.Listen("tcp", bind)
+	}
+	if info, err := os.Lstat(socket); err == nil && info.Mode()&os.ModeSocket != 0 {
+		os.Remove(socket)
+	}
+	return net.Listen("unix", socket)
+}
+
 func main() {
 	runMode := flag.String("mode", SupportedRunModes[0], fmt.Sprintf("Choose run mode for operator: %s", SupportedRunModes))
-	bind := flag.String("bind", "localhost:0", "To which address httpPost should bind")
+	bind := flag.String("bind", "localhost:0", "Address httpPost listens on: host:port, or unix: followed by a socket path")
 	help := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
@@ -80,7 +107,7 @@ func main() {
 	elem.Init()
 
 	// Parse and Build blueprint
-	operator, err := api.BuildOperator(slBundle)
+	operator, err := api.BuildOperatorWith(slBundle, capabilitiesFromEnv(os.Getenv("SLANG_HTTP_CAPABILITY_SOCKET")))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -282,7 +309,11 @@ func runHttpPost(operator *core.Operator, bind string) {
 
 	operator.Main().Out().Bufferize()
 	operator.Start()
-	log.Fatal(http.ListenAndServe(bind, handler))
+	listener, err := listen(bind)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Fatal(http.Serve(listener, handler))
 }
 
 func isQuasiTrigger(p *core.Port) bool {

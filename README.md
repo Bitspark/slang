@@ -31,7 +31,7 @@ the studio's test action to execute it with the Go runner. HTTP deployments
 receive a public address under `<deployment-id>.slangapps.com`.
 
 The [product website](https://slang.bitspark.com/) is maintained in
-[Bitspark/slang.bitspark.com](https://github.com/Bitspark/slang.bitspark.com).
+[Bitspark/slang-website](https://github.com/Bitspark/slang-website).
 `tryslang.com` and its former playground aliases now redirect there.
 
 Hosting implementation and operations live in the private

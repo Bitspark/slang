@@ -1,8 +1,6 @@
 package elem
 
 import (
-	"fmt"
-
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
@@ -47,7 +45,7 @@ var encodingJSONPathCfg = &builtinConfig{
 					Type: "map",
 					Map: core.TypeDefMap{
 						"query": {Type: "string"},
-						"name": {Type: "string"},
+						"name":  {Type: "string"},
 					},
 				},
 			},
@@ -67,12 +65,10 @@ var encodingJSONPathCfg = &builtinConfig{
 			}
 
 			data := in
-			fmt.Println("1)", data)
 			jsonDoc := []byte(data.(core.Binary))
 
 			if !gjson.ValidBytes(jsonDoc) {
 				for _, path_name := range path_names {
-					fmt.Println("   2)", path_name.(map[string]interface{}))
 					out.Map(path_name.(map[string]interface{})["name"].(string)).Push(nil)
 				}
 				valid = false
@@ -80,15 +76,13 @@ var encodingJSONPathCfg = &builtinConfig{
 				for _, path_name := range path_names {
 					res := gjson.GetBytes(jsonDoc, path_name.(map[string]interface{})["query"].(string))
 					if !res.Exists() {
-					fmt.Println("   3)", path_name.(map[string]interface{}))
 						out.Map(path_name.(map[string]interface{})["name"].(string)).Push(nil)
 					}
 					/*
-					if res.IsArray() || res.IsObject() {
-						out.Map(path_name.(map[string]interface{})["name"].(string)).Push(res.Raw)
-					}
+						if res.IsArray() || res.IsObject() {
+							out.Map(path_name.(map[string]interface{})["name"].(string)).Push(res.Raw)
+						}
 					*/
-					fmt.Println("   4)", path_name.(map[string]interface{}))
 					out.Map(path_name.(map[string]interface{})["name"].(string)).Push(res.Value())
 				}
 			}

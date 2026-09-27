@@ -21,7 +21,8 @@ var hostAccess = map[string][]string{
 	"os": {"Open", "OpenFile", "Create", "ReadFile", "WriteFile", "Remove", "RemoveAll",
 		"Mkdir", "MkdirAll", "Rename", "Stat", "Lstat", "ReadDir", "Truncate", "Chmod",
 		"Chown", "Symlink", "Link", "CreateTemp", "MkdirTemp", "TempDir", "DirFS",
-		"Getenv", "LookupEnv", "Environ", "Hostname", "Getwd", "Chdir", "StartProcess"},
+		"Getenv", "LookupEnv", "Environ", "Hostname", "Getwd", "Chdir", "StartProcess",
+		"Stdin", "Stdout", "Stderr", "Exit"},
 	"io/ioutil":     {"ReadFile", "WriteFile", "ReadDir", "TempFile", "TempDir"},
 	"path/filepath": {"Walk", "WalkDir", "Glob", "Abs", "EvalSymlinks"},
 	"archive/zip":   {"OpenReader"},
@@ -37,7 +38,16 @@ var hostAccess = map[string][]string{
 	"github.com/Shopify/sarama":           {"*"},
 	"github.com/eclipse/paho.mqtt.golang": {"*"},
 	"time": {"Now", "Since", "Until", "Sleep", "After", "AfterFunc", "Tick",
-		"NewTimer", "NewTicker"},
+		"NewTimer", "NewTicker", "Local", "LoadLocation"},
+	// Randomness, the operating system's user database and signals, and standard
+	// output are host effects too, though they need no network or file.
+	"math/rand":              {"*"},
+	"crypto/rand":            {"*"},
+	"github.com/google/uuid": {"New", "NewRandom", "NewString", "NewUUID"},
+	"github.com/robfig/cron": {"*"},
+	"os/user":                {"*"},
+	"os/signal":              {"*"},
+	"fmt":                    {"Print", "Println", "Printf"},
 }
 
 // packageNames gives the declared name of watched packages whose name differs from
@@ -51,9 +61,10 @@ var capabilityAdapters = map[string]bool{"capabilities.go": true}
 // the import paths they reach the host through. It may only shrink: no file may
 // start reaching the host, and a file that stops must be removed here.
 var reachesHostDirectly = map[string][]string{
+	"data_uuid.go":                {"github.com/google/uuid"},
 	"data_variable_get.go":        {"time"},
 	"database_execute.go":         {"database/sql"},
-	"database_kafka_subscribe.go": {"github.com/Shopify/sarama"},
+	"database_kafka_subscribe.go": {"github.com/Shopify/sarama", "os/signal"},
 	"database_query.go":           {"database/sql"},
 	"database_redis_get.go":       {"github.com/go-redis/redis"},
 	"database_redis_hget.go":      {"github.com/go-redis/redis"},
@@ -63,15 +74,16 @@ var reachesHostDirectly = map[string][]string{
 	"database_redis_set.go":       {"github.com/go-redis/redis"},
 	"database_redis_subscribe.go": {"github.com/go-redis/redis"},
 	"files_append.go":             {"os"},
-	"files_read.go":               {"io/ioutil"},
+	"files_read.go":               {"io/ioutil", "os/user"},
 	"files_read_lines.go":         {"os"},
 	"files_write.go":              {"io/ioutil"},
 	"net_http_server.go":          {"net/http"},
 	"net_mqtt_publish.go":         {"github.com/eclipse/paho.mqtt.golang"},
 	"net_mqtt_subscribe.go":       {"github.com/eclipse/paho.mqtt.golang"},
 	"net_send_email.go":           {"net/smtp"},
-	"rand_range.go":               {"time"},
+	"rand_range.go":               {"math/rand", "time"},
 	"shell_execute.go":            {"os/exec"},
+	"time_crontab.go":             {"github.com/robfig/cron"},
 	"time_date_now.go":            {"time"},
 	"time_delay.go":               {"time"},
 	"time_unix.go":                {"time"},
@@ -181,19 +193,21 @@ func TestHostAccessGuardDetectsDirectAccess(t *testing.T) {
 	src := `package elem
 import (
 	disk "os"
+	"math/rand"
 	"net/http"
 	"time"
 )
 func f(time struct{ Now func() }) {
 	disk.ReadFile("x")
 	http.Get("http://example.com")
+	rand.Intn(6)
 	time.Now()
 }`
 	found, err := hostAccessIn("sample.go", src)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found["os"] != "disk.ReadFile" || found["net/http"] != "http.Get" {
+	if found["os"] != "disk.ReadFile" || found["net/http"] != "http.Get" || found["math/rand"] != "rand.Intn" {
 		t.Errorf("guard missed direct access: %v", found)
 	}
 	if _, shadowed := found["time"]; shadowed {

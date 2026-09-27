@@ -17,11 +17,11 @@ This repository contains the Go runtime and two commands:
 
 | Command | Purpose |
 | --- | --- |
-| `slangd` | Local daemon that manages blueprints, runs operators, and serves the visual editor. |
+| `slangd` | Local daemon that manages blueprints, runs operators, and serves the released `slang-ui` editor. |
 | `slang` | Standalone runner for JSON blueprint bundles, with pipe and HTTP modes. |
 
-The [visual editor](https://github.com/Bitspark/slang-ui) and
-[standard library](https://github.com/Bitspark/slang-lib) live in separate repositories.
+The visual editing studio ([slang-studio](https://github.com/Bitspark/slang-studio), a private
+repository) and the [standard library](https://github.com/Bitspark/slang-lib) live in separate repositories.
 
 ## Try it in your browser
 
@@ -59,10 +59,15 @@ internet connection is required. `--only-daemon` prevents the browser from openi
 automatically; omit it to open the UI on startup. Keep the terminal open and use
 **Ctrl+C** to stop the daemon.
 
-**UI compatibility:** The last published UI uses older save/run endpoints than
-the current source API. Serving its files locally does not make those operations
-compatible. Use the hosted playground for the visual editor; the source commands
-here are useful for working on the runtime and its current API.
+**UI compatibility:** The last published `slang-ui` release uses older save/run
+endpoints than the current source API. Serving its files locally does not make
+those operations compatible. For visual editing, use the hosted studio at
+[slang.run](https://slang.run/) (see [Try it in your browser](#try-it-in-your-browser)),
+or the local mode of `slang-studio` if you have access to that private repository;
+the source commands here are useful for working on the runtime and its current API.
+`slang-ui` and `slangd`'s HTTP API are slated for removal under
+[decision 0008](https://github.com/Bitspark/slang-ecosystem/blob/main/docs/decisions/0008-api-contract-decisions.md)
+of the private `slang-ecosystem` repository.
 
 The exact Go version used to validate Linux, Windows, and macOS builds is set in
 the [CI workflow](.github/workflows/ci.yml).

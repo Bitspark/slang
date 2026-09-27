@@ -1,8 +1,6 @@
 package elem
 
 import (
-	"fmt"
-
 	"github.com/Bitspark/slang/pkg/core"
 	"github.com/google/uuid"
 )
@@ -68,15 +66,12 @@ var streamStreamToMapCfg = &builtinConfig{
 		//valueStr := op.Property("value").(string)
 		for !op.CheckStop() {
 			i := in.Pull()
-			fmt.Println("entries", entries)
 			if core.IsMarker(i) {
 				out.Push(i)
 				continue
 			}
-			fmt.Println("entries", entries)
 
 			is := i.([]interface{})
-			fmt.Println("==>", is)
 
 			mapOut := make(map[string]interface{})
 			for _, entry := range entries {
@@ -84,7 +79,6 @@ var streamStreamToMapCfg = &builtinConfig{
 					valueMap := value.(map[string]interface{})
 					key := valueMap["key"].(string)
 					value := valueMap["value"]
-					fmt.Println(" . >", key, value, entry)
 					if key == entry {
 						mapOut[entry] = value
 					}

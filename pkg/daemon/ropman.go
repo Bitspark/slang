@@ -9,6 +9,7 @@ import (
 
 	"github.com/Bitspark/slang/pkg/api"
 	"github.com/Bitspark/slang/pkg/core"
+	"github.com/Bitspark/slang/pkg/elem"
 	"github.com/Bitspark/slang/pkg/storage"
 	"github.com/google/uuid"
 )
@@ -157,8 +158,11 @@ func (rom *runningOperatorManager) Exec(bpid uuid.UUID, gens core.Generics, prop
 	return rom.exec(bpid, gens, props, st)
 }
 
+// Profile is the execution profile this daemon builds and lists operators under.
+var Profile = elem.LocalProfile
+
 func (rom *runningOperatorManager) exec(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*runningOperator, error) {
-	op, err := api.BuildAndCompile(bpid, gens, props, st)
+	op, err := api.BuildAndCompileWith(bpid, gens, props, st, Profile, elem.LocalCapabilities())
 
 	if err != nil {
 		return nil, err

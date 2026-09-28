@@ -51,7 +51,7 @@ func TestBuildOperatorWithKeepsCapabilitiesThroughCompile(t *testing.T) {
 	defer server.Close()
 	transport := &recordingTransport{}
 
-	op, err := BuildOperatorWith(httpBundle(t), elem.Capabilities{HTTP: &http.Client{Transport: transport}})
+	op, err := BuildOperatorWith(httpBundle(t), elem.LocalProfile, elem.Capabilities{HTTP: &http.Client{Transport: transport}})
 	require.NoError(t, err)
 	op.Main().Out().Bufferize()
 	go op.Start()
@@ -67,6 +67,6 @@ func TestBuildOperatorWithKeepsCapabilitiesThroughCompile(t *testing.T) {
 }
 
 func TestBuildOperatorWithRefusesAnOperatorWhoseCapabilityIsMissing(t *testing.T) {
-	_, err := BuildOperatorWith(httpBundle(t), elem.Capabilities{})
+	_, err := BuildOperatorWith(httpBundle(t), elem.LocalProfile, elem.Capabilities{})
 	require.ErrorContains(t, err, "does not provide HTTP")
 }

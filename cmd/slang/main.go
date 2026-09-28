@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -29,20 +28,18 @@ import (
 
 var SupportedRunModes = []string{"process", "httpPost"}
 
-// safeModeFromEnv reads SLANG_SAFE_MODE, which leaves shell execution and file
-// writes unregistered. The hosted runner sets it. It is an environment variable
-// rather than a flag because older binaries ignore an unknown variable, so the
-// runner can set it before every deployed engine release understands it. An
-// unreadable value is an error, never a silent return to the unsafe default.
-func safeModeFromEnv(value string) (bool, error) {
-	if value == "" {
-		return false, nil
+// profileFromEnv reads SLANG_PROFILE, the execution profile a program runs under:
+// "local" when unset, or "hosted", which the hosted runner sets. SLANG_SAFE_MODE,
+// which it replaces, is refused rather than ignored, so a runner configured for
+// the old switch fails to start instead of running unconfined.
+func profileFromEnv(profile, safeMode string) (elem.Profile, error) {
+	if safeMode != "" {
+		return elem.Profile{}, errors.New("SLANG_SAFE_MODE is replaced by SLANG_PROFILE=hosted")
 	}
-	safe, err := strconv.ParseBool(value)
-	if err != nil {
-		return false, fmt.Errorf("invalid SLANG_SAFE_MODE %q: must be true or false", value)
+	if profile == "" {
+		return elem.LocalProfile, nil
 	}
-	return safe, nil
+	return elem.ProfileNamed(profile)
 }
 
 // capabilitiesFromEnv reads SLANG_HTTP_CAPABILITY_SOCKET. When it names a capability
@@ -100,15 +97,14 @@ func main() {
 	}
 
 	// Init elementary operators
-	safeMode, err := safeModeFromEnv(os.Getenv("SLANG_SAFE_MODE"))
+	profile, err := profileFromEnv(os.Getenv("SLANG_PROFILE"), os.Getenv("SLANG_SAFE_MODE"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	elem.SafeMode = safeMode
 	elem.Init()
 
 	// Parse and Build blueprint
-	operator, err := api.BuildOperatorWith(slBundle, capabilitiesFromEnv(os.Getenv("SLANG_HTTP_CAPABILITY_SOCKET")))
+	operator, err := api.BuildOperatorWith(slBundle, profile, capabilitiesFromEnv(os.Getenv("SLANG_HTTP_CAPABILITY_SOCKET")))
 	if err != nil {
 		log.Fatal(err)
 	}

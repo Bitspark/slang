@@ -21,11 +21,13 @@ var outDir string
 func main() {
 	var bundleLib bool
 	var bundleElems bool
+	var profileName string
 
 	flag.StringVar(&libDir, "libdir", "./", "Input location of the standard library files")
 	flag.StringVar(&outDir, "outdir", "./", "Output location of the bundle files")
 	flag.BoolVar(&bundleLib, "bundlelib", true, "Bundle standard library")
 	flag.BoolVar(&bundleElems, "bundleelems", true, "Bundle elementaries")
+	flag.StringVar(&profileName, "profile", elem.LocalProfile.Name, "Bundle only the elementaries available under this execution profile: local or hosted")
 	flag.Parse()
 
 	if len(os.Args) < 2 {
@@ -34,6 +36,10 @@ func main() {
 		os.Exit(0)
 	}
 
+	profile, err := elem.ProfileNamed(profileName)
+	if err != nil {
+		panic(err)
+	}
 	elem.Init()
 
 	store := storage.NewStorage().AddBackend(storage.NewReadOnlyFileSystem(libDir))
@@ -41,9 +47,10 @@ func main() {
 	var uuids []uuid.UUID
 
 	if bundleElems {
-		elemUUIDs := elem.GetBuiltinIds()
-		for _, id := range elemUUIDs {
-			uuids = append(uuids, id)
+		for _, entry := range profile.Catalog() {
+			if entry.State == elem.Available {
+				uuids = append(uuids, entry.ID)
+			}
 		}
 	}
 

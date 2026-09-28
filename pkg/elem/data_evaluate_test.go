@@ -17,7 +17,7 @@ func Test_DataEvaluate__TranslatesVariables(t *testing.T) {
 
 func Test_DataEvaluate__IsRegistered(t *testing.T) {
 	a := assertions.New(t)
-	a.True(IsRegistered(dataEvaluateId))
+	a.True(IsBuiltin(dataEvaluateId))
 }
 
 func Test_DataEvaluate__NilProperties(t *testing.T) {

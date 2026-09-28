@@ -52,14 +52,17 @@ func TestRunRejectsMissingMainService(t *testing.T) {
 	require.EqualError(t, run(o, "process", ""), "blueprint has no main service")
 }
 
-func TestSafeModeFromEnv(t *testing.T) {
-	for value, want := range map[string]bool{"": false, "false": false, "0": false, "true": true, "1": true} {
-		got, err := safeModeFromEnv(value)
+func TestProfileFromEnv(t *testing.T) {
+	for value, want := range map[string]string{"": "local/1", "local": "local/1", "hosted": "hosted/1"} {
+		got, err := profileFromEnv(value, "")
 		require.NoError(t, err, value)
-		require.Equal(t, want, got, value)
+		require.Equal(t, want, got.ID(), value)
 	}
-	_, err := safeModeFromEnv("yes")
-	require.Error(t, err, "an unreadable value must not fall back to unsafe mode")
+	_, err := profileFromEnv("unsafe", "")
+	require.Error(t, err, "an unknown profile must not fall back to the local one")
+	_, err = profileFromEnv("", "true")
+	require.EqualError(t, err, "SLANG_SAFE_MODE is replaced by SLANG_PROFILE=hosted",
+		"a runner still configured for safe mode must fail to start, not run unconfined")
 }
 
 // shortSocketPath avoids the length limit on unix socket paths.

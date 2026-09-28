@@ -6,7 +6,6 @@ import (
 )
 
 var streamCtrlJoinCfg = &builtinConfig{
-	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("fb174c53-80bd-4e29-955a-aafe33ebfb31"),
 		Meta: core.BlueprintMetaDef{

@@ -8,7 +8,6 @@ import (
 )
 
 var stringFormatCfg = &builtinConfig{
-	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("21dbddf2-2d07-494e-8950-3ac0224a3ff5"),
 		Meta: core.BlueprintMetaDef{

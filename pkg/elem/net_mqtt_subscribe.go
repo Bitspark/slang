@@ -9,7 +9,7 @@ import (
 )
 
 var netMQTTSubscribeCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: MQTTSubscribe, Properties: []string{"broker", "topic", "username", "password"}}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("fd51e295-3483-4558-9b26-8c16d579c4ef"),
 		Meta: core.BlueprintMetaDef{

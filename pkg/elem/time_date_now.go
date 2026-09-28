@@ -8,7 +8,7 @@ import (
 )
 
 var timeDateNowCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: ClockRead}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("808c7846-db9f-43ee-989b-37a08ce7e70d"),
 		Meta: core.BlueprintMetaDef{

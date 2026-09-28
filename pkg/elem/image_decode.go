@@ -9,7 +9,6 @@ import (
 )
 
 var imageDecodeCfg = &builtinConfig{
-	safe: true,
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("4b082c52-9a99-472f-9277-f5ca9651dbfb"),
 		Meta: core.BlueprintMetaDef{

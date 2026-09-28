@@ -12,7 +12,7 @@ import (
 
 var filesReadId = uuid.MustParse("f7eecf2c-6504-478f-b2fa-809bec71463c")
 var filesReadCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: FilesRead, Dynamic: true}},
 	blueprint: core.Blueprint{
 		Id: filesReadId,
 		Meta: core.BlueprintMetaDef{

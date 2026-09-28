@@ -12,7 +12,7 @@ import (
 )
 
 var netSendEmailCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: MailSend, Properties: []string{"server", "username", "password"}}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("741b8a21-0b6d-40e5-a281-b179a49e9030"),
 		Meta: core.BlueprintMetaDef{

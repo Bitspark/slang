@@ -18,11 +18,12 @@ var PROPERTY_INTERPOLATION_REGEXP = regexp.MustCompile(`(\$\w+)`)
 // todo should be SlangBundle method
 // BuildOperator builds a bundle whose operators reach this machine directly.
 func BuildOperator(bundle *core.SlangBundle) (*core.Operator, error) {
-	return BuildOperatorWith(bundle, elem.LocalCapabilities())
+	return BuildOperatorWith(bundle, elem.LocalProfile, elem.LocalCapabilities())
 }
 
-// BuildOperatorWith builds a bundle whose operators use only the given capabilities.
-func BuildOperatorWith(bundle *core.SlangBundle, caps elem.Capabilities) (*core.Operator, error) {
+// BuildOperatorWith builds a bundle under profile, whose operators use only the
+// given capabilities.
+func BuildOperatorWith(bundle *core.SlangBundle, profile elem.Profile, caps elem.Capabilities) (*core.Operator, error) {
 	if !bundle.Valid() {
 		if err := bundle.Validate(); err != nil {
 			return nil, err
@@ -31,7 +32,7 @@ func BuildOperatorWith(bundle *core.SlangBundle, caps elem.Capabilities) (*core.
 
 	stor := newSlangBundleStorage(funk.Values(bundle.Blueprints).([]core.Blueprint))
 
-	return buildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor, caps)
+	return buildAndCompile(bundle.Main, bundle.Args.Generics, bundle.Args.Properties, *stor, profile, caps)
 }
 
 func gatherDependencies(def *core.Blueprint, bundle *core.SlangBundle, store *storage.Storage) error {
@@ -105,10 +106,10 @@ func (l *slangBundleLoader) Load(opId uuid.UUID) (*core.Blueprint, error) {
 }
 
 func CreateAndConnectOperator(insName string, def core.Blueprint, ordered bool) (*core.Operator, error) {
-	return createAndConnectOperator(insName, def, ordered, elem.LocalCapabilities())
+	return createAndConnectOperator(insName, def, ordered, elem.LocalProfile, elem.LocalCapabilities())
 }
 
-func createAndConnectOperator(insName string, def core.Blueprint, ordered bool, caps elem.Capabilities) (*core.Operator, error) {
+func createAndConnectOperator(insName string, def core.Blueprint, ordered bool, profile elem.Profile, caps elem.Capabilities) (*core.Operator, error) {
 	// Create new non-builtin operator
 	o, err := core.NewOperator(insName, nil, nil, nil, nil, def)
 	if err != nil {
@@ -117,16 +118,18 @@ func createAndConnectOperator(insName string, def core.Blueprint, ordered bool, 
 
 	// Recursively create all child operators from top to bottom
 	for _, childOpInsDef := range def.InstanceDefs {
-		if builtinOp, err := elem.MakeOperatorWith(*childOpInsDef, caps); err == nil {
-			// Builtin operator has been found
+		// A built-in's ID is never defined by a document: the engine provides it
+		// under this profile, or building fails naming the instance.
+		if elem.IsBuiltin(childOpInsDef.Operator) {
+			builtinOp, err := elem.MakeOperatorWith(*childOpInsDef, profile, caps)
+			if err != nil {
+				return nil, fmt.Errorf("instance %s: %w", childOpInsDef.Name, err)
+			}
 			builtinOp.SetParent(o)
 			continue
-		} else if elem.IsRegistered(childOpInsDef.Operator) {
-			// Builtin operator with that name exists, but still could not create it, so an error must have occurred
-			return nil, err
 		}
 
-		oc, err := createAndConnectOperator(childOpInsDef.Name, childOpInsDef.Blueprint, ordered, caps)
+		oc, err := createAndConnectOperator(childOpInsDef.Name, childOpInsDef.Blueprint, ordered, profile, caps)
 		if err != nil {
 			return nil, err
 		}
@@ -208,24 +211,33 @@ func connectDestinations(o *core.Operator, conns map[*core.Port][]*core.Port, or
 }
 
 func BuildAndCompile(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
-	return buildAndCompile(bpid, gens, props, st, elem.LocalCapabilities())
+	return buildAndCompile(bpid, gens, props, st, elem.LocalProfile, elem.LocalCapabilities())
 }
 
-func buildAndCompile(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, caps elem.Capabilities) (*core.Operator, error) {
-	if op, err := build(bpid, gens, props, st, caps); err == nil {
-		return compile(op, caps)
+// BuildAndCompileWith builds and compiles a blueprint under profile, whose
+// operators use only the given capabilities.
+func BuildAndCompileWith(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, profile elem.Profile, caps elem.Capabilities) (*core.Operator, error) {
+	return buildAndCompile(bpid, gens, props, st, profile, caps)
+}
+
+func buildAndCompile(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, profile elem.Profile, caps elem.Capabilities) (*core.Operator, error) {
+	if op, err := build(bpid, gens, props, st, profile, caps); err == nil {
+		return compile(op, profile, caps)
 	} else {
 		return op, err
 	}
 }
 
 func Build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage) (*core.Operator, error) {
-	return build(bpid, gens, props, st, elem.LocalCapabilities())
+	return build(bpid, gens, props, st, elem.LocalProfile, elem.LocalCapabilities())
 }
 
-func build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, caps elem.Capabilities) (*core.Operator, error) {
+func build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage.Storage, profile elem.Profile, caps elem.Capabilities) (*core.Operator, error) {
 	if !elem.Initalized {
 		return nil, fmt.Errorf("call elem.Init() before api.Build() or api.BuildAndCompile()")
+	}
+	if elem.IsBuiltin(bpid) {
+		return nil, fmt.Errorf("a program's main blueprint must be composite, not the built-in %s", bpid)
 	}
 
 	// Recursively replace generics by their actual types and propagate properties
@@ -242,7 +254,7 @@ func build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage
 	}
 
 	// Create and connect the operator
-	op, err := createAndConnectOperator("", *blueprint, false, caps)
+	op, err := createAndConnectOperator("", *blueprint, false, profile, caps)
 	if err != nil {
 		return nil, err
 	}
@@ -251,12 +263,12 @@ func build(bpid uuid.UUID, gens core.Generics, props core.Properties, st storage
 }
 
 func Compile(op *core.Operator) (*core.Operator, error) {
-	return compile(op, elem.LocalCapabilities())
+	return compile(op, elem.LocalProfile, elem.LocalCapabilities())
 }
 
 // compile flattens op and rebuilds every elementary operator, so it needs the
-// same capabilities the operator was built with.
-func compile(op *core.Operator, caps elem.Capabilities) (*core.Operator, error) {
+// same profile and capabilities the operator was built with.
+func compile(op *core.Operator, profile elem.Profile, caps elem.Capabilities) (*core.Operator, error) {
 	// Compile
 	op.Compile()
 
@@ -267,7 +279,7 @@ func compile(op *core.Operator, caps elem.Capabilities) (*core.Operator, error) 
 	}
 
 	// Create and connect the flat operator
-	flatOp, err := createAndConnectOperator("", flatDef, true, caps)
+	flatOp, err := createAndConnectOperator("", flatDef, true, profile, caps)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +328,7 @@ func specifyOperator(blueprint *core.Blueprint, gens core.Generics, props core.P
 			if childBlueprint, err := st.Load(childOpId); err == nil {
 				childInsDef.Blueprint = *childBlueprint
 			} else {
-				return err
+				return fmt.Errorf("instance %s: %w", childInsDef.Name, err)
 			}
 		}
 

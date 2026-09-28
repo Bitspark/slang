@@ -9,7 +9,6 @@ import (
 
 var streamMapAccessId = uuid.MustParse("618c4007-70fc-44ac-9443-184df77ab730")
 var streamMapAccessCfg = &builtinConfig{
-	safe: true,
 	blueprint: core.Blueprint{
 		Id: streamMapAccessId,
 		Meta: core.BlueprintMetaDef{

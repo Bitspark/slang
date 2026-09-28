@@ -1,7 +1,6 @@
 package elem
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -17,31 +16,28 @@ type builtinConfig struct {
 	// Operators that reach the host use it instead of opFunc.
 	makeFunc  func(Capabilities) (core.OFunc, error)
 	blueprint core.Blueprint
-	safe      bool
+	// requires declares every operation the built-in performs. A profile decides
+	// from it alone whether the built-in is available (decision 0012).
+	requires []Requirement
 }
 
-var SafeMode bool
-
-// PublicMode exposes only computation operators to untrusted web visitors.
-// It supplements process/container isolation; SafeMode alone permits network I/O.
-var PublicMode bool
 var Initalized bool = false
 
+// cfgs holds every built-in this engine provides, whatever the profile.
 var cfgs map[uuid.UUID]*builtinConfig
-var name2Id map[string]uuid.UUID
 
 // MakeOperator builds an elementary operator that reaches this machine directly.
 func MakeOperator(def core.InstanceDef) (*core.Operator, error) {
-	return MakeOperatorWith(def, LocalCapabilities())
+	return MakeOperatorWith(def, LocalProfile, LocalCapabilities())
 }
 
-// MakeOperatorWith builds an elementary operator that uses only the given capabilities.
-func MakeOperatorWith(def core.InstanceDef, caps Capabilities) (*core.Operator, error) {
-	cfg := getBuiltinCfg(def.Operator)
-
-	if cfg == nil {
-		return nil, errors.New("unknown elementary operator")
+// MakeOperatorWith builds an elementary operator that profile makes available,
+// using only the given capabilities.
+func MakeOperatorWith(def core.InstanceDef, profile Profile, caps Capabilities) (*core.Operator, error) {
+	if err := profile.Resolve(def.Operator).Err(); err != nil {
+		return nil, err
 	}
+	cfg := cfgs[def.Operator]
 
 	if err := def.Blueprint.GenericsSpecified(); err != nil {
 		return nil, err
@@ -63,56 +59,33 @@ func MakeOperatorWith(def core.InstanceDef, caps Capabilities) (*core.Operator, 
 	return o, nil
 }
 
+// GetBlueprint returns a built-in's blueprint, whatever the profile, or explains
+// why the ID is not a built-in this engine provides.
 func GetBlueprint(id uuid.UUID) (*core.Blueprint, error) {
 	cfg, ok := cfgs[id]
 
 	if !ok {
-		return nil, errors.New("elementary operator not found")
+		return nil, LocalProfile.Resolve(id).Err()
 	}
 
 	blueprint := cfg.blueprint.Copy(true)
 	return &blueprint, nil
 }
 
-func IsRegistered(id uuid.UUID) bool {
-	_, b := cfgs[id]
-	return b
+// IsBuiltin says whether id belongs to a built-in, including a removed one. Such
+// an ID is never defined by a document.
+func IsBuiltin(id uuid.UUID) bool {
+	_, provided := cfgs[id]
+	_, removed := removedBuiltins[id]
+	return provided || removed
 }
 
 func Register(cfg *builtinConfig) {
-	if PublicMode && !publicOperator(cfg) {
-		return
-	}
-	if SafeMode && SafeMode != cfg.safe {
-		// slang run in safe mode,
-		// unsafe elementary operators cannot be registered
-		return
-	}
-
 	cfg.blueprint.Elementary = cfg.blueprint.Id
-
-	id := cfg.blueprint.Id
-	cfgs[id] = cfg
-	name2Id[cfg.blueprint.Meta.Name] = id
+	cfgs[cfg.blueprint.Id] = cfg
 }
 
-func publicOperator(cfg *builtinConfig) bool {
-	switch cfg {
-	case dataValueCfg, dataEvaluateCfg, dataConvertCfg, dataUUIDCfg, randRangeCfg,
-		controlSplitCfg, controlMergeCfg, controlSwitchCfg, controlLoopCfg, controlIterateCfg,
-		streamReduceCfg, streamCtrlJoinCfg, streamSerializeCfg, streamParallelizeCfg,
-		streamConcatenateCfg, streamMapAccessCfg, streamWindow2Cfg, streamWindowCollectCfg,
-		streamWindowReleaseCfg, streamMapToStreamCfg, streamStreamToMapCfg, streamSliceCfg,
-		streamTransformCfg, streamDistinctCfg, encodingCSVReadCfg, encodingCSVWriteCfg,
-		encodingJSONReadCfg, encodingJSONWriteCfg, encodingJSONPathCfg, encodingURLWriteCfg,
-		timeDelayCfg, timeParseDateCfg, timeDateNowCfg, timeUNIXMillisCfg,
-		stringTemplateCfg, stringFormatCfg, stringSplitCfg, stringBeginswithCfg,
-		stringContainsCfg, stringEndswithCfg, databaseMemoryReadCfg, databaseMemoryWriteCfg:
-		return true
-	}
-	return false
-}
-
+// GetBuiltinIds lists every built-in this engine provides, whatever the profile.
 func GetBuiltinIds() []uuid.UUID {
 	return funk.Keys(cfgs).([]uuid.UUID)
 }
@@ -120,17 +93,12 @@ func GetBuiltinIds() []uuid.UUID {
 func Init() {
 	Initalized = true
 	cfgs = make(map[uuid.UUID]*builtinConfig)
-	name2Id = make(map[string]uuid.UUID)
-
-	//Register(metaStoreCfg)
 
 	// Data manipulating operators
 	Register(dataValueCfg)
 	Register(dataEvaluateCfg)
 	Register(dataConvertCfg)
 	Register(dataUUIDCfg)
-	//Register(dataVariableSetCfg)
-	//Register(dataVariableGetCfg)
 	Register(randRangeCfg)
 
 	// Flow control operators
@@ -141,15 +109,12 @@ func Init() {
 	Register(controlIterateCfg)
 	Register(streamReduceCfg)
 	Register(streamCtrlJoinCfg)
-	//Register(controlSemaphorePCfg)
-	//Register(controlSemaphoreVCfg)
 
 	// Stream accessing and processing operators
 	Register(streamSerializeCfg)
 	Register(streamParallelizeCfg)
 	Register(streamConcatenateCfg)
 	Register(streamMapAccessCfg)
-	//Register(streamWindowCfg)
 	Register(streamWindow2Cfg)
 	Register(streamWindowCollectCfg)
 	Register(streamWindowReleaseCfg)
@@ -196,51 +161,25 @@ func Init() {
 
 	Register(databaseQueryCfg)
 	Register(databaseExecuteCfg)
-	//Register(databaseKafkaSubscribeCfg)
-	//Register(databaseRedisGetCfg)
-	//Register(databaseRedisSetCfg)
-	//Register(databaseRedisHGetCfg)
-	//Register(databaseRedisHSetCfg)
-	//Register(databaseRedisLPushCfg)
-	//Register(databaseRedisHIncrByCfg)
-	//Register(databaseRedisSubscribeCfg)
 	Register(databaseMemoryReadCfg)
 	Register(databaseMemoryWriteCfg)
 
 	Register(imageDecodeCfg)
 	Register(imageEncodeCfg)
 
-	//Register(shellExecuteCfg)
 	Register(systemLogCfg)
 
 	Register(encodingPRTGHistDataCfg)
-
-	variableStores = make(map[string]*variableStore)
-	variableMutex = &sync.Mutex{}
 
 	windowStores = make(map[string]*windowStore)
 	windowMutex = &sync.Mutex{}
 
 	memoryStores = make(map[string]*memoryStore)
 	memoryMutex = &sync.Mutex{}
-
-	semaphoreStores = make(map[string]*semaphoreStore)
-	semaphoreMutex = &sync.Mutex{}
 }
 
 func getBuiltinCfg(id uuid.UUID) *builtinConfig {
-	c, _ := cfgs[id]
-	return c
-}
-
-func getBuiltinCfgErr(id uuid.UUID) (*builtinConfig, error) {
-	cfg, ok := cfgs[id]
-
-	if !ok {
-		return nil, errors.New("builtin operator not found")
-	}
-
-	return cfg, nil
+	return cfgs[id]
 }
 
 // Mainly for testing
@@ -261,5 +200,5 @@ func buildOperatorWith(insDef core.InstanceDef, caps Capabilities) (*core.Operat
 	}
 	insDef.Blueprint = *blueprint
 
-	return MakeOperatorWith(insDef, caps)
+	return MakeOperatorWith(insDef, LocalProfile, caps)
 }

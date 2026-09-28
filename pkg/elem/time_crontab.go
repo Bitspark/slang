@@ -7,7 +7,7 @@ import (
 )
 
 var timeCrontabCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: ClockWait, Dynamic: true}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("60b849fd-ca5a-4206-8312-996e4e3f6c31"),
 		Meta: core.BlueprintMetaDef{

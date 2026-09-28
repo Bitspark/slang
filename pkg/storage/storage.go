@@ -52,6 +52,8 @@ func (s *Storage) IsSaved(opId uuid.UUID) bool {
 	return false
 }
 
+// List lists the blueprints the backends define. Copies of built-ins, which
+// exported bundles carry, are not among them: a built-in comes from the engine.
 func (s *Storage) List() ([]uuid.UUID, error) {
 	all := make([]uuid.UUID, 0)
 
@@ -61,7 +63,11 @@ func (s *Storage) List() ([]uuid.UUID, error) {
 		if err != nil {
 			continue
 		}
-		all = append(all, l...)
+		for _, id := range l {
+			if !elem.IsBuiltin(id) {
+				all = append(all, id)
+			}
+		}
 	}
 
 	return all, nil
@@ -72,6 +78,9 @@ func (s *Storage) Save(blueprint core.Blueprint) (uuid.UUID, error) {
 	var err error
 	// The question is whether we want multiple backends that are able to take a write
 	// because if we need to make sure they all use the same identifier
+	if elem.IsBuiltin(blueprint.Id) {
+		return opId, fmt.Errorf("%s is the ID of a built-in and cannot be saved", blueprint.Id)
+	}
 	writableBackends := s.writeableBackends()
 	if len(writableBackends) == 0 {
 		return opId, errors.New("no writable backend for saving found")
@@ -123,8 +132,10 @@ func (s *Storage) selectBackend(opId uuid.UUID) Backend {
 }
 
 func (s *Storage) getBlueprintId(opId uuid.UUID) (*core.Blueprint, error) {
-	if blueprint, err := elem.GetBlueprint(opId); err == nil {
-		return blueprint, nil
+	// A built-in's definition comes only from the engine, never from a document's
+	// copy of it (API design 5.6).
+	if elem.IsBuiltin(opId) {
+		return elem.GetBlueprint(opId)
 	}
 
 	backend := s.selectBackend(opId)

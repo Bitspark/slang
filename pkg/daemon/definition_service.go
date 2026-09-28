@@ -31,11 +31,12 @@ var DefinitionService = &Service{map[string]*Endpoint{
 		opIds, err := st.List()
 
 		if err == nil {
-			builtinOpIds := elem.GetBuiltinIds()
-
-			// Gather builtin/elementary blueprints
-			for _, opId := range builtinOpIds {
-				blueprint, err := elem.GetBlueprint(opId)
+			// Gather the builtin/elementary blueprints this daemon's profile makes available
+			for _, entry := range Profile.Catalog() {
+				if entry.State != elem.Available {
+					continue
+				}
+				blueprint, err := elem.GetBlueprint(entry.ID)
 
 				if err != nil {
 					break

@@ -11,7 +11,7 @@ import (
 )
 
 var databaseQueryCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: SQLQuery, Properties: []string{"driver", "url", "query"}}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("ce3a3e0e-d579-4712-8573-713a645c2271"),
 		Meta: core.BlueprintMetaDef{

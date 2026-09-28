@@ -6,7 +6,7 @@ import (
 )
 
 var streamWindowReleaseCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: StateRead, Properties: []string{"store"}}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("47b3f097-2043-42c6-aad5-0cfdb9004aef"),
 		Meta: core.BlueprintMetaDef{

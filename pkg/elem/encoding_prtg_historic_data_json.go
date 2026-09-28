@@ -102,7 +102,6 @@ func getChannels(channelNames []interface{}, prtgData *PRTGData) []map[string]fl
 
 var encodingPRTGHistDataId = uuid.MustParse("71f01aee-860a-49a4-8fe0-2a449301ea54")
 var encodingPRTGHistDataCfg = &builtinConfig{
-	safe: true,
 	blueprint: core.Blueprint{
 		Id: encodingPRTGHistDataId,
 		Meta: core.BlueprintMetaDef{

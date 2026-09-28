@@ -40,7 +40,7 @@ func netHTTPExchange(ctx context.Context, client *http.Client, method, url strin
 }
 
 var netHTTPClientCfg = &builtinConfig{
-	safe: true,
+	requires: []Requirement{{Operation: HTTPRequest, Dynamic: true}},
 	blueprint: core.Blueprint{
 		Id: uuid.MustParse("f7f5907d-758b-4892-8a3e-ae86b877b869"),
 		Meta: core.BlueprintMetaDef{

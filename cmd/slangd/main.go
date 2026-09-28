@@ -34,12 +34,11 @@ var (
 var onlyDaemon bool
 var skipChecks bool
 var withoutUI bool
-var safeMode bool
+var profile string
 var credentials string
 
 func main() {
-	flag.BoolVar(&elem.PublicMode, "public", false, "Only expose computation operators suitable for an isolated public playground.")
-	flag.BoolVar(&safeMode, "safe", false, "Only support safe operator. Unsafe operators are handled as not existing.")
+	flag.StringVar(&profile, "profile", elem.LocalProfile.Name, "Execution profile: local, hosted, or public for untrusted visitors")
 	flag.BoolVar(&onlyDaemon, "only-daemon", false, "Don't automatically open UI")
 	flag.BoolVar(&skipChecks, "skip-checks", false, "Skip checking and updating UI and Lib")
 	flag.BoolVar(&withoutUI, "without-ui", false, "Do not serve the UI found in SLANG_UI")
@@ -50,8 +49,11 @@ func main() {
 		log.Fatalf("\n\n\t%v\n\n", "Invalid format for credentials. Must be username:password")
 	}
 
-	// init elementary operators in proper mode (safe mode oder unsafe mode)
-	elem.SafeMode = safeMode
+	selected, err := elem.ProfileNamed(profile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	daemon.Profile = selected
 	elem.Init()
 
 	buildTime, _ := strconv.ParseInt(BuildTime, 10, 64)

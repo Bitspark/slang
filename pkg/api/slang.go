@@ -87,12 +87,10 @@ func (l *slangBundleLoader) Has(opId uuid.UUID) bool {
 }
 
 func (l *slangBundleLoader) List() ([]uuid.UUID, error) {
-	var uuidList []uuid.UUID
+	uuidList := make([]uuid.UUID, 0, len(l.blueprintById))
 
-	for _, idOrName := range funk.Keys(l.blueprintById).([]string) {
-		if id, err := uuid.Parse(idOrName); err == nil {
-			uuidList = append(uuidList, id)
-		}
+	for id := range l.blueprintById {
+		uuidList = append(uuidList, id)
 	}
 
 	return uuidList, nil
@@ -409,7 +407,7 @@ func interpolatePropVal(propVal interface{}, props core.Properties) (bool, inter
 			if !updated {
 				newPropMapVal[k] = v
 				continue
-			} 
+			}
 
 			newPropMapVal[k] = new
 

@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -251,7 +252,35 @@ func runProcess(operator *core.Operator) {
 }
 
 func runHttpPost(operator *core.Operator, bind string) {
+	handler := httpPostHandler(operator)
+
+	operator.Main().Out().Bufferize()
+	operator.Start()
+	listener, err := listen(bind)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Fatal(http.Serve(listener, handler))
+}
+
+// httpPostHandler turns each POST into one invocation of the running operator:
+// its body becomes one input item and the next output item is the response.
+func httpPostHandler(operator *core.Operator) http.Handler {
 	inDef := operator.Main().In().Define()
+
+	// One running operator serves every invocation, and its output items carry no
+	// request identity, so only one invocation may be in flight at a time.
+	// Otherwise two concurrent callers can each receive the other's output.
+	var inFlight sync.Mutex
+	invoke := func(in interface{}) (interface{}, error) {
+		inFlight.Lock()
+		defer inFlight.Unlock()
+		operator.Main().In().Push(in)
+		if operator.Main().Out().Closed() {
+			return nil, errors.New("the program has stopped")
+		}
+		return operator.Main().Out().Receive()
+	}
 
 	r := mux.NewRouter()
 	r.
@@ -265,8 +294,7 @@ func runHttpPost(operator *core.Operator, bind string) {
 			// for the case when the `In` is a trigger.
 			case err == io.EOF:
 				if isQuasiTrigger(operator.Main().In()) {
-					operator.Main().In().Push(true)
-					outgoing, err := operator.Main().Out().Receive()
+					outgoing, err := invoke(true)
 					if err != nil {
 						responseWithError(resp, err, http.StatusServiceUnavailable)
 						return
@@ -286,14 +314,7 @@ func runHttpPost(operator *core.Operator, bind string) {
 					responseWithError(resp, err, http.StatusBadRequest)
 					return
 				}
-				operator.Main().In().Push(incoming)
-
-				p := operator.Main().Out()
-				if p.Closed() {
-					return
-				}
-
-				outgoing, err := p.Receive()
+				outgoing, err := invoke(incoming)
 				if err != nil {
 					responseWithError(resp, err, http.StatusServiceUnavailable)
 					return
@@ -303,17 +324,9 @@ func runHttpPost(operator *core.Operator, bind string) {
 
 		})
 
-	handler := cors.New(cors.Options{
+	return cors.New(cors.Options{
 		AllowedMethods: []string{"POST"},
 	}).Handler(r)
-
-	operator.Main().Out().Bufferize()
-	operator.Start()
-	listener, err := listen(bind)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Fatal(http.Serve(listener, handler))
 }
 
 func isQuasiTrigger(p *core.Port) bool {
@@ -330,7 +343,8 @@ func responseWithError(w http.ResponseWriter, err error, status int) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(err.Error()); err != nil {
-		log.Fatal(err)
+		// The caller is gone; the program keeps serving the others.
+		log.Error(err)
 	}
 }
 
@@ -339,6 +353,7 @@ func responseWithOk(w http.ResponseWriter, m interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(m); err != nil {
-		log.Fatal(err)
+		// The caller is gone; the program keeps serving the others.
+		log.Error(err)
 	}
 }
